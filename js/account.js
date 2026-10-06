@@ -64,6 +64,16 @@
     show($("accounts-off"), true);
   }
 
+  // Supabase Auth error codes worth their own message.
+  function signupErrorKey(error) {
+    var code = error.code || "";
+    if (code === "email_address_invalid") return "auth.emailRejected";
+    if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit") return "auth.rateLimited";
+    if (code === "weak_password") return "auth.passwordShort";
+    if (code === "user_already_exists" || /already|registered/i.test(error.message || "")) return "auth.exists";
+    return "acct.error";
+  }
+
   // ===================================================================
   // Sign-up / log-in page
   // ===================================================================
@@ -116,7 +126,9 @@
 
       var request;
       if (mode === "reset") {
-        request = client.auth.resetPasswordForEmail(email, { redirectTo: sitePath("account.html") }).then(function () {
+        request = client.auth.resetPasswordForEmail(email, { redirectTo: sitePath("account.html") }).then(function (r) {
+          if (r.error && r.error.code !== "user_not_found")
+            return status(statusEl, "error", T(signupErrorKey(r.error)));
           status(statusEl, "success", T("auth.resetSent"));
         });
       } else if (mode === "login") {
@@ -135,10 +147,7 @@
             },
           })
           .then(function (r) {
-            if (r.error) {
-              var exists = /already|registered/i.test(r.error.message || "");
-              return status(statusEl, "error", T(exists ? "auth.exists" : "acct.error"));
-            }
+            if (r.error) return status(statusEl, "error", T(signupErrorKey(r.error)));
             if (r.data && r.data.session) window.location.href = next();
             else status(statusEl, "success", T("auth.checkEmail"));
           });

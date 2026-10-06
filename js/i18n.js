@@ -869,6 +869,16 @@
       "Ya hay una cuenta con ese correo. Inicie sesión.",
       "Já existe uma conta com esse e-mail. Entre na sua conta.",
     ],
+    "auth.emailRejected": [
+      "That email address can't receive mail. Please use a real email address.",
+      "Esa dirección no puede recibir correo. Use una dirección de correo real.",
+      "Esse endereço não pode receber e-mails. Use um endereço de e-mail real.",
+    ],
+    "auth.rateLimited": [
+      "Too many sign-up emails were sent just now. Please try again in an hour.",
+      "Se enviaron demasiados correos de registro hace poco. Inténtelo de nuevo en una hora.",
+      "Foram enviados e-mails de cadastro demais agora há pouco. Tente de novo daqui a uma hora.",
+    ],
     "auth.badLogin": [
       "That email and password don't match.",
       "El correo y la contraseña no coinciden.",

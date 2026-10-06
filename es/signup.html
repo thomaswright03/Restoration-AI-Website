@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Empiece su prueba gratis | Room Designer 3D</title>
+    <meta name="description" content="Cree su cuenta de Room Designer 3D." />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/signup.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/signup.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/signup.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/signup.html" />
+    <script>
+      (function () {
+        var here = "es";
+        var root = "../";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "signup.html" !== "404.html") {
+            location.replace(root + dirs[want] + "signup.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Ir al contenido</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Principal">
+        <a href="../es/index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="../es/designer.html">Demo en vivo</a></li>
+          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <li><a href="../es/account.html" data-auth-link>Iniciar sesión</a></li>
+          <li><a href="../es/signup.html" class="nav-cta">Prueba gratis</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Idioma: </span>ES
+              </summary>
+              <ul class="lang-menu-list" aria-label="Idioma">
+                <li><a href="../signup.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li>
+                  <a href="../es/signup.html?lang=es" hreflang="es" lang="es" data-lang-choice="es" aria-current="true"
+                    >Español</a
+                  >
+                </li>
+                <li>
+                  <a href="../pt/signup.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" class="app-page solid-header">
+      <section class="section app-narrow">
+        <h1 class="section-title" id="auth-title" data-mode-text="signup">Empiece su prueba gratis</h1>
+        <h1 class="section-title" data-mode-text="login" hidden>Iniciar sesión</h1>
+        <p class="section-subtitle" data-mode-text="signup">
+          Cree su cuenta y luego elija un plan. Solo se cobra a su tarjeta después de los 14 días de prueba.
+        </p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p>
+            <strong>Las cuentas aún no están activadas.</strong> El registro abrirá pronto. Mientras tanto, puede probar
+            la demo.
+          </p>
+          <p><a href="../es/designer.html">Probar la demo</a></p>
+        </div>
+
+        <div class="app-card" id="auth-card" hidden>
+          <div class="auth-tabs" role="group" aria-label="Crear una cuenta o iniciar sesión">
+            <button type="button" class="auth-tab" data-mode="signup" aria-pressed="true">Crear cuenta</button>
+            <button type="button" class="auth-tab" data-mode="login" aria-pressed="false">Iniciar sesión</button>
+          </div>
+          <form id="auth-form" novalidate>
+            <div class="form-group" data-mode-field="signup">
+              <label for="auth-business">Nombre de la empresa</label>
+              <input type="text" id="auth-business" name="business" autocomplete="organization" maxlength="120" />
+            </div>
+            <div class="form-group">
+              <label for="auth-email">Correo electrónico</label>
+              <input type="email" id="auth-email" name="email" autocomplete="email" required />
+            </div>
+            <div class="form-group" data-mode-field="signup login">
+              <label for="auth-password">Contraseña</label>
+              <input
+                type="password"
+                id="auth-password"
+                name="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+              <p class="form-note" data-mode-field="signup">Al menos 8 caracteres.</p>
+            </div>
+            <div id="auth-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
+            <button type="submit" class="btn btn-primary btn-block" id="auth-submit">
+              <span data-mode-text="signup">Crear cuenta</span>
+              <span data-mode-text="login" hidden>Iniciar sesión</span>
+              <span data-mode-text="reset" hidden>Enviarme un enlace para restablecerla</span>
+            </button>
+            <p class="form-note">
+              <button type="button" class="link-button" id="auth-forgot" data-mode-field="login">
+                ¿Olvidó su contraseña?
+              </button>
+              <button type="button" class="link-button" id="auth-back" data-mode-field="reset">
+                Volver a iniciar sesión
+              </button>
+            </p>
+            <p class="form-consent" data-mode-field="signup">
+              Al crear una cuenta acepta los <a href="terms.html">Términos del servicio</a> y la
+              <a href="privacy.html">Política de privacidad</a>.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">
+            Un diseñador y estimador de baños en 3D para empresas de remodelación y restauración.
+          </p>
+          <p class="footer-identity">
+            Room Designer 3D es un producto de Wright AI Solutions, LLC, compañía de responsabilidad limitada de
+            Arizona.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Producto</h2>
+          <a href="../es/designer.html">Demo en vivo</a>
+          <a href="../es/index.html#pricing">Precios</a>
+          <a href="../es/index.html#faq">Preguntas</a>
+          <a href="../es/signup.html">Prueba gratis</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contacto</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Legal</h2>
+          <a href="../es/privacy.html">Política de privacidad</a>
+          <a href="../es/terms.html">Términos del servicio</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Tema de color">
+          <span class="theme-switch-label" aria-hidden="true">Tema</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Oscuro</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+
+    <script src="../js/bathroom-pricing.js"></script>
+    <script src="../js/site-config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/vendor/supabase/supabase.js"></script>
+    <script src="../js/account.js"></script>
+  </body>
+</html>

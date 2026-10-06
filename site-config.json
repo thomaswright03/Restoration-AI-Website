@@ -1,0 +1,35 @@
+{
+  "_help": "Site settings. Edit, commit and push; Vercel redeploys and the next page load picks up the change. Plan prices here are what the pages SHOW: keep them equal to the prices set in Stripe, then run npm run pages so the built pages pick them up. See README 'Settings'.",
+  "plans": {
+    "monthly": 79,
+    "yearly": 790,
+    "trialDays": 14
+  },
+  "company": {
+    "supportEmail": ""
+  },
+  "priceEstimator": {
+    "enabled": true
+  },
+  "materialsEstimator": {
+    "enabled": true
+  },
+  "bathroomVisualizer": {
+    "enabled": true
+  },
+  "productPricing": {
+    "endpoint": ""
+  },
+  "leadForm": {
+    "endpoint": "",
+    "serviceName": "",
+    "servicePrivacyUrl": ""
+  },
+  "owner": {
+    "legalName": "",
+    "contactAddress": ""
+  },
+  "privacy": {
+    "responsePeriod": ""
+  }
+}

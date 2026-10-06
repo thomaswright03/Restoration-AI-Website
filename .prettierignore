@@ -1,0 +1,8 @@
+node_modules/
+js/vendor/
+fonts/
+test-results/
+playwright-report/
+package-lock.json
+models/
+pages/*.html

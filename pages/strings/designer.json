@@ -1,0 +1,122 @@
+{
+  "designer.title": [
+    "Bathroom designer | Room Designer 3D",
+    "Diseñador de baños | Room Designer 3D",
+    "Projetista de banheiros | Room Designer 3D"
+  ],
+  "designer.description": [
+    "Design your bathroom in 3D and get a rough estimate.",
+    "Diseñe su baño en 3D y obtenga una estimación aproximada.",
+    "Projete o seu banheiro em 3D e receba uma estimativa aproximada."
+  ],
+  "designer.demo.eyebrow": ["Live demo", "Demo en vivo", "Demonstração"],
+  "designer.demo.title": [
+    "This is what your customers see",
+    "Esto es lo que ven sus clientes",
+    "É isto que os seus clientes veem"
+  ],
+  "designer.demo.text": [
+    "Try it as a homeowner would: start the estimate, design the room and pick products. This demo uses a sample business; yours shows your name, phone and prices.",
+    "Pruébelo como lo haría un cliente: empiece la estimación, diseñe el baño y elija productos. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
+    "Teste como um cliente faria: comece a estimativa, projete o banheiro e escolha os produtos. Esta demonstração usa uma empresa de exemplo; a sua mostra o seu nome, telefone e preços."
+  ],
+  "designer.unavailable.title": [
+    "This designer isn't available right now",
+    "Este diseñador no está disponible en este momento",
+    "Este projetista não está disponível no momento"
+  ],
+  "designer.unavailable.text": [
+    "Please contact the business directly. If this is your designer, check your plan on your account page.",
+    "Comuníquese directamente con la empresa. Si este es su diseñador, revise su plan en la página de su cuenta.",
+    "Entre em contato diretamente com a empresa. Se este é o seu projetista, confira o seu plano na página da sua conta."
+  ],
+  "designer.chat.title": ["Design your bathroom in 3D", "Diseñe su baño en 3D", "Projete o seu banheiro em 3D"],
+  "designer.chat.subtitle": [
+    "Scripted replies, not a person and not AI. Nothing you type in the chat is sent anywhere.",
+    "Respuestas predefinidas; no es una persona ni una IA. Nada de lo que escriba en el chat se envía a ningún lado.",
+    "Respostas pré-programadas, não é uma pessoa nem uma IA. Nada do que você digita no chat é enviado a lugar nenhum."
+  ],
+  "designer.chat.estimateNote": [
+    "Estimates are rough and non-binding. For a real quote, send your request below.",
+    "Las estimaciones son aproximadas y no vinculantes. Para una cotización real, envíe su solicitud abajo.",
+    "As estimativas são aproximadas e sem compromisso. Para um orçamento de verdade, envie o seu pedido abaixo."
+  ],
+  "designer.chat.progress": ["Estimate progress", "Progreso de la estimación", "Progresso da estimativa"],
+  "designer.chat.close": ["Close chat", "Cerrar chat", "Fechar chat"],
+  "designer.chat.greeting": [
+    "Hi! I'm the bathroom design assistant for <span data-biz=\"name\"></span> (automated, scripted replies, not a person). I'll help you design your bathroom in 3D and get a rough price. Let's get started!",
+    "¡Hola! Soy el asistente de diseño de baños de <span data-biz=\"name\"></span> (automático, con respuestas predefinidas; no soy una persona). Le ayudaré a diseñar su baño en 3D y a obtener un precio aproximado. ¡Comencemos!",
+    "Olá! Eu sou o assistente de projetos de banheiro da <span data-biz=\"name\"></span> (automático, com respostas pré-programadas, não sou uma pessoa). Vou ajudar você a projetar o seu banheiro em 3D e ter um preço aproximado. Vamos começar!"
+  ],
+  "designer.chat.starter": [
+    "Get a bathroom price estimate →",
+    "Obtener una estimación del precio del baño →",
+    "Fazer uma estimativa de preço do banheiro →"
+  ],
+  "designer.chat.disclosure": [
+    "A 3D preview built from what you've told us — not a rendering of your actual bathroom. Drag to look around.",
+    "Una vista previa en 3D creada a partir de lo que nos indicó; no es una representación de su baño real. Arrastre para mirar alrededor.",
+    "Uma prévia em 3D criada a partir do que você nos contou — não é uma imagem do seu banheiro real. Arraste para olhar ao redor."
+  ],
+  "designer.chat.inputLabel": [
+    "Message the automated assistant",
+    "Escriba un mensaje al asistente automático",
+    "Mensagem para o assistente automático"
+  ],
+  "designer.chat.placeholder": [
+    "Ask about your bathroom…",
+    "Pregunte sobre su baño…",
+    "Pergunte sobre o seu banheiro…"
+  ],
+  "designer.chat.send": ["Send message", "Enviar mensaje", "Enviar mensagem"],
+  "designer.form.title": ["Send your request", "Envíe su solicitud", "Envie o seu pedido"],
+  "designer.form.subtitle": [
+    "Send your design and estimate to <span data-biz=\"name\"></span> for a real quote.",
+    "Envíe su diseño y su estimación a <span data-biz=\"name\"></span> para recibir una cotización real.",
+    "Envie o seu projeto e a sua estimativa para <span data-biz=\"name\"></span> e receba um orçamento de verdade."
+  ],
+  "designer.form.demoNote": [
+    "Demo: requests sent from this page aren't delivered to anyone.",
+    "Demo: las solicitudes enviadas desde esta página no le llegan a nadie.",
+    "Demonstração: os pedidos enviados desta página não chegam a ninguém."
+  ],
+  "designer.form.prefill": [
+    "We've added your estimate to the project details below. Edit it as you like before sending.",
+    "Agregamos su estimación a los detalles del proyecto más abajo. Modifíquela como quiera antes de enviarla.",
+    "Adicionamos a sua estimativa aos detalhes do projeto abaixo. Edite como quiser antes de enviar."
+  ],
+  "designer.form.name": ["Full Name", "Nombre completo", "Nome completo"],
+  "designer.form.phone": ["Phone Number", "Número de teléfono", "Telefone"],
+  "designer.form.email": ["Email Address", "Correo electrónico", "E-mail"],
+  "designer.form.service": ["Bathroom Work Needed", "Trabajo que necesita en el baño", "Serviço de banheiro desejado"],
+  "designer.form.full": ["Full bathroom remodel", "Remodelación completa del baño", "Reforma completa do banheiro"],
+  "designer.form.partial": [
+    "Part of a bathroom (e.g. fixtures, tile, or flooring)",
+    "Parte de un baño (p. ej., accesorios, azulejo o piso)",
+    "Parte de um banheiro (por exemplo, louças e metais, revestimento cerâmico ou piso)"
+  ],
+  "designer.form.other": [
+    "Other bathroom work / not sure yet",
+    "Otro trabajo en el baño / aún no estoy seguro",
+    "Outro serviço de banheiro / ainda não sei"
+  ],
+  "designer.form.message": ["Tell Us About Your Project", "Cuéntenos sobre su proyecto", "Conte sobre o seu projeto"],
+  "designer.form.placeholder": [
+    "Property type, rough timeline, and anything else we should know...",
+    "Tipo de propiedad, plazo aproximado y cualquier otra cosa que debamos saber...",
+    "Tipo de imóvel, prazo aproximado e qualquer outra coisa que devemos saber..."
+  ],
+  "designer.form.honeypot": ["Leave this empty", "Deje esto en blanco", "Deixe este campo vazio"],
+  "designer.form.consent": [
+    "<strong>How this form works:</strong> when you press Send Request, what you entered above is sent to <span data-biz=\"name\"></span> through Room Designer 3D, the service that runs this designer, which stores it for them. They use your details to respond to your request and prepare your quote. Nothing is sold.",
+    "<strong>Cómo funciona este formulario:</strong> al presionar Enviar solicitud, lo que escribió arriba se envía a <span data-biz=\"name\"></span> a través de Room Designer 3D, el servicio que hace funcionar este diseñador, que lo guarda para la empresa. La empresa usa sus datos para responder a su solicitud y preparar su cotización. No se vende nada.",
+    "<strong>Como este formulário funciona:</strong> quando você aperta Enviar solicitação, o que você preencheu acima é enviado para <span data-biz=\"name\"></span> por meio do Room Designer 3D, o serviço que faz este projetista funcionar, que guarda as informações para a empresa. A empresa usa os seus dados para responder ao seu pedido e preparar o seu orçamento. Nada é vendido."
+  ],
+  "designer.form.send": ["Send Request", "Enviar solicitud", "Enviar solicitação"],
+  "designer.form.talk": ["Prefer to talk? Call", "¿Prefiere hablar? Llame al", "Prefere conversar? Ligue para"],
+  "designer.poweredBy": [
+    "Powered by Room Designer 3D",
+    "Con la tecnología de Room Designer 3D",
+    "Desenvolvido com Room Designer 3D"
+  ]
+}

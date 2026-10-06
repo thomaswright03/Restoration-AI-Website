@@ -1,0 +1,189 @@
+{
+  "index.title": [
+    "Room Designer 3D | 3D bathroom designer for remodelers",
+    "Room Designer 3D | Diseñador de baños en 3D para remodeladores",
+    "Room Designer 3D | Projetista de banheiros em 3D para empresas de reforma"
+  ],
+  "index.description": [
+    "Put a 3D bathroom designer and estimator on your website. Homeowners design their bathroom, see a rough estimate at your prices, and send you the request.",
+    "Ponga un diseñador y estimador de baños en 3D en su sitio web. Los clientes diseñan su baño, ven una estimación aproximada con sus precios y le envían la solicitud.",
+    "Coloque um projetista e orçamentista de banheiros em 3D no seu site. Os clientes projetam o banheiro, veem uma estimativa aproximada com os seus preços e enviam o pedido para você."
+  ],
+  "index.eyebrow": [
+    "For remodeling and restoration businesses",
+    "Para empresas de remodelación y restauración",
+    "Para empresas de reforma e restauração"
+  ],
+  "index.h1": [
+    "Let homeowners <em>design</em> their bathroom in 3D",
+    "Deje que sus clientes <em>diseñen</em> su baño en 3D",
+    "Deixe seus clientes <em>projetarem</em> o banheiro em 3D"
+  ],
+  "index.lede": [
+    "Put a 3D bathroom designer on your website. Homeowners lay out their room, pick fixtures and finishes, and see a rough estimate at your prices. You get their request with the design attached.",
+    "Ponga un diseñador de baños en 3D en su sitio web. Sus clientes arman su baño, eligen piezas y acabados y ven una estimación aproximada con sus precios. Usted recibe la solicitud con el diseño incluido.",
+    "Coloque um projetista de banheiros em 3D no seu site. Seus clientes montam o banheiro, escolhem peças e acabamentos e veem uma estimativa aproximada com os seus preços. Você recebe o pedido com o projeto junto."
+  ],
+  "index.tryDemo": ["Try the live demo", "Probar la demo", "Ver a demonstração"],
+  "index.heroNote": [
+    "{{@trialDays}}-day free trial. Cancel any time.",
+    "{{@trialDays}} días de prueba gratis. Cancele cuando quiera.",
+    "{{@trialDays}} dias de teste grátis. Cancele quando quiser."
+  ],
+  "index.how.eyebrow": ["How it works", "Cómo funciona", "Como funciona"],
+  "index.how.title": ["Live on your site in three steps", "En su sitio en tres pasos", "No seu site em três passos"],
+  "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],
+  "index.how.1.text": [
+    "Create an account and start your free trial with a monthly or yearly plan.",
+    "Cree una cuenta y empiece su prueba gratis con un plan mensual o anual.",
+    "Crie uma conta e comece o teste grátis com um plano mensal ou anual."
+  ],
+  "index.how.2.title": ["Make it yours", "Hágalo suyo", "Deixe com a sua cara"],
+  "index.how.2.text": [
+    "Add your business name, phone, email and your own labor prices. The designer speaks for your business.",
+    "Agregue el nombre de su empresa, teléfono, correo y sus propios precios de mano de obra. El diseñador habla en nombre de su empresa.",
+    "Informe o nome da sua empresa, telefone, e-mail e os seus próprios preços de mão de obra. O projetista fala em nome da sua empresa."
+  ],
+  "index.how.3.title": ["Add it to your website", "Agréguelo a su sitio", "Coloque no seu site"],
+  "index.how.3.text": [
+    "Paste one line of code into your website, or share your own designer link with customers.",
+    "Pegue una línea de código en su sitio web o comparta con sus clientes su propio enlace al diseñador.",
+    "Cole uma linha de código no seu site ou compartilhe com os clientes o seu próprio link do projetista."
+  ],
+  "index.features.eyebrow": ["What you get", "Qué incluye", "O que está incluído"],
+  "index.features.title": [
+    "Everything a bathroom lead needs",
+    "Todo lo que necesita un cliente de baño",
+    "Tudo o que um cliente de banheiro precisa"
+  ],
+  "index.f1.title": [
+    "A 3D room from their answers",
+    "Un baño en 3D según sus respuestas",
+    "Um banheiro em 3D a partir das respostas"
+  ],
+  "index.f1.text": [
+    "The room is built from the size and work the homeowner enters, and they can drag fixtures around it.",
+    "El baño se arma con las medidas y el trabajo que indica el cliente, y puede mover las piezas arrastrándolas.",
+    "O banheiro é montado com as medidas e o serviço que o cliente informa, e ele pode arrastar as peças pelo ambiente."
+  ],
+  "index.f2.title": ["Real product models", "Modelos de productos reales", "Modelos de produtos reais"],
+  "index.f2.text": [
+    "Toilets, tubs, showers, vanities, sinks and mirrors are 3D models of real manufacturer products, with real tile, flooring and paint finishes.",
+    "Inodoros, bañeras, duchas, muebles de lavabo, lavabos y espejos son modelos 3D de productos reales de fabricante, con acabados reales de azulejo, piso y pintura.",
+    "Vasos, banheiras, boxes, gabinetes, pias e espelhos são modelos 3D de produtos reais de fabricantes, com acabamentos reais de revestimento, piso e pintura."
+  ],
+  "index.f3.title": ["Estimates at your prices", "Estimaciones con sus precios", "Estimativas com os seus preços"],
+  "index.f3.text": [
+    "A rough, non-binding labor and materials estimate using the labor rates you set, with a PDF the homeowner can keep.",
+    "Una estimación aproximada y no vinculante de mano de obra y materiales con las tarifas que usted fija, y un PDF que el cliente puede guardar.",
+    "Uma estimativa aproximada e sem compromisso de mão de obra e materiais com os valores que você define, e um PDF que o cliente pode guardar."
+  ],
+  "index.f4.title": ["Requests in your account", "Solicitudes en su cuenta", "Pedidos na sua conta"],
+  "index.f4.text": [
+    "When a homeowner sends their design, it lands in your account with their contact details and the full estimate.",
+    "Cuando un cliente envía su diseño, llega a su cuenta con sus datos de contacto y la estimación completa.",
+    "Quando um cliente envia o projeto, ele chega na sua conta com os dados de contato e a estimativa completa."
+  ],
+  "index.f5.title": ["English, Spanish and Portuguese", "Inglés, español y portugués", "Inglês, espanhol e português"],
+  "index.f5.text": [
+    "Homeowners can use the whole designer and estimate in English, Spanish or Brazilian Portuguese.",
+    "Sus clientes pueden usar todo el diseñador y la estimación en inglés, español o portugués de Brasil.",
+    "Seus clientes podem usar todo o projetista e a estimativa em inglês, espanhol ou português do Brasil."
+  ],
+  "index.f6.title": ["Works on phones", "Funciona en el celular", "Funciona no celular"],
+  "index.f6.text": [
+    "Built for phones, tablets and computers, with nothing for the homeowner to install.",
+    "Hecho para celulares, tabletas y computadoras, sin nada que el cliente tenga que instalar.",
+    "Feito para celulares, tablets e computadores, sem nada para o cliente instalar."
+  ],
+  "index.pricing.title": ["One plan, everything included", "Un plan, todo incluido", "Um plano, tudo incluído"],
+  "index.pricing.subtitle": [
+    "Start with a {{@trialDays}}-day free trial. Prices in US dollars.",
+    "Empiece con {{@trialDays}} días de prueba gratis. Precios en dólares estadounidenses.",
+    "Comece com {{@trialDays}} dias de teste grátis. Preços em dólares americanos."
+  ],
+  "index.plan.monthly": ["Monthly", "Mensual", "Mensal"],
+  "index.plan.yearly": ["Yearly", "Anual", "Anual"],
+  "index.plan.perMonth": ["per month", "al mes", "por mês"],
+  "index.plan.perYear": ["per year", "al año", "por ano"],
+  "index.plan.monthlyNote": [
+    "Billed monthly. Cancel any time.",
+    "Se cobra cada mes. Cancele cuando quiera.",
+    "Cobrado todo mês. Cancele quando quiser."
+  ],
+  "index.plan.yearlyNote": [
+    "Billed once a year. Two months free.",
+    "Se cobra una vez al año. Dos meses gratis.",
+    "Cobrado uma vez por ano. Dois meses grátis."
+  ],
+  "index.plan.badge": ["Best value", "Mejor precio", "Melhor preço"],
+  "index.inc.1": [
+    "The 3D designer and estimate chat, for your business",
+    "El diseñador 3D y el chat de estimación, para su empresa",
+    "O projetista 3D e o chat de estimativa, para a sua empresa"
+  ],
+  "index.inc.2": [
+    "Your own labor prices",
+    "Sus propios precios de mano de obra",
+    "Os seus próprios preços de mão de obra"
+  ],
+  "index.inc.3": [
+    "A link to share and a line of code for your website",
+    "Un enlace para compartir y una línea de código para su sitio",
+    "Um link para compartilhar e uma linha de código para o seu site"
+  ],
+  "index.inc.4": [
+    "Homeowner requests saved in your account",
+    "Solicitudes de clientes guardadas en su cuenta",
+    "Pedidos dos clientes salvos na sua conta"
+  ],
+  "index.inc.5": ["English, Spanish and Portuguese", "Inglés, español y portugués", "Inglês, espanhol e português"],
+  "index.faq.title": ["Questions", "Preguntas frecuentes", "Perguntas frequentes"],
+  "index.q1": ["Do I need a web developer?", "¿Necesito un desarrollador web?", "Preciso de um desenvolvedor?"],
+  "index.a1": [
+    "No. Your account page gives you a link you can share right away, and one line of code to paste into your website builder (WordPress, Wix, Squarespace and others accept it).",
+    "No. La página de su cuenta le da un enlace que puede compartir de inmediato y una línea de código para pegar en el editor de su sitio (WordPress, Wix, Squarespace y otros la aceptan).",
+    "Não. A página da sua conta dá um link que você pode compartilhar na hora e uma linha de código para colar no editor do seu site (WordPress, Wix, Squarespace e outros aceitam)."
+  ],
+  "index.q2": ["Can I use my own prices?", "¿Puedo usar mis propios precios?", "Posso usar os meus próprios preços?"],
+  "index.a2": [
+    "Yes. Set your labor price for each item (demolition, tile, flooring, paint, fixtures) in your account. Estimates use them right away.",
+    "Sí. Fije en su cuenta el precio de mano de obra de cada partida (demolición, azulejo, piso, pintura, piezas). Las estimaciones los usan de inmediato.",
+    "Sim. Defina na sua conta o preço de mão de obra de cada item (demolição, revestimento, piso, pintura, peças). As estimativas passam a usá-los na hora."
+  ],
+  "index.q3": ["Where do homeowner requests go?", "¿Adónde llegan las solicitudes?", "Para onde vão os pedidos?"],
+  "index.a3": [
+    "To your account page, with the homeowner's name, phone, email and their full estimate and design picks.",
+    "A la página de su cuenta, con el nombre, teléfono y correo del cliente, y su estimación y diseño completos.",
+    "Para a página da sua conta, com nome, telefone e e-mail do cliente, e a estimativa e o projeto completos."
+  ],
+  "index.q4": ["Is the estimate a quote?", "¿La estimación es una cotización?", "A estimativa é um orçamento?"],
+  "index.a4": [
+    "No. Homeowners are told it's a rough, non-binding estimate that excludes plumbing, electrical, permits and taxes. You set the real price after seeing the job.",
+    "No. Al cliente se le indica que es una estimación aproximada y no vinculante que no incluye plomería, electricidad, permisos ni impuestos. Usted fija el precio real después de ver el trabajo.",
+    "Não. O cliente é avisado de que é uma estimativa aproximada e sem compromisso, que não inclui encanamento, elétrica, alvarás nem impostos. Você define o preço real depois de ver o serviço."
+  ],
+  "index.q5": ["Can I cancel?", "¿Puedo cancelar?", "Posso cancelar?"],
+  "index.a5": [
+    "Yes, any time from your account. Your designer stays on until the end of the period you've paid for. If you cancel during the free trial, you aren't charged.",
+    "Sí, cuando quiera desde su cuenta. Su diseñador sigue activo hasta el final del período pagado. Si cancela durante la prueba gratis, no se le cobra.",
+    "Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. Se cancelar durante o teste grátis, você não é cobrado."
+  ],
+  "index.q6": ["Is it only for bathrooms?", "¿Es solo para baños?", "É só para banheiros?"],
+  "index.a6": [
+    "For now, yes: the designer and estimate cover bathroom remodels. Questions about other work get your phone number.",
+    "Por ahora sí: el diseñador y la estimación cubren remodelaciones de baños. Las preguntas sobre otros trabajos reciben su número de teléfono.",
+    "Por enquanto, sim: o projetista e a estimativa cobrem reformas de banheiros. Perguntas sobre outros serviços recebem o seu telefone."
+  ],
+  "index.cta.eyebrow": ["Get started", "Empiece hoy", "Comece agora"],
+  "index.cta.title": [
+    "Give your customers a better way to start",
+    "Dé a sus clientes una mejor forma de empezar",
+    "Dê aos seus clientes um jeito melhor de começar"
+  ],
+  "index.cta.text": [
+    "Try it free for {{@trialDays}} days, then {{@priceMonthly}} a month.",
+    "Pruébelo gratis {{@trialDays}} días; después, {{@priceMonthly}} al mes.",
+    "Teste grátis por {{@trialDays}} dias; depois, {{@priceMonthly}} por mês."
+  ]
+}

@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Su cuenta | Room Designer 3D</title>
+    <meta name="description" content="Administre su plan, los datos de su empresa, sus precios y sus solicitudes." />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/account.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/account.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/account.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/account.html" />
+    <script>
+      (function () {
+        var here = "es";
+        var root = "../";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "account.html" !== "404.html") {
+            location.replace(root + dirs[want] + "account.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Ir al contenido</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Principal">
+        <a href="../es/index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="../es/designer.html">Demo en vivo</a></li>
+          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <li><a href="../es/account.html" data-auth-link>Iniciar sesión</a></li>
+          <li><a href="../es/signup.html" class="nav-cta">Prueba gratis</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Idioma: </span>ES
+              </summary>
+              <ul class="lang-menu-list" aria-label="Idioma">
+                <li><a href="../account.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li>
+                  <a href="../es/account.html?lang=es" hreflang="es" lang="es" data-lang-choice="es" aria-current="true"
+                    >Español</a
+                  >
+                </li>
+                <li>
+                  <a href="../pt/account.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" class="app-page solid-header">
+      <section class="section app-wide">
+        <div class="app-head">
+          <div>
+            <h1 class="section-title">Su cuenta</h1>
+            <p class="app-signed-in" id="account-email" hidden></p>
+          </div>
+          <button type="button" class="btn btn-outline-dark" id="sign-out" hidden>Cerrar sesión</button>
+        </div>
+
+        <p class="app-loading" id="account-loading">Cargando…</p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p>
+            <strong>Las cuentas aún no están activadas.</strong> El registro abrirá pronto. Mientras tanto, puede probar
+            la demo.
+          </p>
+          <p><a href="../es/designer.html">Probar la demo</a></p>
+        </div>
+
+        <div class="app-card" id="password-card" hidden>
+          <h2>Elija una contraseña nueva</h2>
+          <form id="password-form" novalidate>
+            <div class="form-group">
+              <label for="new-password">Contraseña nueva</label>
+              <input type="password" id="new-password" autocomplete="new-password" minlength="8" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar contraseña</button>
+            <p class="form-status" id="password-status" role="status" aria-live="polite" hidden></p>
+          </form>
+        </div>
+
+        <div id="account-app" hidden>
+          <div class="app-card" id="plan-card">
+            <h2>Su plan</h2>
+            <p class="plan-status" id="plan-status"></p>
+            <div class="app-actions" id="plan-buy" hidden>
+              <button type="button" class="btn btn-primary" data-plan="monthly">Empezar prueba: $79 al mes</button>
+              <button type="button" class="btn btn-outline-dark" data-plan="yearly">Empezar prueba: $790 al año</button>
+            </div>
+            <p class="form-note" id="plan-trial-note" hidden>
+              El pago lo procesa Stripe. Puede cancelar antes de que termine la prueba y no pagar nada.
+            </p>
+            <div class="app-actions" id="plan-manage" hidden>
+              <button type="button" class="btn btn-outline-dark" id="manage-billing">
+                Administrar pagos, cambiar de plan o cancelar
+              </button>
+            </div>
+            <p class="form-status" id="plan-message" role="status" aria-live="polite" hidden></p>
+          </div>
+
+          <div class="app-card">
+            <h2>Su empresa</h2>
+            <p class="form-note">El diseñador se los muestra a sus clientes.</p>
+            <form id="business-form" novalidate>
+              <div class="form-group">
+                <label for="biz-name">Nombre de la empresa</label>
+                <input type="text" id="biz-name" maxlength="120" required autocomplete="organization" />
+              </div>
+              <div class="form-group">
+                <label for="biz-slug">Dirección web de su diseñador</label>
+                <input type="text" id="biz-slug" maxlength="64" required pattern="[a-z0-9][a-z0-9-]{1,62}[a-z0-9]" />
+                <p class="form-note">Letras minúsculas, números y guiones, p. ej., smith-remodeling.</p>
+              </div>
+              <div class="form-group">
+                <label for="biz-phone">Teléfono para clientes</label>
+                <input type="tel" id="biz-phone" maxlength="40" autocomplete="tel" />
+              </div>
+              <div class="form-group">
+                <label for="biz-email">Correo para clientes</label>
+                <input type="email" id="biz-email" maxlength="160" autocomplete="email" />
+              </div>
+              <div class="form-group">
+                <label for="biz-legal">Razón social registrada (opcional)</label>
+                <input type="text" id="biz-legal" maxlength="160" />
+                <p class="form-note">
+                  Aparece en las estimaciones después del nombre de su empresa, p. ej., Smith Remodeling LLC.
+                </p>
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar</button>
+              <p class="form-status" id="business-status" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+
+          <div class="app-card" id="prices-card" hidden>
+            <h2>Sus precios de mano de obra</h2>
+            <p class="form-note">
+              Las estimaciones usan estos precios. Deje una casilla vacía para usar el valor predeterminado que muestra.
+            </p>
+            <form id="prices-form" novalidate>
+              <div class="price-grid">
+                <div class="form-group">
+                  <label for="price-Demo_Price_Per_SqFt">Demolición, por pie² de piso ($)</label>
+                  <input
+                    type="number"
+                    id="price-Demo_Price_Per_SqFt"
+                    data-price-key="Demo_Price_Per_SqFt"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Tile_Price_Per_SqFt">Azulejo, por pie² ($)</label>
+                  <input
+                    type="number"
+                    id="price-Tile_Price_Per_SqFt"
+                    data-price-key="Tile_Price_Per_SqFt"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Floor_Price_Per_SqFt">Otro piso, por pie² ($)</label>
+                  <input
+                    type="number"
+                    id="price-Floor_Price_Per_SqFt"
+                    data-price-key="Floor_Price_Per_SqFt"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Painting_Price_Per_SqFt">Pintura, por pie² ($)</label>
+                  <input
+                    type="number"
+                    id="price-Painting_Price_Per_SqFt"
+                    data-price-key="Painting_Price_Per_SqFt"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Toilet_Price">Instalación de inodoro, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Toilet_Price"
+                    data-price-key="Toilet_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Sink_Price">Instalación de lavabo, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Sink_Price"
+                    data-price-key="Sink_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Shower_Price">Instalación de ducha, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Shower_Price"
+                    data-price-key="Shower_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Shower_Door_Price">Instalación de puerta de ducha, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Shower_Door_Price"
+                    data-price-key="Shower_Door_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Shower_Shelf_Price">Repisa de ducha empotrada, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Shower_Shelf_Price"
+                    data-price-key="Shower_Shelf_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Vanity_Price">Instalación de mueble de lavabo, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Vanity_Price"
+                    data-price-key="Vanity_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Cabinet_Price">Instalación de gabinete, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Cabinet_Price"
+                    data-price-key="Cabinet_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Mirror_Price">Instalación de espejo estándar, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Mirror_Price"
+                    data-price-key="Mirror_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Mirror_Huge_Price">Instalación de espejo extragrande, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Mirror_Huge_Price"
+                    data-price-key="Mirror_Huge_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Door_Price">Instalación de puerta de entrada, c/u ($)</label>
+                  <input
+                    type="number"
+                    id="price-Door_Price"
+                    data-price-key="Door_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+              </div>
+              <p class="form-note">La instalación de bañeras se cobra al 70% del precio de la ducha.</p>
+              <div class="app-actions">
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-outline-dark" id="prices-reset">
+                  Usar los valores predeterminados
+                </button>
+              </div>
+              <p class="form-status" id="prices-status" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+
+          <div class="app-card" id="share-card" hidden>
+            <h2>Póngalo en su sitio web</h2>
+            <p class="form-note" id="share-inactive" hidden>Su diseñador se activa cuando su plan esté activo.</p>
+            <div class="form-group">
+              <label for="share-lang">Idioma</label>
+              <select id="share-lang">
+                <option value="">English</option>
+                <option value="es/">Español</option>
+                <option value="pt/">Português</option>
+              </select>
+            </div>
+            <p>Su enlace: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
+            <div class="form-group">
+              <label for="embed-code">Código para su sitio web</label>
+              <textarea id="embed-code" readonly rows="4"></textarea>
+              <p class="form-note">
+                Péguelo donde debe aparecer el diseñador, en un bloque HTML o de inserción del editor de su sitio.
+              </p>
+            </div>
+            <button type="button" class="btn btn-outline-dark" id="copy-embed">Copiar código</button>
+            <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
+          </div>
+
+          <div class="app-card" id="leads-card" hidden>
+            <h2>Solicitudes de clientes</h2>
+            <p class="form-note" id="leads-empty">
+              Aún no hay solicitudes. Aparecen aquí cuando un cliente envía su diseño.
+            </p>
+            <ol class="lead-list" id="leads-list"></ol>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">
+            Un diseñador y estimador de baños en 3D para empresas de remodelación y restauración.
+          </p>
+          <p class="footer-identity">
+            Room Designer 3D es un producto de Wright AI Solutions, LLC, compañía de responsabilidad limitada de
+            Arizona.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Producto</h2>
+          <a href="../es/designer.html">Demo en vivo</a>
+          <a href="../es/index.html#pricing">Precios</a>
+          <a href="../es/index.html#faq">Preguntas</a>
+          <a href="../es/signup.html">Prueba gratis</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contacto</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Legal</h2>
+          <a href="../es/privacy.html">Política de privacidad</a>
+          <a href="../es/terms.html">Términos del servicio</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Tema de color">
+          <span class="theme-switch-label" aria-hidden="true">Tema</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Oscuro</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+
+    <script src="../js/bathroom-pricing.js"></script>
+    <script src="../js/site-config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/vendor/supabase/supabase.js"></script>
+    <script src="../js/account.js"></script>
+  </body>
+</html>

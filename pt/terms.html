@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Termos de Serviço | Room Designer 3D</title>
+    <meta name="description" content="Os termos de uso do Room Designer 3D." />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/terms.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/terms.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/terms.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/terms.html" />
+    <script>
+      (function () {
+        var here = "pt";
+        var root = "../";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "terms.html" !== "404.html") {
+            location.replace(root + dirs[want] + "terms.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Pular para o conteúdo</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Principal">
+        <a href="../pt/index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="../pt/designer.html">Demonstração</a></li>
+          <li><a href="../pt/index.html#pricing">Preços</a></li>
+          <li><a href="../pt/index.html#faq">Perguntas</a></li>
+          <li><a href="../pt/account.html" data-auth-link>Entrar</a></li>
+          <li><a href="../pt/signup.html" class="nav-cta">Teste grátis</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Idioma: </span>PT
+              </summary>
+              <ul class="lang-menu-list" aria-label="Idioma">
+                <li><a href="../terms.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li>
+                  <a href="../es/terms.html?lang=es" hreflang="es" lang="es" data-lang-choice="es">Español</a>
+                </li>
+                <li>
+                  <a
+                    href="../pt/terms.html?lang=pt"
+                    hreflang="pt-BR"
+                    lang="pt-BR"
+                    data-lang-choice="pt"
+                    aria-current="true"
+                    >Português</a
+                  >
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero hero-page">
+        <div class="hero-inner">
+          <h1>Termos de Serviço</h1>
+          <p class="legal-updated">Última atualização: 6 de outubro de 2026</p>
+        </div>
+      </section>
+      <article class="section legal-content">
+        <h2>O serviço</h2>
+        <p>
+          O Room Designer 3D, operado pela Wright AI Solutions, LLC, permite que uma empresa ofereça aos clientes um
+          projetista de banheiros em 3D e uma estimativa aproximada com o nome da empresa. Ao criar uma conta, você
+          aceita estes termos em nome da sua empresa.
+        </p>
+        <h2>Planos, teste e cobrança</h2>
+        <p>
+          Os planos são cobrados antecipadamente, todo mês ou todo ano, pela Stripe, e renovam automaticamente até serem
+          cancelados. O primeiro plano de uma conta nova começa com um teste grátis; se cancelar antes do fim, você não
+          é cobrado. Você pode cancelar quando quiser pela página da conta, e o projetista continua ativo até o fim do
+          período pago. Pagamentos já feitos não são reembolsados, exceto quando a lei exigir. Podemos mudar os preços
+          avisando com pelo menos 30 dias de antecedência da próxima renovação.
+        </p>
+        <h2>A sua empresa e os seus clientes</h2>
+        <p>
+          Você é responsável pelos dados e preços que informa, pelos orçamentos e serviços que oferece aos clientes e
+          por tratar de forma legal os pedidos que eles enviam, incluindo qualquer aviso de privacidade devido a eles.
+          As estimativas são apresentadas aos clientes como aproximadas e sem compromisso.
+        </p>
+        <h2>Produtos e preços exibidos</h2>
+        <p>
+          Os modelos 3D de produtos e os preços de catálogo dos materiais são ilustrativos. Os produtos podem mudar ou
+          sair de linha, e os preços de catálogo podem estar desatualizados. As marcas e os nomes de produtos pertencem
+          aos seus donos, e exibi-los não significa que eles endossem o serviço.
+        </p>
+        <h2>Uso aceitável</h2>
+        <p>
+          Não use o serviço para nada ilegal, para enviar spam, para se passar por outra empresa nem para tentar
+          danificar, copiar ou revender o serviço. Podemos suspender uma conta que faça isso.
+        </p>
+        <h2>Sem garantia e responsabilidade limitada</h2>
+        <p>
+          O serviço é fornecido no estado em que se encontra. Trabalhamos para mantê-lo funcionando, mas não prometemos
+          que esteja sempre disponível ou sem erros. Na medida em que a lei permitir, a nossa responsabilidade total por
+          qualquer reclamação se limita ao que você nos pagou nos 12 meses anteriores, e não respondemos por lucros
+          cessantes nem danos indiretos.
+        </p>
+        <h2>Lei aplicável e alterações</h2>
+        <p>
+          Estes termos são regidos pelas leis do estado do Arizona. Podemos atualizá-los; mudaremos a data no topo e
+          avisaremos os titulares de conta por e-mail sobre mudanças importantes antes que entrem em vigor.
+        </p>
+        <p data-show-if="company.supportEmail" hidden>
+          Dúvidas? Escreva para
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">
+            Um projetista e orçamentista de banheiros em 3D para empresas de reforma e restauração.
+          </p>
+          <p class="footer-identity">
+            Room Designer 3D é um produto da Wright AI Solutions, LLC, sociedade de responsabilidade limitada do
+            Arizona.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Produto</h2>
+          <a href="../pt/designer.html">Demonstração</a>
+          <a href="../pt/index.html#pricing">Preços</a>
+          <a href="../pt/index.html#faq">Perguntas</a>
+          <a href="../pt/signup.html">Teste grátis</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contato</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Jurídico</h2>
+          <a href="../pt/privacy.html">Política de Privacidade</a>
+          <a href="../pt/terms.html">Termos de Serviço</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Tema de cores">
+          <span class="theme-switch-label" aria-hidden="true">Tema</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Escuro</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+
+    <script src="../js/site-config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/script.js"></script>
+  </body>
+</html>

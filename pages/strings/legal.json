@@ -1,0 +1,126 @@
+{
+  "privacy.title": [
+    "Privacy Policy | Room Designer 3D",
+    "Política de privacidad | Room Designer 3D",
+    "Política de Privacidade | Room Designer 3D"
+  ],
+  "privacy.description": [
+    "How Room Designer 3D handles personal information.",
+    "Cómo trata Room Designer 3D la información personal.",
+    "Como o Room Designer 3D trata informações pessoais."
+  ],
+  "privacy.h1": ["Privacy Policy", "Política de privacidad", "Política de Privacidade"],
+  "terms.title": [
+    "Terms of Service | Room Designer 3D",
+    "Términos del servicio | Room Designer 3D",
+    "Termos de Serviço | Room Designer 3D"
+  ],
+  "terms.description": [
+    "The terms for using Room Designer 3D.",
+    "Los términos para usar Room Designer 3D.",
+    "Os termos de uso do Room Designer 3D."
+  ],
+  "terms.h1": ["Terms of Service", "Términos del servicio", "Termos de Serviço"],
+  "legal.updated": [
+    "Last updated October 6, 2026",
+    "Última actualización: 6 de octubre de 2026",
+    "Última atualização: 6 de outubro de 2026"
+  ],
+  "legal.contact": [
+    "Questions? Contact us at <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a>.",
+    "¿Preguntas? Escríbanos a <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a>.",
+    "Dúvidas? Escreva para <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a>."
+  ],
+  "privacy.s1": ["Who we are", "Quiénes somos", "Quem somos"],
+  "privacy.s1p1": [
+    "Room Designer 3D is run by Wright AI Solutions, LLC, an Arizona limited liability company (\"we\", \"us\"). This policy explains what we collect when businesses use Room Designer 3D and when homeowners use a business's designer.",
+    "Room Designer 3D es operado por Wright AI Solutions, LLC, compañía de responsabilidad limitada de Arizona (\"nosotros\"). Esta política explica qué datos recopilamos cuando las empresas usan Room Designer 3D y cuando los clientes usan el diseñador de una empresa.",
+    "O Room Designer 3D é operado pela Wright AI Solutions, LLC, sociedade de responsabilidade limitada do Arizona (\"nós\"). Esta política explica quais dados coletamos quando empresas usam o Room Designer 3D e quando clientes usam o projetista de uma empresa."
+  ],
+  "privacy.s2": ["Businesses that sign up", "Empresas que se registran", "Empresas que se cadastram"],
+  "privacy.s2p1": [
+    "We keep your account email and your business details (name, web address, phone, email, legal name and labor prices). Your password is handled by our sign-in provider and we never see it. Payments are handled by Stripe: we receive your plan and payment status, not your full card number.",
+    "Guardamos el correo de su cuenta y los datos de su empresa (nombre, dirección web, teléfono, correo, razón social y precios de mano de obra). Su contraseña la gestiona nuestro proveedor de inicio de sesión y nunca la vemos. Los pagos los procesa Stripe: recibimos su plan y el estado del pago, no el número completo de su tarjeta.",
+    "Guardamos o e-mail da sua conta e os dados da empresa (nome, endereço web, telefone, e-mail, razão social e preços de mão de obra). A sua senha é gerenciada pelo nosso provedor de login e nunca a vemos. Os pagamentos são processados pela Stripe: recebemos o plano e a situação do pagamento, não o número completo do cartão."
+  ],
+  "privacy.s3": ["Homeowners using a designer", "Clientes que usan un diseñador", "Clientes que usam um projetista"],
+  "privacy.s3p1": [
+    "What you type in the chat and the 3D design stay in your browser; the design may be saved there so you can pick up where you left off. Only when you press Send Request do we receive your name, phone, email and project details, which we store for the business whose designer you used. That business decides how to use them and you should contact it about your request.",
+    "Lo que escribe en el chat y el diseño en 3D se quedan en su navegador; el diseño puede guardarse allí para que pueda continuar más tarde. Solo cuando presiona Enviar solicitud recibimos su nombre, teléfono, correo y los detalles del proyecto, que guardamos para la empresa cuyo diseñador usó. Esa empresa decide cómo usarlos y debe comunicarse con ella sobre su solicitud.",
+    "O que você digita no chat e o projeto em 3D ficam no seu navegador; o projeto pode ser salvo ali para você continuar depois. Só quando você aperta Enviar solicitação recebemos o seu nome, telefone, e-mail e os detalhes do projeto, que guardamos para a empresa cujo projetista você usou. Essa empresa decide como usá-los, e é com ela que você deve falar sobre o seu pedido."
+  ],
+  "privacy.s4": [
+    "Who helps us run the service",
+    "Quién nos ayuda a operar el servicio",
+    "Quem nos ajuda a operar o serviço"
+  ],
+  "privacy.s4p1": [
+    "Vercel hosts the website, Supabase stores accounts and requests, Stripe handles payments, and an email provider may send new requests to the business. They only process data to provide those services to us. We don't sell personal information.",
+    "Vercel aloja el sitio web, Supabase guarda las cuentas y las solicitudes, Stripe procesa los pagos y un proveedor de correo puede enviar las nuevas solicitudes a la empresa. Solo tratan los datos para prestarnos esos servicios. No vendemos información personal.",
+    "A Vercel hospeda o site, o Supabase guarda as contas e os pedidos, a Stripe processa os pagamentos e um provedor de e-mail pode enviar os novos pedidos à empresa. Eles só tratam os dados para nos prestar esses serviços. Não vendemos informações pessoais."
+  ],
+  "privacy.s5": ["How long we keep it", "Cuánto tiempo lo guardamos", "Por quanto tempo guardamos"],
+  "privacy.s5p1": [
+    "Account and business details are kept while the account is open and deleted after it is closed, except billing records we must keep by law. Homeowner requests are kept until the business deletes them or closes its account.",
+    "Los datos de la cuenta y de la empresa se guardan mientras la cuenta esté abierta y se eliminan después de cerrarla, salvo los registros de facturación que la ley nos obliga a conservar. Las solicitudes de clientes se guardan hasta que la empresa las elimina o cierra su cuenta.",
+    "Os dados da conta e da empresa são guardados enquanto a conta estiver aberta e excluídos depois que ela é encerrada, exceto os registros de cobrança que a lei nos obriga a manter. Os pedidos de clientes são guardados até a empresa excluí-los ou encerrar a conta."
+  ],
+  "privacy.s6": ["Your choices", "Sus opciones", "Suas escolhas"],
+  "privacy.s6p1": [
+    "You can ask to see, correct or delete your information. Businesses can edit their details and delete requests from their account page. Homeowners can ask the business they contacted, or us, to delete a request. Sign-in and your language and theme choices use your browser's storage; we don't use advertising cookies.",
+    "Puede pedir ver, corregir o eliminar su información. Las empresas pueden editar sus datos y eliminar solicitudes desde la página de su cuenta. Los clientes pueden pedir a la empresa que contactaron, o a nosotros, que elimine una solicitud. El inicio de sesión y sus preferencias de idioma y tema usan el almacenamiento de su navegador; no usamos cookies publicitarias.",
+    "Você pode pedir para ver, corrigir ou excluir as suas informações. As empresas podem editar os dados e excluir pedidos na página da conta. Os clientes podem pedir à empresa que contataram, ou a nós, que exclua um pedido. O login e as suas escolhas de idioma e tema usam o armazenamento do navegador; não usamos cookies de publicidade."
+  ],
+  "privacy.s7": ["Changes", "Cambios", "Alterações"],
+  "privacy.s7p1": [
+    "If we change this policy, we'll update the date at the top and, for significant changes, tell account holders by email.",
+    "Si cambiamos esta política, actualizaremos la fecha de arriba y, si los cambios son importantes, avisaremos por correo a los titulares de cuentas.",
+    "Se alterarmos esta política, atualizaremos a data no topo e, em mudanças importantes, avisaremos os titulares de conta por e-mail."
+  ],
+  "terms.s1": ["The service", "El servicio", "O serviço"],
+  "terms.s1p1": [
+    "Room Designer 3D, run by Wright AI Solutions, LLC, lets a business offer homeowners a 3D bathroom designer and rough estimate under the business's name. By creating an account you agree to these terms on behalf of your business.",
+    "Room Designer 3D, operado por Wright AI Solutions, LLC, permite que una empresa ofrezca a sus clientes un diseñador de baños en 3D y una estimación aproximada con el nombre de la empresa. Al crear una cuenta, acepta estos términos en nombre de su empresa.",
+    "O Room Designer 3D, operado pela Wright AI Solutions, LLC, permite que uma empresa ofereça aos clientes um projetista de banheiros em 3D e uma estimativa aproximada com o nome da empresa. Ao criar uma conta, você aceita estes termos em nome da sua empresa."
+  ],
+  "terms.s2": ["Plans, trial and billing", "Planes, prueba y cobro", "Planos, teste e cobrança"],
+  "terms.s2p1": [
+    "Plans are billed in advance, monthly or yearly, through Stripe, and renew automatically until cancelled. A new account's first plan starts with a free trial; if you cancel before it ends, you aren't charged. You can cancel any time from your account page, and the designer stays on until the end of the paid period. Payments already made are not refunded, except where the law requires it. We may change prices with at least 30 days' notice before your next renewal.",
+    "Los planes se cobran por adelantado, cada mes o cada año, a través de Stripe, y se renuevan automáticamente hasta que los cancele. El primer plan de una cuenta nueva empieza con una prueba gratis; si cancela antes de que termine, no se le cobra. Puede cancelar cuando quiera desde la página de su cuenta y el diseñador sigue activo hasta el final del período pagado. Los pagos ya hechos no se reembolsan, salvo cuando la ley lo exija. Podemos cambiar los precios avisando al menos 30 días antes de su próxima renovación.",
+    "Os planos são cobrados antecipadamente, todo mês ou todo ano, pela Stripe, e renovam automaticamente até serem cancelados. O primeiro plano de uma conta nova começa com um teste grátis; se cancelar antes do fim, você não é cobrado. Você pode cancelar quando quiser pela página da conta, e o projetista continua ativo até o fim do período pago. Pagamentos já feitos não são reembolsados, exceto quando a lei exigir. Podemos mudar os preços avisando com pelo menos 30 dias de antecedência da próxima renovação."
+  ],
+  "terms.s3": ["Your business and your customers", "Su empresa y sus clientes", "A sua empresa e os seus clientes"],
+  "terms.s3p1": [
+    "You are responsible for the details and prices you enter, for the quotes and work you give your customers, and for handling the requests they send you lawfully, including any privacy notice your customers are owed. Estimates are labelled to homeowners as rough and non-binding.",
+    "Usted es responsable de los datos y precios que ingresa, de las cotizaciones y trabajos que ofrece a sus clientes y de tratar legalmente las solicitudes que le envían, incluido cualquier aviso de privacidad que les corresponda. Las estimaciones se presentan a los clientes como aproximadas y no vinculantes.",
+    "Você é responsável pelos dados e preços que informa, pelos orçamentos e serviços que oferece aos clientes e por tratar de forma legal os pedidos que eles enviam, incluindo qualquer aviso de privacidade devido a eles. As estimativas são apresentadas aos clientes como aproximadas e sem compromisso."
+  ],
+  "terms.s4": ["Products and prices shown", "Productos y precios que se muestran", "Produtos e preços exibidos"],
+  "terms.s4p1": [
+    "3D product models and catalog material prices are for illustration. Products may change or be discontinued and catalog prices may be out of date. Brand and product names belong to their owners, and showing them doesn't mean they endorse the service.",
+    "Los modelos 3D de productos y los precios de catálogo de los materiales son ilustrativos. Los productos pueden cambiar o descontinuarse y los precios de catálogo pueden estar desactualizados. Las marcas y nombres de productos pertenecen a sus dueños, y mostrarlos no significa que respalden el servicio.",
+    "Os modelos 3D de produtos e os preços de catálogo dos materiais são ilustrativos. Os produtos podem mudar ou sair de linha, e os preços de catálogo podem estar desatualizados. As marcas e os nomes de produtos pertencem aos seus donos, e exibi-los não significa que eles endossem o serviço."
+  ],
+  "terms.s5": ["Fair use", "Uso aceptable", "Uso aceitável"],
+  "terms.s5p1": [
+    "Don't use the service for anything unlawful, to send spam, to impersonate another business, or to try to break, copy or resell it. We may suspend an account that does.",
+    "No use el servicio para nada ilegal, para enviar spam, para hacerse pasar por otra empresa ni para intentar dañarlo, copiarlo o revenderlo. Podemos suspender una cuenta que lo haga.",
+    "Não use o serviço para nada ilegal, para enviar spam, para se passar por outra empresa nem para tentar danificar, copiar ou revender o serviço. Podemos suspender uma conta que faça isso."
+  ],
+  "terms.s6": [
+    "No warranty and limited liability",
+    "Sin garantía y responsabilidad limitada",
+    "Sem garantia e responsabilidade limitada"
+  ],
+  "terms.s6p1": [
+    "The service is provided as is. We work to keep it running but don't promise it will always be available or error-free. To the extent the law allows, our total liability for any claim is limited to what you paid us in the 12 months before it, and we aren't liable for lost profits or indirect damages.",
+    "El servicio se ofrece tal como está. Trabajamos para que funcione, pero no prometemos que siempre esté disponible o libre de errores. En la medida en que la ley lo permita, nuestra responsabilidad total por cualquier reclamo se limita a lo que nos pagó en los 12 meses anteriores, y no respondemos por ganancias perdidas ni daños indirectos.",
+    "O serviço é fornecido no estado em que se encontra. Trabalhamos para mantê-lo funcionando, mas não prometemos que esteja sempre disponível ou sem erros. Na medida em que a lei permitir, a nossa responsabilidade total por qualquer reclamação se limita ao que você nos pagou nos 12 meses anteriores, e não respondemos por lucros cessantes nem danos indiretos."
+  ],
+  "terms.s7": ["Law and changes", "Ley aplicable y cambios", "Lei aplicável e alterações"],
+  "terms.s7p1": [
+    "These terms are governed by the laws of the State of Arizona. We may update them; we'll change the date at the top and tell account holders about significant changes by email before they take effect.",
+    "Estos términos se rigen por las leyes del estado de Arizona. Podemos actualizarlos; cambiaremos la fecha de arriba y avisaremos por correo a los titulares de cuentas sobre los cambios importantes antes de que entren en vigor.",
+    "Estes termos são regidos pelas leis do estado do Arizona. Podemos atualizá-los; mudaremos a data no topo e avisaremos os titulares de conta por e-mail sobre mudanças importantes antes que entrem em vigor."
+  ]
+}

@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Room Designer 3D | Projetista de banheiros em 3D para empresas de reforma</title>
+    <meta
+      name="description"
+      content="Coloque um projetista e orçamentista de banheiros em 3D no seu site. Os clientes projetam o banheiro, veem uma estimativa aproximada com os seus preços e enviam o pedido para você."
+    />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/index.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/index.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/index.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/index.html" />
+    <script>
+      (function () {
+        var here = "pt";
+        var root = "../";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "index.html" !== "404.html") {
+            location.replace(root + dirs[want] + "index.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Pular para o conteúdo</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Principal">
+        <a href="../pt/index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="../pt/designer.html">Demonstração</a></li>
+          <li><a href="../pt/index.html#pricing">Preços</a></li>
+          <li><a href="../pt/index.html#faq">Perguntas</a></li>
+          <li><a href="../pt/account.html" data-auth-link>Entrar</a></li>
+          <li><a href="../pt/signup.html" class="nav-cta">Teste grátis</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Idioma: </span>PT
+              </summary>
+              <ul class="lang-menu-list" aria-label="Idioma">
+                <li><a href="../index.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li>
+                  <a href="../es/index.html?lang=es" hreflang="es" lang="es" data-lang-choice="es">Español</a>
+                </li>
+                <li>
+                  <a
+                    href="../pt/index.html?lang=pt"
+                    hreflang="pt-BR"
+                    lang="pt-BR"
+                    data-lang-choice="pt"
+                    aria-current="true"
+                    >Português</a
+                  >
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero">
+        <div class="hero-inner">
+          <p class="eyebrow center">Para empresas de reforma e restauração</p>
+          <h1>Deixe seus clientes <em>projetarem</em> o banheiro em 3D</h1>
+          <p>
+            Coloque um projetista de banheiros em 3D no seu site. Seus clientes montam o banheiro, escolhem peças e
+            acabamentos e veem uma estimativa aproximada com os seus preços. Você recebe o pedido com o projeto junto.
+          </p>
+          <div class="hero-actions">
+            <a href="../pt/signup.html" class="btn btn-primary">Teste grátis</a>
+            <a href="../pt/designer.html" class="btn btn-outline">Ver a demonstração</a>
+          </div>
+          <p class="hero-note">14 dias de teste grátis. Cancele quando quiser.</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="how-title">
+        <p class="eyebrow center">Como funciona</p>
+        <h2 class="section-title" id="how-title">No seu site em três passos</h2>
+        <div class="grid">
+          <div class="card">
+            <span class="card-number">01</span>
+            <h3>Cadastre-se</h3>
+            <p>Crie uma conta e comece o teste grátis com um plano mensal ou anual.</p>
+          </div>
+          <div class="card">
+            <span class="card-number">02</span>
+            <h3>Deixe com a sua cara</h3>
+            <p>
+              Informe o nome da sua empresa, telefone, e-mail e os seus próprios preços de mão de obra. O projetista
+              fala em nome da sua empresa.
+            </p>
+          </div>
+          <div class="card">
+            <span class="card-number">03</span>
+            <h3>Coloque no seu site</h3>
+            <p>Cole uma linha de código no seu site ou compartilhe com os clientes o seu próprio link do projetista.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-dark" aria-labelledby="features-title">
+        <p class="eyebrow center">O que está incluído</p>
+        <h2 class="section-title" id="features-title">Tudo o que um cliente de banheiro precisa</h2>
+        <div class="grid feature-grid">
+          <div class="card">
+            <h3>Um banheiro em 3D a partir das respostas</h3>
+            <p>
+              O banheiro é montado com as medidas e o serviço que o cliente informa, e ele pode arrastar as peças pelo
+              ambiente.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Modelos de produtos reais</h3>
+            <p>
+              Vasos, banheiras, boxes, gabinetes, pias e espelhos são modelos 3D de produtos reais de fabricantes, com
+              acabamentos reais de revestimento, piso e pintura.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Estimativas com os seus preços</h3>
+            <p>
+              Uma estimativa aproximada e sem compromisso de mão de obra e materiais com os valores que você define, e
+              um PDF que o cliente pode guardar.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Pedidos na sua conta</h3>
+            <p>
+              Quando um cliente envia o projeto, ele chega na sua conta com os dados de contato e a estimativa completa.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Inglês, espanhol e português</h3>
+            <p>Seus clientes podem usar todo o projetista e a estimativa em inglês, espanhol ou português do Brasil.</p>
+          </div>
+          <div class="card">
+            <h3>Funciona no celular</h3>
+            <p>Feito para celulares, tablets e computadores, sem nada para o cliente instalar.</p>
+          </div>
+        </div>
+        <p class="center demo-link">
+          <a href="../pt/designer.html" class="btn btn-outline">Ver a demonstração</a>
+        </p>
+      </section>
+
+      <section class="section" id="pricing" aria-labelledby="pricing-title">
+        <p class="eyebrow center">Preços</p>
+        <h2 class="section-title" id="pricing-title">Um plano, tudo incluído</h2>
+        <p class="section-subtitle">Comece com 14 dias de teste grátis. Preços em dólares americanos.</p>
+        <div class="plan-grid">
+          <div class="plan-card">
+            <h3>Mensal</h3>
+            <p class="plan-price"><span>US$ 79</span> por mês</p>
+            <p class="plan-note">Cobrado todo mês. Cancele quando quiser.</p>
+            <a href="../pt/signup.html?plan=monthly" class="btn btn-primary btn-block">Teste grátis</a>
+          </div>
+          <div class="plan-card plan-card-featured">
+            <p class="plan-badge">Melhor preço</p>
+            <h3>Anual</h3>
+            <p class="plan-price"><span>US$ 790</span> por ano</p>
+            <p class="plan-note">Cobrado uma vez por ano. Dois meses grátis.</p>
+            <a href="../pt/signup.html?plan=yearly" class="btn btn-primary btn-block">Teste grátis</a>
+          </div>
+        </div>
+        <ul class="plan-includes">
+          <li>O projetista 3D e o chat de estimativa, para a sua empresa</li>
+          <li>Os seus próprios preços de mão de obra</li>
+          <li>Um link para compartilhar e uma linha de código para o seu site</li>
+          <li>Pedidos dos clientes salvos na sua conta</li>
+          <li>Inglês, espanhol e português</li>
+        </ul>
+      </section>
+
+      <section class="section faq-list" id="faq" aria-labelledby="faq-title">
+        <p class="eyebrow center">Perguntas</p>
+        <h2 class="section-title" id="faq-title">Perguntas frequentes</h2>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              Preciso de um desenvolvedor?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Não. A página da sua conta dá um link que você pode compartilhar na hora e uma linha de código para
+                colar no editor do seu site (WordPress, Wix, Squarespace e outros aceitam).
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              Posso usar os meus próprios preços?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Sim. Defina na sua conta o preço de mão de obra de cada item (demolição, revestimento, piso, pintura,
+                peças). As estimativas passam a usá-los na hora.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              Para onde vão os pedidos?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Para a página da sua conta, com nome, telefone e e-mail do cliente, e a estimativa e o projeto
+                completos.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              A estimativa é um orçamento?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Não. O cliente é avisado de que é uma estimativa aproximada e sem compromisso, que não inclui
+                encanamento, elétrica, alvarás nem impostos. Você define o preço real depois de ver o serviço.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              Posso cancelar?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. Se
+                cancelar durante o teste grátis, você não é cobrado.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              É só para banheiros?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Por enquanto, sim: o projetista e a estimativa cobrem reformas de banheiros. Perguntas sobre outros
+                serviços recebem o seu telefone.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band">
+        <p class="eyebrow center">Comece agora</p>
+        <h2 class="section-title">Dê aos seus clientes um jeito melhor de começar</h2>
+        <p class="section-subtitle">Teste grátis por 14 dias; depois, US$ 79 por mês.</p>
+        <a href="../pt/signup.html" class="btn btn-primary">Teste grátis</a>
+      </section>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">
+            Um projetista e orçamentista de banheiros em 3D para empresas de reforma e restauração.
+          </p>
+          <p class="footer-identity">
+            Room Designer 3D é um produto da Wright AI Solutions, LLC, sociedade de responsabilidade limitada do
+            Arizona.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Produto</h2>
+          <a href="../pt/designer.html">Demonstração</a>
+          <a href="../pt/index.html#pricing">Preços</a>
+          <a href="../pt/index.html#faq">Perguntas</a>
+          <a href="../pt/signup.html">Teste grátis</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contato</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Jurídico</h2>
+          <a href="../pt/privacy.html">Política de Privacidade</a>
+          <a href="../pt/terms.html">Termos de Serviço</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Tema de cores">
+          <span class="theme-switch-label" aria-hidden="true">Tema</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Escuro</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+
+    <script src="../js/site-config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/script.js"></script>
+  </body>
+</html>

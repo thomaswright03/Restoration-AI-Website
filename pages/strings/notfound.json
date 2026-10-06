@@ -1,0 +1,15 @@
+{
+  "notfound.title": [
+    "Page not found | Room Designer 3D",
+    "Página no encontrada | Room Designer 3D",
+    "Página não encontrada | Room Designer 3D"
+  ],
+  "notfound.description": ["This page doesn't exist.", "Esta página no existe.", "Esta página não existe."],
+  "notfound.h1": ["Page not found", "Página no encontrada", "Página não encontrada"],
+  "notfound.text": [
+    "The page you're looking for doesn't exist or has moved.",
+    "La página que busca no existe o cambió de lugar.",
+    "A página que você procura não existe ou mudou de lugar."
+  ],
+  "notfound.home": ["Go to the home page", "Ir a la página de inicio", "Ir para a página inicial"]
+}

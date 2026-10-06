@@ -1,0 +1,1337 @@
+// Room Designer 3D — languages: English, Spanish and Brazilian Portuguese.
+//
+// The page text itself is translated in the HTML (es/*.html, pt/*.html; see
+// README "Languages"). This file holds every piece of text the site's
+// JavaScript shows or sends: the chat assistant and its estimate, form
+// messages, the 3D room's buttons and the PDF. Each entry is
+//   key: [English, Spanish, Portuguese]
+// with {name} placeholders filled in by t(). Keep the three in step: the
+// unit tests fail when one is missing or its placeholders differ.
+//
+// The language is the page's own <html lang>, so the English pages (and the
+// admin tool, which is English only) always get English.
+//
+// Loads as a plain browser script (window.I18n) and as a Node module.
+
+(function (root, factory) {
+  "use strict";
+  var api = factory();
+  if (typeof module === "object" && module.exports) {
+    module.exports = api;
+  } else {
+    root.I18n = api;
+  }
+})(typeof globalThis !== "undefined" ? globalThis : this, function () {
+  "use strict";
+
+  var LANGS = ["en", "es", "pt"];
+  // Prices stay in US dollars in every language; only the number format
+  // follows the language (US Spanish, Brazilian Portuguese).
+  var LOCALES = { en: "en-US", es: "es-US", pt: "pt-BR" };
+  var NAMES = { en: "English", es: "Español", pt: "Português" };
+
+  var S = {
+    // ---------- language switcher ----------
+    "lang.label": ["Language", "Idioma", "Idioma"],
+
+    // ---------- units ----------
+    "unit.ft": ["ft", "pies", "pés"],
+    "unit.sqft": ["sq ft", "pies²", "pés²"],
+    "unit.sqftFloor": ["sq ft of floor", "pies² de piso", "pés² de piso"],
+    "unit.unit": ["unit", "unidad", "unidade"],
+    "unit.units": ["units", "unidades", "unidades"],
+    "unit.point": ["point", "punto", "ponto"],
+    "unit.points": ["points", "puntos", "pontos"],
+    "unit.flat": ["flat", "fijo", "fixo"],
+    "unit.gallon": ["gallon", "galón", "galão"],
+    "unit.gallons": ["gallons", "galones", "galões"],
+
+    // ---------- estimate: fixtures (js/bathroom-pricing.js) ----------
+    "fixture.Toilet_Quantity": ["Toilet", "Inodoro", "Vaso sanitário"],
+    "fixture.Sink_Quantity": ["Sink", "Lavabo", "Pia"],
+    "fixture.Bathtub_Quantity": ["Bathtub", "Bañera", "Banheira"],
+    "fixture.Shower_Quantity": ["Shower", "Ducha", "Chuveiro"],
+    "fixture.Shower_Door_Quantity": ["Shower door", "Puerta de ducha", "Porta de box"],
+    "fixture.Door_Quantity": ["Entry door", "Puerta de entrada", "Porta de entrada"],
+    "fixture.Vanity_Quantity": ["Vanity", "Mueble de lavabo", "Gabinete de pia"],
+    "fixture.Cabinet_Quantity": ["Cabinet", "Gabinete", "Armário"],
+    "fixture.Mirror_Quantity": ["Mirror (standard)", "Espejo (estándar)", "Espelho (padrão)"],
+    "fixture.Mirror_Huge_Quantity": ["Mirror (huge)", "Espejo (extragrande)", "Espelho (extragrande)"],
+    "fixture.Shower_Shelf_Quantity": ["Shower shelf", "Repisa de ducha", "Nicho de box"],
+    "fixtures.Toilet_Quantity": ["Toilets", "Inodoros", "Vasos sanitários"],
+    "fixtures.Sink_Quantity": ["Sinks", "Lavabos", "Pias"],
+    "fixtures.Bathtub_Quantity": ["Bathtubs", "Bañeras", "Banheiras"],
+    "fixtures.Shower_Quantity": ["Showers", "Duchas", "Chuveiros"],
+    "fixtures.Shower_Door_Quantity": ["Shower doors", "Puertas de ducha", "Portas de box"],
+    "fixtures.Door_Quantity": ["Entry doors", "Puertas de entrada", "Portas de entrada"],
+    "fixtures.Vanity_Quantity": ["Vanities", "Muebles de lavabo", "Gabinetes de pia"],
+    "fixtures.Cabinet_Quantity": ["Cabinets", "Gabinetes", "Armários"],
+    "fixtures.Mirror_Quantity": ["Standard mirrors", "Espejos estándar", "Espelhos padrão"],
+    "fixtures.Mirror_Huge_Quantity": ["Huge mirrors", "Espejos extragrandes", "Espelhos extragrandes"],
+    "fixtures.Shower_Shelf_Quantity": ["Shower shelves", "Repisas de ducha", "Nichos de box"],
+
+    // ---------- estimate: work questions ----------
+    "question.demolition": [
+      "Remove the existing bathroom first (demolition)?",
+      "¿Quitar primero el baño actual (demolición)?",
+      "Remover o banheiro atual primeiro (demolição)?",
+    ],
+    "question.floorFinish": ["New floor?", "¿Piso nuevo?", "Piso novo?"],
+    "question.walls": ["Walls?", "¿Paredes?", "Paredes?"],
+    "question.paintCeiling": ["Paint the ceiling?", "¿Pintar el techo?", "Pintar o teto?"],
+    "choice.yes": ["Yes", "Sí", "Sim"],
+    "choice.no": ["No", "No", "Não"],
+    "choice.floor.tile": ["Tile", "Azulejo", "Cerâmica"],
+    "choice.floor.flooring": ["Other flooring", "Otro tipo de piso", "Outro tipo de piso"],
+    "choice.walls.tile": ["Tile (full height)", "Azulejo (hasta el techo)", "Revestimento (até o teto)"],
+    "choice.walls.paint": ["Paint", "Pintura", "Pintura"],
+    "choice.none": ["None", "Ninguno", "Nenhum"],
+    "choice.neither": ["Neither", "Ninguno", "Nenhum"],
+    "choice.notAnswered": ["Not answered", "Sin respuesta", "Sem resposta"],
+    "dimension.Bathroom_Width_Ft": ["Width", "Ancho", "Largura"],
+    "dimension.Bathroom_Length_Ft": ["Length", "Largo", "Comprimento"],
+    "dimension.Bathroom_Height_Ft": ["Ceiling height", "Altura del techo", "Altura do teto"],
+
+    // ---------- estimate: validation ----------
+    "error.chooseAnswer": ["Choose an answer.", "Elija una respuesta.", "Escolha uma resposta."],
+    "error.dimension.missing.Bathroom_Width_Ft": [
+      "Enter the width in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
+      "Escriba el ancho en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
+      "Informe a largura em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
+    ],
+    "error.dimension.missing.Bathroom_Length_Ft": [
+      "Enter the length in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
+      "Escriba el largo en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
+      "Informe o comprimento em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
+    ],
+    "error.dimension.missing.Bathroom_Height_Ft": [
+      "Enter the ceiling height in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
+      "Escriba la altura del techo en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
+      "Informe a altura do teto em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
+    ],
+    "error.dimension.range": [
+      "{label} must be more than 0 and no more than {max} ft.",
+      "{label}: debe ser más de 0 y no más de {max} pies.",
+      "{label}: deve ser mais de 0 e no máximo {max} pés.",
+    ],
+    "error.wholeNumber": [
+      "Enter a whole number from 0 to {max}.",
+      "Escriba un número entero del 0 al {max}.",
+      "Informe um número inteiro de 0 a {max}.",
+    ],
+
+    // ---------- estimate: priced lines ----------
+    "line.detail": ["{qty} {unit} × {rate}", "{qty} {unit} × {rate}", "{qty} {unit} × {rate}"],
+    "line.flatCharge": ["Flat charge", "Cargo fijo", "Valor fixo"],
+    "section.preparation": ["Preparation", "Preparación", "Preparação"],
+    "section.fixtures": ["Fixtures", "Instalaciones", "Instalações"],
+    "section.surfaces": ["Surfaces", "Superficies", "Superfícies"],
+    "section.plumbing": ["Plumbing", "Plomería", "Encanamento"],
+    "section.electrical": ["Electrical", "Electricidad", "Elétrica"],
+    "line.demolition": ["Demolition", "Demolición", "Demolição"],
+    "line.floorTile": ["Floor tile", "Azulejo de piso", "Piso cerâmico"],
+    "line.flooring": ["Flooring", "Piso", "Piso"],
+    "line.wallTile": [
+      "Wall tile (full height)",
+      "Azulejo de pared (hasta el techo)",
+      "Revestimento de parede (até o teto)",
+    ],
+    "line.wallPaint": ["Painting (walls)", "Pintura (paredes)", "Pintura (paredes)"],
+    "line.ceilingPaint": ["Painting (ceiling)", "Pintura (techo)", "Pintura (teto)"],
+    "line.plumbingPoints": ["Plumbing points", "Puntos de plomería", "Pontos hidráulicos"],
+    "line.noStack": [
+      "No existing plumbing stack",
+      "Sin bajante de plomería existente",
+      "Sem prumada hidráulica existente",
+    ],
+    "line.badValve": ["Bad valve replacement", "Cambio de válvula dañada", "Troca de registro com defeito"],
+    "line.electricalPoints": ["Electrical points", "Puntos eléctricos", "Pontos elétricos"],
+
+    // ---------- estimate: assumptions and summary ----------
+    "scope.describe": [
+      "Demolition: {demolition}; new floor: {floor}; walls: {walls}; paint ceiling: {ceiling}",
+      "Demolición: {demolition}; piso nuevo: {floor}; paredes: {walls}; pintar el techo: {ceiling}",
+      "Demolição: {demolition}; piso novo: {floor}; paredes: {walls}; pintar o teto: {ceiling}",
+    ],
+    "assume.scope": [
+      "{scope}. Only this work is priced.",
+      "{scope}. Solo se cotiza este trabajo.",
+      "{scope}. Somente este serviço está no orçamento.",
+    ],
+    "assume.floorArea": [
+      "Floor area: {w} × {l} ft = {area} sq ft (the ceiling is taken to be the same size).",
+      "Área del piso: {w} × {l} pies = {area} pies² (se toma el techo del mismo tamaño).",
+      "Área do piso: {w} × {l} pés = {area} pés² (considera-se o teto do mesmo tamanho).",
+    ],
+    "assume.wallArea": [
+      "Wall area: 2 × {h} ft × ({w} + {l} ft) = {area} sq ft — all four walls, full height, with no deduction for doors, windows, or a tub/shower.",
+      "Área de paredes: 2 × {h} pies × ({w} + {l} pies) = {area} pies²: las cuatro paredes, hasta el techo, sin descontar puertas, ventanas ni la bañera o ducha.",
+      "Área das paredes: 2 × {h} pés × ({w} + {l} pés) = {area} pés²: as quatro paredes, até o teto, sem descontar portas, janelas nem a banheira ou o box.",
+    ],
+    "assume.fixtures": [
+      "Fixtures are priced per item at our current labor rates, which may change.",
+      "Las instalaciones se cobran por pieza según nuestras tarifas de mano de obra actuales, que pueden cambiar.",
+      "As instalações são cobradas por item conforme nossos valores atuais de mão de obra, que podem mudar.",
+    ],
+    "summary.title": [
+      "My bathroom estimate from your website:",
+      "Mi estimación del baño hecha en su sitio web:",
+      "Minha estimativa do banheiro feita no seu site:",
+    ],
+    "summary.room": ["- Room: {size}", "- Baño: {size}", "- Banheiro: {size}"],
+    "summary.size2": [
+      "{w} ft wide × {l} ft long",
+      "{w} pies de ancho × {l} pies de largo",
+      "{w} pés de largura × {l} pés de comprimento",
+    ],
+    "summary.size3": [
+      "{w} ft wide × {l} ft long × {h} ft high",
+      "{w} pies de ancho × {l} pies de largo × {h} pies de alto",
+      "{w} pés de largura × {l} pés de comprimento × {h} pés de altura",
+    ],
+    "summary.work": ["- Work: {scope}", "- Trabajo: {scope}", "- Serviço: {scope}"],
+    "summary.fixtures": ["- Fixtures: {list}", "- Instalaciones: {list}", "- Instalações: {list}"],
+    "summary.none": ["none", "ninguna", "nenhuma"],
+    "summary.roomPicks": [
+      "Products picked in the 3D room:",
+      "Productos elegidos en el baño 3D:",
+      "Produtos escolhidos no banheiro 3D:",
+    ],
+    "summary.total": [
+      "- Estimated labor total: {total} — rough and non-binding; excludes plumbing, electrical, materials, permits and taxes.",
+      "- Total estimado de mano de obra: {total}. Aproximado y no vinculante; no incluye plomería, electricidad, materiales, permisos ni impuestos.",
+      "- Total estimado de mão de obra: {total}. Aproximado e sem compromisso; não inclui encanamento, elétrica, materiais, alvarás nem impostos.",
+    ],
+    "summary.totalBeforePlumbing": [
+      "- Estimated labor total: {total} (before plumbing) — rough and non-binding; excludes plumbing, electrical, materials, permits and taxes.",
+      "- Total estimado de mano de obra: {total} (sin la plomería). Aproximado y no vinculante; no incluye plomería, electricidad, materiales, permisos ni impuestos.",
+      "- Total estimado de mão de obra: {total} (sem o encanamento). Aproximado e sem compromisso; não inclui encanamento, elétrica, materiais, alvarás nem impostos.",
+    ],
+
+    // ---------- chat assistant replies (js/chat-replies.js) ----------
+    "chat.callForPrice": [
+      "Call {phone} or send your details with the request form for a price.",
+      "Llame al {phone} o envíe sus datos con el formulario de solicitud para pedir un precio.",
+      "Ligue para {phone} ou envie seus dados pelo formulário de pedido para pedir um preço.",
+    ],
+    "chat.estimateOffer": [
+      "For a rough estimate of your whole job, tap the button below or say “bathroom quote”.",
+      "Para una estimación aproximada de todo el trabajo, toque el botón de abajo o escriba “cotización del baño”.",
+      "Para uma estimativa aproximada do serviço todo, toque no botão abaixo ou escreva “orçamento do banheiro”.",
+    ],
+    "chat.plumbingExtra": [
+      "Installing it also needs plumbing work, which isn't included in our online prices and will add to the cost.",
+      "Instalarlo también requiere trabajo de plomería, que no está incluido en nuestros precios en línea y aumentará el costo.",
+      "A instalação também exige serviço de encanamento, que não está incluído nos nossos preços on-line e vai aumentar o custo.",
+    ],
+    "chat.identity": [
+      "I'm an automated assistant with scripted replies — not a person, and not AI. Nothing you type here is sent to or read by us. To reach a person, call {phone} or email {email}.",
+      "Soy un asistente automático con respuestas programadas: no soy una persona ni inteligencia artificial. Nada de lo que escriba aquí se nos envía ni lo leemos. Para hablar con una persona, llame al {phone} o escriba a {email}.",
+      "Sou um assistente automático com respostas programadas: não sou uma pessoa nem inteligência artificial. Nada do que você digitar aqui é enviado ou lido por nós. Para falar com uma pessoa, ligue para {phone} ou escreva para {email}.",
+    ],
+    "chat.otherLanguage.es": [
+      "This automated assistant also speaks Spanish: choose “Español” in the language menu at the top of the page, or call {phone}.",
+      "Este asistente automático también habla español: elija “Español” en el menú de idioma, arriba en la página, o llame al {phone}.",
+      "This automated assistant also speaks Spanish: choose “Español” in the language menu at the top of the page, or call {phone}.",
+    ],
+    "chat.otherLanguage.pt": [
+      "This automated assistant also speaks Portuguese: choose “Português” in the language menu at the top of the page, or call {phone}.",
+      "This automated assistant also speaks Portuguese: choose “Português” in the language menu at the top of the page, or call {phone}.",
+      "Este assistente automático também fala português: escolha “Português” no menu de idioma, no topo da página, ou ligue para {phone}.",
+    ],
+    "chat.french": [
+      "Sorry — this automated assistant only understands English, Spanish and Portuguese. Désolé, cet assistant automatique ne comprend que l'anglais, l'espagnol et le portugais. Please call {phone}.",
+      "Lo sentimos, este asistente automático solo entiende español, inglés y portugués. Désolé, cet assistant automatique ne comprend que l'anglais, l'espagnol et le portugais. Llame al {phone}.",
+      "Desculpe, este assistente automático só entende português, inglês e espanhol. Désolé, cet assistant automatique ne comprend que l'anglais, l'espagnol et le portugais. Ligue para {phone}.",
+    ],
+    "chat.damage": [
+      "This assistant only estimates bathroom remodeling, so it can't price damage restoration (such as water, fire, smoke or mold damage). Call {phone} to talk it through. For a bathroom project, say “bathroom quote” and I can give you a rough estimate.",
+      "Este asistente solo estima remodelaciones de baños, así que no puede cotizar la restauración de daños (como daños por agua, fuego, humo o moho). Llame al {phone} para hablarlo. Para un proyecto de baño, escriba “cotización del baño” y le daré una estimación aproximada.",
+      "Este assistente só estima reformas de banheiros, então não consegue orçar restauração de danos (como danos causados por água, fogo, fumaça ou mofo). Ligue para {phone} para conversarmos. Para um projeto de banheiro, escreva “orçamento do banheiro” e eu dou uma estimativa aproximada.",
+    ],
+    "chat.notBathroom": [
+      "Sorry, this assistant only estimates bathroom work, so it can't help with that here. Call {phone} to ask about other projects. For a bathroom project, say “bathroom quote” and I can give you a rough estimate.",
+      "Lo sentimos, este asistente solo estima trabajos de baño, así que aquí no puede ayudarle con eso. Llame al {phone} para preguntar por otros proyectos. Para un proyecto de baño, escriba “cotización del baño” y le daré una estimación aproximada.",
+      "Desculpe, este assistente só estima serviços de banheiro, então não pode ajudar com isso aqui. Ligue para {phone} para perguntar sobre outros projetos. Para um projeto de banheiro, escreva “orçamento do banheiro” e eu dou uma estimativa aproximada.",
+    ],
+    "chat.fixtureProblem": [
+      "A leaking or broken faucet, toilet, sink, tub or shower is plumbing work. Fixtures can be replaced as part of a bathroom remodel, but plumbing isn't included in the online prices and adds to the cost. Call {phone} to talk it through — we'll tell you who would do the plumbing and how it would be priced before any work is agreed.",
+      "Una llave, inodoro, lavabo, bañera o ducha con fugas o dañada es trabajo de plomería. Las instalaciones se pueden cambiar como parte de una remodelación del baño, pero la plomería no está incluida en los precios en línea y aumenta el costo. Llame al {phone} para hablarlo: le diremos quién haría la plomería y cómo se cobraría antes de acordar cualquier trabajo.",
+      "Torneira, vaso, pia, banheira ou chuveiro com vazamento ou quebrado é serviço de encanamento. As peças podem ser trocadas como parte de uma reforma do banheiro, mas o encanamento não está incluído nos preços on-line e aumenta o custo. Ligue para {phone} para conversarmos: diremos quem faria o encanamento e como seria cobrado antes de combinar qualquer serviço.",
+    ],
+    "chat.item.showerDoor": [
+      "Shower door installation is {price} per door (labor only).",
+      "La instalación de una puerta de ducha cuesta {price} por puerta (solo mano de obra).",
+      "A instalação de porta de box custa {price} por porta (só mão de obra).",
+    ],
+    "chat.item.showerShelf": [
+      "A built-in shower shelf is {price} each (labor only).",
+      "Una repisa empotrada en la ducha cuesta {price} cada una (solo mano de obra).",
+      "Um nicho embutido no box custa {price} cada (só mão de obra).",
+    ],
+    "chat.item.tile": [
+      "Tile is {price} per sq ft of floor or wall tiled (labor only).",
+      "El azulejo cuesta {price} por pie cuadrado de piso o pared (solo mano de obra).",
+      "O revestimento cerâmico custa {price} por pé quadrado de piso ou parede (só mão de obra).",
+    ],
+    "chat.item.paint": [
+      "Painting is {price} per sq ft of wall or ceiling painted (labor only).",
+      "La pintura cuesta {price} por pie cuadrado de pared o techo pintado (solo mano de obra).",
+      "A pintura custa {price} por pé quadrado de parede ou teto pintado (só mão de obra).",
+    ],
+    "chat.item.demolition": [
+      "Demolition is {price} per sq ft of bathroom floor (labor only).",
+      "La demolición cuesta {price} por pie cuadrado de piso del baño (solo mano de obra).",
+      "A demolição custa {price} por pé quadrado de piso do banheiro (só mão de obra).",
+    ],
+    "chat.item.flooring": [
+      "Bathroom flooring is {price} per sq ft of bathroom floor (labor only; tile floors are priced as tile).",
+      "El piso del baño cuesta {price} por pie cuadrado de piso (solo mano de obra; los pisos de azulejo se cobran como azulejo).",
+      "O piso do banheiro custa {price} por pé quadrado (só mão de obra; piso cerâmico é cobrado como revestimento cerâmico).",
+    ],
+    "chat.item.cabinet": [
+      "Bathroom cabinet installation is {price} per cabinet (labor only).",
+      "La instalación de un gabinete de baño cuesta {price} por gabinete (solo mano de obra).",
+      "A instalação de armário de banheiro custa {price} por armário (só mão de obra).",
+    ],
+    "chat.item.vanity": [
+      "Vanity installation is {price} per vanity (labor only).",
+      "La instalación de un mueble de lavabo cuesta {price} por mueble (solo mano de obra).",
+      "A instalação de gabinete de pia custa {price} por gabinete (só mão de obra).",
+    ],
+    "chat.item.mirror": [
+      "Mirror installation is {price} per standard mirror, or {huge} for a huge/oversized one (labor only).",
+      "La instalación de un espejo cuesta {price} por espejo estándar, o {huge} si es extragrande (solo mano de obra).",
+      "A instalação de espelho custa {price} por espelho padrão, ou {huge} se for extragrande (só mão de obra).",
+    ],
+    "chat.item.toilet": [
+      "Toilet installation is {price} per toilet (labor only).",
+      "La instalación de un inodoro cuesta {price} por inodoro (solo mano de obra).",
+      "A instalação de vaso sanitário custa {price} por vaso (só mão de obra).",
+    ],
+    "chat.item.sink": [
+      "Sink installation is {price} per sink (labor only).",
+      "La instalación de un lavabo cuesta {price} por lavabo (solo mano de obra).",
+      "A instalação de pia custa {price} por pia (só mão de obra).",
+    ],
+    "chat.item.bathtub": [
+      "Bathtub installation is {price} per bathtub (labor only).",
+      "La instalación de una bañera cuesta {price} por bañera (solo mano de obra).",
+      "A instalação de banheira custa {price} por banheira (só mão de obra).",
+    ],
+    "chat.item.shower": [
+      "Shower installation is {price} per shower (labor only).",
+      "La instalación de una ducha cuesta {price} por ducha (solo mano de obra).",
+      "A instalação de chuveiro custa {price} por chuveiro (só mão de obra).",
+    ],
+    "chat.item.door": [
+      "Installing the bathroom's entry door is {price} per door (labor only).",
+      "Instalar la puerta de entrada del baño cuesta {price} por puerta (solo mano de obra).",
+      "Instalar a porta de entrada do banheiro custa {price} por porta (só mão de obra).",
+    ],
+    "chat.trade": [
+      "Our online prices and estimates don't include plumbing or electrical work, and toilets, sinks, showers, and bathtubs also need plumbing work, so expect it to add to the cost. Tell us about your project with the request form and we'll tell you who will do that work and how it will be priced before any work is agreed.",
+      "Nuestros precios y estimaciones en línea no incluyen trabajo de plomería ni electricidad, y los inodoros, lavabos, duchas y bañeras también requieren plomería, así que cuente con que aumentará el costo. Cuéntenos su proyecto con el formulario de solicitud y le diremos quién hará ese trabajo y cómo se cobrará antes de acordar cualquier trabajo.",
+      "Nossos preços e estimativas on-line não incluem serviço de encanamento nem de elétrica, e vasos, pias, chuveiros e banheiras também precisam de encanamento, então conte com um custo maior. Conte sobre o seu projeto pelo formulário de pedido e diremos quem fará esse serviço e como será cobrado antes de combinar qualquer serviço.",
+    ],
+    "chat.services": [
+      "I can estimate bathroom work: demolition, installing fixtures (toilets, sinks, showers, bathtubs, vanities, mirrors, doors and cabinets), tile, flooring, and painting walls and ceilings. For anything else, call {phone}.",
+      "Puedo estimar trabajos de baño: demolición, instalación de piezas (inodoros, lavabos, duchas, bañeras, muebles de lavabo, espejos, puertas y gabinetes), azulejo, pisos y pintura de paredes y techos. Para cualquier otra cosa, llame al {phone}.",
+      "Posso estimar serviços de banheiro: demolição, instalação de peças (vasos, pias, chuveiros, banheiras, gabinetes, espelhos, portas e armários), revestimento cerâmico, pisos e pintura de paredes e tetos. Para qualquer outra coisa, ligue para {phone}.",
+    ],
+    "chat.licence": [
+      "Ask us about licensing, insurance and permits when you get in touch at {phone}. Before any work is agreed, we'll tell you who will do any plumbing and electrical work and how it will be priced.",
+      "Pregúntenos por licencias, seguros y permisos cuando nos contacte al {phone}. Antes de acordar cualquier trabajo, le diremos quién hará la plomería y la electricidad que haga falta y cómo se cobrará.",
+      "Pergunte sobre licenças, seguros e alvarás quando entrar em contato pelo {phone}. Antes de combinar qualquer serviço, diremos quem fará o encanamento e a elétrica necessários e como serão cobrados.",
+    ],
+    "chat.warranty": [
+      "We don't advertise a standard warranty on this website. If you'd like one, ask us before you agree to the work, and make sure any warranty terms are given to you in writing.",
+      "No anunciamos una garantía estándar en este sitio web. Si quiere una, pídanosla antes de acordar el trabajo y asegúrese de recibir por escrito los términos de cualquier garantía.",
+      "Não anunciamos uma garantia padrão neste site. Se quiser uma, peça antes de combinar o serviço e confira se os termos de qualquer garantia são entregues a você por escrito.",
+    ],
+    "chat.timeline": [
+      "It depends on the size of the bathroom and the work involved. We'll give you an expected timeline once we've seen the job — call {phone} or use the request form.",
+      "Depende del tamaño del baño y del trabajo que se necesite. Le daremos un plazo estimado cuando hayamos visto el trabajo: llame al {phone} o use el formulario de solicitud.",
+      "Depende do tamanho do banheiro e do serviço necessário. Daremos um prazo estimado depois de ver o serviço: ligue para {phone} ou use o formulário de pedido.",
+    ],
+    "chat.privacy": [
+      "Nothing you type in this chat is sent anywhere. Only what you send with the request form reaches us, and we use it to answer your request.",
+      "Nada de lo que escriba en este chat se envía a ningún lado. Solo nos llega lo que envíe con el formulario de solicitud, y lo usamos para responder a su pedido.",
+      "Nada do que você digitar neste chat é enviado a lugar nenhum. Só recebemos o que você enviar pelo formulário de pedido, e usamos isso para responder ao seu pedido.",
+    ],
+    "chat.contact": [
+      "You can reach us at {phone} or {email}, or send your request with the form below the chat.",
+      "Puede comunicarse con nosotros al {phone} o en {email}, o enviar su solicitud con el formulario debajo del chat.",
+      "Você pode falar conosco pelo {phone} ou por {email}, ou enviar o seu pedido pelo formulário abaixo do chat.",
+    ],
+    "chat.hours": [
+      "Send your request with the form below the chat or give us a call at {phone}, and we'll get back to you as soon as we can.",
+      "Envíe su solicitud con el formulario debajo del chat o llámenos al {phone} y le responderemos lo antes posible.",
+      "Envie o seu pedido pelo formulário abaixo do chat ou ligue para {phone} e responderemos o quanto antes.",
+    ],
+    "chat.area": [
+      "Call {phone} or send your address with the request form and we'll tell you whether we can take on your job.",
+      "Llame al {phone} o envíe su dirección con el formulario de solicitud y le diremos si podemos hacer su trabajo.",
+      "Ligue para {phone} ou envie o seu endereço pelo formulário de pedido e diremos se podemos fazer o seu serviço.",
+    ],
+    "chat.photos": [
+      "Ask us about past jobs and photos of our work when you get in touch at {phone}.",
+      "Pregúntenos por trabajos anteriores y fotos de nuestro trabajo cuando nos contacte al {phone}.",
+      "Pergunte sobre trabalhos anteriores e fotos do nosso serviço quando entrar em contato pelo {phone}.",
+    ],
+    "chat.greeting": [
+      "Hello! Ask me about our bathroom work or prices, or get a rough estimate of your bathroom job.",
+      "¡Hola! Pregúnteme por nuestros trabajos de baño o nuestros precios, o pida una estimación aproximada de su baño.",
+      "Olá! Pergunte sobre nossos serviços de banheiro ou nossos preços, ou peça uma estimativa aproximada do seu banheiro.",
+    ],
+    "chat.thanks": [
+      "You're welcome! If you'd like to talk to a person, call {phone}.",
+      "¡De nada! Si quiere hablar con una persona, llame al {phone}.",
+      "De nada! Se quiser falar com uma pessoa, ligue para {phone}.",
+    ],
+    "chat.fallback": [
+      "Sorry, I didn't understand that. I can answer questions about bathroom work and prices, or give you a rough estimate. To talk to a person, call {phone} or use the request form.",
+      "Lo siento, no entendí. Puedo responder preguntas sobre trabajos de baño y precios, o darle una estimación aproximada. Para hablar con una persona, llame al {phone} o use el formulario de solicitud.",
+      "Desculpe, não entendi. Posso responder perguntas sobre serviços de banheiro e preços, ou dar uma estimativa aproximada. Para falar com uma pessoa, ligue para {phone} ou use o formulário de pedido.",
+    ],
+    "chat.fallbackNoEstimate": [
+      "Sorry, I didn't understand that. I can answer questions about bathroom work. To talk to a person, call {phone} or use the request form.",
+      "Lo siento, no entendí. Puedo responder preguntas sobre trabajos de baño. Para hablar con una persona, llame al {phone} o use el formulario de solicitud.",
+      "Desculpe, não entendi. Posso responder perguntas sobre serviços de banheiro. Para falar com uma pessoa, ligue para {phone} ou use o formulário de pedido.",
+    ],
+
+    // ---------- chat window and estimate flow (js/script.js) ----------
+    "chat.you": ["YOU", "TÚ", "VOCÊ"],
+    "chat.typing": ["Assistant is typing", "El asistente está escribiendo", "O assistente está digitando"],
+    "chat.estimateButton": [
+      "Get a bathroom price estimate →",
+      "Obtener una estimación del precio del baño →",
+      "Fazer uma estimativa de preço do banheiro →",
+    ],
+    "chat.estimateRequest": [
+      "I'd like a bathroom price estimate",
+      "Quisiera una estimación del precio de mi baño",
+      "Quero uma estimativa de preço do meu banheiro",
+    ],
+    "progress.complete": ["{pct}% complete", "{pct}% completado", "{pct}% concluído"],
+    "flow.scopeIntro": [
+      "Sure! Let's get you a rough, non-binding bathroom labor estimate. Nothing you enter here is sent to us. First, which work does the job need? Only what you choose is priced.",
+      "¡Claro! Vamos a preparar una estimación aproximada y no vinculante de la mano de obra de su baño. Nada de lo que escriba aquí se nos envía. Primero, ¿qué trabajo necesita? Solo se cotiza lo que usted elija.",
+      "Claro! Vamos fazer uma estimativa aproximada e sem compromisso da mão de obra do seu banheiro. Nada do que você informar aqui é enviado para nós. Primeiro, qual serviço você precisa? Só entra no cálculo o que você escolher.",
+    ],
+    "flow.dimensionsIntro": [
+      "Now the room's floor size, in feet.",
+      "Ahora el tamaño del piso del baño, en pies.",
+      "Agora o tamanho do piso do banheiro, em pés.",
+    ],
+    "flow.dimensionsIntroHeight": [
+      "Now the room's size, in feet. The wall work you chose needs the ceiling height too.",
+      "Ahora el tamaño del baño, en pies. Para el trabajo de paredes que eligió también necesitamos la altura del techo.",
+      "Agora o tamanho do banheiro, em pés. Para o serviço de paredes que você escolheu também precisamos da altura do teto.",
+    ],
+    "flow.dimensionLabel": ["{label} (ft)", "{label} (pies)", "{label} (pés)"],
+    "flow.fixturesIntro": [
+      "How many of each should we install? Leave blank or enter 0 for any that don't apply.",
+      "¿Cuántas de cada una debemos instalar? Deje en blanco o escriba 0 en las que no correspondan.",
+      "Quantas de cada uma devemos instalar? Deixe em branco ou digite 0 nas que não se aplicam.",
+    ],
+    "flow.cancelled": [
+      "No problem, I've stopped the estimate. Ask me anything else, or say “bathroom quote” to start over.",
+      "No hay problema, detuve la estimación. Pregúnteme lo que quiera o escriba “cotización del baño” para empezar de nuevo.",
+      "Sem problemas, parei a estimativa. Pergunte o que quiser ou escreva “orçamento do banheiro” para começar de novo.",
+    ],
+    "flow.cancel": ["Cancel", "Cancelar", "Cancelar"],
+    "flow.continue": ["Continue →", "Continuar →", "Continuar →"],
+    "flow.skip": ["Skip", "Omitir", "Pular"],
+    "flow.back": ["← Back", "← Atrás", "← Voltar"],
+    "design.saved": [
+      "You have a bathroom design saved in this browser from {date}.",
+      "Tiene un diseño de baño guardado en este navegador del {date}.",
+      "Você tem um projeto de banheiro salvo neste navegador em {date}.",
+    ],
+    "design.resume": ["Pick up where I left off →", "Seguir donde lo dejé →", "Continuar de onde parei →"],
+    "design.forget": ["Forget it", "Olvidarlo", "Esquecer"],
+    "design.forgotten": [
+      "Done. The saved design is gone from this browser.",
+      "Listo. El diseño guardado se borró de este navegador.",
+      "Pronto. O projeto salvo foi apagado deste navegador.",
+    ],
+    "design.resumed": [
+      "Here's your saved design. Your earlier answers are filled in, and Back goes through them.",
+      "Aquí está su diseño guardado. Sus respuestas anteriores ya están puestas y Atrás las recorre.",
+      "Aqui está o seu projeto salvo. As suas respostas anteriores já estão preenchidas, e Voltar passa por elas.",
+    ],
+    "flow.getEstimate": ["Get My Estimate →", "Ver mi estimación →", "Ver minha estimativa →"],
+    "flow.seeEstimate": ["See My Estimate →", "Ver mi estimación →", "Ver minha estimativa →"],
+    "flow.doesNotFit": [
+      "Not enough room for all of these — reduce the count, make the room bigger, or check what else needs to be picked first (e.g. a vanity or sink for a mirror to mount above).",
+      "No hay espacio para todas: reduzca la cantidad, agrande el baño o revise qué más hay que elegir primero (por ejemplo, un mueble de lavabo o un lavabo para colgar un espejo encima).",
+      "Não há espaço para todas: diminua a quantidade, aumente o banheiro ou veja o que precisa ser escolhido antes (por exemplo, um gabinete ou uma pia para instalar um espelho em cima).",
+    ],
+    "flow.fixHighlighted": [
+      "Please fix the highlighted answers above.",
+      "Corrija las respuestas marcadas arriba.",
+      "Corrija as respostas destacadas acima.",
+    ],
+    "walls.intro": [
+      "Which wall(s) carry the plumbing stack? Click them directly in the 3D preview — pick as many as apply. The toilet, sink, vanity, tub, and shower will only be placed on the wall(s) you choose.",
+      "¿Qué pared o paredes tienen la bajante de plomería? Haga clic en ellas directamente en la vista 3D; elija todas las que correspondan. El inodoro, el lavabo, el mueble de baño, la bañera y la ducha solo se colocarán en las paredes que elija.",
+      "Qual parede ou quais paredes têm a prumada hidráulica? Clique nelas direto na visualização 3D; escolha todas as que se aplicam. O vaso, a pia, o gabinete, a banheira e o chuveiro só serão colocados nas paredes que você escolher.",
+    ],
+    "walls.buttons": [
+      "Or choose a wall here (as the room is first shown)",
+      "O elija una pared aquí (como se ve el baño al principio)",
+      "Ou escolha uma parede aqui (como o banheiro aparece no início)",
+    ],
+    "walls.name.N": ["Back right wall", "Pared del fondo a la derecha", "Parede do fundo à direita"],
+    "walls.name.W": ["Back left wall", "Pared del fondo a la izquierda", "Parede do fundo à esquerda"],
+    "walls.name.E": ["Front right wall", "Pared del frente a la derecha", "Parede da frente à direita"],
+    "walls.name.S": ["Front left wall", "Pared del frente a la izquierda", "Parede da frente à esquerda"],
+    "walls.none": ["No walls selected yet.", "Todavía no hay paredes elegidas.", "Nenhuma parede escolhida ainda."],
+    "walls.one": ["1 wall selected.", "1 pared elegida.", "1 parede escolhida."],
+    "walls.many": ["{n} walls selected.", "{n} paredes elegidas.", "{n} paredes escolhidas."],
+    "entry.howMany": [
+      "How many entry points (doors or openings) does this bathroom have?",
+      "¿Cuántas entradas (puertas o aberturas) tiene este baño?",
+      "Quantas entradas (portas ou vãos) este banheiro tem?",
+    ],
+    "entry.clickWall": [
+      "click its wall in the 3D preview.",
+      "Haga clic en su pared en la vista 3D.",
+      "Clique na parede dela na visualização 3D.",
+    ],
+    "entry.clickWallOf": [
+      "Entry point {i} of {n}: click its wall in the 3D preview.",
+      "Entrada {i} de {n}: haga clic en su pared en la vista 3D.",
+      "Entrada {i} de {n}: clique na parede dela na visualização 3D.",
+    ],
+    "entry.noWall": ["No wall selected yet.", "Todavía no hay una pared elegida.", "Nenhuma parede escolhida ainda."],
+    "entry.left": ["← Move left", "← Mover a la izquierda", "← Mover para a esquerda"],
+    "entry.right": ["Move right →", "Mover a la derecha →", "Mover para a direita →"],
+    "entry.hasDoor": ["Does this entry point have a door?", "¿Esta entrada tiene puerta?", "Esta entrada tem porta?"],
+    "entry.archway": ["No — open archway", "No, es un arco abierto", "Não, é um vão aberto"],
+    "entry.confirm": ["Confirm entry point", "Confirmar entrada", "Confirmar entrada"],
+    "entry.confirmNext": ["Confirm & next →", "Confirmar y seguir →", "Confirmar e seguir →"],
+    "entry.doesNotFit": [
+      "That spot doesn't fit — try a different wall, or nudge it clear of what's already there.",
+      "No cabe en ese lugar: pruebe otra pared o muévala para que no choque con lo que ya está.",
+      "Não cabe nesse lugar: tente outra parede ou mova para longe do que já está lá.",
+    ],
+    "entry.wallSelected": [
+      "Wall selected — nudge it into place and confirm below.",
+      "Pared elegida: ajuste la posición y confirme abajo.",
+      "Parede escolhida: ajuste a posição e confirme abaixo.",
+    ],
+
+    // ---------- estimate card ----------
+    "card.eyebrow": ["Your Estimate", "Su estimación", "Sua estimativa"],
+    "card.title": ["Bathroom Remodel", "Remodelación de baño", "Reforma de banheiro"],
+    "card.lede": [
+      "Rough, non-binding labor estimate — details below.",
+      "Estimación aproximada y no vinculante de la mano de obra. Detalles abajo.",
+      "Estimativa aproximada e sem compromisso da mão de obra. Detalhes abaixo.",
+    ],
+    "card.ledeMaterials": [
+      "Rough, non-binding estimate — labor plus real current prices for the exact products you picked.",
+      "Estimación aproximada y no vinculante: mano de obra más los precios reales actuales de los productos exactos que eligió.",
+      "Estimativa aproximada e sem compromisso: mão de obra mais os preços reais atuais dos produtos exatos que você escolheu.",
+    ],
+    "card.noWork": [
+      "No priced work selected",
+      "No eligió ningún trabajo con precio",
+      "Nenhum serviço com preço escolhido",
+    ],
+    "card.laborSubtotal": ["Labor Subtotal", "Subtotal de mano de obra", "Subtotal de mão de obra"],
+    "card.materialsSubtotal": ["Materials Subtotal", "Subtotal de materiales", "Subtotal de materiais"],
+    "card.total": ["Estimated Labor Total", "Total estimado de mano de obra", "Total estimado de mão de obra"],
+    "card.totalBeforePlumbing": [
+      "Estimated Labor Total, before plumbing",
+      "Total estimado de mano de obra, sin la plomería",
+      "Total estimado de mão de obra, sem o encanamento",
+    ],
+    "card.totalMaterials": [
+      "Estimated Total (Labor + Materials)",
+      "Total estimado (mano de obra + materiales)",
+      "Total estimado (mão de obra + materiais)",
+    ],
+    "card.totalMaterialsBeforePlumbing": [
+      "Estimated Total (Labor + Materials), before plumbing",
+      "Total estimado (mano de obra + materiales), sin la plomería",
+      "Total estimado (mão de obra + materiais), sem o encanamento",
+    ],
+    "card.plumbingTotalNote": [
+      "This is not the full cost of your job: plumbing work for the {n} toilet/sink/shower/bathtub item(s) you listed will be added on top of this total.",
+      "Este no es el costo total de su trabajo: la plomería de las {n} pieza(s) que indicó (inodoro, lavabo, ducha o bañera) se sumará a este total.",
+      "Este não é o custo total do seu serviço: o encanamento das {n} peça(s) que você informou (vaso, pia, chuveiro ou banheira) será somado a este total.",
+    ],
+    "card.excluded.listedPlumbing": [
+      "Plumbing for the {n} toilet/sink/shower/bathtub item(s) you listed",
+      "Plomería de las {n} pieza(s) indicadas (inodoro, lavabo, ducha o bañera)",
+      "Encanamento das {n} peça(s) informadas (vaso, pia, chuveiro ou banheira)",
+    ],
+    "card.excluded.trades": [
+      "Plumbing & electrical work",
+      "Trabajo de plomería y electricidad",
+      "Serviço de encanamento e elétrica",
+    ],
+    "card.excluded.otherTrades": [
+      "Any other plumbing & electrical work",
+      "Cualquier otro trabajo de plomería y electricidad",
+      "Qualquer outro serviço de encanamento e elétrica",
+    ],
+    "card.excluded.permits": [
+      "Permits & any applicable taxes",
+      "Permisos e impuestos aplicables",
+      "Alvarás e impostos aplicáveis",
+    ],
+    "card.excluded.materialsPermits": [
+      "Materials, permits & any applicable taxes",
+      "Materiales, permisos e impuestos aplicables",
+      "Materiais, alvarás e impostos aplicáveis",
+    ],
+    "card.excluded.extra": ["Extra — not included", "Aparte, no incluido", "À parte, não incluído"],
+    "card.excluded.notIncluded": ["Not included", "No incluido", "Não incluído"],
+    "card.plumbingNote": [
+      "Plumbing and electrical work is not included. Toilets, sinks, showers, and bathtubs also need plumbing work, so if you listed any, or your job needs other plumbing or electrical work, expect it to add to the cost. We'll tell you how it will be handled and priced before any work is agreed.",
+      "No incluye trabajo de plomería ni electricidad. Los inodoros, lavabos, duchas y bañeras también requieren plomería, así que si indicó alguno, o su trabajo necesita otra plomería o electricidad, cuente con que aumentará el costo. Le diremos cómo se hará y cómo se cobrará antes de acordar cualquier trabajo.",
+      "Não inclui serviço de encanamento nem de elétrica. Vasos, pias, chuveiros e banheiras também precisam de encanamento, então se você informou algum, ou se o seu serviço precisa de outro encanamento ou elétrica, conte com um custo maior. Diremos como será feito e cobrado antes de combinar qualquer serviço.",
+    ],
+    "card.materialsNote": [
+      "Materials shown are priced at current Home Depot rates as of when they were last refreshed — confirm before buying. Also not included: permits and any applicable taxes.",
+      "Los materiales tienen los precios de Home Depot de la última actualización: confírmelos antes de comprar. Tampoco incluye permisos ni impuestos aplicables.",
+      "Os materiais estão com os preços da Home Depot da última atualização: confirme antes de comprar. Também não inclui alvarás nem impostos aplicáveis.",
+    ],
+    "card.alsoNotIncluded": [
+      "Also not included: materials, permits, and any applicable taxes.",
+      "Tampoco incluye materiales, permisos ni impuestos aplicables.",
+      "Também não inclui materiais, alvarás nem impostos aplicáveis.",
+    ],
+    "card.disclaimer": [
+      "This is an automated, non-binding estimate of labor only, based only on the measurements, counts, and choices you entered and the assumptions listed with it. It is not a quote, offer, or contract. It excludes plumbing and electrical work (including the plumbing any toilets, sinks, showers, or bathtubs need), materials, permits, and any applicable taxes, which will add to the cost where your job needs them. Prices are current as of the date generated and may change. Your actual price is set only in a written agreement after we review your project in person.",
+      "Esta es una estimación automática y no vinculante solo de la mano de obra, basada únicamente en las medidas, cantidades y opciones que usted indicó y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. No incluye trabajo de plomería ni electricidad (incluida la plomería que necesiten inodoros, lavabos, duchas o bañeras), materiales, permisos ni impuestos aplicables, que aumentarán el costo si su trabajo los necesita. Los precios son los vigentes en la fecha en que se generó y pueden cambiar. Su precio real se fija solo en un acuerdo por escrito, después de revisar su proyecto en persona.",
+      "Esta é uma estimativa automática e sem compromisso somente da mão de obra, baseada apenas nas medidas, quantidades e escolhas que você informou e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Não inclui serviço de encanamento nem de elétrica (incluindo o encanamento de vasos, pias, chuveiros ou banheiras), materiais, alvarás nem impostos aplicáveis, que aumentarão o custo se o seu serviço precisar deles. Os preços são os vigentes na data em que foi gerada e podem mudar. Seu preço real só é definido em um acordo por escrito, depois que avaliarmos o seu projeto pessoalmente.",
+    ],
+    "card.disclaimerMaterials": [
+      "This is an automated, non-binding estimate combining labor at our current rates with current Home Depot prices for the exact products you picked, based only on what you entered and the assumptions listed with it. It is not a quote, offer, or contract. It excludes plumbing and electrical installation work (the labor to hook up any toilets, sinks, showers, or bathtubs listed), permits, and any applicable taxes, which will add to the cost where your job needs them. Product prices were current as of when they were last refreshed and may have changed since — confirm before buying. Your actual price is set only in a written agreement after we review your project in person.",
+      "Esta es una estimación automática y no vinculante que combina la mano de obra según nuestras tarifas actuales con los precios actuales de Home Depot de los productos exactos que eligió, basada únicamente en lo que usted indicó y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. No incluye trabajo de instalación de plomería ni electricidad (la mano de obra para conectar los inodoros, lavabos, duchas o bañeras indicados), permisos ni impuestos aplicables, que aumentarán el costo si su trabajo los necesita. Los precios de los productos eran los vigentes en su última actualización y pueden haber cambiado: confírmelos antes de comprar. Su precio real se fija solo en un acuerdo por escrito, después de revisar su proyecto en persona.",
+      "Esta é uma estimativa automática e sem compromisso que combina a mão de obra pelos nossos valores atuais com os preços atuais da Home Depot dos produtos exatos que você escolheu, baseada apenas no que você informou e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Não inclui serviço de instalação de encanamento nem de elétrica (a mão de obra para ligar os vasos, pias, chuveiros ou banheiras informados), alvarás nem impostos aplicáveis, que aumentarão o custo se o seu serviço precisar deles. Os preços dos produtos eram os vigentes na última atualização e podem ter mudado: confirme antes de comprar. Seu preço real só é definido em um acordo por escrito, depois que avaliarmos o seu projeto pessoalmente.",
+    ],
+    "card.assumptions": ["What this estimate assumes", "Qué supone esta estimación", "O que esta estimativa considera"],
+    "card.whereToBuy": ["Where to buy the materials", "Dónde comprar los materiales", "Onde comprar os materiais"],
+    "card.exportPdf": ["Export as PDF", "Descargar en PDF", "Baixar em PDF"],
+    "card.contactCta": ["Contact Us About This →", "Contáctenos sobre esto →", "Fale conosco sobre isto →"],
+    "card.business": ["{business}", "{business}", "{business}"],
+    "card.businessNamed": ["{business} ({name})", "{business} ({name})", "{business} ({name})"],
+    "summary.materials": [
+      "Materials picked (real current Home Depot prices):",
+      "Materiales elegidos (precios reales actuales de Home Depot):",
+      "Materiais escolhidos (preços reais atuais da Home Depot):",
+    ],
+    "summary.materialsSubtotal": [
+      "- Materials subtotal: {total}",
+      "- Subtotal de materiales: {total}",
+      "- Subtotal de materiais: {total}",
+    ],
+    "summary.grandTotal": [
+      "- Labor + materials total: {total}",
+      "- Total de mano de obra + materiales: {total}",
+      "- Total de mão de obra + materiais: {total}",
+    ],
+    "pdf.preparing": ["Preparing PDF…", "Preparando el PDF…", "Preparando o PDF…"],
+    "pdf.retry": ["Retry PDF", "Reintentar PDF", "Tentar PDF de novo"],
+    "pdf.failed": [
+      "Sorry, the PDF couldn't be prepared. Check your connection and press Retry PDF.",
+      "Lo sentimos, no se pudo preparar el PDF. Revise su conexión y presione Reintentar PDF.",
+      "Desculpe, não foi possível preparar o PDF. Verifique sua conexão e toque em Tentar PDF de novo.",
+    ],
+    "pdf.title": [
+      "Bathroom Remodel — Labor Estimate",
+      "Remodelación de baño: estimación de mano de obra",
+      "Reforma de banheiro: estimativa de mão de obra",
+    ],
+    "pdf.titleMaterials": [
+      "Bathroom Remodel — Estimate (Labor + Materials)",
+      "Remodelación de baño: estimación (mano de obra + materiales)",
+      "Reforma de banheiro: estimativa (mão de obra + materiais)",
+    ],
+
+    // ---------- materials picks ----------
+    "materials.zipIntro": [
+      "Now let's pick the exact product for each item, at real current prices — starting with your ZIP code. (Prices can vary a little by area.)",
+      "Ahora elijamos el producto exacto para cada cosa, con precios reales actuales, empezando por su código postal (ZIP). (Los precios pueden variar un poco según la zona.)",
+      "Agora vamos escolher o produto exato de cada item, com preços reais atuais, começando pelo seu CEP americano (ZIP code). (Os preços podem variar um pouco conforme a região.)",
+    ],
+    "materials.zipLabel": ["ZIP code", "Código postal (ZIP)", "CEP (ZIP code)"],
+    "materials.zipError": [
+      "Enter a 5-digit ZIP code.",
+      "Escriba un código postal de 5 dígitos.",
+      "Informe um ZIP code de 5 dígitos.",
+    ],
+    "materials.which": [
+      "Which {label} would you like? ({qty} {unit})",
+      "Elija el producto para: {label} ({qty} {unit})",
+      "Escolha o produto para: {label} ({qty} {unit})",
+    ],
+    "products.which": [
+      "Next up: {fixture}. Pick its products below; the 3D view zooms in and shows each one as you pick it.",
+      "Sigue: {fixture}. Elija sus productos abajo; la vista 3D se acerca y muestra cada uno a medida que lo elige.",
+      "Próximo: {fixture}. Escolha os produtos abaixo; a visualização 3D se aproxima e mostra cada um conforme você escolhe.",
+    ],
+    "products.checking": [
+      "Checking live Home Depot prices near {zip}. This can take up to a minute.",
+      "Consultando los precios actuales de Home Depot cerca de {zip}. Puede tardar hasta un minuto.",
+      "Consultando os preços atuais da Home Depot perto de {zip}. Pode levar até um minuto.",
+    ],
+    "products.retailer": ["Home Depot, {store} store", "Home Depot, tienda {store}", "Home Depot, loja {store}"],
+    "products.unpriced": [
+      "No live Home Depot price was found for these, so they aren't in the total: {items}.",
+      "No se encontró un precio actual de Home Depot para estos productos, así que no están en el total: {items}.",
+      "Não encontramos um preço atual da Home Depot para estes produtos, então eles não estão no total: {items}.",
+    ],
+    "products.vanityCabinet": [
+      "The vanity cabinet itself isn't a Kohler product, so it isn't priced here; only its bowl or top and faucet are.",
+      "El mueble del lavabo no es un producto Kohler, así que no tiene precio aquí; solo el lavabo o la cubierta y la llave.",
+      "O gabinete em si não é um produto Kohler, então não tem preço aqui; só a cuba ou o tampo e a torneira.",
+    ],
+    "products.wiringNotIncluded": [
+      "{items}: the wiring by an electrician isn't in this estimate.",
+      "{items}: la instalación eléctrica por un electricista no está incluida en esta estimación.",
+      "{items}: a instalação elétrica por um eletricista não está incluída nesta estimativa.",
+    ],
+    "products.valveNotIncluded": [
+      "The shower and tub valve prices are for the visible trim only; the valve inside the wall is extra.",
+      "Los precios de las válvulas de la ducha y la bañera son solo del acabado visible; la válvula dentro de la pared es aparte.",
+      "Os preços dos registros do chuveiro e da banheira são só do acabamento visível; a válvula dentro da parede é à parte.",
+    ],
+    "products.roomChanged": [
+      "You've changed the products in the room since this estimate, so it no longer matches.",
+      "Cambió los productos de la habitación después de esta estimación, así que ya no coincide.",
+      "Você mudou os produtos do banheiro depois desta estimativa, então ela não corresponde mais.",
+    ],
+    "products.reprice": ["Update my estimate →", "Actualizar mi estimación →", "Atualizar minha estimativa →"],
+    "materials.priceAt": ["{price} at {store}", "{price} en {store}", "{price} na {store}"],
+    "materials.pickOne": [
+      "Pick one option to continue.",
+      "Elija una opción para continuar.",
+      "Escolha uma opção para continuar.",
+    ],
+    "materials.cheaperThan": [
+      "Cheaper than {others} for the same product.",
+      "Más barato que {others} por el mismo producto.",
+      "Mais barato que {others} pelo mesmo produto.",
+    ],
+
+    // ---------- Get a Quote form ----------
+    "form.error.name": ["Enter your name.", "Escriba su nombre.", "Informe seu nome."],
+    "form.error.phone": [
+      "Enter a phone number we can call you on.",
+      "Escriba un número de teléfono al que podamos llamarle.",
+      "Informe um telefone para podermos ligar para você.",
+    ],
+    "form.error.phoneInvalid": [
+      "Enter a valid phone number, e.g. (385) 356-8733.",
+      "Escriba un número de teléfono válido, por ejemplo (385) 356-8733.",
+      "Informe um telefone válido, por exemplo (385) 356-8733.",
+    ],
+    "form.error.email": ["Enter your email address.", "Escriba su correo electrónico.", "Informe seu e-mail."],
+    "form.error.emailInvalid": [
+      "Enter a valid email address, e.g. name@example.com.",
+      "Escriba un correo electrónico válido, por ejemplo nombre@ejemplo.com.",
+      "Informe um e-mail válido, por exemplo nome@exemplo.com.",
+    ],
+    "form.subject": [
+      "Bathroom quote request from {name}",
+      "Solicitud de cotización de baño de {name}",
+      "Pedido de orçamento de banheiro de {name}",
+    ],
+    "form.body.name": ["Name", "Nombre", "Nome"],
+    "form.body.phone": ["Phone", "Teléfono", "Telefone"],
+    "form.body.email": ["Email", "Correo electrónico", "E-mail"],
+    "form.body.service": ["Service", "Servicio", "Serviço"],
+    "form.body.details": ["Project details", "Detalles del proyecto", "Detalhes do projeto"],
+    "form.sending": ["Sending…", "Enviando…", "Enviando…"],
+    "form.status.sending": ["Sending your request…", "Enviando su solicitud…", "Enviando o seu pedido…"],
+    "form.status.mailto": [
+      "Your email app should now open with your request filled in. [b:Please press Send in your email app] — we don't receive anything until you do. If nothing opened, [again:open it again], email us at [email] or call [phone].",
+      "Ahora debería abrirse su aplicación de correo con su solicitud ya escrita. [b:Presione Enviar en su aplicación de correo]: no recibimos nada hasta que lo haga. Si no se abrió nada, [again:vuelva a abrirla], escríbanos a [email] o llame al [phone].",
+      "Agora o seu aplicativo de e-mail deve abrir com o pedido já preenchido. [b:Toque em Enviar no seu aplicativo de e-mail]: não recebemos nada até você fazer isso. Se nada abriu, [again:abra de novo], escreva para [email] ou ligue para [phone].",
+    ],
+    "form.status.sent": [
+      "[b:Request sent.] Thank you — we've received your request and will get back to you as soon as we can. If it's urgent, call [phone].",
+      "[b:Solicitud enviada.] Gracias: recibimos su solicitud y le responderemos lo antes posible. Si es urgente, llame al [phone].",
+      "[b:Pedido enviado.] Obrigado! Recebemos o seu pedido e responderemos o quanto antes. Se for urgente, ligue para [phone].",
+    ],
+    "form.status.failed": [
+      "[b:Sorry, your request wasn't sent.] Nothing you entered has been lost — please try again, or call us at [phone] or email [email].",
+      "[b:Lo sentimos, su solicitud no se envió.] No se perdió nada de lo que escribió: inténtelo de nuevo, o llámenos al [phone] o escriba a [email].",
+      "[b:Desculpe, o seu pedido não foi enviado.] Nada do que você digitou foi perdido: tente de novo, ou ligue para [phone] ou escreva para [email].",
+    ],
+
+    // ---------- account and sign-up pages (js/account.js) ----------
+    "acct.status.none": [
+      "You don't have a plan yet. Pick one to start your free trial.",
+      "Aún no tiene un plan. Elija uno para empezar su prueba gratis.",
+      "Você ainda não tem um plano. Escolha um para começar o teste grátis.",
+    ],
+    "acct.status.trialing": [
+      "Free trial until {date}. Your designer is live.",
+      "Prueba gratis hasta el {date}. Su diseñador está activo.",
+      "Teste grátis até {date}. O seu projetista está no ar.",
+    ],
+    "acct.status.active": [
+      "Active. Renews on {date}. Your designer is live.",
+      "Activo. Se renueva el {date}. Su diseñador está activo.",
+      "Ativo. Renova em {date}. O seu projetista está no ar.",
+    ],
+    "acct.status.ending": [
+      "Cancelled. Your designer stays live until {date}.",
+      "Cancelado. Su diseñador sigue activo hasta el {date}.",
+      "Cancelado. O seu projetista fica no ar até {date}.",
+    ],
+    "acct.status.past_due": [
+      "Your last payment didn't go through. Update your card to keep your designer live.",
+      "Su último pago no se procesó. Actualice su tarjeta para mantener activo su diseñador.",
+      "O seu último pagamento não foi aprovado. Atualize o cartão para manter o projetista no ar.",
+    ],
+    "acct.status.canceled": [
+      "Your plan has ended. Start a new one to turn your designer back on.",
+      "Su plan terminó. Empiece uno nuevo para volver a activar su diseñador.",
+      "O seu plano terminou. Comece um novo para colocar o projetista de volta no ar.",
+    ],
+    "acct.status.other": [
+      "Plan status: {status}. Your designer is off until the plan is active.",
+      "Estado del plan: {status}. Su diseñador está apagado hasta que el plan esté activo.",
+      "Situação do plano: {status}. O seu projetista fica fora do ar até o plano estar ativo.",
+    ],
+    "acct.checkout.success": [
+      "Thanks! Your plan will show as active in a moment.",
+      "¡Gracias! Su plan aparecerá como activo en un momento.",
+      "Obrigado! O seu plano vai aparecer como ativo em instantes.",
+    ],
+    "acct.checkout.cancelled": [
+      "Checkout was cancelled. Nothing was charged.",
+      "Se canceló el pago. No se cobró nada.",
+      "O pagamento foi cancelado. Nada foi cobrado.",
+    ],
+    "acct.paymentsOff": [
+      "Payments aren't switched on yet. Please check back soon.",
+      "Los pagos aún no están activados. Vuelva pronto.",
+      "Os pagamentos ainda não estão ativados. Volte em breve.",
+    ],
+    "acct.error": [
+      "Something went wrong. Please try again.",
+      "Algo salió mal. Inténtelo de nuevo.",
+      "Algo deu errado. Tente de novo.",
+    ],
+    "acct.saved": ["Saved.", "Guardado.", "Salvo."],
+    "acct.slugTaken": [
+      "That web address is taken. Try another.",
+      "Esa dirección web ya está en uso. Pruebe otra.",
+      "Esse endereço já está em uso. Tente outro.",
+    ],
+    "acct.slugInvalid": [
+      "Use 3 to 64 lowercase letters, numbers and dashes.",
+      "Use de 3 a 64 letras minúsculas, números y guiones.",
+      "Use de 3 a 64 letras minúsculas, números e hifens.",
+    ],
+    "acct.nameRequired": [
+      "Enter your business name.",
+      "Escriba el nombre de su empresa.",
+      "Informe o nome da sua empresa.",
+    ],
+    "acct.saveBusinessFirst": [
+      "Save your business details first.",
+      "Primero guarde los datos de su empresa.",
+      "Primeiro salve os dados da sua empresa.",
+    ],
+    "acct.priceInvalid": [
+      "Prices must be numbers from 0 to 100,000.",
+      "Los precios deben ser números de 0 a 100.000.",
+      "Os preços devem ser números de 0 a 100.000.",
+    ],
+    "acct.copied": ["Copied.", "Copiado.", "Copiado."],
+    "acct.iframeTitle": ["Bathroom designer", "Diseñador de baños", "Projetista de banheiros"],
+    "acct.lead.work": ["Work", "Trabajo", "Serviço"],
+    "acct.lead.language": ["Language", "Idioma", "Idioma"],
+    "acct.lead.delete": ["Delete", "Eliminar", "Excluir"],
+    "acct.lead.deleteConfirm": [
+      "Delete this request? This can't be undone.",
+      "¿Eliminar esta solicitud? No se puede deshacer.",
+      "Excluir este pedido? Não dá para desfazer.",
+    ],
+    "auth.checkEmail": [
+      "Check your email to confirm your account, then log in.",
+      "Revise su correo para confirmar su cuenta y luego inicie sesión.",
+      "Confira o seu e-mail para confirmar a conta e depois entre.",
+    ],
+    "auth.exists": [
+      "There's already an account for that email. Log in instead.",
+      "Ya hay una cuenta con ese correo. Inicie sesión.",
+      "Já existe uma conta com esse e-mail. Entre na sua conta.",
+    ],
+    "auth.badLogin": [
+      "That email and password don't match.",
+      "El correo y la contraseña no coinciden.",
+      "O e-mail e a senha não conferem.",
+    ],
+    "auth.resetSent": [
+      "If there's an account for that email, a reset link is on its way.",
+      "Si hay una cuenta con ese correo, le enviamos un enlace para restablecer la contraseña.",
+      "Se houver uma conta com esse e-mail, um link para redefinir a senha está a caminho.",
+    ],
+    "auth.passwordShort": ["Use at least 8 characters.", "Use al menos 8 caracteres.", "Use pelo menos 8 caracteres."],
+    "auth.emailInvalid": [
+      "Enter a valid email address.",
+      "Escriba un correo electrónico válido.",
+      "Informe um e-mail válido.",
+    ],
+    "auth.passwordSaved": ["Password saved.", "Contraseña guardada.", "Senha salva."],
+    "auth.signedInAs": ["Signed in as {email}", "Sesión iniciada como {email}", "Conectado como {email}"],
+
+    // ---------- 3D room (js/bathroom-room-3d.js) ----------
+    "room3d.walkIn": ["Walk in", "Entrar", "Entrar"],
+    "room3d.overview": ["Overview", "Vista general", "Visão geral"],
+    "room3d.entry": ["Entry {n}", "Entrada {n}", "Entrada {n}"],
+    "room3d.canvasLabel": [
+      "3D preview of your bathroom. Walls and products can also be chosen with the buttons in the chat.",
+      "Vista previa 3D de su baño. Las paredes y los productos también se pueden elegir con los botones del chat.",
+      "Prévia em 3D do seu banheiro. As paredes e os produtos também podem ser escolhidos com os botões do chat.",
+    ],
+    "room3d.dragHint": [
+      "Drag a toilet, tub, shower, vanity, sink or cabinet to move it. The outline turns red where it won't fit.",
+      "Arrastre un inodoro, bañera, ducha, mueble de baño, lavabo o gabinete para moverlo. El contorno se pone rojo donde no cabe.",
+      "Arraste um vaso, banheira, box, gabinete, pia ou armário para movê-lo. O contorno fica vermelho onde ele não cabe.",
+    ],
+    "room3d.tooBig": ["Too big for this room", "Demasiado grande para este baño", "Grande demais para este banheiro"],
+    "room3d.toilet.A": ["Skirted two-piece", "Dos piezas con faldón", "Duas peças com saia"],
+    "room3d.toilet.B": ["One-piece seamless", "Una pieza, sin uniones", "Peça única, sem emendas"],
+    "room3d.slot.tub": ["Tub", "Bañera", "Banheira"],
+    "room3d.slot.tubFaucet": ["Tub faucet", "Llave de la bañera", "Torneira da banheira"],
+    "room3d.slot.vanitySink": ["Vanity sink", "Lavabo del mueble", "Cuba do gabinete"],
+    "room3d.slot.vanityFaucet": ["Sink faucet", "Llave del lavabo", "Torneira da pia"],
+    "room3d.slot.showerValve": ["Shower valve", "Válvula de la ducha", "Registro do chuveiro"],
+    "room3d.slot.toilet": ["Toilet", "Inodoro", "Vaso sanitário"],
+    "room3d.slot.paperHolder": ["Paper holder", "Portarrollos", "Porta-papel"],
+    "room3d.slot.towelBar": ["Towel bar", "Toallero", "Toalheiro"],
+    "room3d.slot.exhaustFan": ["Exhaust fan", "Extractor", "Exaustor"],
+    "room3d.slot.tubValve": ["Tub valve", "Válvula de la bañera", "Registro da banheira"],
+    "room3d.slot.tubGrabBar": ["Tub grab bar", "Barra de apoyo de la bañera", "Barra de apoio da banheira"],
+    "room3d.slot.sink": ["Pedestal/wall sink", "Lavabo de pedestal o de pared", "Pia de coluna ou de parede"],
+    "room3d.slot.sinkFaucet": ["Pedestal/wall faucet", "Llave del lavabo de pedestal", "Torneira da pia de coluna"],
+    "room3d.slot.showerBase": ["Shower base", "Base de ducha", "Base do box"],
+    "room3d.slot.showerWalls": ["Shower walls", "Paredes de la ducha", "Paredes do box"],
+    "room3d.slot.showerDoor": ["Shower door", "Puerta de la ducha", "Porta do box"],
+    "room3d.slot.showerHead": ["Showerhead", "Regadera", "Chuveiro"],
+    "room3d.slot.showerGrabBar": ["Shower grab bar", "Barra de apoyo de la ducha", "Barra de apoio do box"],
+    "room3d.slot.showerShelf": ["Shower shelf", "Repisa de la ducha", "Prateleira do box"],
+    "room3d.slot.mirror": ["Mirror", "Espejo", "Espelho"],
+    "room3d.slot.mirrorLarge": ["Large mirror", "Espejo grande", "Espelho grande"],
+    "room3d.slot.robeHook": ["Robe hook", "Gancho para bata", "Gancho para roupão"],
+    "room3d.products": ["Kohler products", "Productos Kohler", "Produtos Kohler"],
+    "room3d.unavailable": [
+      "The 3D preview can't run in this browser, so it's hidden. Your estimate works the same without it.",
+      "La vista previa 3D no funciona en este navegador, así que está oculta. Su estimación funciona igual sin ella.",
+      "A prévia em 3D não funciona neste navegador, então ela está oculta. A sua estimativa funciona do mesmo jeito sem ela.",
+    ],
+    "room3d.modelFailed": [
+      "Couldn't load the 3D model for {list}, so a stand-in is showing. It's still in your estimate. Change anything in the room to try again.",
+      "No se pudo cargar el modelo 3D de {list}, así que se muestra uno genérico. Sigue incluido en su estimación. Cambie cualquier cosa en el baño para intentarlo de nuevo.",
+      "Não foi possível carregar o modelo 3D de {list}, então um genérico está aparecendo. Ele continua na sua estimativa. Mude qualquer coisa no banheiro para tentar de novo.",
+    ],
+    "room3d.tight": ["Fits, but tight: {list}.", "Cabe, pero justo: {list}.", "Cabe, mas fica apertado: {list}."],
+    "room3d.tightSide": [
+      "{fixture}, {n} in. beside it (18 in. recommended)",
+      "{fixture}, {n} pulg. al costado (se recomiendan 18 pulg.)",
+      "{fixture}, {n} pol. ao lado (o recomendado são 18 pol.)",
+    ],
+    "room3d.tightFront": [
+      "{fixture}, {n} in. clear in front (30 in. recommended)",
+      "{fixture}, {n} pulg. libres al frente (se recomiendan 30 pulg.)",
+      "{fixture}, {n} pol. livres na frente (o recomendado são 30 pol.)",
+    ],
+    "room3d.group.toilet": ["Toilet", "Inodoro", "Vaso sanitário"],
+    "room3d.group.tub": ["Tub", "Bañera", "Banheira"],
+    "room3d.group.vanity": ["Vanity", "Mueble de baño", "Gabinete"],
+    "room3d.group.sink": ["Sink", "Lavabo", "Pia"],
+    "room3d.group.shower": ["Shower", "Ducha", "Box"],
+    "room3d.group.mirror": ["Mirrors", "Espejos", "Espelhos"],
+    "room3d.group.door": ["Door", "Puerta", "Porta"],
+    "room3d.tooLong": ["Too long for this shower", "Demasiado larga para esta ducha", "Comprida demais para este box"],
+    "room3d.noFit": ["Not made for this base", "No es para esta base", "Não é para esta base"],
+    "room3d.needsDeck": [
+      "Needs a drop-in tub's deck",
+      "Necesita la cubierta de una bañera empotrada",
+      "Precisa do deck de uma banheira embutida",
+    ],
+    "room3d.needsFreestanding": [
+      "For freestanding tubs only",
+      "Solo para bañeras independientes",
+      "Só para banheiras de chão",
+    ],
+    "room3d.faucetHasHandles": [
+      "The tub faucet has its own handles",
+      "La llave de la bañera ya tiene sus manijas",
+      "A torneira da banheira já tem seus registros",
+    ],
+    "room3d.ceilingTooLow": [
+      "Too tall for this ceiling",
+      "Demasiado alto para este techo",
+      "Alto demais para este teto",
+    ],
+    "room3d.wrongHoles": [
+      "Doesn't fit this sink's faucet holes",
+      "No coincide con los orificios de este lavabo",
+      "Não serve nos furos desta pia",
+    ],
+    "room3d.option.freestanding": [
+      "Stargaze 60 in. freestanding",
+      "Stargaze 60 pulg. independiente",
+      "Stargaze 60 pol. independente",
+    ],
+    "room3d.option.K-1184-0": [
+      "Devonshire 60 in. alcove",
+      "Devonshire 60 pulg. empotrada",
+      "Devonshire 60 pol. embutida",
+    ],
+    "room3d.option.K-1163-0": ["Sunward 60 in. oval", "Sunward 60 pulg. ovalada", "Sunward 60 pol. oval"],
+    "room3d.option.K-1165-0": ["Sunward 72 in. oval", "Sunward 72 pulg. ovalada", "Sunward 72 pol. oval"],
+    "room3d.option.K-14426-CP": ["Purist wall spout", "Purist, caño de pared", "Purist, bica de parede"],
+    "room3d.option.K-73081-4-CP": [
+      "Composed deck-mount filler",
+      "Composed, llenador sobre cubierta",
+      "Composed, misturador de borda",
+    ],
+    "room3d.option.K-2874-0": ["Canvas white", "Canvas blanco", "Canvas branca"],
+    "room3d.option.K-2608-SU-NA": ["Bachata stainless", "Bachata acero inoxidable", "Bachata inox"],
+    "room3d.option.K-14410-4-CP": ["Purist widespread", "Purist, de 3 orificios", "Purist, 3 furos"],
+    "room3d.option.K-77974-9-CP": ["Components handles only", "Components, solo manijas", "Components, só manoplas"],
+    "room3d.option.K-T73117-4-CP": ["Composed", "Composed", "Composed"],
+    "room3d.option.K-T78027-9-CP": ["Components thermostatic", "Components termostática", "Components termostático"],
+    "room3d.option.K-T72770-4-CP": [
+      "Artifacts transfer valve",
+      "Artifacts, válvula desviadora",
+      "Artifacts, desviador",
+    ],
+    "room3d.option.none": ["None", "Ninguno", "Nenhum"],
+    "room3d.option.standard-toilet": ["Standard", "Estándar", "Padrão"],
+    "room3d.option.K-31648-0": [
+      "Cimarron two-piece elongated",
+      "Cimarron de dos piezas, alargado",
+      "Cimarron duas peças, alongado",
+    ],
+    "room3d.option.K-31626-DRY-0": [
+      "Cimarron two-piece, DryLock",
+      "Cimarron de dos piezas, DryLock",
+      "Cimarron duas peças, DryLock",
+    ],
+    "room3d.option.K-31641-0": [
+      "Cimarron two-piece round-front",
+      "Cimarron de dos piezas, frente redondo",
+      "Cimarron duas peças, frente redonda",
+    ],
+    "room3d.option.K-3619-0": ["Cimarron one-piece", "Cimarron de una pieza", "Cimarron peça única"],
+    "room3d.option.K-3981-0": [
+      "Tresham one-piece compact",
+      "Tresham de una pieza, compacto",
+      "Tresham peça única, compacto",
+    ],
+    "room3d.option.K-3940-0": [
+      "Kathryn one-piece compact",
+      "Kathryn de una pieza, compacto",
+      "Kathryn peça única, compacto",
+    ],
+    "room3d.option.K-14377-CP": [
+      "Purist pivoting holder",
+      "Purist, portarrollos pivotante",
+      "Purist, porta-papel articulado",
+    ],
+    "room3d.option.K-13504-CP": [
+      "Kelston pivoting holder",
+      "Kelston, portarrollos pivotante",
+      "Kelston, porta-papel articulado",
+    ],
+    "room3d.option.K-73147-CP": [
+      "Composed pivoting holder",
+      "Composed, portarrollos pivotante",
+      "Composed, porta-papel articulado",
+    ],
+    "room3d.option.K-78382-CP": [
+      "Components pivoting holder",
+      "Components, portarrollos pivotante",
+      "Components, porta-papel articulado",
+    ],
+    "room3d.option.K-14436-CP": [
+      "Purist 24 in. towel bar",
+      "Purist, toallero de barra de 24 pulg.",
+      "Purist, toalheiro de barra de 24 pol.",
+    ],
+    "room3d.option.K-14435-CP": [
+      "Purist 18 in. towel bar",
+      "Purist, toallero de barra de 18 pulg.",
+      "Purist, toalheiro de barra de 18 pol.",
+    ],
+    "room3d.option.K-78373-CP": [
+      "Components 24 in. towel bar",
+      "Components, toallero de barra de 24 pulg.",
+      "Components, toalheiro de barra de 24 pol.",
+    ],
+    "room3d.option.K-14441-CP": ["Purist towel ring", "Purist, toallero de aro", "Purist, toalheiro de argola"],
+    "room3d.option.K-34454-NA": ["Atmo exhaust fan", "Atmo, extractor", "Atmo, exaustor"],
+    "room3d.option.K-8332-0": [
+      "Memoirs 60 in. freestanding",
+      "Memoirs 60 pulg. independiente",
+      "Memoirs 60 pol. independente",
+    ],
+    "room3d.option.K-R23217-RA-0": [
+      "Elmbrook 60 in. alcove, right drain",
+      "Elmbrook 60 pulg. empotrada, desagüe derecho",
+      "Elmbrook 60 pol. embutida, ralo à direita",
+    ],
+    "room3d.option.K-R23217-LA-0": [
+      "Elmbrook 60 in. alcove, left drain",
+      "Elmbrook 60 pulg. empotrada, desagüe izquierdo",
+      "Elmbrook 60 pol. embutida, ralo à esquerda",
+    ],
+    "room3d.option.K-1946-RA-0": [
+      "Archer 60 in. alcove, right drain",
+      "Archer 60 pulg. empotrada, desagüe derecho",
+      "Archer 60 pol. embutida, ralo à direita",
+    ],
+    "room3d.option.K-T97328-4-CP": [
+      "Purist floor-mount filler",
+      "Purist, llenador de piso",
+      "Purist, misturador de piso",
+    ],
+    "room3d.option.K-T73087-4-CP": [
+      "Composed floor-mount filler",
+      "Composed, llenador de piso",
+      "Composed, misturador de piso",
+    ],
+    "room3d.option.K-T14501-4-CP": [
+      "Purist with diverter button",
+      "Purist con botón desviador",
+      "Purist com botão desviador",
+    ],
+    "room3d.option.K-TS14423-4-CP": ["Purist lever", "Purist de palanca", "Purist de alavanca"],
+    "room3d.option.K-TS73115-4-CP": ["Composed lever", "Composed de palanca", "Composed de alavanca"],
+    "room3d.option.K-10542-CP": ["Traditional 24 in.", "Traditional 24 pulg.", "Traditional 24 pol."],
+    "room3d.option.K-10544-CP": ["Traditional 36 in.", "Traditional 36 pulg.", "Traditional 36 pol."],
+    "room3d.option.K-11895-BS": ["Purist 36 in. stainless", "Purist 36 pulg. acero inoxidable", "Purist 36 pol. inox"],
+    "room3d.option.K-25161-CP": ["Components 36 in.", "Components 36 pulg.", "Components 36 pol."],
+    "room3d.option.K-2210-G-0": ["Caxton oval undermount", "Caxton ovalado bajo cubierta", "Caxton oval sob o tampo"],
+    "room3d.option.K-7806-0": [
+      "Carillon round drop-in",
+      "Carillon redondo de sobreponer",
+      "Carillon redonda de sobrepor",
+    ],
+    "room3d.option.K-3048-1-0": [
+      "Iron/Impressions 25 in. top",
+      "Iron/Impressions, cubierta de 25 pulg.",
+      "Iron/Impressions, tampo de 25 pol.",
+    ],
+    "room3d.option.K-3049-1-0": [
+      "Iron/Impressions 31 in. top",
+      "Iron/Impressions, cubierta de 31 pulg.",
+      "Iron/Impressions, tampo de 31 pol.",
+    ],
+    "room3d.option.K-3051-1-0": [
+      "Iron/Impressions 37 in. top",
+      "Iron/Impressions, cubierta de 37 pulg.",
+      "Iron/Impressions, tampo de 37 pol.",
+    ],
+    "room3d.option.K-3052-1-0": [
+      "Iron/Impressions 43 in. top",
+      "Iron/Impressions, cubierta de 43 pulg.",
+      "Iron/Impressions, tampo de 43 pol.",
+    ],
+    "room3d.option.K-3053-1-0": [
+      "Iron/Impressions 49 in. top",
+      "Iron/Impressions, cubierta de 49 pulg.",
+      "Iron/Impressions, tampo de 49 pol.",
+    ],
+    "room3d.option.K-14031-BU-96": [
+      "Marrakesh top, Caxton bowl",
+      "Marrakesh, cubierta con lavabo Caxton",
+      "Marrakesh, tampo com cuba Caxton",
+    ],
+    "room3d.option.K-14402-4A-CP": ["Purist single-handle", "Purist monomando", "Purist monocomando"],
+    "room3d.option.K-73167-4-CP": ["Composed single-handle", "Composed monomando", "Composed monocomando"],
+    "room3d.option.K-77958-4A-CP": ["Components single-handle", "Components monomando", "Components monocomando"],
+    "room3d.option.K-35951-4-CP": ["Buckley centerset", "Buckley, 3 orificios a 4 pulg.", "Buckley, 3 furos a 4 pol."],
+    "room3d.option.K-27388-4-CP": [
+      "Simplice centerset",
+      "Simplice, 3 orificios a 4 pulg.",
+      "Simplice, 3 furos a 4 pol.",
+    ],
+    "room3d.option.K-77969-CP": ["Components Row spout", "Components, caño Row", "Components, bica Row"],
+    "room3d.option.K-77967-CP": ["Components Tube spout", "Components, caño Tube", "Components, bica Tube"],
+    "room3d.option.K-2035-4-0": ["Pinoir wall-mount", "Pinoir de pared", "Pinoir de parede"],
+    "room3d.option.K-2032-0": ["Greenwich wall-mount", "Greenwich de pared", "Greenwich de parede"],
+    "room3d.option.K-2362-8-0": ["Cimarron pedestal", "Cimarron de pedestal", "Cimarron de coluna"],
+    "room3d.option.K-5265-4-0": ["Veer pedestal", "Veer de pedestal", "Veer de coluna"],
+    "room3d.option.glass-enclosure": ["Glass enclosure", "Mampara de vidrio", "Box de vidro"],
+    "room3d.option.K-8459-0": [
+      "Rely 60 x 32 in., left drain",
+      "Rely 60 x 32 pulg., desagüe izquierdo",
+      "Rely 60 x 32 pol., ralo à esquerda",
+    ],
+    "room3d.option.K-8458-0": [
+      "Rely 60 x 32 in., right drain",
+      "Rely 60 x 32 pulg., desagüe derecho",
+      "Rely 60 x 32 pol., ralo à direita",
+    ],
+    "room3d.option.K-9163-0": [
+      "Bellwether 60 x 32 in., left drain",
+      "Bellwether 60 x 32 pulg., desagüe izquierdo",
+      "Bellwether 60 x 32 pol., ralo à esquerda",
+    ],
+    "room3d.option.K-9396-0": ["Archer 36 x 36 in.", "Archer 36 x 36 pulg.", "Archer 36 x 36 pol."],
+    "room3d.option.K-8644-0": ["Rely 36 x 34 in.", "Rely 36 x 34 pulg.", "Rely 36 x 34 pol."],
+    "room3d.option.choreograph-72": [
+      "Choreograph 72 in. walls",
+      "Choreograph, paredes de 72 pulg.",
+      "Choreograph, paredes de 72 pol.",
+    ],
+    "room3d.option.choreograph-96": [
+      "Choreograph 96 in. walls",
+      "Choreograph, paredes de 96 pulg.",
+      "Choreograph, paredes de 96 pol.",
+    ],
+    "room3d.option.standard-door": ["Glass door", "Puerta de vidrio", "Porta de vidro"],
+    "room3d.option.K-R706851-8L-BL": ["Elmbrook sliding", "Elmbrook corrediza", "Elmbrook de correr"],
+    "room3d.option.K-707615-8L-BL": ["Elate sliding", "Elate corrediza", "Elate de correr"],
+    "room3d.option.K-706015-L-BL": [
+      "Levity bypass",
+      "Levity de dos hojas corredizas",
+      "Levity de duas folhas de correr",
+    ],
+    "room3d.option.K-27582-10L-BL": ["Composed pivot", "Composed abatible", "Composed pivotante"],
+    "room3d.option.K-27583-10L-BL": ["Components pivot", "Components abatible", "Components pivotante"],
+    "room3d.option.K-965-AK-CP": ["Purist showerhead", "Purist, regadera", "Purist, chuveiro"],
+    "room3d.option.K-24805-CP": ["Parallel showerhead", "Parallel, regadera", "Parallel, chuveiro"],
+    "room3d.option.K-27051-CP": [
+      "Occasion 8 in. rainhead",
+      "Occasion, regadera de lluvia de 8 pulg.",
+      "Occasion, chuveiro de teto de 8 pol.",
+    ],
+    "room3d.option.K-22166-CP": ["Purist handshower", "Purist, regadera de mano", "Purist, ducha manual"],
+    "room3d.option.standard-shelf": ["Standard", "Estándar", "Padrão"],
+    "room3d.option.K-97621": [
+      "Choreograph 7 in. shelf",
+      "Choreograph, repisa de 7 pulg.",
+      "Choreograph, prateleira de 7 pol.",
+    ],
+    "room3d.option.K-97622": [
+      "Choreograph 14 in. shelf",
+      "Choreograph, repisa de 14 pulg.",
+      "Choreograph, prateleira de 14 pol.",
+    ],
+    "room3d.option.K-97623": [
+      "Choreograph 21 in. shelf",
+      "Choreograph, repisa de 21 pulg.",
+      "Choreograph, prateleira de 21 pol.",
+    ],
+    "room3d.option.K-14440-CP": ["Purist glass shelf", "Purist, repisa de vidrio", "Purist, prateleira de vidro"],
+    "room3d.option.K-97630": [
+      "Choreograph storage column",
+      "Choreograph, columna de almacenamiento",
+      "Choreograph, coluna organizadora",
+    ],
+    "room3d.option.standard-mirror": ["Standard", "Estándar", "Padrão"],
+    "room3d.option.K-31364-BLL": ["Essential 24 x 36 in.", "Essential 24 x 36 pulg.", "Essential 24 x 36 pol."],
+    "room3d.option.K-31367-BLL": [
+      "Essential 22 in. round",
+      "Essential redondo de 22 pulg.",
+      "Essential redondo de 22 pol.",
+    ],
+    "room3d.option.K-31368": [
+      "Essential 32 in. round",
+      "Essential redondo de 32 pulg.",
+      "Essential redondo de 32 pol.",
+    ],
+    "room3d.option.K-31365-BLL": ["Essential 30 x 45 in.", "Essential 30 x 45 pulg.", "Essential 30 x 45 pol."],
+    "room3d.option.K-31369-BLL": [
+      "Essential 36 in. round",
+      "Essential redondo de 36 pulg.",
+      "Essential redondo de 36 pol.",
+    ],
+    "room3d.option.K-99573-TL-NA": [
+      "Verdera 40 x 33 in. lighted",
+      "Verdera 40 x 33 pulg. con luz",
+      "Verdera 40 x 33 pol. com iluminação",
+    ],
+    "room3d.option.K-14443-CP": ["Purist robe hook", "Purist, gancho para bata", "Purist, gancho para roupão"],
+    "room3d.option.K-23529-CP": ["Parallel robe hook", "Parallel, gancho para bata", "Parallel, gancho para roupão"],
+
+    // ---------- PDF (js/estimate-pdf.js) ----------
+    "pdf.preparedFor": ["Prepared for: {name}", "Preparado para: {name}", "Preparado para: {name}"],
+    "pdf.generated": ["Generated {date}", "Generado el {date}", "Gerado em {date}"],
+    "pdf.page": ["Page {i} of {n}", "Página {i} de {n}", "Página {i} de {n}"],
+
+    // ---------- settings shown on the page (js/site-config.js) ----------
+    "config.formService": [
+      "our form service provider",
+      "nuestro proveedor de servicio de formularios",
+      "nosso provedor de serviço de formulários",
+    ],
+    "config.period.day": ["{n} day", "{n} día", "{n} dia"],
+    "config.period.days": ["{n} days", "{n} días", "{n} dias"],
+    "config.period.businessDay": ["{n} business day", "{n} día hábil", "{n} dia útil"],
+    "config.period.businessDays": ["{n} business days", "{n} días hábiles", "{n} dias úteis"],
+    "config.period.week": ["{n} week", "{n} semana", "{n} semana"],
+    "config.period.weeks": ["{n} weeks", "{n} semanas", "{n} semanas"],
+    "config.period.month": ["{n} month", "{n} mes", "{n} mês"],
+    "config.period.months": ["{n} months", "{n} meses", "{n} meses"],
+  };
+
+  function detect() {
+    var doc = typeof document !== "undefined" ? document : null;
+    var lang = doc && doc.documentElement ? String(doc.documentElement.lang || "").toLowerCase() : "";
+    if (lang.indexOf("es") === 0) return "es";
+    if (lang.indexOf("pt") === 0) return "pt";
+    return "en";
+  }
+
+  var current = detect();
+
+  function index(lang) {
+    var i = LANGS.indexOf(lang || current);
+    return i === -1 ? 0 : i;
+  }
+
+  // t("key", { name: value }, lang?) — the text in `lang` (default: the
+  // page's language), falling back to English.
+  function t(key, vars, lang) {
+    var entry = S[key];
+    if (!entry) throw new Error("I18n: unknown key " + key);
+    var text = entry[index(lang)];
+    if (text === undefined || text === null) text = entry[0];
+    if (vars) {
+      text = text.replace(/\{(\w+)\}/g, function (m, name) {
+        return Object.prototype.hasOwnProperty.call(vars, name) ? String(vars[name]) : m;
+      });
+    }
+    return text;
+  }
+
+  return {
+    LANGS: LANGS,
+    LOCALES: LOCALES,
+    NAMES: NAMES,
+    STRINGS: S,
+    t: t,
+    lang: function () {
+      return current;
+    },
+    // Tests only: pretend the page is in another language.
+    setLang: function (lang) {
+      current = LANGS.indexOf(lang) === -1 ? "en" : lang;
+    },
+    locale: function (lang) {
+      return LOCALES[lang || current] || LOCALES.en;
+    },
+    name: function (lang) {
+      return NAMES[lang || current];
+    },
+  };
+});

@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Política de privacidad | Room Designer 3D</title>
+    <meta name="description" content="Cómo trata Room Designer 3D la información personal." />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="../favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/privacy.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/privacy.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/privacy.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/privacy.html" />
+    <script>
+      (function () {
+        var here = "es";
+        var root = "../";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "privacy.html" !== "404.html") {
+            location.replace(root + dirs[want] + "privacy.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Ir al contenido</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Principal">
+        <a href="../es/index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menú" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="../es/designer.html">Demo en vivo</a></li>
+          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <li><a href="../es/account.html" data-auth-link>Iniciar sesión</a></li>
+          <li><a href="../es/signup.html" class="nav-cta">Prueba gratis</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Idioma: </span>ES
+              </summary>
+              <ul class="lang-menu-list" aria-label="Idioma">
+                <li><a href="../privacy.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li>
+                  <a href="../es/privacy.html?lang=es" hreflang="es" lang="es" data-lang-choice="es" aria-current="true"
+                    >Español</a
+                  >
+                </li>
+                <li>
+                  <a href="../pt/privacy.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero hero-page">
+        <div class="hero-inner">
+          <h1>Política de privacidad</h1>
+          <p class="legal-updated">Última actualización: 6 de octubre de 2026</p>
+        </div>
+      </section>
+      <article class="section legal-content">
+        <h2>Quiénes somos</h2>
+        <p>
+          Room Designer 3D es operado por Wright AI Solutions, LLC, compañía de responsabilidad limitada de Arizona
+          ("nosotros"). Esta política explica qué datos recopilamos cuando las empresas usan Room Designer 3D y cuando
+          los clientes usan el diseñador de una empresa.
+        </p>
+        <h2>Empresas que se registran</h2>
+        <p>
+          Guardamos el correo de su cuenta y los datos de su empresa (nombre, dirección web, teléfono, correo, razón
+          social y precios de mano de obra). Su contraseña la gestiona nuestro proveedor de inicio de sesión y nunca la
+          vemos. Los pagos los procesa Stripe: recibimos su plan y el estado del pago, no el número completo de su
+          tarjeta.
+        </p>
+        <h2>Clientes que usan un diseñador</h2>
+        <p>
+          Lo que escribe en el chat y el diseño en 3D se quedan en su navegador; el diseño puede guardarse allí para que
+          pueda continuar más tarde. Solo cuando presiona Enviar solicitud recibimos su nombre, teléfono, correo y los
+          detalles del proyecto, que guardamos para la empresa cuyo diseñador usó. Esa empresa decide cómo usarlos y
+          debe comunicarse con ella sobre su solicitud.
+        </p>
+        <h2>Quién nos ayuda a operar el servicio</h2>
+        <p>
+          Vercel aloja el sitio web, Supabase guarda las cuentas y las solicitudes, Stripe procesa los pagos y un
+          proveedor de correo puede enviar las nuevas solicitudes a la empresa. Solo tratan los datos para prestarnos
+          esos servicios. No vendemos información personal.
+        </p>
+        <h2>Cuánto tiempo lo guardamos</h2>
+        <p>
+          Los datos de la cuenta y de la empresa se guardan mientras la cuenta esté abierta y se eliminan después de
+          cerrarla, salvo los registros de facturación que la ley nos obliga a conservar. Las solicitudes de clientes se
+          guardan hasta que la empresa las elimina o cierra su cuenta.
+        </p>
+        <h2>Sus opciones</h2>
+        <p>
+          Puede pedir ver, corregir o eliminar su información. Las empresas pueden editar sus datos y eliminar
+          solicitudes desde la página de su cuenta. Los clientes pueden pedir a la empresa que contactaron, o a
+          nosotros, que elimine una solicitud. El inicio de sesión y sus preferencias de idioma y tema usan el
+          almacenamiento de su navegador; no usamos cookies publicitarias.
+        </p>
+        <h2>Cambios</h2>
+        <p>
+          Si cambiamos esta política, actualizaremos la fecha de arriba y, si los cambios son importantes, avisaremos
+          por correo a los titulares de cuentas.
+        </p>
+        <p data-show-if="company.supportEmail" hidden>
+          ¿Preguntas? Escríbanos a
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>.
+        </p>
+      </article>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">
+            Un diseñador y estimador de baños en 3D para empresas de remodelación y restauración.
+          </p>
+          <p class="footer-identity">
+            Room Designer 3D es un producto de Wright AI Solutions, LLC, compañía de responsabilidad limitada de
+            Arizona.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Producto</h2>
+          <a href="../es/designer.html">Demo en vivo</a>
+          <a href="../es/index.html#pricing">Precios</a>
+          <a href="../es/index.html#faq">Preguntas</a>
+          <a href="../es/signup.html">Prueba gratis</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contacto</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Legal</h2>
+          <a href="../es/privacy.html">Política de privacidad</a>
+          <a href="../es/terms.html">Términos del servicio</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Tema de color">
+          <span class="theme-switch-label" aria-hidden="true">Tema</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Oscuro</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="../js/i18n.js"></script>
+
+    <script src="../js/site-config.js"></script>
+    <script src="../js/theme.js"></script>
+    <script src="../js/script.js"></script>
+  </body>
+</html>

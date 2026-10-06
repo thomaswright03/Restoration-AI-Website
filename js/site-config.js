@@ -1,0 +1,154 @@
+// Room Designer 3D — designer settings loader.
+//
+// Reads /site-config.json (the one place for owner-editable settings, see
+// README "Site settings") and applies it to the page:
+//
+//   data-fill="owner.legalName"       text is set to the value
+//   data-show-if="owner.legalName"    shown only when the value is filled in
+//   data-show-unless="leadForm.endpoint"  shown only when it is NOT filled in
+//
+// Elements with data-show-if start out `hidden` in the HTML, so an unfilled
+// value never shows a placeholder. If the settings file can't be loaded, the
+// safe defaults below apply (price estimator off, email-app lead form).
+//
+// Other scripts use: SiteConfig.ready.then(function (config) { ... })
+
+(function () {
+  "use strict";
+
+  var DEFAULTS = {
+    priceEstimator: { enabled: false },
+    // Materials picker uses MOCK product/price data (see js/materials-pricing.js)
+    // until a real pricing source is connected — defaults off so a customer
+    // never sees it without the owner deliberately turning it on.
+    materialsEstimator: { enabled: false },
+    // Bathroom visualizer overlays icon badges on the customer's own uploaded
+    // photo as a mockup (see js/bathroom-visualizer.js) — no AI rendering,
+    // photo never leaves the browser. Defaults off, same rollout as above.
+    bathroomVisualizer: { enabled: false },
+    leadForm: { endpoint: "", serviceName: "", servicePrivacyUrl: "" },
+    // Live Home Depot prices for the Kohler products picked in the 3D room
+    // (tools/pricing-service/). Empty: those products show as not priced.
+    productPricing: { endpoint: "" },
+    owner: { legalName: "", contactAddress: "" },
+    privacy: { responsePeriod: "" },
+    company: { supportEmail: "" },
+  };
+
+  var T = window.I18n.t;
+
+  // The owner writes the privacy response period in English ("30 days");
+  // the Spanish and Portuguese Privacy Notices need it in their language.
+  function localPeriod(text) {
+    var m = /^(\d+)\s*(day|days|business days|week|weeks|month|months)$/i.exec(text);
+    if (!m) return text;
+    var unit = m[2].toLowerCase().replace(/s$/, "").replace(" day", "Day");
+    return T("config.period." + unit + (m[1] === "1" ? "" : "s"), { n: m[1] });
+  }
+
+  function clean(value) {
+    return typeof value === "string" ? value.trim() : "";
+  }
+
+  function normalize(raw) {
+    raw = raw || {};
+    var pe = raw.priceEstimator || {};
+    var me = raw.materialsEstimator || {};
+    var bv = raw.bathroomVisualizer || {};
+    var lf = raw.leadForm || {};
+    var pp = raw.productPricing || {};
+    var owner = raw.owner || {};
+    var privacy = raw.privacy || {};
+    var company = raw.company || {};
+    var endpoint = clean(lf.endpoint);
+    var pricingEndpoint = clean(pp.endpoint);
+    // The business using the designer (js/business.js) decides where its
+    // leads go and what legal name its estimates carry.
+    var biz = (typeof window !== "undefined" && window.DesignerBusiness) || null;
+    if (biz && biz.leadEndpoint) {
+      endpoint = biz.leadEndpoint;
+      lf = { serviceName: biz.serviceName || "", servicePrivacyUrl: "" };
+    }
+    if (biz && biz.legalName) owner = { legalName: biz.legalName, contactAddress: owner.contactAddress };
+    return {
+      loaded: true,
+      priceEstimator: { enabled: pe.enabled === true },
+      materialsEstimator: { enabled: me.enabled === true },
+      bathroomVisualizer: { enabled: bv.enabled === true },
+      leadForm: {
+        // Only an https:// address is used; anything else keeps the email-app form.
+        endpoint: /^(https:\/\/[^\s]+|\/api\/[^\s]+)$/.test(endpoint) ? endpoint : "",
+        serviceName: clean(lf.serviceName) || T("config.formService"),
+        servicePrivacyUrl: /^https:\/\//.test(clean(lf.servicePrivacyUrl)) ? clean(lf.servicePrivacyUrl) : "",
+      },
+      // https://, or http://localhost while testing the service on this machine.
+      productPricing: {
+        endpoint: /^(https:\/\/|http:\/\/localhost[:/])[^\s]+$/.test(pricingEndpoint) ? pricingEndpoint : "",
+      },
+      owner: { legalName: clean(owner.legalName), contactAddress: clean(owner.contactAddress) },
+      privacy: { responsePeriod: localPeriod(clean(privacy.responsePeriod)) },
+      // The product's own support address (footer). Blank = left out.
+      company: {
+        supportEmail: /^[^\s@]+@[^\s@]+$/.test(clean(company.supportEmail)) ? clean(company.supportEmail) : "",
+        supportEmailHref: /^[^\s@]+@[^\s@]+$/.test(clean(company.supportEmail))
+          ? "mailto:" + clean(company.supportEmail)
+          : "",
+      },
+    };
+  }
+
+  function lookup(config, path) {
+    return path.split(".").reduce(function (obj, key) {
+      return obj && obj[key] !== undefined ? obj[key] : "";
+    }, config);
+  }
+
+  function apply(config, scope) {
+    scope = scope || document;
+    Array.prototype.forEach.call(scope.querySelectorAll("[data-fill]"), function (el) {
+      el.textContent = lookup(config, el.getAttribute("data-fill"));
+    });
+    Array.prototype.forEach.call(scope.querySelectorAll("[data-fill-href]"), function (el) {
+      var href = lookup(config, el.getAttribute("data-fill-href"));
+      if (href) el.setAttribute("href", href);
+    });
+    Array.prototype.forEach.call(scope.querySelectorAll("[data-show-if]"), function (el) {
+      el.hidden = !lookup(config, el.getAttribute("data-show-if"));
+    });
+    Array.prototype.forEach.call(scope.querySelectorAll("[data-show-unless]"), function (el) {
+      el.hidden = !!lookup(config, el.getAttribute("data-show-unless"));
+    });
+  }
+
+  var script = document.currentScript;
+  var url = script && script.src ? new URL("../site-config.json", script.src).href : "site-config.json";
+
+  var loaded = fetch(url, { cache: "no-cache" })
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(normalize)
+    .catch(function () {
+      var fallback = normalize(DEFAULTS);
+      fallback.loaded = false;
+      return fallback;
+    });
+
+  var domReady = new Promise(function (resolve) {
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", resolve);
+    } else {
+      resolve();
+    }
+  });
+
+  var ready = Promise.all([loaded, domReady]).then(function (results) {
+    var config = results[0];
+    apply(config);
+    document.documentElement.setAttribute("data-config", config.loaded ? "loaded" : "defaults");
+    return config;
+  });
+
+  window.SiteConfig = { ready: ready, apply: apply };
+})();

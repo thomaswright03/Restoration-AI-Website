@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Start your free trial | Room Designer 3D</title>
+    <meta name="description" content="Create your Room Designer 3D account." />
+    <meta name="theme-color" content="#15130f" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <script>
+      (function () {
+        try {
+          var t = localStorage.getItem("pr_theme");
+          if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        } catch (e) {}
+        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
+      })();
+    </script>
+    <link rel="alternate" hreflang="en" href="https://room-designer-3d.vercel.app/signup.html" />
+    <link rel="alternate" hreflang="es" href="https://room-designer-3d.vercel.app/es/signup.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://room-designer-3d.vercel.app/pt/signup.html" />
+    <link rel="alternate" hreflang="x-default" href="https://room-designer-3d.vercel.app/signup.html" />
+    <script>
+      (function () {
+        var here = "en";
+        var root = "";
+        var dirs = { en: "", es: "es/", pt: "pt/" };
+        try {
+          var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
+          if (chosen) {
+            localStorage.setItem("pr_lang", chosen[1]);
+            var rest = location.search.replace(/([?&])lang=[a-z]+&?/, "$1").replace(/[?&]$/, "");
+            history.replaceState(null, "", location.pathname + rest + location.hash);
+            return;
+          }
+          if (/[?&]embed=1\b/.test(location.search)) return;
+          var want = localStorage.getItem("pr_lang");
+          if (!want && here === "en") {
+            var prefs = navigator.languages || [navigator.language || ""];
+            for (var i = 0; i < prefs.length; i++) {
+              var code = String(prefs[i]).slice(0, 2).toLowerCase();
+              if (code === "en" || code === "es" || code === "pt") {
+                want = code;
+                break;
+              }
+            }
+          }
+          if (want && want !== here && dirs[want] !== undefined && "signup.html" !== "404.html") {
+            location.replace(root + dirs[want] + "signup.html" + location.search + location.hash);
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/product.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header product-chrome">
+      <nav class="nav" aria-label="Main">
+        <a href="index.html" class="nav-brand">Room Designer 3D</a>
+        <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </button>
+        <ul class="nav-links" id="nav-links">
+          <li><a href="designer.html">Live demo</a></li>
+          <li><a href="index.html#pricing">Pricing</a></li>
+          <li><a href="index.html#faq">FAQ</a></li>
+          <li><a href="account.html" data-auth-link>Log in</a></li>
+          <li><a href="signup.html" class="nav-cta">Start free trial</a></li>
+          <li class="nav-lang">
+            <details class="lang-menu">
+              <summary>
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path
+                    d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.6"
+                  />
+                </svg>
+                <span class="visually-hidden">Language: </span>EN
+              </summary>
+              <ul class="lang-menu-list" aria-label="Language">
+                <li>
+                  <a href="signup.html?lang=en" hreflang="en" lang="en" data-lang-choice="en" aria-current="true"
+                    >English</a
+                  >
+                </li>
+                <li>
+                  <a href="es/signup.html?lang=es" hreflang="es" lang="es" data-lang-choice="es">Español</a>
+                </li>
+                <li>
+                  <a href="pt/signup.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                </li>
+              </ul>
+            </details>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main id="main" class="app-page solid-header">
+      <section class="section app-narrow">
+        <h1 class="section-title" id="auth-title" data-mode-text="signup">Start your free trial</h1>
+        <h1 class="section-title" data-mode-text="login" hidden>Log in</h1>
+        <p class="section-subtitle" data-mode-text="signup">
+          Create your account, then pick a plan. Your card is only charged after the 14-day trial.
+        </p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p>
+            <strong>Accounts aren't switched on yet.</strong> Sign-up opens soon. Meanwhile, you can try the live demo.
+          </p>
+          <p><a href="designer.html">Try the live demo</a></p>
+        </div>
+
+        <div class="app-card" id="auth-card" hidden>
+          <div class="auth-tabs" role="group" aria-label="Create an account or log in">
+            <button type="button" class="auth-tab" data-mode="signup" aria-pressed="true">Create account</button>
+            <button type="button" class="auth-tab" data-mode="login" aria-pressed="false">Log in</button>
+          </div>
+          <form id="auth-form" novalidate>
+            <div class="form-group" data-mode-field="signup">
+              <label for="auth-business">Business name</label>
+              <input type="text" id="auth-business" name="business" autocomplete="organization" maxlength="120" />
+            </div>
+            <div class="form-group">
+              <label for="auth-email">Email</label>
+              <input type="email" id="auth-email" name="email" autocomplete="email" required />
+            </div>
+            <div class="form-group" data-mode-field="signup login">
+              <label for="auth-password">Password</label>
+              <input
+                type="password"
+                id="auth-password"
+                name="password"
+                autocomplete="new-password"
+                minlength="8"
+                required
+              />
+              <p class="form-note" data-mode-field="signup">At least 8 characters.</p>
+            </div>
+            <div id="auth-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
+            <button type="submit" class="btn btn-primary btn-block" id="auth-submit">
+              <span data-mode-text="signup">Create account</span>
+              <span data-mode-text="login" hidden>Log in</span>
+              <span data-mode-text="reset" hidden>Email me a reset link</span>
+            </button>
+            <p class="form-note">
+              <button type="button" class="link-button" id="auth-forgot" data-mode-field="login">
+                Forgot your password?
+              </button>
+              <button type="button" class="link-button" id="auth-back" data-mode-field="reset">Back to log in</button>
+            </p>
+            <p class="form-consent" data-mode-field="signup">
+              By creating an account you agree to the <a href="terms.html">Terms of Service</a> and the
+              <a href="privacy.html">Privacy Policy</a>.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer product-chrome">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <p class="footer-brand">Room Designer 3D</p>
+          <p class="footer-tagline">A 3D bathroom designer and estimator for remodeling and restoration businesses.</p>
+          <p class="footer-identity">
+            Room Designer 3D is a product of Wright AI Solutions, LLC, an Arizona limited liability company.
+          </p>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Product</h2>
+          <a href="designer.html">Live demo</a>
+          <a href="index.html#pricing">Pricing</a>
+          <a href="index.html#faq">FAQ</a>
+          <a href="signup.html">Start free trial</a>
+        </div>
+        <div class="footer-col" data-show-if="company.supportEmail" hidden>
+          <h2 class="footer-heading">Contact</h2>
+          <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a>
+        </div>
+        <div class="footer-col">
+          <h2 class="footer-heading">Legal</h2>
+          <a href="privacy.html">Privacy Policy</a>
+          <a href="terms.html">Terms of Service</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-copy">&copy; <span data-year>2026</span> Wright AI Solutions, LLC.</p>
+        <div class="theme-switch" role="group" aria-label="Colour theme">
+          <span class="theme-switch-label" aria-hidden="true">Theme</span>
+          <button type="button" data-theme-choice="system" aria-pressed="true">System</button>
+          <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+          <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+
+    <script src="js/bathroom-pricing.js"></script>
+    <script src="js/site-config.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/vendor/supabase/supabase.js"></script>
+    <script src="js/account.js"></script>
+  </body>
+</html>

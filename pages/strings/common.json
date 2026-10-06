@@ -1,0 +1,34 @@
+{
+  "brand": ["Room Designer 3D", "Room Designer 3D", "Room Designer 3D"],
+  "nav.skip": ["Skip to content", "Ir al contenido", "Pular para o conteúdo"],
+  "nav.label": ["Main", "Principal", "Principal"],
+  "nav.menu": ["Menu", "Menú", "Menu"],
+  "nav.demo": ["Live demo", "Demo en vivo", "Demonstração"],
+  "nav.pricing": ["Pricing", "Precios", "Preços"],
+  "nav.faq": ["FAQ", "Preguntas", "Perguntas"],
+  "nav.login": ["Log in", "Iniciar sesión", "Entrar"],
+  "nav.cta": ["Start free trial", "Prueba gratis", "Teste grátis"],
+  "nav.language": ["Language", "Idioma", "Idioma"],
+  "nav.langCode": ["EN", "ES", "PT"],
+  "footer.tagline": [
+    "A 3D bathroom designer and estimator for remodeling and restoration businesses.",
+    "Un diseñador y estimador de baños en 3D para empresas de remodelación y restauración.",
+    "Um projetista e orçamentista de banheiros em 3D para empresas de reforma e restauração."
+  ],
+  "footer.company": [
+    "Room Designer 3D is a product of Wright AI Solutions, LLC, an Arizona limited liability company.",
+    "Room Designer 3D es un producto de Wright AI Solutions, LLC, compañía de responsabilidad limitada de Arizona.",
+    "Room Designer 3D é um produto da Wright AI Solutions, LLC, sociedade de responsabilidade limitada do Arizona."
+  ],
+  "footer.product": ["Product", "Producto", "Produto"],
+  "footer.contact": ["Contact", "Contacto", "Contato"],
+  "footer.legal": ["Legal", "Legal", "Jurídico"],
+  "footer.privacy": ["Privacy Policy", "Política de privacidad", "Política de Privacidade"],
+  "footer.terms": ["Terms of Service", "Términos del servicio", "Termos de Serviço"],
+  "footer.copy": ["Wright AI Solutions, LLC.", "Wright AI Solutions, LLC.", "Wright AI Solutions, LLC."],
+  "footer.theme": ["Colour theme", "Tema de color", "Tema de cores"],
+  "footer.themeLabel": ["Theme", "Tema", "Tema"],
+  "footer.system": ["System", "Sistema", "Sistema"],
+  "footer.light": ["Light", "Claro", "Claro"],
+  "footer.dark": ["Dark", "Oscuro", "Escuro"]
+}

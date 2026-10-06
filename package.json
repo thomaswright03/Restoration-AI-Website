@@ -1,0 +1,30 @@
+{
+  "name": "room-designer-3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Room Designer 3D: a 3D bathroom designer and estimator businesses sign up for, by Wright AI Solutions, LLC. Static pages plus Vercel functions, no build step at deploy time.",
+  "scripts": {
+    "serve": "node scripts/serve.mjs",
+    "lint": "eslint --max-warnings=0 .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pages": "node scripts/build-pages.mjs",
+    "check:pages": "node scripts/build-pages.mjs --check",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run format:check && npm run check:pages && npm run test:unit",
+    "test": "npm run check && npm run test:e2e"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.56.1",
+    "eslint": "9.39.5",
+    "globals": "17.12.0",
+    "jspdf": "4.2.1",
+    "prettier": "3.9.9"
+  }
+}

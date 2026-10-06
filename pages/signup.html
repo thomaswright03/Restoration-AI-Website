@@ -1,0 +1,45 @@
+    <main id="main" class="app-page solid-header">
+      <section class="section app-narrow">
+        <h1 class="section-title" id="auth-title" data-mode-text="signup">{{signup.h1}}</h1>
+        <h1 class="section-title" data-mode-text="login" hidden>{{signup.h1Login}}</h1>
+        <p class="section-subtitle" data-mode-text="signup">{{signup.lede}}</p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p><strong>{{account.off.title}}</strong> {{account.off.text}}</p>
+          <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>
+        </div>
+
+        <div class="app-card" id="auth-card" hidden>
+          <div class="auth-tabs" role="group" aria-label="{{signup.tabs}}">
+            <button type="button" class="auth-tab" data-mode="signup" aria-pressed="true">{{signup.tabSignup}}</button>
+            <button type="button" class="auth-tab" data-mode="login" aria-pressed="false">{{signup.tabLogin}}</button>
+          </div>
+          <form id="auth-form" novalidate>
+            <div class="form-group" data-mode-field="signup">
+              <label for="auth-business">{{account.biz.name}}</label>
+              <input type="text" id="auth-business" name="business" autocomplete="organization" maxlength="120" />
+            </div>
+            <div class="form-group">
+              <label for="auth-email">{{account.email}}</label>
+              <input type="email" id="auth-email" name="email" autocomplete="email" required />
+            </div>
+            <div class="form-group" data-mode-field="signup login">
+              <label for="auth-password">{{account.password}}</label>
+              <input type="password" id="auth-password" name="password" autocomplete="new-password" minlength="8" required />
+              <p class="form-note" data-mode-field="signup">{{signup.passwordHint}}</p>
+            </div>
+            <div id="auth-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
+            <button type="submit" class="btn btn-primary btn-block" id="auth-submit">
+              <span data-mode-text="signup">{{signup.submit}}</span>
+              <span data-mode-text="login" hidden>{{signup.submitLogin}}</span>
+              <span data-mode-text="reset" hidden>{{signup.submitReset}}</span>
+            </button>
+            <p class="form-note">
+              <button type="button" class="link-button" id="auth-forgot" data-mode-field="login">{{signup.forgot}}</button>
+              <button type="button" class="link-button" id="auth-back" data-mode-field="reset">{{signup.back}}</button>
+            </p>
+            <p class="form-consent" data-mode-field="signup">{{signup.consent}}</p>
+          </form>
+        </div>
+      </section>
+    </main>

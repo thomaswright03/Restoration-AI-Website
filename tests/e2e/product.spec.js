@@ -7,7 +7,9 @@ const PAGES = ["index.html", "designer.html", "signup.html", "account.html", "pr
 
 for (const dir of ["", "es/", "pt/"]) {
   for (const file of PAGES) {
-    test(`/${dir}${file} loads without errors and passes axe`, async ({ page }) => {
+    test(`/${dir}${file} loads without errors and passes axe, light and dark`, async ({ page }) => {
+      // Reduced motion skips the scroll-reveal fade, which axe would catch mid-way.
+      await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
       const errors = [];
       page.on("pageerror", (e) => errors.push(e.message));
       await page.goto(`/${dir}${file}?lang=${dir ? dir.slice(0, 2) : "en"}`);
@@ -16,6 +18,9 @@ for (const dir of ["", "es/", "pt/"]) {
       expect(errors).toEqual([]);
       const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
       expect(results.violations.map((v) => v.id)).toEqual([]);
+      await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+      const dark = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+      expect(dark.violations.map((v) => v.nodes.map((n) => n.target.join(" "))).flat()).toEqual([]);
     });
   }
 }

@@ -2,10 +2,294 @@
    sign-up, account) and the designer page's extras. Uses the design tokens
    from css/style.css. */
 
-/* Pages without a dark hero get a solid header so the white nav stays readable. */
+/* ================= Blueprint theme =================
+   Product look: geometric display type (Space Grotesk), rounded cards,
+   electric-blue buttons, teal highlights and a blueprint grid on dark bands. */
+
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+/* Header: a frosted navy bar. */
+.site-header,
+.site-header.scrolled,
 body:has(main.solid-header) .site-header {
-  background: rgba(21, 19, 15, 0.96);
-  border-bottom-color: var(--color-on-dark-line);
+  background: rgba(10, 16, 36, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--color-on-dark-line);
+}
+
+body:has(main.solid-header) .site-header {
+  background: var(--color-dark);
+}
+
+.nav-brand {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.nav-brand::before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 10px;
+  vertical-align: -4px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #5eead4 0%, #3355f0 100%);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.nav-links a {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fs-base);
+}
+
+.nav-links a::after {
+  background: #5eead4;
+}
+
+.nav-links a.nav-cta {
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-bright);
+  color: #fff;
+  font-weight: 600;
+}
+
+.nav-links a.nav-cta:hover {
+  background: #4b6bff;
+  color: #fff;
+}
+
+/* Blueprint grid behind the hero, dark bands and CTA. */
+.hero,
+.cta-band,
+.section-dark {
+  background-color: var(--color-dark);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 80% 0%, rgba(94, 234, 212, 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 60% at 10% 100%, rgba(51, 85, 240, 0.28), transparent 70%),
+    linear-gradient(rgba(148, 170, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 170, 255, 0.07) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    32px 32px,
+    32px 32px;
+}
+
+.hero::before,
+.cta-band::before {
+  background-image: none;
+}
+
+.hero {
+  text-align: left;
+  padding-top: 180px;
+}
+
+.hero-inner {
+  max-width: var(--max-width);
+}
+
+.hero h1 {
+  max-width: 820px;
+}
+
+.hero p {
+  margin-left: 0;
+  max-width: 620px;
+}
+
+.hero .eyebrow.center,
+.hero-actions {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.hero h1 em {
+  font-style: normal;
+  color: transparent;
+  background: linear-gradient(90deg, #5eead4, #8ea6ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.hero.hero-page,
+.hero.hero-page .hero-inner,
+.hero.hero-page p {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Eyebrows become small pills. */
+.eyebrow {
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.eyebrow::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.eyebrow.center {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero .eyebrow,
+.section-dark .eyebrow,
+.cta-band .eyebrow {
+  color: #5eead4;
+}
+
+.hero .eyebrow.center {
+  margin-left: 0;
+}
+
+/* Buttons: rounded, sentence case, blue fill. */
+.btn {
+  border-radius: var(--radius-pill);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fs-base);
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--color-accent-bright);
+  border-color: var(--color-accent-bright);
+  color: #fff;
+  box-shadow: 0 10px 24px -12px rgba(51, 85, 240, 0.8);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: #fff;
+}
+
+.btn-outline {
+  border-color: rgba(201, 211, 234, 0.45);
+}
+
+/* Cards: separate rounded tiles instead of a ruled grid. */
+.grid,
+.section-dark .grid {
+  gap: var(--space-5);
+  background: none;
+  border: 0;
+}
+
+.card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.section-dark .card {
+  background: rgba(19, 28, 58, 0.72);
+  border-color: var(--color-on-dark-line);
+  box-shadow: none;
+}
+
+.card-number {
+  font-style: normal;
+  font-weight: 700;
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--color-surface-alt);
+  font-size: var(--fs-sm);
+}
+
+/* Forms: boxed fields, normal-case labels. */
+label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--fs-sm);
+}
+
+.app-card input:not([type="checkbox"]):not([type="radio"]),
+.app-card select,
+.designer-form input,
+.designer-form select,
+.designer-form textarea,
+#auth-form input {
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+  background: var(--color-surface);
+}
+
+.faq-question {
+  font-family: var(--font-display);
+}
+
+.plan-card,
+.app-card,
+.app-notice {
+  border-radius: var(--radius-lg);
+}
+
+.plan-card {
+  box-shadow: var(--shadow-soft);
+}
+
+.plan-card .plan-badge {
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: #04201c;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.plan-card-featured {
+  border-color: var(--color-accent-bright);
+  box-shadow:
+    0 0 0 1px var(--color-accent-bright),
+    var(--shadow-soft);
+}
+
+.site-footer {
+  background-color: var(--color-dark);
+}
+
+.footer-brand {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.footer-heading {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Chat: blue avatar, rounded window. */
+.ai-chat-avatar {
+  background: linear-gradient(135deg, #3355f0, #14b8a6);
+  color: #fff;
+}
+
+.ai-chat-suggestion {
+  border-radius: var(--radius-pill);
 }
 
 main.solid-header {
@@ -278,4 +562,26 @@ html[data-embed="1"] main.solid-header {
   .grid.feature-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+.theme-switch button[aria-pressed="true"] {
+  color: #fff;
+}
+
+/* Blue fills carry white text; on navy, highlights are teal. */
+.ai-chat-row.user .ai-chat-avatar,
+.ai-chat-estimate-cta,
+.ai-chat-estimate-cta:hover {
+  color: #fff;
+}
+
+.ai-chat-estimate-total-value,
+.section-dark .card-number,
+.footer-col a:hover,
+.nav-links .lang-menu-list a[aria-current="true"] {
+  color: #5eead4;
+}
+
+.section-dark .card-number {
+  background: rgba(94, 234, 212, 0.12);
 }

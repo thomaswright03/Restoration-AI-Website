@@ -1,4 +1,4 @@
-/* Room Designer 3D — luxury editorial theme.
+/* Room Designer 3D — blueprint theme: cool slate and electric blue, with teal highlights.
    Everything is driven by the tokens in :root below: colours (with a dark
    theme), a small type scale and a spacing scale. Change a token to re-theme
    the whole site. Hero, dark bands and the footer stay dark in both themes. */
@@ -14,51 +14,43 @@
 }
 
 @font-face {
-  font-family: "Playfair Display";
+  font-family: "Space Grotesk";
   font-style: normal;
-  font-weight: 500 700;
+  font-weight: 300 700;
   font-display: swap;
-  src: url("../fonts/playfair-display-latin.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Playfair Display";
-  font-style: italic;
-  font-weight: 500 600;
-  font-display: swap;
-  src: url("../fonts/playfair-display-italic-latin.woff2") format("woff2");
+  src: url("../fonts/space-grotesk-latin.woff2") format("woff2");
 }
 
 :root {
   color-scheme: light;
 
   /* Colours: page (light theme) */
-  --color-bg: #faf8f4;
+  --color-bg: #f5f7fb;
   --color-surface: #ffffff;
-  --color-surface-alt: #f3efe7;
-  --color-ink: #1c1a17;
-  --color-ink-soft: #46413a;
-  --color-muted: #6b6358;
-  --color-line: #e6ddcd;
-  --color-line-strong: #cfc3ad;
-  --color-accent: #b3874a; /* decorative only (rules, bars) */
-  --color-accent-text: #87652f; /* accent-coloured text and links on light surfaces */
-  --color-accent-bright: #cda15f; /* on dark surfaces, and button fills */
-  --color-accent-hover: #c4975a;
-  --color-danger: #b5462f;
-  --color-success: #2f6b3f;
-  --color-selected-bg: #1c1a17;
+  --color-surface-alt: #eef2fa;
+  --color-ink: #0f172a;
+  --color-ink-soft: #334155;
+  --color-muted: #5b6678;
+  --color-line: #e2e8f0;
+  --color-line-strong: #c3cddb;
+  --color-accent: #14b8a6; /* decorative only (rules, bars) */
+  --color-accent-text: #2445d6; /* accent-coloured text and links on light surfaces */
+  --color-accent-bright: #3355f0; /* button fills (white text) */
+  --color-accent-hover: #2445d6;
+  --color-danger: #c2283c;
+  --color-success: #0f7a5c;
+  --color-selected-bg: #2445d6;
   --color-selected-ink: #ffffff;
-  --color-focus: #87652f;
+  --color-focus: #2445d6;
 
   /* Colours: always-dark areas (hero, dark bands, footer, total bands) */
-  --color-dark: #15130f;
-  --color-dark-soft: #211d17;
+  --color-dark: #0a1024;
+  --color-dark-soft: #131c3a;
   --color-on-dark: #ffffff;
-  --color-on-dark-soft: #c5c4c3;
-  --color-on-dark-muted: #a1a19f;
-  --color-on-dark-line: rgba(255, 255, 255, 0.14);
-  --color-focus-on-dark: #e0b877;
+  --color-on-dark-soft: #c9d3ea;
+  --color-on-dark-muted: #9fabc6;
+  --color-on-dark-line: rgba(148, 170, 255, 0.18);
+  --color-focus-on-dark: #5eead4;
 
   /* Type scale (7 sizes; nothing smaller than 14px) */
   --fs-sm: 0.875rem; /* 14px — captions, labels, fine print */
@@ -82,15 +74,15 @@
   --space-10: 120px;
   --gutter: var(--space-6);
 
-  --radius: 2px;
-  --radius-lg: 4px;
+  --radius: 10px;
+  --radius-lg: 16px;
   --radius-pill: 999px;
-  --shadow: 0 24px 48px -20px rgba(21, 19, 15, 0.25);
-  --shadow-soft: 0 12px 32px -16px rgba(21, 19, 15, 0.18);
+  --shadow: 0 24px 48px -20px rgba(15, 23, 42, 0.22);
+  --shadow-soft: 0 12px 32px -16px rgba(15, 23, 42, 0.16);
   --max-width: 1180px;
   --content-width: 760px;
   --tap: 44px;
-  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-display: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -99,22 +91,22 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --color-bg: #14120f;
-    --color-surface: #1d1a16;
-    --color-surface-alt: #24201b;
-    --color-ink: #f4efe6;
-    --color-ink-soft: #d9d1c4;
-    --color-muted: #b0a695;
-    --color-line: #3a332b;
-    --color-line-strong: #5a5044;
-    --color-accent-text: #e0b877;
-    --color-danger: #e07a60;
-    --color-success: #7fc493;
-    --color-selected-bg: #e0b877;
-    --color-selected-ink: #14120f;
-    --color-focus: #e0b877;
-    --color-dark: #0d0c0a;
-    --color-dark-soft: #1a1713;
+    --color-bg: #0b1122;
+    --color-surface: #121a30;
+    --color-surface-alt: #18223d;
+    --color-ink: #eef2ff;
+    --color-ink-soft: #cdd6ea;
+    --color-muted: #9aa6c0;
+    --color-line: #24304f;
+    --color-line-strong: #3a4970;
+    --color-accent-text: #8ea6ff;
+    --color-danger: #ff8094;
+    --color-success: #5fd4ae;
+    --color-selected-bg: #8ea6ff;
+    --color-selected-ink: #0b1122;
+    --color-focus: #8ea6ff;
+    --color-dark: #070b18;
+    --color-dark-soft: #0f1630;
     --shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
     --shadow-soft: 0 12px 32px -16px rgba(0, 0, 0, 0.5);
   }
@@ -122,22 +114,22 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --color-bg: #14120f;
-  --color-surface: #1d1a16;
-  --color-surface-alt: #24201b;
-  --color-ink: #f4efe6;
-  --color-ink-soft: #d9d1c4;
-  --color-muted: #b0a695;
-  --color-line: #3a332b;
-  --color-line-strong: #5a5044;
-  --color-accent-text: #e0b877;
-  --color-danger: #e07a60;
-  --color-success: #7fc493;
-  --color-selected-bg: #e0b877;
-  --color-selected-ink: #14120f;
-  --color-focus: #e0b877;
-  --color-dark: #0d0c0a;
-  --color-dark-soft: #1a1713;
+  --color-bg: #0b1122;
+  --color-surface: #121a30;
+  --color-surface-alt: #18223d;
+  --color-ink: #eef2ff;
+  --color-ink-soft: #cdd6ea;
+  --color-muted: #9aa6c0;
+  --color-line: #24304f;
+  --color-line-strong: #3a4970;
+  --color-accent-text: #8ea6ff;
+  --color-danger: #ff8094;
+  --color-success: #5fd4ae;
+  --color-selected-bg: #8ea6ff;
+  --color-selected-ink: #0b1122;
+  --color-focus: #8ea6ff;
+  --color-dark: #070b18;
+  --color-dark-soft: #0f1630;
   --shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.6);
   --shadow-soft: 0 12px 32px -16px rgba(0, 0, 0, 0.5);
 }
@@ -547,7 +539,7 @@ p {
 .hero {
   position: relative;
   background:
-    radial-gradient(ellipse at 20% 15%, rgba(179, 135, 74, 0.16), transparent 55%),
+    radial-gradient(ellipse at 20% 15%, rgba(51, 85, 240, 0.16), transparent 55%),
     linear-gradient(160deg, var(--color-dark) 0%, #1f1b15 55%, var(--color-dark-soft) 100%);
   color: var(--color-on-dark);
   padding: 200px var(--gutter) var(--space-10);
@@ -1875,8 +1867,8 @@ body.ai-chat-locked {
   inset: 0;
   background-image: repeating-linear-gradient(
     115deg,
-    rgba(179, 135, 74, 0.14) 0px,
-    rgba(179, 135, 74, 0.14) 1px,
+    rgba(51, 85, 240, 0.14) 0px,
+    rgba(51, 85, 240, 0.14) 1px,
     transparent 1px,
     transparent 46px
   );

@@ -68,7 +68,7 @@
     }
 
     function paragraph(text, size, color, style, gap) {
-      doc.setFont("times", style || "normal");
+      doc.setFont("helvetica", style || "normal");
       doc.setFontSize(size);
       doc.setTextColor(color);
       var lineHeight = size * 1.3;
@@ -87,7 +87,7 @@
       y += 16;
     }
 
-    doc.setFont("times", "bold");
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(20);
     doc.setTextColor(20);
     doc.text(spec.heading || (spec.footer && spec.footer.businessName) || "", left, y);
@@ -109,7 +109,7 @@
       var detailLines = doc.splitTextToSize(l.detail || "", detailWidth);
       var rowHeight = Math.max(labelLines.length * 14, detailLines.length * 13) + 6;
       ensure(rowHeight);
-      doc.setFont("times", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       doc.setTextColor(30);
       doc.text(labelLines, left, y);
@@ -126,7 +126,7 @@
         doc.setFontSize(10);
         var labelLines = doc.splitTextToSize(x.label, width - 150);
         ensure(labelLines.length * 13 + 4);
-        doc.setFont("times", "normal");
+        doc.setFont("helvetica", "normal");
         doc.setTextColor(80);
         doc.text(labelLines, left, y);
         doc.text(x.value, right, y, { align: "right" });
@@ -141,7 +141,7 @@
       doc.setFontSize(size);
       var labelLines = doc.splitTextToSize(t.label, width - 150);
       ensure(labelLines.length * (size + 4) + 4);
-      doc.setFont("times", t.strong ? "bold" : "normal");
+      doc.setFont("helvetica", t.strong ? "bold" : "normal");
       doc.setTextColor(20);
       doc.text(labelLines, left, y);
       doc.text(t.value, right, y, { align: "right" });
@@ -158,7 +158,7 @@
       ensure(40);
       paragraph(section.title, 11, 30, "bold", 2);
       section.items.forEach(function (item) {
-        doc.setFont("times", "normal");
+        doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
         doc.setTextColor(60);
         var lines = doc.splitTextToSize(item, width - 14);
@@ -178,7 +178,7 @@
       doc.setPage(i);
       doc.setDrawColor(220);
       doc.line(left, pageHeight - 52, right, pageHeight - 52);
-      doc.setFont("times", "normal");
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(90);
       doc.text(T("pdf.generated", { date: f.date }) + "  •  " + f.phone + "  •  " + f.email, left, pageHeight - 38);

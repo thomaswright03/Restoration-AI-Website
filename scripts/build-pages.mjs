@@ -24,7 +24,7 @@ import * as prettier from "prettier";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
-export const SITE_URL = "https://room-designer-3d.vercel.app";
+export const SITE_URL = "https://restoration-ai-website-nu.vercel.app";
 
 export const LANGS = [
   { code: "en", dir: "", htmlLang: "en", locale: "en-US", index: 0 },

@@ -1,0 +1,51 @@
+    <main id="main" class="app-page solid-header">
+      <section class="section app-wide">
+        <div class="app-head">
+          <div>
+            <h1 class="section-title">{{projects.h1}}</h1>
+            <p class="app-signed-in" id="projects-email" hidden></p>
+            <p class="app-signed-in" id="projects-plan" hidden></p>
+          </div>
+          <div class="app-actions app-head-actions">
+            <a class="btn btn-primary" id="project-new" href="{{@root}}{{@dir}}designer.html" hidden>{{projects.new}}</a>
+            <a class="btn btn-outline-dark" href="{{@root}}{{@dir}}account.html">{{projects.account}}</a>
+          </div>
+        </div>
+
+        <p class="app-loading" id="projects-loading">{{account.loading}}</p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p><strong>{{account.off.title}}</strong> {{account.off.text}}</p>
+          <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>
+        </div>
+
+        <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-free" hidden>
+            <p><strong>{{projects.free.title}}</strong> {{projects.free.text}}</p>
+            <p><a href="{{@root}}{{@dir}}account.html">{{projects.free.cta}}</a></p>
+          </div>
+
+          <div class="app-card" id="projects-usage" hidden>
+            <h2>{{projects.usage.title}}</h2>
+            <div class="usage-grid">
+              <div class="usage" id="usage-month">
+                <p data-meter-text></p>
+                <meter min="0" aria-label="{{projects.usage.monthLabel}}"></meter>
+              </div>
+              <div class="usage" id="usage-total">
+                <p data-meter-text></p>
+                <meter min="0" aria-label="{{projects.usage.totalLabel}}"></meter>
+              </div>
+            </div>
+            <p class="form-note">{{projects.usage.note}}</p>
+          </div>
+
+          <div class="app-card">
+            <h2 id="projects-heading" tabindex="-1">{{projects.list.title}} <span id="projects-count"></span></h2>
+            <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
+            <p class="form-note" id="projects-empty" hidden>{{projects.list.empty}}</p>
+            <ul class="project-list" id="projects-list"></ul>
+          </div>
+        </div>
+      </section>
+    </main>

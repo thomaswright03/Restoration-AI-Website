@@ -152,6 +152,18 @@
         </p>
       </section>
 
+      <section class="project-bar product-chrome" id="project-bar" aria-label="Your project" hidden>
+        <p class="project-bar-text" id="project-bar-text"></p>
+        <form class="project-bar-form" id="project-save-form" novalidate hidden>
+          <label for="project-name">Project name</label>
+          <input type="text" id="project-name" maxlength="120" />
+          <button type="submit" class="btn btn-primary" id="project-save">Save project</button>
+          <button type="button" class="btn btn-outline-dark" id="project-save-new" hidden>Save as new project</button>
+        </form>
+        <a class="project-bar-link" href="projects.html">My projects</a>
+        <p class="form-status" id="project-status" role="status" aria-live="polite" hidden></p>
+      </section>
+
       <section class="studio" id="studio" aria-labelledby="studio-title" data-biz-live>
         <header class="studio-bar">
           <div class="studio-brand">
@@ -316,5 +328,6 @@
     <script src="js/script.js"></script>
     <script type="module" src="js/bathroom-room-3d.js"></script>
     <script src="js/studio.js" defer></script>
+    <script src="js/projects.js" defer></script>
   </body>
 </html>

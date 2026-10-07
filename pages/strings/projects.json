@@ -1,0 +1,36 @@
+{
+  "projects.title": [
+    "My projects | Room Designer 3D",
+    "Mis proyectos | Room Designer 3D",
+    "Meus projetos | Room Designer 3D"
+  ],
+  "projects.description": [
+    "Open, rename and delete the bathroom designs saved to your account.",
+    "Abra, cambie de nombre y elimine los diseños de baño guardados en su cuenta.",
+    "Abra, renomeie e exclua os projetos de banheiro salvos na sua conta."
+  ],
+  "projects.h1": ["My projects", "Mis proyectos", "Meus projetos"],
+  "projects.new": ["New project", "Nuevo proyecto", "Novo projeto"],
+  "projects.account": ["Account", "Cuenta", "Conta"],
+  "projects.free.title": ["You're on the free plan.", "Tiene el plan gratis.", "Você está no plano grátis."],
+  "projects.free.text": [
+    "You can use the designer as much as you like, but saving projects needs a paid plan.",
+    "Puede usar el diseñador todo lo que quiera, pero para guardar proyectos necesita un plan de pago.",
+    "Você pode usar o projetista à vontade, mas para salvar projetos precisa de um plano pago."
+  ],
+  "projects.free.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+  "projects.usage.title": ["What your plan allows", "Lo que permite su plan", "O que o seu plano permite"],
+  "projects.usage.monthLabel": ["New projects this month", "Proyectos nuevos este mes", "Projetos novos este mês"],
+  "projects.usage.totalLabel": ["Saved projects", "Proyectos guardados", "Projetos salvos"],
+  "projects.usage.note": [
+    "Deleting a project frees a saved-project slot, but not this month's new projects; those start over on the 1st of each month.",
+    "Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes; esos vuelven a empezar el día 1 de cada mes.",
+    "Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses recomeçam no dia 1º de cada mês."
+  ],
+  "projects.list.title": ["Your projects", "Sus proyectos", "Seus projetos"],
+  "projects.list.empty": [
+    "No projects yet. Open the designer and use Save project at the top to keep a design here.",
+    "Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.",
+    "Ainda não há projetos. Abra o projetista e use Salvar projeto no topo para guardar um projeto aqui."
+  ]
+}

@@ -4,6 +4,9 @@
 -- businesses     one per account: the profile the designer shows
 -- subscriptions  written only by api/stripe-webhook.js (service role)
 -- leads          homeowner requests, written only by api/leads.js
+-- projects       designs a subscriber saved, written only by api/projects.js
+-- project_creations  one row per project ever created, never deleted, so the
+--                monthly allowance counts projects that were later deleted
 --
 -- Row-level security lets a signed-in owner read and edit their own rows
 -- from the browser; everything else goes through the api/ functions.
@@ -33,6 +36,9 @@ create table if not exists public.subscriptions (
   cancel_at_period_end boolean not null default false,
   updated_at timestamptz not null default now()
 );
+-- starter | pro | max: which plan the subscription is on (api/_plans.js).
+-- Filled by the Stripe webhook; can also be set by hand in Table Editor.
+alter table public.subscriptions add column if not exists plan text;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
@@ -47,9 +53,29 @@ create table if not exists public.leads (
 );
 create index if not exists leads_business_created on public.leads (business_id, created_at desc);
 
+create table if not exists public.projects (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 120),
+  -- The design as js/room-plan.js encode() writes it (base64url).
+  design text not null default '' check (char_length(design) <= 20000 and design ~ '^[A-Za-z0-9_-]*$'),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists projects_owner_updated on public.projects (owner_id, updated_at desc);
+
+create table if not exists public.project_creations (
+  id bigint generated always as identity primary key,
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists project_creations_owner_created on public.project_creations (owner_id, created_at);
+
 alter table public.businesses enable row level security;
 alter table public.subscriptions enable row level security;
 alter table public.leads enable row level security;
+alter table public.projects enable row level security;
+alter table public.project_creations enable row level security;
 
 drop policy if exists "owner reads business" on public.businesses;
 create policy "owner reads business" on public.businesses
@@ -75,3 +101,46 @@ create policy "owner deletes leads" on public.leads
   for delete using (
     exists (select 1 from public.businesses b where b.id = leads.business_id and b.owner_id = auth.uid())
   );
+
+-- Projects: owners can read their own from the browser; creating, saving,
+-- renaming and deleting go through api/projects.js, which checks the plan.
+drop policy if exists "owner reads projects" on public.projects;
+create policy "owner reads projects" on public.projects
+  for select using (owner_id = auth.uid());
+
+-- Creates a project if the plan's limits allow it, in one transaction: a
+-- per-owner lock stops two saves at once from both slipping under a limit.
+-- The month is the calendar month in UTC. Only the server can call it.
+create or replace function public.create_project(
+  p_owner uuid, p_name text, p_design text, p_monthly integer, p_total integer
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  used_month integer;
+  used_total integer;
+  created public.projects;
+begin
+  perform pg_advisory_xact_lock(hashtext('create_project:' || p_owner::text));
+  select count(*) into used_month from public.project_creations
+    where owner_id = p_owner and created_at >= (date_trunc('month', now() at time zone 'utc') at time zone 'utc');
+  select count(*) into used_total from public.projects where owner_id = p_owner;
+  if used_month >= p_monthly then
+    return jsonb_build_object('error', 'monthly-limit', 'month', used_month, 'total', used_total);
+  end if;
+  if used_total >= p_total then
+    return jsonb_build_object('error', 'total-limit', 'month', used_month, 'total', used_total);
+  end if;
+  insert into public.projects (owner_id, name, design) values (p_owner, p_name, p_design)
+    returning * into created;
+  insert into public.project_creations (owner_id) values (p_owner);
+  return jsonb_build_object(
+    'project', jsonb_build_object('id', created.id, 'name', created.name,
+      'created_at', created.created_at, 'updated_at', created.updated_at),
+    'month', used_month + 1, 'total', used_total + 1);
+end;
+$$;
+revoke all on function public.create_project(uuid, text, text, integer, integer) from public, anon, authenticated;
+grant execute on function public.create_project(uuid, text, text, integer, integer) to service_role;

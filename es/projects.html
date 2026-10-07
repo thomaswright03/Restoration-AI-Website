@@ -3,13 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Empiece su prueba gratis | Room Designer 3D</title>
-    <meta name="description" content="Cree su cuenta de Room Designer 3D." />
+    <title>Mis proyectos | Room Designer 3D</title>
+    <meta name="description" content="Abra, cambie de nombre y elimine los diseños de baño guardados en su cuenta." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Room Designer 3D" />
-    <meta property="og:title" content="Empiece su prueba gratis | Room Designer 3D" />
-    <meta property="og:description" content="Cree su cuenta de Room Designer 3D." />
-    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/es/signup.html" />
+    <meta property="og:title" content="Mis proyectos | Room Designer 3D" />
+    <meta
+      property="og:description"
+      content="Abra, cambie de nombre y elimine los diseños de baño guardados en su cuenta."
+    />
+    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/es/projects.html" />
     <meta property="og:image" content="https://restoration-ai-website-nu.vercel.app/images/og-es.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -29,10 +32,10 @@
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();
     </script>
-    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/signup.html" />
-    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/signup.html" />
-    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/signup.html" />
-    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/signup.html" />
+    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
+    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/projects.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/projects.html" />
+    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
     <script>
       (function () {
         var here = "es";
@@ -40,7 +43,7 @@
         var dirs = { en: "", es: "es/", pt: "pt/" };
         try {
           // Vercel answers every missing page with the English 404.html; under es/ or pt/, show that language's.
-          var lost = here === "en" && "signup.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
+          var lost = here === "en" && "projects.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
           if (lost) return location.replace("/" + lost[1] + "/404.html");
           var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
           if (chosen) {
@@ -61,8 +64,8 @@
               }
             }
           }
-          if (want && want !== here && dirs[want] !== undefined && "signup.html" !== "404.html") {
-            location.replace(root + dirs[want] + "signup.html" + location.search + location.hash);
+          if (want && want !== here && dirs[want] !== undefined && "projects.html" !== "404.html") {
+            location.replace(root + dirs[want] + "projects.html" + location.search + location.hash);
           }
         } catch (e) {}
       })();
@@ -101,14 +104,21 @@
                 <span class="visually-hidden">Idioma: </span>ES
               </summary>
               <ul class="lang-menu-list" aria-label="Idioma">
-                <li><a href="../signup.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li><a href="../projects.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
                 <li>
-                  <a href="../es/signup.html?lang=es" hreflang="es" lang="es" data-lang-choice="es" aria-current="true"
+                  <a
+                    href="../es/projects.html?lang=es"
+                    hreflang="es"
+                    lang="es"
+                    data-lang-choice="es"
+                    aria-current="true"
                     >Español</a
                   >
                 </li>
                 <li>
-                  <a href="../pt/signup.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                  <a href="../pt/projects.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt"
+                    >Português</a
+                  >
                 </li>
               </ul>
             </details>
@@ -118,12 +128,20 @@
     </header>
 
     <main id="main" class="app-page solid-header">
-      <section class="section app-narrow">
-        <h1 class="section-title" id="auth-title" data-mode-text="signup">Empiece su prueba gratis</h1>
-        <h1 class="section-title" data-mode-text="login" hidden>Iniciar sesión</h1>
-        <p class="section-subtitle" data-mode-text="signup">
-          Cree su cuenta y luego elija un plan. Solo se cobra a su tarjeta después de los 14 días de prueba.
-        </p>
+      <section class="section app-wide">
+        <div class="app-head">
+          <div>
+            <h1 class="section-title">Mis proyectos</h1>
+            <p class="app-signed-in" id="projects-email" hidden></p>
+            <p class="app-signed-in" id="projects-plan" hidden></p>
+          </div>
+          <div class="app-actions app-head-actions">
+            <a class="btn btn-primary" id="project-new" href="../es/designer.html" hidden>Nuevo proyecto</a>
+            <a class="btn btn-outline-dark" href="../es/account.html">Cuenta</a>
+          </div>
+        </div>
+
+        <p class="app-loading" id="projects-loading">Cargando…</p>
 
         <div class="app-notice" id="accounts-off" hidden>
           <p>
@@ -133,51 +151,41 @@
           <p><a href="../es/designer.html">Probar la demo</a></p>
         </div>
 
-        <div class="app-card" id="auth-card" hidden>
-          <div class="auth-tabs" role="group" aria-label="Crear una cuenta o iniciar sesión">
-            <button type="button" class="auth-tab" data-mode="signup" aria-pressed="true">Crear cuenta</button>
-            <button type="button" class="auth-tab" data-mode="login" aria-pressed="false">Iniciar sesión</button>
+        <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-free" hidden>
+            <p>
+              <strong>Tiene el plan gratis.</strong> Puede usar el diseñador todo lo que quiera, pero para guardar
+              proyectos necesita un plan de pago.
+            </p>
+            <p><a href="../es/account.html">Elegir un plan</a></p>
           </div>
-          <form id="auth-form" novalidate>
-            <div class="form-group" data-mode-field="signup">
-              <label for="auth-business">Nombre de la empresa</label>
-              <input type="text" id="auth-business" name="business" autocomplete="organization" maxlength="120" />
+
+          <div class="app-card" id="projects-usage" hidden>
+            <h2>Lo que permite su plan</h2>
+            <div class="usage-grid">
+              <div class="usage" id="usage-month">
+                <p data-meter-text></p>
+                <meter min="0" aria-label="Proyectos nuevos este mes"></meter>
+              </div>
+              <div class="usage" id="usage-total">
+                <p data-meter-text></p>
+                <meter min="0" aria-label="Proyectos guardados"></meter>
+              </div>
             </div>
-            <div class="form-group">
-              <label for="auth-email">Correo electrónico</label>
-              <input type="email" id="auth-email" name="email" autocomplete="email" required />
-            </div>
-            <div class="form-group" data-mode-field="signup login">
-              <label for="auth-password">Contraseña</label>
-              <input
-                type="password"
-                id="auth-password"
-                name="password"
-                autocomplete="new-password"
-                minlength="8"
-                required
-              />
-              <p class="form-note" data-mode-field="signup">Al menos 8 caracteres.</p>
-            </div>
-            <div id="auth-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
-            <button type="submit" class="btn btn-primary btn-block" id="auth-submit">
-              <span data-mode-text="signup">Crear cuenta</span>
-              <span data-mode-text="login" hidden>Iniciar sesión</span>
-              <span data-mode-text="reset" hidden>Enviarme un enlace para restablecerla</span>
-            </button>
             <p class="form-note">
-              <button type="button" class="link-button" id="auth-forgot" data-mode-field="login">
-                ¿Olvidó su contraseña?
-              </button>
-              <button type="button" class="link-button" id="auth-back" data-mode-field="reset">
-                Volver a iniciar sesión
-              </button>
+              Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes;
+              esos vuelven a empezar el día 1 de cada mes.
             </p>
-            <p class="form-consent" data-mode-field="signup">
-              Al crear una cuenta acepta los <a href="terms.html">Términos del servicio</a> y la
-              <a href="privacy.html">Política de privacidad</a>.
+          </div>
+
+          <div class="app-card">
+            <h2 id="projects-heading" tabindex="-1">Sus proyectos <span id="projects-count"></span></h2>
+            <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
+            <p class="form-note" id="projects-empty" hidden>
+              Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.
             </p>
-          </form>
+            <ul class="project-list" id="projects-list"></ul>
+          </div>
         </div>
       </section>
     </main>

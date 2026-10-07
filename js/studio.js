@@ -349,6 +349,13 @@
     return url + "#" + HASH_KEY + "=" + Plan.encode(design);
   }
 
+  // js/projects.js saves the design to the signed-in subscriber's projects.
+  window.StudioDesign = {
+    encoded: function () {
+      return design ? Plan.encode(design) : "";
+    },
+  };
+
   function copyLink() {
     var url = shareUrl();
     var done = function () {

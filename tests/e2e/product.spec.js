@@ -3,7 +3,15 @@
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
 
-const PAGES = ["index.html", "designer.html", "signup.html", "account.html", "privacy.html", "terms.html"];
+const PAGES = [
+  "index.html",
+  "designer.html",
+  "signup.html",
+  "account.html",
+  "projects.html",
+  "privacy.html",
+  "terms.html",
+];
 
 for (const dir of ["", "es/", "pt/"]) {
   for (const file of PAGES) {

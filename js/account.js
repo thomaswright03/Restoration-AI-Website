@@ -438,6 +438,34 @@
       });
   }
 
+  // The plan's project limits and what's used (api/projects.js); the full
+  // list is on projects.html.
+  function loadProjectsSummary() {
+    fetch("/api/projects", { headers: { Authorization: "Bearer " + session.access_token }, cache: "no-store" })
+      .then(function (res) {
+        return res.ok ? res.json() : null;
+      })
+      .catch(function () {
+        return null;
+      })
+      .then(function (data) {
+        var text = !data
+          ? ""
+          : data.plan === "free"
+            ? T("proj.summary.free")
+            : T("proj.summary.paid", {
+                plan: T("proj.plan." + data.plan),
+                month: data.used.month,
+                monthly: data.limits.monthly,
+                total: data.used.total,
+                limit: data.limits.total,
+              });
+        $("projects-summary").textContent = text;
+        show($("projects-summary"), !!text);
+        show($("projects-card"), true);
+      });
+  }
+
   function buy(plan, button) {
     var out = $("plan-message");
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
@@ -498,6 +526,7 @@
         }, 3000);
       });
       loadBusiness();
+      loadProjectsSummary();
     });
 
     $("sign-out").addEventListener("click", function () {

@@ -39,6 +39,7 @@ export const PAGES = [
   { file: "designer.html", strings: ["designer"], designer: true },
   { file: "signup.html", strings: ["account", "index"], app: "signup" },
   { file: "account.html", strings: ["account", "index"], app: "account" },
+  { file: "projects.html", strings: ["projects", "account", "index"], app: "projects" },
   { file: "privacy.html", strings: ["legal"] },
   { file: "terms.html", strings: ["legal"] },
   { file: "404.html", strings: ["notfound"], absolute: true },

@@ -44,6 +44,12 @@
             <p class="form-status" id="plan-message" role="status" aria-live="polite" hidden></p>
           </div>
 
+          <div class="app-card" id="projects-card" hidden>
+            <h2>{{account.projects.title}}</h2>
+            <p id="projects-summary"></p>
+            <p><a href="{{@root}}{{@dir}}projects.html">{{account.projects.link}}</a></p>
+          </div>
+
           <div class="app-card">
             <h2>{{account.biz.title}}</h2>
             <p class="form-note">{{account.biz.help}}</p>

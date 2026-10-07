@@ -9,6 +9,8 @@ A product of Wright AI Solutions, LLC. The designer itself started as the one bu
 - **Landing page** (`index.html`): what it is, pricing, FAQ, sign-up.
 - **Live demo** (`designer.html`): the full designer, speaking for a sample business.
 - **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout, free trial), set the business details and labor prices, copy the designer link or embed code, and read the requests homeowners send.
+- **My projects** (`projects.html`): a subscriber's saved designs, to open, rename or delete, with what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project (homeowners are never signed in, so they don't see it).
+- **Plans and limits** (`api/_plans.js`): Free can use the designer but can't save projects. Starter 10 new projects a month and 50 kept at once, Pro 25 and 100, Max 100 and 1000. Deleting a project frees a slot under the total but not the month's allowance (calendar month, UTC). The server enforces both (`api/projects.js` and the `create_project()` database function).
 - **A business's designer**: `designer.html?b=<their-slug>`, or `...&embed=1` inside an iframe on their own site (no product header/footer). It only runs while their subscription is active or trialing.
 
 Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
@@ -21,13 +23,14 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
   - `business.js`: a business's public profile, loaded by the designer page as a script
   - `leads.js`: saves a homeowner request for that business (and emails it, if Resend is set up)
   - `checkout.js` / `portal.js`: Stripe Checkout and the Stripe billing portal
-  - `stripe-webhook.js`: records subscription status in Supabase
-- Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, with row-level security).
+  - `projects.js`: a subscriber's projects (list, open, save, rename, delete), within their plan's limits
+  - `stripe-webhook.js`: records subscription status (and which plan) in Supabase
+- Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, projects, with row-level security).
 - With no keys set, the site runs in demo mode: the demo designer works, and sign-up says accounts aren't switched on yet.
 
 ## Going live (one-time setup)
 
-1. **Supabase**: create a project. In SQL Editor, run `supabase/schema.sql`. In Authentication > URL Configuration, set the Site URL to your domain and add `https://<domain>/account.html`, `/es/account.html` and `/pt/account.html` as redirect URLs.
+1. **Supabase**: create a project. In SQL Editor, run `supabase/schema.sql` (and run it again whenever it changes; it's safe to re-run). In Authentication > URL Configuration, set the Site URL to your domain and add `https://<domain>/account.html`, `/es/account.html` and `/pt/account.html` as redirect URLs.
 2. **Stripe**: create one product with a monthly and a yearly recurring price. Add a webhook to `https://<domain>/api/stripe-webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Turn on the customer portal (Settings > Billing > Customer portal).
 3. **Vercel**: import this repo as a project (no build settings needed) and set the environment variables in `.env.example`.
 4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json`, run `npm run pages`, commit.
@@ -58,6 +61,7 @@ The designer is a five-step studio: **Room** (a common bathroom to start from, m
 - `js/script.js`: menu, language, FAQ and the request form
 - `models/`: GLB fixture and product models
 - `js/account.js`: sign-up and account pages
+- `js/projects.js`: the My projects page and the designer's save bar
 
 ## Checks
 

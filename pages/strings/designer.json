@@ -84,5 +84,10 @@
     "Powered by Room Designer 3D",
     "Con la tecnología de Room Designer 3D",
     "Desenvolvido com Room Designer 3D"
-  ]
+  ],
+  "designer.project.label": ["Your project", "Su proyecto", "Seu projeto"],
+  "designer.project.name": ["Project name", "Nombre del proyecto", "Nome do projeto"],
+  "designer.project.save": ["Save project", "Guardar proyecto", "Salvar projeto"],
+  "designer.project.saveNew": ["Save as new project", "Guardar como proyecto nuevo", "Salvar como projeto novo"],
+  "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"]
 }

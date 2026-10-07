@@ -7,6 +7,7 @@
 "use strict";
 
 const { env, supabaseReady, sendJson, db, stripe, verifyStripeSignature, readRawBody } = require("./_lib.js");
+const { planFromPrice } = require("./_plans.js");
 
 function periodEnd(sub) {
   const item = sub.items && sub.items.data && sub.items.data[0];
@@ -17,6 +18,8 @@ function periodEnd(sub) {
 async function saveSubscription(ownerId, sub) {
   if (!ownerId) return;
   const item = sub.items && sub.items.data && sub.items.data[0];
+  // Only when the price names its plan, so a plan set by hand isn't wiped.
+  const plan = planFromPrice(item && item.price) || undefined;
   await db("subscriptions?on_conflict=owner_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
@@ -26,6 +29,7 @@ async function saveSubscription(ownerId, sub) {
       stripe_subscription_id: sub.id,
       status: sub.status,
       price_id: item && item.price ? item.price.id : null,
+      plan,
       current_period_end: periodEnd(sub),
       cancel_at_period_end: !!sub.cancel_at_period_end,
       updated_at: new Date().toISOString(),

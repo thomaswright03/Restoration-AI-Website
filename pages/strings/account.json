@@ -203,5 +203,7 @@
     "No requests yet. They appear here when a customer sends their design.",
     "Aún no hay solicitudes. Aparecen aquí cuando un cliente envía su diseño.",
     "Ainda não há pedidos. Eles aparecem aqui quando um cliente envia o projeto."
-  ]
+  ],
+  "account.projects.title": ["Projects", "Proyectos", "Projetos"],
+  "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"]
 }

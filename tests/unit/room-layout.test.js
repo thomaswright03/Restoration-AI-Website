@@ -386,16 +386,16 @@ test("computeLayout handles the DIMENSIONS max (50x50) without error", () => {
 
 test("colorForFloorFinish / colorForWalls / colorForCeiling return the brand hex values for every scope value, light and dark", () => {
   assert.equal(L.colorForFloorFinish("tile", false), 0xffffff);
-  assert.equal(L.colorForFloorFinish("tile", true), 0x1d1a16);
-  assert.equal(L.colorForFloorFinish("flooring", false), 0xcda15f);
-  assert.equal(L.colorForFloorFinish("none", false), 0xf3efe7);
+  assert.equal(L.colorForFloorFinish("tile", true), 0x1a2236);
+  assert.equal(L.colorForFloorFinish("flooring", false), 0x9db3dd);
+  assert.equal(L.colorForFloorFinish("none", false), 0xeef2f8);
 
   assert.equal(L.colorForWalls("tile", false), 0xffffff);
-  assert.equal(L.colorForWalls("paint", false), 0xcda15f);
-  assert.equal(L.colorForWalls("none", false), 0xfaf8f4);
+  assert.equal(L.colorForWalls("paint", false), 0x9db3dd);
+  assert.equal(L.colorForWalls("none", false), 0xf5f7fb);
 
-  assert.equal(L.colorForCeiling(true, false), 0xcda15f);
-  assert.equal(L.colorForCeiling(false, false), 0xfaf8f4);
+  assert.equal(L.colorForCeiling(true, false), 0x9db3dd);
+  assert.equal(L.colorForCeiling(false, false), 0xf5f7fb);
 });
 
 test("demolition has no fixture-layout or finish-color entry point, same convention as the materials picker", () => {

@@ -1,0 +1,10 @@
+# Source and dev files Vercel doesn't need to serve. The built pages, js/,
+# css/, fonts/, images/, models/ and api/ are what the live site uses.
+pages/
+scripts/
+supabase/
+tests/
+tools/
+test-results/
+playwright-report/
+blob-report/

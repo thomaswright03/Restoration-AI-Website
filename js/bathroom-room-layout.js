@@ -975,13 +975,13 @@
   // demolition never influences any of these — same convention the
   // materials picker and the old bathroom-visualizer.js both already used.
   var FINISH_COLORS = {
-    tile: { light: 0xffffff, dark: 0x1d1a16 },
-    flooring: { light: 0xcda15f, dark: 0xe0b877 },
-    floorNone: { light: 0xf3efe7, dark: 0x24201b },
-    wallPaint: { light: 0xcda15f, dark: 0xe0b877 },
-    wallNone: { light: 0xfaf8f4, dark: 0x14120f },
-    ceilingPainted: { light: 0xcda15f, dark: 0xe0b877 },
-    ceilingUnpainted: { light: 0xfaf8f4, dark: 0x14120f },
+    tile: { light: 0xffffff, dark: 0x1a2236 },
+    flooring: { light: 0x9db3dd, dark: 0x6b82b5 },
+    floorNone: { light: 0xeef2f8, dark: 0x1a2236 },
+    wallPaint: { light: 0x9db3dd, dark: 0x6b82b5 },
+    wallNone: { light: 0xf5f7fb, dark: 0x0b1122 },
+    ceilingPainted: { light: 0x9db3dd, dark: 0x6b82b5 },
+    ceilingUnpainted: { light: 0xf5f7fb, dark: 0x0b1122 },
   };
 
   function colorForFloorFinish(value, isDark) {

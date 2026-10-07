@@ -5,7 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Página não encontrada | Room Designer 3D</title>
     <meta name="description" content="Esta página não existe." />
-    <meta name="theme-color" content="#15130f" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Room Designer 3D" />
+    <meta property="og:title" content="Página não encontrada | Room Designer 3D" />
+    <meta property="og:description" content="Esta página não existe." />
+    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/pt/404.html" />
+    <meta property="og:image" content="https://restoration-ai-website-nu.vercel.app/images/og-pt.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#0a1024" />
     <meta name="color-scheme" content="light dark" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
@@ -30,6 +39,9 @@
         var root = "/";
         var dirs = { en: "", es: "es/", pt: "pt/" };
         try {
+          // Vercel answers every missing page with the English 404.html; under es/ or pt/, show that language's.
+          var lost = here === "en" && "404.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
+          if (lost) return location.replace("/" + lost[1] + "/404.html");
           var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
           if (chosen) {
             localStorage.setItem("pr_lang", chosen[1]);

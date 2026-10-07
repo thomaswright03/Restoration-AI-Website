@@ -142,7 +142,8 @@
             email: email,
             password: password,
             options: {
-              data: { business_name: $("auth-business").value.trim().slice(0, 120) },
+              // lang picks the language of Supabase's emails (supabase/emails/).
+              data: { business_name: $("auth-business").value.trim().slice(0, 120), lang: LANG },
               emailRedirectTo: next(),
             },
           })

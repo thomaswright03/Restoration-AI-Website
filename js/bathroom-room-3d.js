@@ -2383,8 +2383,8 @@ function ensureScene() {
     renderer.domElement.setAttribute("aria-label", T("room3d.canvasLabel"));
 
     var scene = new THREE.Scene();
-    var skyHex = isDark ? 0x211d17 : 0xfaf8f4;
-    var groundHex = isDark ? 0x14120f : 0xf3efe7;
+    var skyHex = isDark ? 0x162038 : 0xf5f7fb;
+    var groundHex = isDark ? 0x0b1122 : 0xeef2f8;
     scene.background = new THREE.Color(skyHex);
 
     // Image-based lighting from a procedurally generated studio-like room
@@ -2458,10 +2458,10 @@ function ensureScene() {
     // leaking materials — rebuildShell only repositions/resizes the
     // highlight mesh for each wall, it never replaces these.
     var wallHighlightMaterials = {
-      N: new THREE.MeshBasicMaterial({ color: 0xcda15f, transparent: true, opacity: 0, depthWrite: false }),
-      E: new THREE.MeshBasicMaterial({ color: 0xcda15f, transparent: true, opacity: 0, depthWrite: false }),
-      S: new THREE.MeshBasicMaterial({ color: 0xcda15f, transparent: true, opacity: 0, depthWrite: false }),
-      W: new THREE.MeshBasicMaterial({ color: 0xcda15f, transparent: true, opacity: 0, depthWrite: false }),
+      N: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
+      E: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
+      S: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
+      W: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
     };
     var raycaster = new THREE.Raycaster();
     var pointerDownPos = null;

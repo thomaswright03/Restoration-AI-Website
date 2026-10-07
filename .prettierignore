@@ -6,3 +6,6 @@ playwright-report/
 package-lock.json
 models/
 pages/*.html
+
+# Supabase email templates: Go template tags between table rows; pasted as is.
+supabase/emails/*.html

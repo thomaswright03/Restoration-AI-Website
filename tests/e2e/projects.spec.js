@@ -29,7 +29,7 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits } 
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
   await page.route(SUPABASE + "/rest/v1/businesses**", (route) => route.fulfill({ json: { slug: "smith-bath" } }));
   // The business's designer profile, as api/business.js would send it.
-  await page.route("**/api/business?b=smith-bath", (route) =>
+  await page.route("**/api/business?b=smith-bath*", (route) =>
     route.fulfill({
       contentType: "application/javascript",
       body: 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{}});',

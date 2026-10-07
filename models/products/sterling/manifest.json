@@ -1,0 +1,635 @@
+{
+  "source": "Sterling's official catalog on SketchUp 3D Warehouse (https://3dwarehouse.sketchup.com/user/8e30d62b-de9e-4c6e-b47a-00322bc78944), GLB download, filtered to products sold at Home Depot (fixture-models/sterling/sterling-homedepot-check.csv in the project files). Flattened to OBJ in centimeters, then converted with: node tools/models/obj-to-glb.mjs <model>.obj <file> <convertArgs>. Files are named by Home Depot model number.",
+  "products": [
+    {
+      "mmn": "402078-0",
+      "sterlingModel": "402078",
+      "name": "Sterling Windham 14 in. Rough-In 2-Piece 1.28 GPF Single Flush Round Toilet in White, Seat Not Included",
+      "file": "models/products/sterling/402078-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-14-in-Rough-In-2-Piece-1-28-GPF-Single-Flush-Round-Toilet-in-White-Seat-Not-Included-402078-0/318624796",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/cc1d0f8949fc47dafe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402210-0",
+      "sterlingModel": "402210",
+      "name": "Sterling Windham 10 in. Rough-In 2-Piece 1.6 GPF Single Flush Elongated Toilet in White",
+      "file": "models/products/sterling/402210-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-10-in-Rough-In-2-Piece-1-6-GPF-Single-Flush-Elongated-Toilet-in-White-402210-0/202962054",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/6459f86a46286508fe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402320-0",
+      "sterlingModel": "402320",
+      "name": "Sterling Windham 2- Piece 1.28 GPF Single Flush Round Toilet in White, Seat Not Included",
+      "file": "models/products/sterling/402320-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-2-Piece-1-28-GPF-Single-Flush-Round-Toilet-in-White-Seat-Not-Included-402320-0/333664097",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/90214ddd-45c9-46a6-9728-fa3279ad689e",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402321-0",
+      "sterlingModel": "402321",
+      "name": "Sterling Windham 2- Piece 1.28 GPF Single Flush Elongated Toilet in White, Seat Not Included",
+      "file": "models/products/sterling/402321-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-2-Piece-1-28-GPF-Single-Flush-Elongated-Toilet-in-White-Seat-Not-Included-402321-0/333664100",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/10dd0340-447d-4d22-ab43-28e5e41c25db",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402322-0",
+      "sterlingModel": "402322",
+      "name": "Sterling Windham 2-Piece 1.28 GPF Single Flush Elongated Chair Height Toilet w ProForce Plus Flushing in White, Seat Not Included",
+      "file": "models/products/sterling/402322-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-2-Piece-1-28-GPF-Single-Flush-Elongated-Chair-Height-Toilet-w-ProForce-Plus-Flushing-in-White-Seat-Not-Included-402322-0/333664078",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/6c0bce5a-2d85-4bf3-a837-da96a8be7aef",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402324-0",
+      "sterlingModel": "402324",
+      "name": "Sterling Windham 2-Piece 1.6 GPF Single Flush Elongated Toilet with ProForce Plus Flushing Technology in White, Seat Not Included",
+      "file": "models/products/sterling/402324-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-2-Piece-1-6-GPF-Single-Flush-Elongated-Toilet-with-ProForce-Plus-Flushing-Technology-in-White-Seat-Not-Included-402324-0/333664081",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/85f33ba9-82a0-4adf-ba91-9dbf7b1b2de5",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "402325-0",
+      "sterlingModel": "402325",
+      "name": "Sterling Windham 2-Piece 1.6 GPF Single Flush Elongated Toilet in White (Seat Not Included)",
+      "file": "models/products/sterling/402325-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Windham-2-Piece-1-6-GPF-Single-Flush-Elongated-Toilet-in-White-Seat-Not-Included-402325-0/333664088",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/71c644ba-4c9f-4918-8ca9-661b2208df3b",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.35"
+      ]
+    },
+    {
+      "mmn": "442007-U-0",
+      "sterlingModel": "442007",
+      "name": "Sterling Stinson 20.2 x 14.375 in. Undermount Bathroom Sink in White Vitreous China with Overflow Drain",
+      "file": "models/products/sterling/442007-U-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/STERLING-Stinson-20-2-x-14-375-in-Undermount-Bathroom-Sink-in-White-Vitreous-China-with-Overflow-Drain-442007-U-0/202952320",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/9af321a4-f0a5-480b-89ec-83a486a0e118",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.12"
+      ]
+    },
+    {
+      "mmn": "442040-0",
+      "sterlingModel": "442040",
+      "name": "Sterling Wescott 19.1x15.375in. Undermount Bathroom Sink in White Vitreous China with Overflow Drain",
+      "file": "models/products/sterling/442040-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/STERLING-Wescott-19-1x15-375in-Undermount-Bathroom-Sink-in-White-Vitreous-China-with-Overflow-Drain-442040-0/202493885",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/a706bc0a-7ad6-4a7a-87d2-4c6f54b69c17",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.12"
+      ]
+    },
+    {
+      "mmn": "S1201-0",
+      "sterlingModel": "S1201-0",
+      "name": "Sterling Drop-In Oval Stainless Steal Bathroom Sink in Satin Stainless-Steel",
+      "file": "models/products/sterling/S1201-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Drop-In-Oval-Stainless-Steal-Bathroom-Sink-in-Satin-Stainless-Steel-S1201-0/307516750",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/a9e05544b478b6471f6566a4d01370e6",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.12"
+      ]
+    },
+    {
+      "mmn": "442124-0",
+      "sterlingModel": "442124",
+      "name": "Sterling Sacramento 18.3 x 21.25 Pedestal Bathroom Sink in White Vitreous China with Overflow Drain",
+      "file": "models/products/sterling/442124-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Sacramento-18-3-x-21-25-Pedestal-Bathroom-Sink-in-White-Vitreous-China-with-Overflow-Drain-442124-0/202493894",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/e2267e08-1fe1-4ce9-98a1-5bf6b83e6010",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "-x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "71121110-0",
+      "sterlingModel": "71121110",
+      "name": "Sterling Ensemble 5 ft. Left Drain Rectangular Alcove Bathtub in White",
+      "file": "models/products/sterling/71121110-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/STERLING-Ensemble-5-ft-Left-Drain-Rectangular-Alcove-Bathtub-in-White-71121110-0/202953493",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/986351819dec1974fe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71121112-0",
+      "sterlingModel": "71121112",
+      "name": "Sterling Ensemblen60. 25 in x 32.125 in. Soaking Bathtub with Right Drain in White",
+      "file": "models/products/sterling/71121112-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemblen60-25-in-x-32-125-in-Soaking-Bathtub-with-Right-Drain-in-White-71121112-0/202903036",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/c9e4c04d662d401afe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71121120-0",
+      "sterlingModel": "71121120",
+      "name": "Sterling Ensemble 5 ft. Right Drain Rectangular Alcove Bathtub in White",
+      "file": "models/products/sterling/71121120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-5-ft-Right-Drain-Rectangular-Alcove-Bathtub-in-White-71121120-0/202953509",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/a267a7c0a0563015fe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71121122-0",
+      "sterlingModel": "71121122",
+      "name": "Sterling Ensemble 60.25 in x 32.125 in. Soaking Bathtub with Right Drain in White",
+      "file": "models/products/sterling/71121122-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-60-25-in-x-32-125-in-Soaking-Bathtub-with-Right-Drain-in-White-71121122-0/202903043",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ddb0ea838117d8ebfe52ffd0e748a1ab",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71171110-0",
+      "sterlingModel": "71171110",
+      "name": "Sterling Ensemble 60 in. x 30.125 in. Soaking Bathtub with Left Drain in White",
+      "file": "models/products/sterling/71171110-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-60-in-x-30-125-in-Soaking-Bathtub-with-Left-Drain-in-White-71171110-0/205439667",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u8fea106a-037b-4c19-8ea9-97f7a1f63cb5",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71171112-0",
+      "sterlingModel": "71171112",
+      "name": "Sterling Ensemble 60.25 in. x 30.25 in. Alcove Soaking Bathtub with Left Drain in White",
+      "file": "models/products/sterling/71171112-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-60-25-in-x-30-25-in-Alcove-Soaking-Bathtub-with-Left-Drain-in-White-71171112-0/330681951",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ucea117d7-f92f-4612-93fb-12482e12ea78",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71171120-0",
+      "sterlingModel": "71171120",
+      "name": "Sterling Ensemble 5 ft. Alcove Rectangular Right Drain Bathtub in White",
+      "file": "models/products/sterling/71171120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-5-ft-Alcove-Rectangular-Right-Drain-Bathtub-in-White-71171120-0/205439668",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u6fe25f39-03ac-4692-ab0d-df7bfbe51acb",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71171122-0",
+      "sterlingModel": "71171122",
+      "name": "Sterling Ensemble 60 in. x 30.25 in. Soaking Bathtub with Right Drain in White",
+      "file": "models/products/sterling/71171122-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-60-in-x-30-25-in-Soaking-Bathtub-with-Right-Drain-in-White-71171122-0/205795036",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ucaaa6632-db19-4346-be77-e26c007bfad3",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "96136-0",
+      "sterlingModel": "96136",
+      "name": "Sterling Unwind 66.94 in. x 29.5 in. Alcove Soaking Bathtub with Center Drain in White",
+      "file": "models/products/sterling/96136-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Unwind-66-94-in-x-29-5-in-Alcove-Soaking-Bathtub-with-Center-Drain-in-White-96136-0/330682134",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/4caf2580-2d9a-4632-98d2-174451aee75a",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "-x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "71220110-0",
+      "sterlingModel": "71220110",
+      "name": "Sterling Ensemble 32 in. x 60 in. x 74 in. Bath and Shower Kit with Left-Hand Drain in White",
+      "file": "models/products/sterling/71220110-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-32-in-x-60-in-x-74-in-Bath-and-Shower-Kit-with-Left-Hand-Drain-in-White-71220110-0/203022634",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/568754189f37a3e01f6566a4d01370e6",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "71220120-0",
+      "sterlingModel": "71220120",
+      "name": "Sterling Ensemble 32 in. x 60 in. x 74 in. Bath and Shower Kit with Right-Hand Drain in White",
+      "file": "models/products/sterling/71220120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-32-in-x-60-in-x-74-in-Bath-and-Shower-Kit-with-Right-Hand-Drain-in-White-71220120-0/203016834",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/14aac4855be03b041f6566a4d01370e6",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "71370120-0",
+      "sterlingModel": "71370120",
+      "name": "Sterling Ensemble Medley 60 in. x 31.25 in. x 74.25 in. 4-piece Tongue and Groove Tub Wall in White",
+      "file": "models/products/sterling/71370120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-Medley-60-in-x-31-25-in-x-74-25-in-4-piece-Tongue-and-Groove-Tub-Wall-in-White-71370120-0/205218525",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u4270e700-fa40-497b-b82e-8ee316958cbf",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "72101100-0",
+      "sterlingModel": "72101100",
+      "name": "Sterling Ensemble 36 in. x 34 in. Single Threshold Shower Base in White",
+      "file": "models/products/sterling/72101100-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-36-in-x-34-in-Single-Threshold-Shower-Base-in-White-72101100-0/203016883",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u8829844a-8561-4314-b3d0-db6267664809",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72131100-0",
+      "sterlingModel": "72131100",
+      "name": "Sterling Ensemble 34 in. x 60 in. Single Threshold Shower Floor in White",
+      "file": "models/products/sterling/72131100-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-34-in-x-60-in-Single-Threshold-Shower-Floor-in-White-72131100-0/203022687",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/bd5e1579-2bb2-48c8-8ab5-90451872b6a1",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "-x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72171110-0",
+      "sterlingModel": "72171110",
+      "name": "Sterling Ensemble 60 in. L x 30 in. W Single Threshold Alcove Shower Pan Base with Left-Hand Drain in White",
+      "file": "models/products/sterling/72171110-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-60-in-L-x-30-in-W-Single-Threshold-Alcove-Shower-Pan-Base-with-Left-Hand-Drain-in-White-72171110-0/205113537",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u20a03540-8390-4c99-ba7f-727a128b035f",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72171120-0",
+      "sterlingModel": "72171120",
+      "name": "Sterling Ensemble 30 in. L x 60 in. W Alcove Single Threshold Shower Pan Base with Right Drain in White",
+      "file": "models/products/sterling/72171120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-30-in-L-x-60-in-W-Alcove-Single-Threshold-Shower-Pan-Base-with-Right-Drain-in-White-72171120-0/307589856",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u581afdc4-cf87-4105-8e82-7e5acaca7b0f",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72181110-0",
+      "sterlingModel": "72181110",
+      "name": "Sterling Ensemble 32 in. x 60 in. Alcove Single Threshold Shower Pan Base with Left Drain in White",
+      "file": "models/products/sterling/72181110-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-32-in-x-60-in-Alcove-Single-Threshold-Shower-Pan-Base-with-Left-Drain-in-White-72181110-0/307589845",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ua757af73-693c-4a7c-894c-f1a86544ff25",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72181120-0",
+      "sterlingModel": "72181120",
+      "name": "Sterling Ensemble 32 in. x 60 in. Single Threshold Shower Base in White",
+      "file": "models/products/sterling/72181120-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-32-in-x-60-in-Single-Threshold-Shower-Base-in-White-72181120-0/205755752",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u394912cf-5a8c-489a-9f4f-711b23b4721d",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.25"
+      ]
+    },
+    {
+      "mmn": "72180116-0",
+      "sterlingModel": "72180116",
+      "name": "Sterling Ensemble 32 in. x 60 in. x 74-1/2 in. Shower Kit with Age-in-Place Backers in White",
+      "file": "models/products/sterling/72180116-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/STERLING-Ensemble-32-in-x-60-in-x-74-1-2-in-Shower-Kit-with-Age-in-Place-Backers-in-White-72180116-0/307515645",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u0e815a9a-6dab-4818-a991-fd0fd68cffd1",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "72180126-0",
+      "sterlingModel": "72180126",
+      "name": "Sterling Ensemble 32 in. x 60 in. x 74-1/2 in. 4-Piece Shower Stall with Age-in-Place Backers in White",
+      "file": "models/products/sterling/72180126-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Ensemble-32-in-x-60-in-x-74-1-2-in-4-Piece-Shower-Stall-with-Age-in-Place-Backers-in-White-72180126-0/332162097",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u566b7e23-2dd1-4ddb-9ad6-c83821e55f5c",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "72240100-0",
+      "sterlingModel": "72240100",
+      "name": "Sterling Accord 36 in. L x 36 in. W x 75.75 in. H Shower Kit in White",
+      "file": "models/products/sterling/72240100-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Accord-36-in-L-x-36-in-W-x-75-75-in-H-Shower-Kit-in-White-72240100-0/202962157",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/2d9e2a1536902db71f6566a4d01370e6",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.45"
+      ]
+    },
+    {
+      "mmn": "581075-59N-G05",
+      "sterlingModel": "581075-59",
+      "name": "Sterling Meritor 55-60 in. x 70 in. Semi Frameless Sliding Shower Door in Nickel with 1/4 in. Thick Clear Tempered Glass",
+      "file": "models/products/sterling/581075-59N-G05.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Meritor-55-60-in-x-70-in-Semi-Frameless-Sliding-Shower-Door-in-Nickel-with-1-4-in-Thick-Clear-Tempered-Glass-581075-59N-G05/206058110",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/u8b2b68e0-3cde-42bb-9d06-e38add4f29ff",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "5976-59S",
+      "sterlingModel": "5976-59",
+      "name": "Sterling Deluxe 55-60 in. W x 70 in. H Framed Sliding Shower Door in Silver with 1/8 in. Thick Rain Tempered Glass",
+      "file": "models/products/sterling/5976-59S.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Sterling-Deluxe-55-60-in-W-x-70-in-H-Framed-Sliding-Shower-Door-in-Silver-with-1-8-in-Thick-Rain-Tempered-Glass-5976-59S/202952625",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/fd5074f3-ef3a-4d61-9a86-f25d82779b81",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+z",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.3"
+      ]
+    },
+    {
+      "mmn": "80001024-V",
+      "sterlingModel": "80001024",
+      "name": "Sterling 24 in. x 1.5 in. Straight Bar with Narrow Grip in Matte Silver",
+      "file": "models/products/sterling/80001024-V.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/STERLING-24-in-x-1-5-in-Straight-Bar-with-Narrow-Grip-in-Matte-Silver-80001024-V/202962277",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/196208ff-bf34-49a8-95d4-177ef5836e83",
+      "convertArgs": [
+        "--up",
+        "y",
+        "--front",
+        "+x",
+        "--units",
+        "cm",
+        "--cluster",
+        "0.1"
+      ]
+    }
+  ]
+}

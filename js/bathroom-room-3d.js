@@ -667,6 +667,9 @@ function ensureFixtureModel(s, fixtureKey) {
 //   dropIn:    a drop-in or alcove tub ("oval" or "rect" basin) — drawn set
 //              into a stone tub deck (see buildTubDeck) instead of standing
 //              on its bare shell
+//   alcove:    an alcove tub with its own apron (or a tub-and-walls kit),
+//              set against the wall as it is: no deck, and no floor filler
+//   hasWalls:  a shower kit with its walls built in (no separate wall kit)
 
 // Where a mirror's bottom edge goes: ~10 in. above a 31 in. vanity top.
 var MIRROR_BOTTOM_FT = 3.4;
@@ -753,7 +756,7 @@ function onWall(x, centerY) {
 function accessoryOptions(ids, material, place) {
   return [{ id: "none", url: null }].concat(
     ids.map(function (id) {
-      return { id: id, url: "models/products/kohler/" + id + ".glb", material: material, place: place };
+      return { id: id, url: productUrl(id), material: material, place: place };
     }),
   );
 }
@@ -764,17 +767,23 @@ function noneLast(options) {
 
 var TOWEL_BARS = ["K-14436-CP", "K-14435-CP", "K-78373-CP", "K-14441-CP"];
 var PAPER_HOLDERS = ["K-14377-CP", "K-13504-CP", "K-73147-CP", "K-78382-CP"];
-var GRAB_BARS = ["K-10542-CP", "K-10544-CP", "K-11895-BS", "K-25161-CP"];
+var GRAB_BARS = ["K-10542-CP", "K-10544-CP", "K-11895-BS", "K-25161-CP", "80001024-V"];
 var ROBE_HOOKS = ["K-14443-CP", "K-23529-CP"];
 
 // Each bar's overall length, flanges included (ft).
-var GRAB_BAR_LENGTHS = { "K-10542-CP": 2.23, "K-10544-CP": 3.23, "K-11895-BS": 3.2, "K-25161-CP": 3.2 };
+var GRAB_BAR_LENGTHS = {
+  "K-10542-CP": 2.23,
+  "K-10544-CP": 3.23,
+  "K-11895-BS": 3.2,
+  "K-25161-CP": 3.2,
+  "80001024-V": 2.02,
+};
 
 // fits(sel, length): whether a bar that long goes on this fixture's wall.
 function grabBarOptions(place, fits) {
   return accessoryOptions(GRAB_BARS, "chrome", place).map(function (opt) {
-    // The Purist bar is brushed stainless, not chrome.
-    if (opt.id === "K-11895-BS") opt.material = "stainless";
+    // The Purist and Sterling bars are brushed stainless, not chrome.
+    if (opt.id === "K-11895-BS" || opt.id === "80001024-V") opt.material = "stainless";
     if (opt.url && fits) {
       opt.available = function (sel) {
         return fits(sel, GRAB_BAR_LENGTHS[opt.id]);
@@ -786,11 +795,51 @@ function grabBarOptions(place, fits) {
 }
 
 function isFreestandingTub(sel) {
-  return !sel.tub.dropIn;
+  return !sel.tub.dropIn && !sel.tub.alcove;
 }
 
 function kohlerUrl(id) {
   return "models/products/kohler/" + id + ".glb";
+}
+
+// The Sterling models (models/products/sterling/, from Sterling's own
+// 3D Warehouse catalog — see that folder's manifest.json), named by their
+// Home Depot model numbers.
+function sterlingUrl(id) {
+  return "models/products/sterling/" + id + ".glb";
+}
+
+function productUrl(id) {
+  return /^K-/.test(id) ? kohlerUrl(id) : sterlingUrl(id);
+}
+
+// A 60 in. Sterling alcove tub (or tub-and-walls kit): depth and rim
+// height in feet, wallSpan when it isn't 5 ft.
+function sterlingAlcoveTub(id, depth, rimY, wallSpan) {
+  return {
+    id: id,
+    url: sterlingUrl(id),
+    alcove: true,
+    footprint: { wallSpan: wallSpan || 5, depth: depth },
+    depth: depth,
+    rimY: rimY,
+    deckZ: 0.15,
+  };
+}
+
+// A Sterling shower base or kit: 60 in. wide when opts.wide, else 36 in.
+function sterlingShowerBase(id, opts) {
+  var width = opts.wide ? 5 : 3;
+  return {
+    id: id,
+    url: sterlingUrl(id),
+    wide: !!opts.wide,
+    hasWalls: !!opts.hasWalls,
+    width: width,
+    depth: opts.depth,
+    curbY: opts.curbY,
+    footprint: { wallSpan: opts.wide ? 5 : 3.05, depth: opts.depth + 0.03 },
+  };
 }
 
 function tubDepth(tub) {
@@ -823,6 +872,13 @@ var PRODUCT_SLOTS = [
       { id: "K-3619-0", url: kohlerUrl("K-3619-0"), footprint: { wallSpan: 1.7, depth: 2.5 } },
       { id: "K-3981-0", url: kohlerUrl("K-3981-0"), footprint: { wallSpan: 1.7, depth: 2.35 } },
       { id: "K-3940-0", url: kohlerUrl("K-3940-0"), footprint: { wallSpan: 1.7, depth: 2.35 } },
+      { id: "402321-0", url: sterlingUrl("402321-0"), footprint: { wallSpan: 1.7, depth: 2.45 } },
+      { id: "402320-0", url: sterlingUrl("402320-0"), footprint: { wallSpan: 1.7, depth: 2.3 } },
+      { id: "402322-0", url: sterlingUrl("402322-0"), footprint: { wallSpan: 1.7, depth: 2.45 } },
+      { id: "402324-0", url: sterlingUrl("402324-0"), footprint: { wallSpan: 1.7, depth: 2.45 } },
+      { id: "402325-0", url: sterlingUrl("402325-0"), footprint: { wallSpan: 1.7, depth: 2.45 } },
+      { id: "402078-0", url: sterlingUrl("402078-0"), footprint: { wallSpan: 1.7, depth: 2.43 } },
+      { id: "402210-0", url: sterlingUrl("402210-0"), footprint: { wallSpan: 1.7, depth: 2.46 } },
     ],
   },
   {
@@ -940,6 +996,19 @@ var PRODUCT_SLOTS = [
         rimY: 1.76,
         deckZ: 0.21,
       },
+      // Sterling alcove tubs, and tub-and-shower kits with their walls.
+      sterlingAlcoveTub("71171110-0", 2.51, 1.5),
+      sterlingAlcoveTub("71171120-0", 2.51, 1.5),
+      sterlingAlcoveTub("71171112-0", 2.52, 1.72),
+      sterlingAlcoveTub("71171122-0", 2.52, 1.72),
+      sterlingAlcoveTub("71121110-0", 2.67, 1.66),
+      sterlingAlcoveTub("71121120-0", 2.67, 1.66),
+      sterlingAlcoveTub("71121112-0", 2.71, 1.6),
+      sterlingAlcoveTub("71121122-0", 2.71, 1.6),
+      sterlingAlcoveTub("96136-0", 2.46, 1.85, 5.6),
+      sterlingAlcoveTub("71220110-0", 2.78, 1.5),
+      sterlingAlcoveTub("71220120-0", 2.78, 1.5),
+      sterlingAlcoveTub("71370120-0", 2.6, 1.5),
     ],
   },
   {
@@ -1072,6 +1141,37 @@ var PRODUCT_SLOTS = [
         hole: { rx: 0.62, rz: 0.62 },
         faucetLine: 0.1,
       },
+      {
+        id: "442007-U-0",
+        url: sterlingUrl("442007-U-0"),
+        material: "porcelainGloss",
+        height: 0.59,
+        depth: 1.2,
+        centerZ: 0.85,
+        hole: { rx: 0.73, rz: 0.49 },
+        faucetLine: 0.2,
+      },
+      {
+        id: "442040-0",
+        url: sterlingUrl("442040-0"),
+        material: "porcelainGloss",
+        height: 0.69,
+        depth: 1.28,
+        centerZ: 0.89,
+        hole: { rx: 0.68, rz: 0.53 },
+        faucetLine: 0.2,
+      },
+      {
+        id: "S1201-0",
+        url: sterlingUrl("S1201-0"),
+        material: "stainless",
+        dropIn: true,
+        height: 0.44,
+        depth: 0.99,
+        centerZ: 0.7,
+        hole: { rx: 0.6, rz: 0.4 },
+        faucetLine: 0.12,
+      },
       // Vanity tops with the bowl cast in: they ARE the countertop, and the
       // cabinet under them is stretched to their size.
       { id: "K-3048-1-0", holes: "single", top: { width: 2.134, depth: 1.853, height: 0.544 }, faucetLine: 0.2 },
@@ -1124,6 +1224,7 @@ var PRODUCT_SLOTS = [
       { id: "K-2032-0", url: kohlerUrl("K-2032-0"), holes: "centerset", lift: 2.18, deckY: 2.81, faucetLine: 0.38 },
       { id: "K-2362-8-0", url: kohlerUrl("K-2362-8-0"), holes: "widespread", deckY: 2.86, faucetLine: 0.22 },
       { id: "K-5265-4-0", url: kohlerUrl("K-5265-4-0"), holes: "centerset", deckY: 2.94, faucetLine: 0.22 },
+      { id: "442124-0", url: sterlingUrl("442124-0"), holes: "centerset", deckY: 2.75, faucetLine: 0.2 },
     ],
   },
   {
@@ -1190,6 +1291,16 @@ var PRODUCT_SLOTS = [
         curbY: 0.23,
         footprint: { wallSpan: 3.05, depth: 2.9 },
       },
+      sterlingShowerBase("72181110-0", { wide: true, depth: 2.67, curbY: 0.3 }),
+      sterlingShowerBase("72181120-0", { wide: true, depth: 2.67, curbY: 0.3 }),
+      sterlingShowerBase("72171110-0", { wide: true, depth: 2.5, curbY: 0.32 }),
+      sterlingShowerBase("72171120-0", { wide: true, depth: 2.5, curbY: 0.32 }),
+      sterlingShowerBase("72131100-0", { wide: true, depth: 2.83, curbY: 0.4 }),
+      sterlingShowerBase("72101100-0", { depth: 2.83, curbY: 0.33 }),
+      // Shower kits: base and walls in one.
+      sterlingShowerBase("72180116-0", { wide: true, depth: 2.77, curbY: 0.3, hasWalls: true }),
+      sterlingShowerBase("72180126-0", { wide: true, depth: 2.77, curbY: 0.3, hasWalls: true }),
+      sterlingShowerBase("72240100-0", { depth: 3.1, curbY: 0.3, hasWalls: true }),
     ],
   },
   {
@@ -1199,7 +1310,7 @@ var PRODUCT_SLOTS = [
     // Kohler base: the Choreograph kit made for that base's size.
     body: true,
     showIf: function (sel) {
-      return !!sel.showerBase.url;
+      return !!sel.showerBase.url && !sel.showerBase.hasWalls;
     },
     options: [
       {
@@ -1241,6 +1352,8 @@ var PRODUCT_SLOTS = [
       { id: "K-706015-L-BL", url: kohlerUrl("K-706015-L-BL"), material: "glass", available: isWideBase },
       { id: "K-27582-10L-BL", url: kohlerUrl("K-27582-10L-BL"), material: "glass", available: isNarrowShower },
       { id: "K-27583-10L-BL", url: kohlerUrl("K-27583-10L-BL"), material: "glass", available: isNarrowShower },
+      { id: "5976-59S", url: sterlingUrl("5976-59S"), material: "glass", available: isWideBase },
+      { id: "581075-59N-G05", url: sterlingUrl("581075-59N-G05"), material: "glass", available: isWideBase },
     ],
   },
   {
@@ -1679,6 +1792,10 @@ function productBodyTemplate(s, fixtureKey, sel) {
 function showerBodyTemplate(s, sel) {
   var base = sel.showerBase;
   if (!base.url) return null;
+  if (base.hasWalls) {
+    if (!productModelsReady(s, [base])) return null;
+    return s.productModels[base.url];
+  }
   var walls = sel.showerWalls;
   var kit = { url: walls.kit(base), material: "porcelain" };
   var corners = walls.corners ? { url: walls.corners, material: "porcelain" } : null;
@@ -1781,7 +1898,7 @@ function slotOptionStates(slot, sel, shown) {
 // estimate names whatever is showing by Kohler model number.
 
 function mmnFromUrl(url) {
-  var m = /\/(K-[A-Z0-9-]+)\.glb$/.exec(url || "");
+  var m = /\/products\/(?:kohler|sterling)\/([A-Z0-9-]+)\.glb$/.exec(url || "");
   return m ? m[1] : null;
 }
 
@@ -1792,7 +1909,7 @@ function mmnFromUrl(url) {
 function optionMmns(slot, opt, sel) {
   var urls;
   if (slot.id === "showerWalls") {
-    if (!sel.showerBase.url) return [];
+    if (!sel.showerBase.url || sel.showerBase.hasWalls) return [];
     urls = [opt.kit(sel.showerBase)].concat(opt.corners ? [opt.corners] : []);
   } else {
     urls = optionModels(opt).map(function (m) {

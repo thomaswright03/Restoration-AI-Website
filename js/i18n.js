@@ -349,9 +349,9 @@
       "Não encontramos um preço atual da Home Depot para estes produtos, então eles não estão no total: {items}.",
     ],
     "products.vanityCabinet": [
-      "The vanity cabinet itself isn't a Kohler product, so it isn't priced here; only its bowl or top and faucet are.",
-      "El mueble del lavabo no es un producto Kohler, así que no tiene precio aquí; solo el lavabo o la cubierta y la llave.",
-      "O gabinete em si não é um produto Kohler, então não tem preço aqui; só a cuba ou o tampo e a torneira.",
+      "The vanity cabinet itself isn't a Kohler or Sterling product, so it isn't priced here; only its bowl or top and faucet are.",
+      "El mueble del lavabo no es un producto Kohler ni Sterling, así que no tiene precio aquí; solo el lavabo o la cubierta y la llave.",
+      "O gabinete em si não é um produto Kohler nem Sterling, então não tem preço aqui; só a cuba ou o tampo e a torneira.",
     ],
     "products.wiringNotIncluded": [
       "{items}: the wiring by an electrician isn't in this estimate.",
@@ -745,9 +745,9 @@
     "studio.step.electrical.short": ["Electrical", "Electricidad", "Elétrica"],
     "studio.step.products.title": ["Products", "Productos", "Produtos"],
     "studio.step.products.intro": [
-      "Pick the Kohler models you like. Each one is shown at its real size, and any that's too big for its spot can't be picked.",
-      "Elija los modelos Kohler que le gusten. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir.",
-      "Escolha os modelos Kohler de que você gosta. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos.",
+      "Pick the Kohler and Sterling models you like. Each one is shown at its real size, and any that's too big for its spot can't be picked.",
+      "Elija los modelos Kohler y Sterling que le gusten. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir.",
+      "Escolha os modelos Kohler e Sterling de que você gosta. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos.",
     ],
     "studio.step.products.short": ["Products", "Productos", "Produtos"],
     "studio.step.finishes.title": ["Finishes", "Acabados", "Acabamentos"],
@@ -1139,19 +1139,19 @@
     ],
     "studio.products.show": ["Show in 3D", "Ver en 3D", "Ver em 3D"],
     "studio.products.useKohler": [
-      "Use real Kohler products",
-      "Usar productos Kohler reales",
-      "Usar produtos Kohler reais",
+      "Use real Kohler and Sterling products",
+      "Usar productos Kohler y Sterling reales",
+      "Usar produtos Kohler e Sterling reais",
     ],
     "studio.products.priceNote": [
-      "Every product is a real Kohler model at its real size. Prices vary by store, so the estimate lists them with their model numbers instead of adding them in.",
-      "Cada producto es un modelo Kohler real en su tamaño real. Los precios varían según la tienda, así que la estimación los muestra con su número de modelo en lugar de sumarlos.",
-      "Cada produto é um modelo Kohler real no tamanho real. Os preços variam conforme a loja, então a estimativa mostra os produtos com o número do modelo em vez de somá-los.",
+      "Every product is a real Kohler or Sterling model at its real size. Prices vary by store, so the estimate lists them with their model numbers instead of adding them in.",
+      "Cada producto es un modelo Kohler o Sterling real en su tamaño real. Los precios varían según la tienda, así que la estimación los muestra con su número de modelo en lugar de sumarlos.",
+      "Cada produto é um modelo Kohler ou Sterling real no tamanho real. Os preços variam conforme a loja, então a estimativa mostra os produtos com o número do modelo em vez de somá-los.",
     ],
     "studio.products.priceLive": [
-      "Every product is a real Kohler model at its real size. Enter your ZIP code on the estimate to add their prices from the nearest Home Depot.",
-      "Cada producto es un modelo Kohler real en su tamaño real. Escriba su código postal (ZIP) en la estimación para sumar sus precios en el Home Depot más cercano.",
-      "Cada produto é um modelo Kohler real no tamanho real. Informe o seu ZIP code na estimativa para somar os preços da Home Depot mais próxima.",
+      "Every product is a real Kohler or Sterling model at its real size. Enter your ZIP code on the estimate to add their prices from the nearest Home Depot.",
+      "Cada producto es un modelo Kohler o Sterling real en su tamaño real. Escriba su código postal (ZIP) en la estimación para sumar sus precios en el Home Depot más cercano.",
+      "Cada produto é um modelo Kohler ou Sterling real no tamanho real. Informe o seu ZIP code na estimativa para somar os preços da Home Depot mais próxima.",
     ],
 
     "studio.finish.demo": ["Demolition", "Demolición", "Demolição"],
@@ -1215,14 +1215,14 @@
       "As quantidades de revestimento e piso incluem {waste}% a mais para recortes; a tinta cobre {coats} demãos.",
     ],
     "studio.est.products": [
-      "Kohler products in your design",
-      "Productos Kohler de su diseño",
-      "Produtos Kohler do seu projeto",
+      "Kohler and Sterling products in your design",
+      "Productos Kohler y Sterling de su diseño",
+      "Produtos Kohler e Sterling do seu projeto",
     ],
     "studio.est.productsNotPriced": [
-      "The Kohler products aren't in the total because their prices vary by store. Each one is listed with its model number.",
-      "Los productos Kohler no están en el total porque su precio varía según la tienda. Cada uno aparece con su número de modelo.",
-      "Os produtos Kohler não estão no total porque o preço varia conforme a loja. Cada um aparece com o número do modelo.",
+      "The Kohler and Sterling products aren't in the total because their prices vary by store. Each one is listed with its model number.",
+      "Los productos Kohler y Sterling no están en el total porque su precio varía según la tienda. Cada uno aparece con su número de modelo.",
+      "Os produtos Kohler e Sterling não estão no total porque o preço varia conforme a loja. Cada um aparece com o número do modelo.",
     ],
     "studio.est.findAt": ["Find it at Home Depot", "Buscar en Home Depot", "Procurar na Home Depot"],
     "studio.est.zip": [
@@ -1742,6 +1742,177 @@
     ],
     "room3d.option.K-27582-10L-BL": ["Composed pivot", "Composed abatible", "Composed pivotante"],
     "room3d.option.K-27583-10L-BL": ["Components pivot", "Components abatible", "Components pivotante"],
+    "room3d.option.402321-0": [
+      "Sterling Windham two-piece elongated",
+      "Sterling Windham de dos piezas, alargado",
+      "Sterling Windham duas peças, alongado",
+    ],
+    "room3d.option.402320-0": [
+      "Sterling Windham two-piece round-front",
+      "Sterling Windham de dos piezas, frente redondo",
+      "Sterling Windham duas peças, frente redonda",
+    ],
+    "room3d.option.402322-0": [
+      "Sterling Windham elongated, chair height",
+      "Sterling Windham alargado, altura de silla",
+      "Sterling Windham alongado, altura conforto",
+    ],
+    "room3d.option.402324-0": [
+      "Sterling Windham elongated, 1.6 gpf",
+      "Sterling Windham alargado, 1.6 gpf",
+      "Sterling Windham alongado, 1.6 gpf",
+    ],
+    "room3d.option.402325-0": [
+      "Sterling Windham chair height, 1.6 gpf",
+      "Sterling Windham altura de silla, 1.6 gpf",
+      "Sterling Windham altura conforto, 1.6 gpf",
+    ],
+    "room3d.option.402078-0": [
+      "Sterling Windham round, 14 in. rough-in",
+      "Sterling Windham redondo, desagüe a 14 pulg.",
+      "Sterling Windham redondo, esgoto a 14 pol.",
+    ],
+    "room3d.option.402210-0": [
+      "Sterling Windham elongated, 10 in. rough-in",
+      "Sterling Windham alargado, desagüe a 10 pulg.",
+      "Sterling Windham alongado, esgoto a 10 pol.",
+    ],
+    "room3d.option.71171110-0": [
+      "Sterling Ensemble 60 x 30 in. alcove, left drain",
+      "Sterling Ensemble 60 x 30 pulg. empotrada, desagüe izquierdo",
+      "Sterling Ensemble 60 x 30 pol. de nicho, ralo à esquerda",
+    ],
+    "room3d.option.71171120-0": [
+      "Sterling Ensemble 60 x 30 in. alcove, right drain",
+      "Sterling Ensemble 60 x 30 pulg. empotrada, desagüe derecho",
+      "Sterling Ensemble 60 x 30 pol. de nicho, ralo à direita",
+    ],
+    "room3d.option.71171112-0": [
+      "Sterling Ensemble 60 x 30 in. soaking, left drain",
+      "Sterling Ensemble 60 x 30 pulg. profunda, desagüe izquierdo",
+      "Sterling Ensemble 60 x 30 pol. funda, ralo à esquerda",
+    ],
+    "room3d.option.71171122-0": [
+      "Sterling Ensemble 60 x 30 in. soaking, right drain",
+      "Sterling Ensemble 60 x 30 pulg. profunda, desagüe derecho",
+      "Sterling Ensemble 60 x 30 pol. funda, ralo à direita",
+    ],
+    "room3d.option.71121110-0": [
+      "Sterling Ensemble 60 x 32 in. alcove, left drain",
+      "Sterling Ensemble 60 x 32 pulg. empotrada, desagüe izquierdo",
+      "Sterling Ensemble 60 x 32 pol. de nicho, ralo à esquerda",
+    ],
+    "room3d.option.71121120-0": [
+      "Sterling Ensemble 60 x 32 in. alcove, right drain",
+      "Sterling Ensemble 60 x 32 pulg. empotrada, desagüe derecho",
+      "Sterling Ensemble 60 x 32 pol. de nicho, ralo à direita",
+    ],
+    "room3d.option.71121112-0": [
+      "Sterling Ensemble 60 x 32 in. soaking, left drain",
+      "Sterling Ensemble 60 x 32 pulg. profunda, desagüe izquierdo",
+      "Sterling Ensemble 60 x 32 pol. funda, ralo à esquerda",
+    ],
+    "room3d.option.71121122-0": [
+      "Sterling Ensemble 60 x 32 in. soaking, right drain",
+      "Sterling Ensemble 60 x 32 pulg. profunda, desagüe derecho",
+      "Sterling Ensemble 60 x 32 pol. funda, ralo à direita",
+    ],
+    "room3d.option.96136-0": [
+      "Sterling Unwind 67 in. soaking",
+      "Sterling Unwind 67 pulg. profunda",
+      "Sterling Unwind 67 pol. funda",
+    ],
+    "room3d.option.71220110-0": [
+      "Sterling Ensemble tub and walls, left drain",
+      "Sterling Ensemble bañera con paredes, desagüe izquierdo",
+      "Sterling Ensemble banheira com paredes, ralo à esquerda",
+    ],
+    "room3d.option.71220120-0": [
+      "Sterling Ensemble tub and walls, right drain",
+      "Sterling Ensemble bañera con paredes, desagüe derecho",
+      "Sterling Ensemble banheira com paredes, ralo à direita",
+    ],
+    "room3d.option.71370120-0": [
+      "Sterling Ensemble Medley tub and walls",
+      "Sterling Ensemble Medley bañera con paredes",
+      "Sterling Ensemble Medley banheira com paredes",
+    ],
+    "room3d.option.442007-U-0": [
+      "Sterling Stinson undermount",
+      "Sterling Stinson bajo cubierta",
+      "Sterling Stinson sob o tampo",
+    ],
+    "room3d.option.442040-0": [
+      "Sterling Wescott oval undermount",
+      "Sterling Wescott ovalado bajo cubierta",
+      "Sterling Wescott oval sob o tampo",
+    ],
+    "room3d.option.S1201-0": [
+      "Sterling stainless oval drop-in",
+      "Sterling ovalado de acero inoxidable, de sobreponer",
+      "Sterling oval de inox, de sobrepor",
+    ],
+    "room3d.option.442124-0": [
+      "Sterling Sacramento pedestal",
+      "Sterling Sacramento de pedestal",
+      "Sterling Sacramento de coluna",
+    ],
+    "room3d.option.72181110-0": [
+      "Sterling Ensemble 60 x 32 in., left drain",
+      "Sterling Ensemble 60 x 32 pulg., desagüe izquierdo",
+      "Sterling Ensemble 60 x 32 pol., ralo à esquerda",
+    ],
+    "room3d.option.72181120-0": [
+      "Sterling Ensemble 60 x 32 in., right drain",
+      "Sterling Ensemble 60 x 32 pulg., desagüe derecho",
+      "Sterling Ensemble 60 x 32 pol., ralo à direita",
+    ],
+    "room3d.option.72171110-0": [
+      "Sterling Ensemble 60 x 30 in., left drain",
+      "Sterling Ensemble 60 x 30 pulg., desagüe izquierdo",
+      "Sterling Ensemble 60 x 30 pol., ralo à esquerda",
+    ],
+    "room3d.option.72171120-0": [
+      "Sterling Ensemble 60 x 30 in., right drain",
+      "Sterling Ensemble 60 x 30 pulg., desagüe derecho",
+      "Sterling Ensemble 60 x 30 pol., ralo à direita",
+    ],
+    "room3d.option.72131100-0": [
+      "Sterling Ensemble 60 x 34 in., center drain",
+      "Sterling Ensemble 60 x 34 pulg., desagüe central",
+      "Sterling Ensemble 60 x 34 pol., ralo central",
+    ],
+    "room3d.option.72101100-0": [
+      "Sterling Ensemble 36 x 34 in.",
+      "Sterling Ensemble 36 x 34 pulg.",
+      "Sterling Ensemble 36 x 34 pol.",
+    ],
+    "room3d.option.72180116-0": [
+      "Sterling Ensemble 60 in. kit with walls, left drain",
+      "Sterling Ensemble 60 pulg. con paredes, desagüe izquierdo",
+      "Sterling Ensemble 60 pol. com paredes, ralo à esquerda",
+    ],
+    "room3d.option.72180126-0": [
+      "Sterling Ensemble 60 in. kit with walls, right drain",
+      "Sterling Ensemble 60 pulg. con paredes, desagüe derecho",
+      "Sterling Ensemble 60 pol. com paredes, ralo à direita",
+    ],
+    "room3d.option.72240100-0": [
+      "Sterling Accord 36 in. kit with walls",
+      "Sterling Accord 36 pulg. con paredes",
+      "Sterling Accord 36 pol. com paredes",
+    ],
+    "room3d.option.5976-59S": [
+      "Sterling Deluxe framed sliding",
+      "Sterling Deluxe corrediza con marco",
+      "Sterling Deluxe de correr com moldura",
+    ],
+    "room3d.option.581075-59N-G05": [
+      "Sterling Meritor sliding",
+      "Sterling Meritor corrediza",
+      "Sterling Meritor de correr",
+    ],
+    "room3d.option.80001024-V": ["Sterling 24 in. straight", "Sterling recta de 24 pulg.", "Sterling reta de 24 pol."],
     "room3d.option.K-965-AK-CP": ["Purist showerhead", "Purist, regadera", "Purist, chuveiro"],
     "room3d.option.K-24805-CP": ["Parallel showerhead", "Parallel, regadera", "Parallel, chuveiro"],
     "room3d.option.K-27051-CP": [

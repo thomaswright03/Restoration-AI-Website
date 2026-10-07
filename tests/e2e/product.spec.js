@@ -9,6 +9,7 @@ const PAGES = [
   "signup.html",
   "account.html",
   "projects.html",
+  "project.html",
   "privacy.html",
   "terms.html",
 ];

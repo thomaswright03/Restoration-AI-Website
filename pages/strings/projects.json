@@ -28,6 +28,41 @@
     "Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses recomeçam no dia 1º de cada mês."
   ],
   "projects.list.title": ["Your projects", "Sus proyectos", "Seus projetos"],
+  "projects.search": [
+    "Search by name, client or address",
+    "Buscar por nombre, cliente o dirección",
+    "Buscar por nome, cliente ou endereço"
+  ],
+  "projects.noMatch": [
+    "No projects match that search.",
+    "Ningún proyecto coincide con esa búsqueda.",
+    "Nenhum projeto corresponde a essa busca."
+  ],
+  "project.title": ["Project | Room Designer 3D", "Proyecto | Room Designer 3D", "Projeto | Room Designer 3D"],
+  "project.description": [
+    "A saved project: its 3D model, the client's details and the materials it needs.",
+    "Un proyecto guardado: su modelo 3D, los datos del cliente y los materiales que necesita.",
+    "Um projeto salvo: o modelo 3D, os dados do cliente e os materiais necessários."
+  ],
+  "project.back": ["← My projects", "← Mis proyectos", "← Meus projetos"],
+  "project.edit": ["Open in the designer", "Abrir en el diseñador", "Abrir no projetista"],
+  "project.sections": ["Project sections", "Secciones del proyecto", "Seções do projeto"],
+  "project.tab.model": ["3D model", "Modelo 3D", "Modelo 3D"],
+  "project.tab.info": ["Info", "Información", "Informações"],
+  "project.tab.materials": ["Materials", "Materiales", "Materiais"],
+  "project.model.note": [
+    "Look around the room here. To change the design and save it, use Open in the designer.",
+    "Recorra el baño aquí. Para cambiar el diseño y guardarlo, use Abrir en el diseñador.",
+    "Explore o banheiro aqui. Para mudar o projeto e salvar, use Abrir no projetista."
+  ],
+  "project.model.frame": ["The project's 3D model", "El modelo 3D del proyecto", "O modelo 3D do projeto"],
+  "project.info.save": ["Save info", "Guardar información", "Salvar informações"],
+  "project.print": ["Print materials list", "Imprimir lista de materiales", "Imprimir lista de materiais"],
+  "project.materials.empty": [
+    "No materials list yet. Open the project in the designer and click Save changes to make one.",
+    "Aún no hay lista de materiales. Abra el proyecto en el diseñador y haga clic en Guardar cambios para crearla.",
+    "Ainda não há lista de materiais. Abra o projeto no projetista e clique em Salvar alterações para criá-la."
+  ],
   "projects.list.empty": [
     "No projects yet. Open the designer and use Save project at the top to keep a design here.",
     "Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.",

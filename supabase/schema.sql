@@ -63,6 +63,17 @@ create table if not exists public.projects (
   updated_at timestamptz not null default now()
 );
 create index if not exists projects_owner_updated on public.projects (owner_id, updated_at desc);
+-- info: the client and the job (client name, address, phone, status...),
+-- checked field by field in api/projects.js. summary: the estimate and
+-- materials list as the designer worked them out when the project was saved.
+alter table public.projects add column if not exists info jsonb not null default '{}'::jsonb;
+alter table public.projects add column if not exists summary jsonb;
+alter table public.projects drop constraint if exists projects_info_object;
+alter table public.projects add constraint projects_info_object
+  check (jsonb_typeof(info) = 'object' and octet_length(info::text) <= 8000);
+alter table public.projects drop constraint if exists projects_summary_size;
+alter table public.projects add constraint projects_summary_size
+  check (summary is null or (jsonb_typeof(summary) = 'object' and octet_length(summary::text) <= 100000));
 
 create table if not exists public.project_creations (
   id bigint generated always as identity primary key,
@@ -111,8 +122,10 @@ create policy "owner reads projects" on public.projects
 -- Creates a project if the plan's limits allow it, in one transaction: a
 -- per-owner lock stops two saves at once from both slipping under a limit.
 -- The month is the calendar month in UTC. Only the server can call it.
+drop function if exists public.create_project(uuid, text, text, integer, integer);
 create or replace function public.create_project(
-  p_owner uuid, p_name text, p_design text, p_monthly integer, p_total integer
+  p_owner uuid, p_name text, p_design text, p_monthly integer, p_total integer,
+  p_info jsonb default '{}'::jsonb, p_summary jsonb default null
 ) returns jsonb
 language plpgsql
 security definer
@@ -133,14 +146,15 @@ begin
   if used_total >= p_total then
     return jsonb_build_object('error', 'total-limit', 'month', used_month, 'total', used_total);
   end if;
-  insert into public.projects (owner_id, name, design) values (p_owner, p_name, p_design)
+  insert into public.projects (owner_id, name, design, info, summary)
+    values (p_owner, p_name, p_design, coalesce(p_info, '{}'::jsonb), p_summary)
     returning * into created;
   insert into public.project_creations (owner_id) values (p_owner);
   return jsonb_build_object(
-    'project', jsonb_build_object('id', created.id, 'name', created.name,
+    'project', jsonb_build_object('id', created.id, 'name', created.name, 'info', created.info,
       'created_at', created.created_at, 'updated_at', created.updated_at),
     'month', used_month + 1, 'total', used_total + 1);
 end;
 $$;
-revoke all on function public.create_project(uuid, text, text, integer, integer) from public, anon, authenticated;
-grant execute on function public.create_project(uuid, text, text, integer, integer) to service_role;
+revoke all on function public.create_project(uuid, text, text, integer, integer, jsonb, jsonb) from public, anon, authenticated;
+grant execute on function public.create_project(uuid, text, text, integer, integer, jsonb, jsonb) to service_role;

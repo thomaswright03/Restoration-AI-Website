@@ -354,7 +354,49 @@
     encoded: function () {
       return design ? Plan.encode(design) : "";
     },
+    summary: function () {
+      return design ? projectSummary() : null;
+    },
   };
+
+  // The estimate as it stands, kept with a saved project so its page can
+  // list the materials without the 3D room (labels in this page's language).
+  function projectSummary() {
+    var est = estimate();
+    var counts = Plan.counts(design);
+    return {
+      v: 1,
+      lang: I18n.lang(),
+      room: { w: num(design.room.w, 3), l: num(design.room.l, 3), h: num(design.room.h, 3) },
+      fixtures: Object.keys(counts)
+        .filter(function (k) {
+          return counts[k] > 0;
+        })
+        .map(function (k) {
+          return { label: T("fixture." + k), qty: counts[k] };
+        }),
+      labor: est.labor.lines.map(function (l) {
+        return { label: l.label, detail: l.detail || "", cost: l.cost };
+      }),
+      laborSubtotal: est.labor.subtotal,
+      materials: est.materials.map(function (m) {
+        return {
+          label: m.label,
+          product: m.product.name,
+          store: m.product.best.name,
+          url: m.product.best.url || "",
+          quantity: m.quantityLabel,
+          cost: m.cost,
+        };
+      }),
+      products: est.products.map(function (p) {
+        return { label: p.label, models: p.mmns, qty: p.qty, url: p.url, cost: p.cost };
+      }),
+      materialsTotal: est.materialsTotal,
+      grandTotal: est.grandTotal,
+      notes: est.notes,
+    };
+  }
 
   function copyLink() {
     var url = shareUrl();

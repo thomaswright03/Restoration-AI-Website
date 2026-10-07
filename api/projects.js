@@ -3,8 +3,13 @@
 //
 //   GET                       the plan, its limits, what's used, and the list
 //   GET    ?id=<id>           one project, with its design
-//   POST   {name, design}     save a new project (needs a paid plan, within its limits)
-//   PATCH  {id, name?, design?}  rename, or save the design again (needs a paid plan)
+//   POST   {name, design, info?, summary?}   save a new project (needs a paid
+//                             plan, within its limits)
+//   PATCH  {id, name?, info?, design?, summary?}   rename or edit the details
+//                             (any plan), or save the design again (paid plan)
+//
+// info is the client and the job (INFO below); summary is the estimate and
+// materials list the designer worked out when the design was saved.
 //   DELETE ?id=<id>           delete it (frees a slot under the total, not the month)
 //
 // Limits per plan are in api/_plans.js. A new project is created by the
@@ -17,7 +22,49 @@ const { planOf, limitsOf } = require("./_plans.js");
 const Plan = require("../js/room-plan.js");
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const LIST_FIELDS = "id,name,created_at,updated_at";
+const LIST_FIELDS = "id,name,info,created_at,updated_at";
+
+// The project details, each a string of at most this many characters, or
+// one of these values.
+const INFO = {
+  client: 120,
+  phone: 40,
+  email: 160,
+  street: 160,
+  unit: 40,
+  city: 80,
+  state: 40,
+  zip: 12,
+  start: /^(\d{4}-\d{2}-\d{2})?$/,
+  type: ["", "full", "partial", "other"],
+  status: ["", "lead", "estimate", "approved", "progress", "done"],
+  notes: 2000,
+};
+
+// Only known fields, trimmed; null when something doesn't fit.
+function cleanInfo(value) {
+  if (value === undefined || value === null) return {};
+  if (typeof value !== "object" || Array.isArray(value)) return null;
+  const out = {};
+  for (const [key, rule] of Object.entries(INFO)) {
+    const raw = value[key];
+    if (raw === undefined || raw === null) continue;
+    if (typeof raw !== "string") return null;
+    const text = key === "notes" ? raw.trim() : raw.replace(/\s+/g, " ").trim();
+    if (typeof rule === "number" ? text.length > rule : Array.isArray(rule) ? !rule.includes(text) : !rule.test(text)) {
+      return null;
+    }
+    if (text) out[key] = text;
+  }
+  return out;
+}
+
+// The designer's estimate snapshot: any plain object, within a size limit.
+function cleanSummary(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) return false;
+  return JSON.stringify(value).length <= 90000 ? value : false;
+}
 
 function cleanName(value) {
   return String(value || "")
@@ -67,7 +114,7 @@ module.exports = async function handler(req, res) {
       const id = String((req.query && req.query.id) || "");
       if (id) {
         if (!ID.test(id)) return sendJson(res, 404, { error: "not-found" });
-        const rows = await db("projects?id=eq." + id + "&" + owner + "&select=" + LIST_FIELDS + ",design");
+        const rows = await db("projects?id=eq." + id + "&" + owner + "&select=" + LIST_FIELDS + ",design,summary");
         if (!rows || !rows[0]) return sendJson(res, 404, { error: "not-found" });
         return sendJson(res, 200, { project: rows[0] });
       }
@@ -85,6 +132,10 @@ module.exports = async function handler(req, res) {
       const name = cleanName(body.name);
       if (!name) return sendJson(res, 400, { error: "name" });
       if (!validDesign(body.design)) return sendJson(res, 400, { error: "design" });
+      const info = cleanInfo(body.info);
+      if (!info) return sendJson(res, 400, { error: "info" });
+      const summary = cleanSummary(body.summary);
+      if (summary === false) return sendJson(res, 400, { error: "summary" });
       const { plan, limits } = await planFor(user.id);
       if (!limits.total) return sendJson(res, 403, { error: "plan", plan });
       const result = await db("rpc/create_project", {
@@ -95,6 +146,8 @@ module.exports = async function handler(req, res) {
           p_design: body.design,
           p_monthly: limits.monthly,
           p_total: limits.total,
+          p_info: info,
+          p_summary: summary,
         },
       });
       const used = { month: result.month, total: result.total };
@@ -110,8 +163,15 @@ module.exports = async function handler(req, res) {
         patch.name = cleanName(body.name);
         if (!patch.name) return sendJson(res, 400, { error: "name" });
       }
+      if (body.info !== undefined) {
+        patch.info = cleanInfo(body.info);
+        if (!patch.info) return sendJson(res, 400, { error: "info" });
+      }
       if (body.design !== undefined) {
         if (!validDesign(body.design)) return sendJson(res, 400, { error: "design" });
+        const summary = cleanSummary(body.summary);
+        if (summary === false) return sendJson(res, 400, { error: "summary" });
+        if (summary) patch.summary = summary;
         // Saving a design is what a paid plan buys; renaming isn't.
         const { plan, limits } = await planFor(user.id);
         if (!limits.total) return sendJson(res, 403, { error: "plan", plan });
@@ -150,3 +210,4 @@ module.exports = async function handler(req, res) {
 
 module.exports.monthStart = monthStart;
 module.exports.validDesign = validDesign;
+module.exports.cleanInfo = cleanInfo;

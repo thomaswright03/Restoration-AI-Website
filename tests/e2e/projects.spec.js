@@ -55,6 +55,8 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits } 
         id: "p" + (state.projects.length + 1),
         name: body.name,
         design: body.design,
+        info: body.info || {},
+        summary: body.summary || null,
         updated_at: new Date().toISOString(),
       };
       state.projects.unshift(p);
@@ -66,7 +68,12 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits } 
     }
     if (req.method() === "PATCH") {
       const p = find(body.id);
-      Object.assign(p, body.name ? { name: body.name } : {}, body.design ? { design: body.design } : {});
+      Object.assign(
+        p,
+        body.name ? { name: body.name } : {},
+        body.info ? { info: body.info } : {},
+        body.design ? { design: body.design, summary: body.summary } : {},
+      );
       return route.fulfill({ json: { project: p } });
     }
     if (req.method() === "DELETE") {
@@ -106,10 +113,7 @@ test("My projects lists, renames and deletes, and shows the plan's limits", asyn
   await expect(page.locator("#usage-month")).toContainText("3 of 10");
   await expect(page.locator("#usage-total")).toContainText("2 of 50");
   await expect(page.locator(".project-item")).toHaveCount(2);
-  await expect(page.locator(".project-name").first()).toHaveAttribute(
-    "href",
-    /designer\.html\?b=smith-bath&project=a1$/,
-  );
+  await expect(page.locator(".project-name").first()).toHaveAttribute("href", /project\.html\?id=a1$/);
 
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(axe.violations.map((v) => v.id)).toEqual([]);
@@ -136,24 +140,47 @@ test("My projects on the free plan says saving needs a paid plan, in Spanish too
   await expect(page.locator("#projects-empty")).toBeVisible();
 });
 
-test("the designer saves a new project, then saves changes to it", async ({ page }) => {
+test("the designer saves a new project with the client's details, then saves changes", async ({ page }) => {
   const state = await signedIn(page);
   await openStudio(page, "/designer.html?b=smith-bath");
   const bar = page.locator("#project-bar");
   await expect(bar).toBeVisible();
   await expect(bar).toContainText("isn't saved to your projects yet");
-  await page.locator("#project-name").fill("Garcia hall bath");
   await page.locator("#project-save").click();
+  const dialog = page.locator("#project-dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Client name").fill("Maria Garcia");
+  await dialog.getByLabel("Street address").fill("12 Elm St");
+  await dialog.getByLabel("Unit / Apt # (optional)").fill("Apt 4B");
+  await dialog.getByLabel("City").fill("Provo");
+  await dialog.getByLabel("State").fill("UT");
+  await dialog.getByLabel("ZIP code").fill("84601");
+  await dialog.getByLabel("Status").selectOption("lead");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  await expect(dialog).toBeHidden();
   await expect(page.locator("#project-status")).toContainText("1 of 10 new projects used this month");
-  await expect(bar).toContainText("Project: Garcia hall bath");
+  await expect(bar).toContainText("Project: Maria Garcia, 12 Elm St");
+  await expect(bar).toContainText("12 Elm St, Apt 4B, Provo, UT 84601");
   expect(page.url()).toContain("project=p1");
   const created = state.calls.find((c) => c.method === "POST");
   expect(created.body.design).toMatch(/^[A-Za-z0-9_-]+$/);
+  expect(created.body.info).toEqual({
+    client: "Maria Garcia",
+    street: "12 Elm St",
+    unit: "Apt 4B",
+    city: "Provo",
+    state: "UT",
+    zip: "84601",
+    status: "lead",
+  });
+  expect(created.body.summary.room.w).toBe(8);
+  expect(created.body.summary.grandTotal).toBeGreaterThan(0);
 
   await expect(page.locator("#project-save")).toHaveText("Save changes");
   await page.locator("#project-save").click();
-  await expect(page.locator("#project-status")).toContainText("Saved “Garcia hall bath”.");
-  expect(state.calls.filter((c) => c.method === "PATCH")).toHaveLength(1);
+  await expect(page.locator("#project-status")).toContainText("Saved “Maria Garcia, 12 Elm St”.");
+  const patch = state.calls.find((c) => c.method === "PATCH");
+  expect(patch.body.summary.room.l).toBe(5);
 });
 
 test("the designer opens a saved project from its link", async ({ page }) => {
@@ -180,4 +207,72 @@ test("homeowners (nobody signed in) never see the save bar", async ({ page }) =>
   await openStudio(page, "/designer.html");
   await page.waitForLoadState("networkidle");
   await expect(page.locator("#project-bar")).toBeHidden();
+});
+
+test("a project's page shows its 3D model, edits its info, and lists its materials", async ({ page }) => {
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const summary = {
+    v: 1,
+    room: { w: 8, l: 5, h: 8 },
+    fixtures: [{ label: "Toilet", qty: 1 }],
+    labor: [{ label: "Tile floor", detail: "40 sq ft", cost: 600 }],
+    laborSubtotal: 600,
+    materials: [
+      {
+        label: "Floor tile",
+        product: "Porcelain tile",
+        store: "Home Depot",
+        url: "https://example.com/tile",
+        quantity: "44 sq ft",
+        cost: 132,
+      },
+    ],
+    products: [{ label: "Toilet: Cimarron", models: ["K-3609-0"], qty: 1, url: "https://example.com/k", cost: null }],
+    materialsTotal: 132,
+    grandTotal: 732,
+    notes: [],
+  };
+  const state = await signedIn(page, {
+    projects: [
+      {
+        id: "a1",
+        name: "Garcia bath",
+        design,
+        info: { client: "Maria Garcia", street: "12 Elm St", city: "Provo", state: "UT" },
+        summary,
+        updated_at: DAY,
+      },
+    ],
+  });
+  await page.goto("/projects.html");
+  await expect(page.locator(".project-client")).toHaveText("Maria Garcia · 12 Elm St, Provo, UT");
+  await page.getByRole("link", { name: "Open Garcia bath" }).click();
+  await expect(page).toHaveURL(/project\.html\?id=a1/);
+  await expect(page.locator("#project-title")).toHaveText("Garcia bath");
+  await expect(page.locator("#project-sub")).toHaveText("Maria Garcia · 12 Elm St, Provo, UT");
+  await expect(page.locator("#project-edit")).toHaveAttribute("href", /designer\.html\?b=smith-bath&project=a1$/);
+  await expect(page.locator("#project-model-frame")).toHaveAttribute("src", /project=a1&embed=1$/);
+
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("#project-model-frame").analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+
+  await page.getByRole("tab", { name: "Info" }).click();
+  await expect(page.locator("#panel-info")).toBeVisible();
+  await page.locator("#panel-info").getByLabel("Unit / Apt # (optional)").fill("Unit 2");
+  await page.locator("#panel-info").getByLabel("Phone").fill("801-555-0100");
+  await page.getByRole("button", { name: "Save info" }).click();
+  await expect(page.locator("#project-info-status")).toHaveText("Info saved.");
+  await expect(page.locator("#project-sub")).toHaveText("Maria Garcia · 12 Elm St, Unit 2, Provo, UT");
+  const patch = state.calls.find((c) => c.method === "PATCH");
+  expect(patch.body.info.phone).toBe("801-555-0100");
+  expect(patch.body.name).toBe("Garcia bath");
+
+  await page.getByRole("tab", { name: "Materials" }).click();
+  await expect(page.locator("#project-materials")).toContainText("Porcelain tile (Home Depot)");
+  await expect(page.locator("#project-materials")).toContainText("44 sq ft");
+  await expect(page.locator("#project-materials")).toContainText("Not priced");
+  await expect(page.locator(".materials-totals")).toContainText("$732");
+  const axe2 = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("#project-model-frame").analyze();
+  expect(axe2.violations.map((v) => v.id)).toEqual([]);
 });

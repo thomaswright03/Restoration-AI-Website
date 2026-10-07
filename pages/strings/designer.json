@@ -86,7 +86,6 @@
     "Desenvolvido com Room Designer 3D"
   ],
   "designer.project.label": ["Your project", "Su proyecto", "Seu projeto"],
-  "designer.project.name": ["Project name", "Nombre del proyecto", "Nome do projeto"],
   "designer.project.save": ["Save project", "Guardar proyecto", "Salvar projeto"],
   "designer.project.saveNew": ["Save as new project", "Guardar como proyecto nuevo", "Salvar como projeto novo"],
   "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"],
@@ -96,5 +95,13 @@
     "Su diseñador aún no está activo para sus clientes, y no se pueden enviar solicitudes desde él, hasta que elija un plan.",
     "O seu projetista ainda não está no ar para os clientes, e não dá para enviar pedidos por ele, até você escolher um plano."
   ],
-  "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"]
+  "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+  "designer.project.newTitle": ["New project", "Nuevo proyecto", "Novo projeto"],
+  "designer.project.newText": [
+    "Who and where is this job for? Everything is optional, and you can change it later on the project's page.",
+    "¿Para quién y dónde es este trabajo? Todo es opcional y puede cambiarlo después en la página del proyecto.",
+    "Para quem e onde é este serviço? Tudo é opcional, e você pode mudar depois na página do projeto."
+  ],
+  "designer.project.create": ["Save project", "Guardar proyecto", "Salvar projeto"],
+  "designer.project.cancel": ["Cancel", "Cancelar", "Cancelar"]
 }

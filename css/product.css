@@ -749,3 +749,325 @@ html[data-embed="1"] main.solid-header {
   color: #4a3500;
   font-weight: 600;
 }
+
+/* ---------- Project details (the new-project dialog and the Info section) ---------- */
+.info-group {
+  border: 0;
+  border-top: 1px solid var(--color-line);
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4) 0 0;
+}
+
+.info-group legend {
+  font-family: var(--font-display);
+  font-weight: 600;
+  padding: 0;
+  margin-bottom: var(--space-3);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0 var(--space-4);
+}
+
+.info-grid .form-group {
+  grid-column: span 12;
+  margin-bottom: var(--space-3);
+}
+
+@media (min-width: 640px) {
+  .info-grid .info-phone,
+  .info-grid .info-email,
+  .info-grid .info-type,
+  .info-grid .info-status,
+  .info-grid .info-city,
+  .info-grid .info-start {
+    grid-column: span 6;
+  }
+
+  .info-grid .info-street {
+    grid-column: span 8;
+  }
+
+  .info-grid .info-unit {
+    grid-column: span 4;
+  }
+
+  .info-grid .info-state,
+  .info-grid .info-zip {
+    grid-column: span 3;
+  }
+}
+
+.info-fields input,
+.info-fields select,
+.info-fields textarea {
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.info-fields textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.info-fields .form-group > label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+.project-dialog {
+  width: min(640px, calc(100% - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow: auto;
+  padding: var(--space-6);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow);
+}
+
+.project-dialog::backdrop {
+  background: rgba(10, 16, 36, 0.55);
+}
+
+.project-dialog h2 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+}
+
+.project-bar-where {
+  color: var(--color-muted);
+}
+
+/* ---------- My projects list extras ---------- */
+.projects-search input {
+  width: 100%;
+  min-height: var(--tap);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+}
+
+.project-client {
+  margin: var(--space-1) 0 0;
+  color: var(--color-ink-soft);
+  overflow-wrap: anywhere;
+}
+
+.project-status {
+  display: inline-block;
+  margin-right: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  border: 1px solid var(--color-line-strong);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* ---------- One project's page ---------- */
+.app-wide.project-page {
+  max-width: 1180px;
+}
+
+.project-back {
+  margin: 0 0 var(--space-4);
+}
+
+.project-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-line);
+  overflow-x: auto;
+}
+
+.project-tabs [role="tab"] {
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  background: none;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.project-tabs [role="tab"][aria-selected="true"] {
+  color: var(--color-ink);
+  border-bottom-color: var(--color-accent-bright);
+}
+
+.project-panel[hidden] {
+  display: none;
+}
+
+.project-model {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.project-model iframe {
+  display: block;
+  width: 100%;
+  height: min(900px, 80vh);
+  min-height: 560px;
+  border: 0;
+}
+
+.project-materials-actions {
+  margin: 0 0 var(--space-4);
+  justify-content: flex-end;
+}
+
+.materials-room,
+.materials-totals {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-4);
+  margin: 0 0 var(--space-5);
+}
+
+.materials-room dt,
+.materials-totals dt {
+  font-weight: 600;
+}
+
+.materials-room dd,
+.materials-totals dd {
+  margin: 0;
+}
+
+.materials-totals {
+  max-width: 360px;
+  margin-left: auto;
+}
+
+.materials-totals dd {
+  text-align: right;
+}
+
+.materials-totals .is-total {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  border-top: 1px solid var(--color-line-strong);
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.materials-totals dt.is-total {
+  margin-right: calc(-1 * var(--space-4));
+}
+
+.materials-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-sm);
+}
+
+.materials-table caption {
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  margin-bottom: var(--space-2);
+}
+
+.materials-table th,
+.materials-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-bottom: 1px solid var(--color-line);
+  overflow-wrap: anywhere;
+}
+
+.materials-table thead th {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.materials-table tbody th {
+  font-weight: 600;
+}
+
+.materials-table .num {
+  text-align: right;
+  white-space: nowrap;
+  padding-right: 0;
+}
+
+@media (max-width: 600px) {
+  .materials-table thead {
+    display: none;
+  }
+
+  .materials-table tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    border-bottom: 1px solid var(--color-line);
+    padding: var(--space-2) 0;
+  }
+
+  .materials-table th,
+  .materials-table td {
+    border: 0;
+    padding: 0;
+  }
+
+  .materials-table td:not(.num) {
+    grid-column: 1;
+    color: var(--color-ink-soft);
+  }
+
+  .materials-table .num {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* Printing a project: just the materials list. */
+@media print {
+  .site-header,
+  .site-footer,
+  .skip-link,
+  .project-back,
+  .project-tabs,
+  .app-head-actions,
+  .project-materials-actions,
+  #panel-model,
+  #panel-info {
+    display: none !important;
+  }
+
+  main.solid-header {
+    padding-top: 0;
+  }
+
+  .app-card {
+    border: 0;
+    padding: 0;
+  }
+
+  #panel-materials {
+    display: block !important;
+  }
+}

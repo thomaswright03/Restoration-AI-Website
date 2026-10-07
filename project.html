@@ -3,13 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My projects | Room Designer 3D</title>
-    <meta name="description" content="Open, rename and delete the bathroom designs saved to your account." />
+    <title>Project | Room Designer 3D</title>
+    <meta
+      name="description"
+      content="A saved project: its 3D model, the client's details and the materials it needs."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Room Designer 3D" />
-    <meta property="og:title" content="My projects | Room Designer 3D" />
-    <meta property="og:description" content="Open, rename and delete the bathroom designs saved to your account." />
-    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/projects.html" />
+    <meta property="og:title" content="Project | Room Designer 3D" />
+    <meta
+      property="og:description"
+      content="A saved project: its 3D model, the client's details and the materials it needs."
+    />
+    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/project.html" />
     <meta property="og:image" content="https://restoration-ai-website-nu.vercel.app/images/og-en.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -29,10 +35,10 @@
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();
     </script>
-    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
-    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/projects.html" />
-    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/projects.html" />
-    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
+    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/project.html" />
+    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/project.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/project.html" />
+    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/project.html" />
     <script>
       (function () {
         var here = "en";
@@ -40,7 +46,7 @@
         var dirs = { en: "", es: "es/", pt: "pt/" };
         try {
           // Vercel answers every missing page with the English 404.html; under es/ or pt/, show that language's.
-          var lost = here === "en" && "projects.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
+          var lost = here === "en" && "project.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
           if (lost) return location.replace("/" + lost[1] + "/404.html");
           var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
           if (chosen) {
@@ -61,8 +67,8 @@
               }
             }
           }
-          if (want && want !== here && dirs[want] !== undefined && "projects.html" !== "404.html") {
-            location.replace(root + dirs[want] + "projects.html" + location.search + location.hash);
+          if (want && want !== here && dirs[want] !== undefined && "project.html" !== "404.html") {
+            location.replace(root + dirs[want] + "project.html" + location.search + location.hash);
           }
         } catch (e) {}
       })();
@@ -102,15 +108,15 @@
               </summary>
               <ul class="lang-menu-list" aria-label="Language">
                 <li>
-                  <a href="projects.html?lang=en" hreflang="en" lang="en" data-lang-choice="en" aria-current="true"
+                  <a href="project.html?lang=en" hreflang="en" lang="en" data-lang-choice="en" aria-current="true"
                     >English</a
                   >
                 </li>
                 <li>
-                  <a href="es/projects.html?lang=es" hreflang="es" lang="es" data-lang-choice="es">Español</a>
+                  <a href="es/project.html?lang=es" hreflang="es" lang="es" data-lang-choice="es">Español</a>
                 </li>
                 <li>
-                  <a href="pt/projects.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
+                  <a href="pt/project.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
                 </li>
               </ul>
             </details>
@@ -120,20 +126,10 @@
     </header>
 
     <main id="main" class="app-page solid-header">
-      <section class="section app-wide">
-        <div class="app-head">
-          <div>
-            <h1 class="section-title">My projects</h1>
-            <p class="app-signed-in" id="projects-email" hidden></p>
-            <p class="app-signed-in" id="projects-plan" hidden></p>
-          </div>
-          <div class="app-actions app-head-actions">
-            <a class="btn btn-primary" id="project-new" href="designer.html" hidden>New project</a>
-            <a class="btn btn-outline-dark" href="account.html">Account</a>
-          </div>
-        </div>
-
-        <p class="app-loading" id="projects-loading">Loading…</p>
+      <section class="section app-wide project-page" id="project-page">
+        <p class="project-back"><a href="projects.html">← My projects</a></p>
+        <p class="app-loading" id="project-loading">Loading…</p>
+        <p class="form-status" id="project-error" role="alert" hidden></p>
 
         <div class="app-notice" id="accounts-off" hidden>
           <p>
@@ -142,46 +138,81 @@
           <p><a href="designer.html">Try the live demo</a></p>
         </div>
 
-        <div id="projects-app" hidden>
-          <div class="app-notice" id="projects-free" hidden>
-            <p>
-              <strong>You're on the free plan.</strong> You can use the designer as much as you like, but saving
-              projects needs a paid plan.
-            </p>
-            <p><a href="account.html">Pick a plan</a></p>
+        <div id="project-app" hidden>
+          <div class="app-head">
+            <div>
+              <h1 class="section-title" id="project-title"></h1>
+              <p class="app-signed-in" id="project-sub" hidden></p>
+              <p class="app-signed-in" id="project-updated"></p>
+            </div>
+            <div class="app-actions app-head-actions">
+              <a class="btn btn-primary" id="project-edit" href="#">Open in the designer</a>
+            </div>
           </div>
 
-          <div class="app-card" id="projects-usage" hidden>
-            <h2>What your plan allows</h2>
-            <div class="usage-grid">
-              <div class="usage" id="usage-month">
-                <p data-meter-text></p>
-                <meter min="0" aria-label="New projects this month"></meter>
-              </div>
-              <div class="usage" id="usage-total">
-                <p data-meter-text></p>
-                <meter min="0" aria-label="Saved projects"></meter>
-              </div>
-            </div>
+          <div class="project-tabs" role="tablist" aria-label="Project sections">
+            <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true">
+              3D model
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-info"
+              aria-controls="panel-info"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Info
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-materials"
+              aria-controls="panel-materials"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Materials
+            </button>
+          </div>
+
+          <section class="app-card project-panel" id="panel-model" role="tabpanel" aria-labelledby="tab-model">
             <p class="form-note">
-              Deleting a project frees a saved-project slot, but not this month's new projects; those start over on the
-              1st of each month.
+              Look around the room here. To change the design and save it, use Open in the designer.
             </p>
-          </div>
-
-          <div class="app-card">
-            <h2 id="projects-heading" tabindex="-1">Your projects <span id="projects-count"></span></h2>
-            <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
-            <div class="form-group projects-search" id="projects-search-wrap" hidden>
-              <label for="projects-search">Search by name, client or address</label>
-              <input type="search" id="projects-search" autocomplete="off" />
+            <div class="project-model">
+              <iframe
+                id="project-model-frame"
+                title="The project's 3D model"
+                loading="lazy"
+                allow="fullscreen"
+              ></iframe>
             </div>
-            <p class="form-note" id="projects-empty" hidden>
-              No projects yet. Open the designer and use Save project at the top to keep a design here.
+          </section>
+
+          <section class="app-card project-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+            <form id="project-info-form" novalidate>
+              <div id="project-info-fields"></div>
+              <button type="submit" class="btn btn-primary">Save info</button>
+              <p class="form-status" id="project-info-status" role="status" aria-live="polite" hidden></p>
+            </form>
+          </section>
+
+          <section
+            class="app-card project-panel"
+            id="panel-materials"
+            role="tabpanel"
+            aria-labelledby="tab-materials"
+            hidden
+          >
+            <div class="app-actions project-materials-actions" id="project-materials-actions" hidden>
+              <button type="button" class="btn btn-outline-dark btn-sm" id="project-print">Print materials list</button>
+            </div>
+            <p class="form-note" id="project-materials-empty" hidden>
+              No materials list yet. Open the project in the designer and click Save changes to make one.
             </p>
-            <p class="form-note" id="projects-no-match" hidden>No projects match that search.</p>
-            <ul class="project-list" id="projects-list"></ul>
-          </div>
+            <div id="project-materials"></div>
+          </section>
         </div>
       </section>
     </main>

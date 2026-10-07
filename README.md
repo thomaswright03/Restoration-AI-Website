@@ -9,7 +9,8 @@ A product of Wright AI Solutions, LLC. The designer itself started as the one bu
 - **Landing page** (`index.html`): what it is, pricing, FAQ, sign-up.
 - **Live demo** (`designer.html`): the full designer, speaking for a sample business.
 - **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout, free trial), set the business details and labor prices, copy the designer link or embed code, and read the requests homeowners send.
-- **My projects** (`projects.html`): a subscriber's saved designs, to open, rename or delete, with what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project (homeowners are never signed in, so they don't see it).
+- **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details (homeowners are never signed in, so they don't see it).
+- **A project's page** (`project.html?id=`): the 3D model, the info (client, phone, email, address with unit/apt, job type, status, start date, notes) and the materials list worked out when the design was last saved, printable.
 - **Plans and limits** (`api/_plans.js`): Free can use the designer but can't save projects. Starter 10 new projects a month and 50 kept at once, Pro 25 and 100, Max 100 and 1000. Deleting a project frees a slot under the total but not the month's allowance (calendar month, UTC). The server enforces both (`api/projects.js` and the `create_project()` database function).
 - **A business's designer**: `designer.html?b=<their-slug>`, or `...&embed=1` inside an iframe on their own site (no product header/footer). It only runs while their subscription is active or trialing.
 

@@ -1,0 +1,73 @@
+    <main id="main" class="app-page solid-header">
+      <section class="section app-wide project-page" id="project-page">
+        <p class="project-back"><a href="{{@root}}{{@dir}}projects.html">{{project.back}}</a></p>
+        <p class="app-loading" id="project-loading">{{account.loading}}</p>
+        <p class="form-status" id="project-error" role="alert" hidden></p>
+
+        <div class="app-notice" id="accounts-off" hidden>
+          <p><strong>{{account.off.title}}</strong> {{account.off.text}}</p>
+          <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>
+        </div>
+
+        <div id="project-app" hidden>
+          <div class="app-head">
+            <div>
+              <h1 class="section-title" id="project-title"></h1>
+              <p class="app-signed-in" id="project-sub" hidden></p>
+              <p class="app-signed-in" id="project-updated"></p>
+            </div>
+            <div class="app-actions app-head-actions">
+              <a class="btn btn-primary" id="project-edit" href="#">{{project.edit}}</a>
+            </div>
+          </div>
+
+          <div class="project-tabs" role="tablist" aria-label="{{project.sections}}">
+            <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true">
+              {{project.tab.model}}
+            </button>
+            <button type="button" role="tab" id="tab-info" aria-controls="panel-info" aria-selected="false" tabindex="-1">
+              {{project.tab.info}}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-materials"
+              aria-controls="panel-materials"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              {{project.tab.materials}}
+            </button>
+          </div>
+
+          <section class="app-card project-panel" id="panel-model" role="tabpanel" aria-labelledby="tab-model">
+            <p class="form-note">{{project.model.note}}</p>
+            <div class="project-model">
+              <iframe id="project-model-frame" title="{{project.model.frame}}" loading="lazy" allow="fullscreen"></iframe>
+            </div>
+          </section>
+
+          <section class="app-card project-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+            <form id="project-info-form" novalidate>
+              <div id="project-info-fields"></div>
+              <button type="submit" class="btn btn-primary">{{project.info.save}}</button>
+              <p class="form-status" id="project-info-status" role="status" aria-live="polite" hidden></p>
+            </form>
+          </section>
+
+          <section
+            class="app-card project-panel"
+            id="panel-materials"
+            role="tabpanel"
+            aria-labelledby="tab-materials"
+            hidden
+          >
+            <div class="app-actions project-materials-actions" id="project-materials-actions" hidden>
+              <button type="button" class="btn btn-outline-dark btn-sm" id="project-print">{{project.print}}</button>
+            </div>
+            <p class="form-note" id="project-materials-empty" hidden>{{project.materials.empty}}</p>
+            <div id="project-materials"></div>
+          </section>
+        </div>
+      </section>
+    </main>

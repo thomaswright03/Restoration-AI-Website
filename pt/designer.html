@@ -167,8 +167,6 @@
       <section class="project-bar product-chrome" id="project-bar" aria-label="Seu projeto" hidden>
         <p class="project-bar-text" id="project-bar-text"></p>
         <form class="project-bar-form" id="project-save-form" novalidate hidden>
-          <label for="project-name">Nome do projeto</label>
-          <input type="text" id="project-name" maxlength="120" />
           <button type="submit" class="btn btn-primary" id="project-save">Salvar projeto</button>
           <button type="button" class="btn btn-outline-dark" id="project-save-new" hidden>
             Salvar como projeto novo
@@ -281,6 +279,21 @@
           <p class="powered-by">Desenvolvido com Room Designer 3D</p>
         </div>
       </section>
+
+      <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">
+        <form id="project-dialog-form" novalidate>
+          <h2 id="project-dialog-title">Novo projeto</h2>
+          <p class="form-note">
+            Para quem e onde é este serviço? Tudo é opcional, e você pode mudar depois na página do projeto.
+          </p>
+          <div id="project-dialog-fields"></div>
+          <p class="form-status" id="project-dialog-status" role="status" aria-live="polite" hidden></p>
+          <div class="app-actions">
+            <button type="submit" class="btn btn-primary">Salvar projeto</button>
+            <button type="button" class="btn btn-outline-dark" id="project-dialog-cancel">Cancelar</button>
+          </div>
+        </form>
+      </dialog>
 
       <dialog class="studio-dialog" id="studio-link-dialog" aria-labelledby="studio-link-title">
         <h2 id="studio-link-title">Link do seu projeto</h2>

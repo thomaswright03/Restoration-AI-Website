@@ -3,16 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mis proyectos | Room Designer 3D</title>
-    <meta name="description" content="Abra, cambie de nombre y elimine los diseños de baño guardados en su cuenta." />
+    <title>Proyecto | Room Designer 3D</title>
+    <meta
+      name="description"
+      content="Un proyecto guardado: su modelo 3D, los datos del cliente y los materiales que necesita."
+    />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Room Designer 3D" />
-    <meta property="og:title" content="Mis proyectos | Room Designer 3D" />
+    <meta property="og:title" content="Proyecto | Room Designer 3D" />
     <meta
       property="og:description"
-      content="Abra, cambie de nombre y elimine los diseños de baño guardados en su cuenta."
+      content="Un proyecto guardado: su modelo 3D, los datos del cliente y los materiales que necesita."
     />
-    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/es/projects.html" />
+    <meta property="og:url" content="https://restoration-ai-website-nu.vercel.app/es/project.html" />
     <meta property="og:image" content="https://restoration-ai-website-nu.vercel.app/images/og-es.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -32,10 +35,10 @@
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();
     </script>
-    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
-    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/projects.html" />
-    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/projects.html" />
-    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/projects.html" />
+    <link rel="alternate" hreflang="en" href="https://restoration-ai-website-nu.vercel.app/project.html" />
+    <link rel="alternate" hreflang="es" href="https://restoration-ai-website-nu.vercel.app/es/project.html" />
+    <link rel="alternate" hreflang="pt-BR" href="https://restoration-ai-website-nu.vercel.app/pt/project.html" />
+    <link rel="alternate" hreflang="x-default" href="https://restoration-ai-website-nu.vercel.app/project.html" />
     <script>
       (function () {
         var here = "es";
@@ -43,7 +46,7 @@
         var dirs = { en: "", es: "es/", pt: "pt/" };
         try {
           // Vercel answers every missing page with the English 404.html; under es/ or pt/, show that language's.
-          var lost = here === "en" && "projects.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
+          var lost = here === "en" && "project.html" === "404.html" && /^\/(es|pt)\//.exec(location.pathname);
           if (lost) return location.replace("/" + lost[1] + "/404.html");
           var chosen = /[?&]lang=(en|es|pt)\b/.exec(location.search);
           if (chosen) {
@@ -64,8 +67,8 @@
               }
             }
           }
-          if (want && want !== here && dirs[want] !== undefined && "projects.html" !== "404.html") {
-            location.replace(root + dirs[want] + "projects.html" + location.search + location.hash);
+          if (want && want !== here && dirs[want] !== undefined && "project.html" !== "404.html") {
+            location.replace(root + dirs[want] + "project.html" + location.search + location.hash);
           }
         } catch (e) {}
       })();
@@ -104,21 +107,14 @@
                 <span class="visually-hidden">Idioma: </span>ES
               </summary>
               <ul class="lang-menu-list" aria-label="Idioma">
-                <li><a href="../projects.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
+                <li><a href="../project.html?lang=en" hreflang="en" lang="en" data-lang-choice="en">English</a></li>
                 <li>
-                  <a
-                    href="../es/projects.html?lang=es"
-                    hreflang="es"
-                    lang="es"
-                    data-lang-choice="es"
-                    aria-current="true"
+                  <a href="../es/project.html?lang=es" hreflang="es" lang="es" data-lang-choice="es" aria-current="true"
                     >Español</a
                   >
                 </li>
                 <li>
-                  <a href="../pt/projects.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt"
-                    >Português</a
-                  >
+                  <a href="../pt/project.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
                 </li>
               </ul>
             </details>
@@ -128,20 +124,10 @@
     </header>
 
     <main id="main" class="app-page solid-header">
-      <section class="section app-wide">
-        <div class="app-head">
-          <div>
-            <h1 class="section-title">Mis proyectos</h1>
-            <p class="app-signed-in" id="projects-email" hidden></p>
-            <p class="app-signed-in" id="projects-plan" hidden></p>
-          </div>
-          <div class="app-actions app-head-actions">
-            <a class="btn btn-primary" id="project-new" href="../es/designer.html" hidden>Nuevo proyecto</a>
-            <a class="btn btn-outline-dark" href="../es/account.html">Cuenta</a>
-          </div>
-        </div>
-
-        <p class="app-loading" id="projects-loading">Cargando…</p>
+      <section class="section app-wide project-page" id="project-page">
+        <p class="project-back"><a href="../es/projects.html">← Mis proyectos</a></p>
+        <p class="app-loading" id="project-loading">Cargando…</p>
+        <p class="form-status" id="project-error" role="alert" hidden></p>
 
         <div class="app-notice" id="accounts-off" hidden>
           <p>
@@ -151,46 +137,84 @@
           <p><a href="../es/designer.html">Probar la demo</a></p>
         </div>
 
-        <div id="projects-app" hidden>
-          <div class="app-notice" id="projects-free" hidden>
-            <p>
-              <strong>Tiene el plan gratis.</strong> Puede usar el diseñador todo lo que quiera, pero para guardar
-              proyectos necesita un plan de pago.
-            </p>
-            <p><a href="../es/account.html">Elegir un plan</a></p>
+        <div id="project-app" hidden>
+          <div class="app-head">
+            <div>
+              <h1 class="section-title" id="project-title"></h1>
+              <p class="app-signed-in" id="project-sub" hidden></p>
+              <p class="app-signed-in" id="project-updated"></p>
+            </div>
+            <div class="app-actions app-head-actions">
+              <a class="btn btn-primary" id="project-edit" href="#">Abrir en el diseñador</a>
+            </div>
           </div>
 
-          <div class="app-card" id="projects-usage" hidden>
-            <h2>Lo que permite su plan</h2>
-            <div class="usage-grid">
-              <div class="usage" id="usage-month">
-                <p data-meter-text></p>
-                <meter min="0" aria-label="Proyectos nuevos este mes"></meter>
-              </div>
-              <div class="usage" id="usage-total">
-                <p data-meter-text></p>
-                <meter min="0" aria-label="Proyectos guardados"></meter>
-              </div>
-            </div>
+          <div class="project-tabs" role="tablist" aria-label="Secciones del proyecto">
+            <button type="button" role="tab" id="tab-model" aria-controls="panel-model" aria-selected="true">
+              Modelo 3D
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-info"
+              aria-controls="panel-info"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Información
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-materials"
+              aria-controls="panel-materials"
+              aria-selected="false"
+              tabindex="-1"
+            >
+              Materiales
+            </button>
+          </div>
+
+          <section class="app-card project-panel" id="panel-model" role="tabpanel" aria-labelledby="tab-model">
             <p class="form-note">
-              Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes;
-              esos vuelven a empezar el día 1 de cada mes.
+              Recorra el baño aquí. Para cambiar el diseño y guardarlo, use Abrir en el diseñador.
             </p>
-          </div>
-
-          <div class="app-card">
-            <h2 id="projects-heading" tabindex="-1">Sus proyectos <span id="projects-count"></span></h2>
-            <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
-            <div class="form-group projects-search" id="projects-search-wrap" hidden>
-              <label for="projects-search">Buscar por nombre, cliente o dirección</label>
-              <input type="search" id="projects-search" autocomplete="off" />
+            <div class="project-model">
+              <iframe
+                id="project-model-frame"
+                title="El modelo 3D del proyecto"
+                loading="lazy"
+                allow="fullscreen"
+              ></iframe>
             </div>
-            <p class="form-note" id="projects-empty" hidden>
-              Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.
+          </section>
+
+          <section class="app-card project-panel" id="panel-info" role="tabpanel" aria-labelledby="tab-info" hidden>
+            <form id="project-info-form" novalidate>
+              <div id="project-info-fields"></div>
+              <button type="submit" class="btn btn-primary">Guardar información</button>
+              <p class="form-status" id="project-info-status" role="status" aria-live="polite" hidden></p>
+            </form>
+          </section>
+
+          <section
+            class="app-card project-panel"
+            id="panel-materials"
+            role="tabpanel"
+            aria-labelledby="tab-materials"
+            hidden
+          >
+            <div class="app-actions project-materials-actions" id="project-materials-actions" hidden>
+              <button type="button" class="btn btn-outline-dark btn-sm" id="project-print">
+                Imprimir lista de materiales
+              </button>
+            </div>
+            <p class="form-note" id="project-materials-empty" hidden>
+              Aún no hay lista de materiales. Abra el proyecto en el diseñador y haga clic en Guardar cambios para
+              crearla.
             </p>
-            <p class="form-note" id="projects-no-match" hidden>Ningún proyecto coincide con esa búsqueda.</p>
-            <ul class="project-list" id="projects-list"></ul>
-          </div>
+            <div id="project-materials"></div>
+          </section>
         </div>
       </section>
     </main>

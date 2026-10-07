@@ -81,7 +81,15 @@ function fakeSupabase(sub) {
       if (total >= body.p_total) return reply(200, { error: "total-limit", month, total });
       const id = "00000000-0000-4000-8000-" + String(++n).padStart(12, "0");
       const now = new Date().toISOString();
-      data.projects.push({ id, owner_id: body.p_owner, name: body.p_name, design: body.p_design, updated_at: now });
+      data.projects.push({
+        id,
+        owner_id: body.p_owner,
+        name: body.p_name,
+        design: body.p_design,
+        info: body.p_info,
+        summary: body.p_summary,
+        updated_at: now,
+      });
       data.creations.push({ owner_id: body.p_owner, created_at: now });
       return reply(200, { project: { id, name: body.p_name }, month: month + 1, total: total + 1 });
     }
@@ -205,4 +213,35 @@ test("projects: a design must be one the designer can open", async () => {
   const bad = await call("POST", { body: { name: "X", design: "abc" } });
   assert.equal(bad.statusCode, 400);
   assert.equal(bad.json().error, "design");
+});
+
+test("projects: client and job details are checked field by field", async () => {
+  const { cleanInfo } = require("../../api/projects.js");
+  assert.deepEqual(
+    cleanInfo({ client: "  Maria   Garcia ", unit: "", status: "lead", start: "2026-11-02", other: "x" }),
+    {
+      client: "Maria Garcia",
+      status: "lead",
+      start: "2026-11-02",
+    },
+  );
+  assert.equal(cleanInfo({ status: "maybe" }), null);
+  assert.equal(cleanInfo({ start: "next week" }), null);
+  assert.equal(cleanInfo({ client: "x".repeat(121) }), null);
+  assert.equal(cleanInfo({ client: 5 }), null);
+  assert.equal(cleanInfo("text"), null);
+
+  const data = fakeSupabase({ status: "active" });
+  const summary = { v: 1, grandTotal: 1234 };
+  const res = await call("POST", { body: { name: "Job", design: DESIGN, info: { client: "Lee" }, summary } });
+  assert.equal(res.statusCode, 201);
+  const sent = data.projects[0];
+  assert.equal(sent.name, "Job");
+  assert.deepEqual(sent.info, { client: "Lee" });
+  assert.deepEqual(sent.summary, summary);
+  assert.equal(
+    (await call("POST", { body: { name: "Job", design: DESIGN, info: { status: "nope" } } })).statusCode,
+    400,
+  );
+  assert.equal((await call("POST", { body: { name: "Job", design: DESIGN, summary: [1] } })).statusCode, 400);
 });

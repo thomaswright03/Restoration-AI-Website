@@ -43,7 +43,12 @@
           <div class="app-card">
             <h2 id="projects-heading" tabindex="-1">{{projects.list.title}} <span id="projects-count"></span></h2>
             <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
+            <div class="form-group projects-search" id="projects-search-wrap" hidden>
+              <label for="projects-search">{{projects.search}}</label>
+              <input type="search" id="projects-search" autocomplete="off" />
+            </div>
             <p class="form-note" id="projects-empty" hidden>{{projects.list.empty}}</p>
+            <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>

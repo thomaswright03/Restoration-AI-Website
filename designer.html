@@ -163,8 +163,6 @@
       <section class="project-bar product-chrome" id="project-bar" aria-label="Your project" hidden>
         <p class="project-bar-text" id="project-bar-text"></p>
         <form class="project-bar-form" id="project-save-form" novalidate hidden>
-          <label for="project-name">Project name</label>
-          <input type="text" id="project-name" maxlength="120" />
           <button type="submit" class="btn btn-primary" id="project-save">Save project</button>
           <button type="button" class="btn btn-outline-dark" id="project-save-new" hidden>Save as new project</button>
         </form>
@@ -272,6 +270,21 @@
           <p class="powered-by">Powered by Room Designer 3D</p>
         </div>
       </section>
+
+      <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">
+        <form id="project-dialog-form" novalidate>
+          <h2 id="project-dialog-title">New project</h2>
+          <p class="form-note">
+            Who and where is this job for? Everything is optional, and you can change it later on the project's page.
+          </p>
+          <div id="project-dialog-fields"></div>
+          <p class="form-status" id="project-dialog-status" role="status" aria-live="polite" hidden></p>
+          <div class="app-actions">
+            <button type="submit" class="btn btn-primary">Save project</button>
+            <button type="button" class="btn btn-outline-dark" id="project-dialog-cancel">Cancel</button>
+          </div>
+        </form>
+      </dialog>
 
       <dialog class="studio-dialog" id="studio-link-dialog" aria-labelledby="studio-link-title">
         <h2 id="studio-link-title">Link to your design</h2>

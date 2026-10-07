@@ -71,8 +71,27 @@
     biz.leadEndpoint = "/api/leads";
     biz.demo = false;
     biz.unavailable = "";
+    // The owner looking at their own designer before it's live.
+    biz.preview = data.preview === true;
     applyPrices(data.prices);
   };
+
+  // The signed-in user's Supabase access token, if any (it's kept in
+  // localStorage as sb-<project>-auth-token). Sent along so a business
+  // owner can see their own designer before their plan is active.
+  function signInToken() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i) || "";
+        if (!/^sb-.+-auth-token$/.test(key)) continue;
+        var s = JSON.parse(localStorage.getItem(key));
+        if (s && s.access_token && (!s.expires_at || s.expires_at * 1000 > Date.now())) return s.access_token;
+      }
+    } catch (e) {
+      /* storage blocked: no preview */
+    }
+    return "";
+  }
 
   var match = /[?&]b=([a-z0-9-]{1,64})\b/.exec(window.location.search);
   var slug = match ? match[1] : "";
@@ -82,7 +101,14 @@
     // Assume unavailable until the profile script says otherwise (it may 404
     // or be blocked), so a broken link never shows the sample business.
     biz.unavailable = "loading";
-    document.write('<script src="/api/business?b=' + encodeURIComponent(slug) + '"></' + "script>");
+    var token = signInToken();
+    document.write(
+      '<script src="/api/business?b=' +
+        encodeURIComponent(slug) +
+        (token ? "&t=" + encodeURIComponent(token) : "") +
+        '"></' +
+        "script>",
+    );
   }
 
   function fill() {
@@ -97,6 +123,9 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-demo]"), function (el) {
       el.hidden = !biz.demo;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-biz-preview]"), function (el) {
+      el.hidden = !biz.preview;
     });
     if (biz.unavailable) {
       Array.prototype.forEach.call(document.querySelectorAll("[data-biz-live]"), function (el) {

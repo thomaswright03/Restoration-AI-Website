@@ -89,5 +89,12 @@
   "designer.project.name": ["Project name", "Nombre del proyecto", "Nome do projeto"],
   "designer.project.save": ["Save project", "Guardar proyecto", "Salvar projeto"],
   "designer.project.saveNew": ["Save as new project", "Guardar como proyecto nuevo", "Salvar como projeto novo"],
-  "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"]
+  "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"],
+  "designer.preview.title": ["Only you can see this.", "Solo usted puede ver esto.", "Só você pode ver isto."],
+  "designer.preview.text": [
+    "Your designer isn't live for customers yet, and requests can't be sent from it, until you pick a plan.",
+    "Su diseñador aún no está activo para sus clientes, y no se pueden enviar solicitudes desde él, hasta que elija un plan.",
+    "O seu projetista ainda não está no ar para os clientes, e não dá para enviar pedidos por ele, até você escolher um plano."
+  ],
+  "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"]
 }

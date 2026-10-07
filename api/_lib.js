@@ -152,7 +152,8 @@ async function activeBusiness(slug) {
   if (!biz) return null;
   const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(biz.owner_id) + "&select=status");
   const status = subs && subs[0] ? subs[0].status : "none";
-  if (!ACTIVE_STATUSES.includes(status)) return { inactive: true };
+  // inactive: only its owner may see it, as a preview (api/business.js).
+  if (!ACTIVE_STATUSES.includes(status)) return { inactive: true, business: biz };
   return biz;
 }
 

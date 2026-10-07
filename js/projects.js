@@ -322,45 +322,53 @@
       show($("accounts-off"), true);
       return;
     }
-    signIn(config).then(function (s) {
-      if (!s) {
-        window.location.href = sitePath("signup.html") + "?mode=login";
-        return;
-      }
-      $("projects-email").textContent = T("auth.signedInAs", { email: s.user.email });
-      show($("projects-email"), true);
-      Promise.all([
-        api("GET"),
-        client
-          .from("businesses")
-          .select("slug")
-          .maybeSingle()
-          .then(function (r) {
-            return r.data || null;
-          }),
-      ])
-        .then(function (results) {
-          var data = results[0];
-          state.plan = data.plan;
-          state.limits = data.limits;
-          state.used = data.used;
-          state.projects = data.projects || [];
-          base = designerBase(results[1]);
-          $("project-new").href = base;
-          show($("projects-loading"), false);
-          show($("projects-app"), true);
-          renderUsage();
-          renderList();
-        })
-        .catch(function (err) {
-          show($("projects-loading"), false);
-          show($("projects-app"), true);
-          base = designerBase(null);
-          $("project-new").href = base;
-          renderList();
-          status($("projects-status"), "error", errorText(err));
-        });
-    });
+    signIn(config)
+      .catch(function () {
+        // The sign-in script didn't load: same notice as accounts being off.
+        show($("projects-loading"), false);
+        show($("accounts-off"), true);
+        return false;
+      })
+      .then(function (s) {
+        if (s === false) return;
+        if (!s) {
+          window.location.href = sitePath("signup.html") + "?mode=login";
+          return;
+        }
+        $("projects-email").textContent = T("auth.signedInAs", { email: s.user.email });
+        show($("projects-email"), true);
+        Promise.all([
+          api("GET"),
+          client
+            .from("businesses")
+            .select("slug")
+            .maybeSingle()
+            .then(function (r) {
+              return r.data || null;
+            }),
+        ])
+          .then(function (results) {
+            var data = results[0];
+            state.plan = data.plan;
+            state.limits = data.limits;
+            state.used = data.used;
+            state.projects = data.projects || [];
+            base = designerBase(results[1]);
+            $("project-new").href = base;
+            show($("projects-loading"), false);
+            show($("projects-app"), true);
+            renderUsage();
+            renderList();
+          })
+          .catch(function (err) {
+            show($("projects-loading"), false);
+            show($("projects-app"), true);
+            base = designerBase(null);
+            $("project-new").href = base;
+            renderList();
+            status($("projects-status"), "error", errorText(err));
+          });
+      });
   }
 
   // ===================================================================
@@ -471,31 +479,35 @@
     var biz = window.DesignerBusiness || {};
     if (biz.unavailable && biz.unavailable !== "loading") return;
     if (!config.accounts || !hasStoredSignIn()) return;
-    signIn(config).then(function (s) {
-      if (!s) return;
-      if ((window.DesignerBusiness || {}).unavailable) return;
-      $("project-name").placeholder = defaultName();
-      $("project-save-form").addEventListener("submit", function (e) {
-        e.preventDefault();
-        saveProject(false);
-      });
-      $("project-save-new").addEventListener("click", function () {
-        saveProject(true);
-      });
-      api("GET")
-        .then(function (data) {
-          barPlan = data.plan;
-        })
-        .catch(function () {
-          barPlan = "free";
-        })
-        .then(function () {
-          renderBar();
-          show($("project-bar"), true);
-          var id = params.get("project");
-          if (id) openProject(id);
+    signIn(config)
+      .catch(function () {
+        return null;
+      })
+      .then(function (s) {
+        if (!s) return;
+        if ((window.DesignerBusiness || {}).unavailable) return;
+        $("project-name").placeholder = defaultName();
+        $("project-save-form").addEventListener("submit", function (e) {
+          e.preventDefault();
+          saveProject(false);
         });
-    });
+        $("project-save-new").addEventListener("click", function () {
+          saveProject(true);
+        });
+        api("GET")
+          .then(function (data) {
+            barPlan = data.plan;
+          })
+          .catch(function () {
+            barPlan = "free";
+          })
+          .then(function () {
+            renderBar();
+            show($("project-bar"), true);
+            var id = params.get("project");
+            if (id) openProject(id);
+          });
+      });
   }
 
   loadConfig().then(function (config) {

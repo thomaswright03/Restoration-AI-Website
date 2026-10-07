@@ -1,10 +1,12 @@
 # Source and dev files Vercel doesn't need to serve. The built pages, js/,
 # css/, fonts/, images/, models/ and api/ are what the live site uses.
-pages/
-scripts/
-supabase/
-tests/
-tools/
-test-results/
-playwright-report/
-blob-report/
+# Each path starts with / so it only matches at the root: a bare "supabase/"
+# also hid js/vendor/supabase/, and sign-up couldn't load.
+/pages/
+/scripts/
+/supabase/
+/tests/
+/tools/
+/test-results/
+/playwright-report/
+/blob-report/

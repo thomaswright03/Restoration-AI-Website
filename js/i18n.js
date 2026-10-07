@@ -42,6 +42,8 @@
     "unit.point": ["point", "punto", "ponto"],
     "unit.points": ["points", "puntos", "pontos"],
     "unit.flat": ["flat", "fijo", "fixo"],
+    "unit.foot": ["foot", "pie", "pé"],
+    "unit.feet": ["feet", "pies", "pés"],
     "unit.gallon": ["gallon", "galón", "galão"],
     "unit.gallons": ["gallons", "galones", "galões"],
 
@@ -155,6 +157,11 @@
     ],
     "line.badValve": ["Bad valve replacement", "Cambio de válvula dañada", "Troca de registro com defeito"],
     "line.electricalPoints": ["Electrical points", "Puntos eléctricos", "Pontos elétricos"],
+    "line.drainRun": [
+      "New drain line to the plumbing wall",
+      "Nueva línea de desagüe hasta la pared de plomería",
+      "Nova linha de esgoto até a parede hidráulica",
+    ],
 
     // ---------- estimate: assumptions and summary ----------
     "scope.describe": [
@@ -729,6 +736,13 @@
       "Adicione peças e mova-as para onde quiser. Cada uma fica encostada em uma parede, e você vê na hora se algo não cabe.",
     ],
     "studio.step.layout.short": ["Layout", "Distribución", "Distribuição"],
+    "studio.step.electrical.title": ["Electrical", "Electricidad", "Elétrica"],
+    "studio.step.electrical.intro": [
+      "Here's where the outlets, switches, lights and fan should go, worked out from your layout. Move any of them along its wall, or add your own.",
+      "Aquí es donde deberían ir los tomacorrientes, los interruptores, las luces y el extractor, según su distribución. Mueva cualquiera por su pared o agregue los suyos.",
+      "Aqui é onde devem ficar as tomadas, os interruptores, as luzes e o exaustor, de acordo com a sua distribuição. Mova qualquer um pela parede ou acrescente os seus.",
+    ],
+    "studio.step.electrical.short": ["Electrical", "Electricidad", "Elétrica"],
     "studio.step.products.title": ["Products", "Productos", "Produtos"],
     "studio.step.products.intro": [
       "Pick the Kohler models you like. Each one is shown at its real size, and any that's too big for its spot can't be picked.",
@@ -1246,6 +1260,163 @@
       "Puerta en la pared {wall}: {kind}",
       "Porta na parede {wall}: {kind}",
     ],
+    // ---------- the electrical step ----------
+    "studio.elec.outlet": ["Outlet", "Tomacorriente", "Tomada"],
+    "studio.elec.switch": ["Switch", "Interruptor", "Interruptor"],
+    "studio.elec.light": ["Light", "Luz", "Luz"],
+    "studio.elec.fan": ["Exhaust fan", "Extractor", "Exaustor"],
+    "studio.elec.add": ["Add a point", "Agregar un punto", "Adicionar um ponto"],
+    "studio.elec.addHelp": [
+      "Everything below is suggested from your layout. Drag any of it in the room, or add what you want.",
+      "Todo lo de abajo se sugiere a partir de su distribución. Arrastre lo que quiera en el baño o agregue lo que necesite.",
+      "Tudo abaixo é sugerido a partir da sua distribuição. Arraste qualquer item no banheiro ou acrescente o que quiser.",
+    ],
+    "studio.elec.suggestBtn": ["Suggest what's missing", "Sugerir lo que falta", "Sugerir o que falta"],
+    "studio.elec.full": [
+      "That's all {n} points this room can hold.",
+      "Esos son los {n} puntos que cabe en este baño.",
+      "Esses são os {n} pontos que este banheiro aceita.",
+    ],
+    "studio.elec.missing": ["Still missing", "Todavía falta", "Ainda falta"],
+    "studio.elec.inRoom": ["In the room", "En el baño", "No banheiro"],
+    "studio.elec.empty": [
+      "Nothing wired yet. Add a point, or let us suggest them.",
+      "Todavía no hay nada. Agregue un punto o deje que se lo sugiramos.",
+      "Ainda não há nada. Adicione um ponto ou deixe que a gente sugira.",
+    ],
+    "studio.elec.height": ["Height", "Altura", "Altura"],
+    "studio.elec.inCeiling": ["in the ceiling", "en el techo", "no teto"],
+    "studio.elec.fanFixed": [
+      "The fan goes in the ceiling over the tub or shower.",
+      "El extractor va en el techo sobre la bañera o la ducha.",
+      "O exaustor fica no teto sobre a banheira ou o chuveiro.",
+    ],
+    "studio.elec.fine": ["Nothing to flag on this one.", "Nada que señalar en este.", "Nada a apontar neste."],
+    "studio.elec.disclaimer": [
+      "These follow the usual US residential rules as guidance. Your electrician decides what actually gets installed.",
+      "Esto sigue las reglas residenciales habituales de EE. UU. como orientación. Su electricista decide qué se instala realmente.",
+      "Isto segue as regras residenciais usuais dos EUA como orientação. Seu eletricista decide o que é instalado de fato.",
+    ],
+    "studio.elec.added": ["{name} added.", "{name} agregado.", "{name} adicionado."],
+    "studio.elec.nothingToAdd": [
+      "Everything the rules ask for is already here.",
+      "Ya está todo lo que piden las reglas.",
+      "Já está tudo o que as regras pedem.",
+    ],
+    "studio.elec.suggested": ["Added {n} point(s).", "Se agregaron {n} punto(s).", "Foram adicionados {n} ponto(s)."],
+    "studio.elec.over": ["over {what}", "sobre {what}", "sobre {what}"],
+    "studio.elec.beside": ["beside {what}", "al lado de {what}", "ao lado de {what}"],
+    "studio.elec.forFan": ["for the exhaust fan", "para el extractor", "para o exaustor"],
+    "studio.elec.gap.noOutlet": [
+      "A basin needs a GFCI outlet within 36 in. of it.",
+      "Un lavabo necesita un tomacorriente GFCI a menos de 36 pulg.",
+      "Uma pia precisa de uma tomada GFCI a menos de 36 pol.",
+    ],
+    "studio.elec.gap.noLight": [
+      "There's no light in the room yet.",
+      "Todavía no hay ninguna luz en el baño.",
+      "Ainda não há nenhuma luz no banheiro.",
+    ],
+    "studio.elec.gap.noSwitch": [
+      "There's no switch beside the door.",
+      "No hay ningún interruptor al lado de la puerta.",
+      "Não há nenhum interruptor ao lado da porta.",
+    ],
+    "studio.elec.gap.noFan": [
+      "A bathroom with a tub or shower needs an exhaust fan.",
+      "Un baño con bañera o ducha necesita un extractor.",
+      "Um banheiro com banheira ou chuveiro precisa de um exaustor.",
+    ],
+    "studio.elecIssue.outside": [
+      "It's past the end of the wall.",
+      "Queda más allá del final de la pared.",
+      "Fica além do fim da parede.",
+    ],
+    "studio.elecIssue.outsideUp": [
+      "It's higher than the ceiling.",
+      "Queda más alto que el techo.",
+      "Fica mais alto que o teto.",
+    ],
+    "studio.elecIssue.wet": [
+      "It's within {feet} of the tub or shower, where no outlet or switch may go.",
+      "Está a menos de {feet} de la bañera o la ducha, donde no puede haber tomacorrientes ni interruptores.",
+      "Está a menos de {feet} da banheira ou do chuveiro, onde não pode haver tomada nem interruptor.",
+    ],
+    "studio.elecIssue.behind": [
+      "It's behind {other}, where nobody could reach it.",
+      "Queda detrás de {other}, donde nadie lo alcanzaría.",
+      "Fica atrás de {other}, onde ninguém alcançaria.",
+    ],
+    "studio.elecIssue.crowded": [
+      "It's right on top of {other}.",
+      "Está justo encima de {other}.",
+      "Está em cima de {other}.",
+    ],
+    "studio.elecIssue.farBasin": [
+      "A basin's outlet has to be within {need} in. of it; this one is {have} in. away.",
+      "El tomacorriente de un lavabo debe estar a menos de {need} pulg.; este está a {have} pulg.",
+      "A tomada de uma pia precisa estar a menos de {need} pol.; esta está a {have} pol.",
+    ],
+    "studio.pointAt": [
+      "{name}, wall {wall} at {at}, {up} up",
+      "{name}, pared {wall} a {at}, {up} de alto",
+      "{name}, parede {wall} a {at}, {up} de altura",
+    ],
+    "studio.pointCeiling": ["{name}, in the ceiling", "{name}, en el techo", "{name}, no teto"],
+    "studio.pointWhere": [
+      "Wall {wall} at {at}, {up} up",
+      "Pared {wall} a {at}, {up} de alto",
+      "Parede {wall} a {at}, {up} de altura",
+    ],
+    // ---------- the plumbing wall ----------
+    "studio.room.plumbing": ["Plumbing", "Plomería", "Hidráulica"],
+    "studio.room.plumbingHelp": [
+      "The drains all run to one wall, the one with the stack in it. Pick the wall your toilet is on today: fixtures on it tie straight in, and anything further away needs a new drain line run to it.",
+      "Todos los desagües van a una sola pared, la que tiene la bajante. Elija la pared donde está hoy su inodoro: las piezas en esa pared se conectan directamente y cualquier otra necesita una nueva línea de desagüe.",
+      "Todos os ralos vão para uma única parede, a que tem a prumada. Escolha a parede onde está hoje o seu vaso sanitário: as peças nela se ligam direto e qualquer outra precisa de uma nova linha de esgoto.",
+    ],
+    "studio.room.plumbingWall": ["Wall with the plumbing", "Pared con la plomería", "Parede com a hidráulica"],
+    "studio.room.plumbingRun": [
+      "As it stands, the layout needs {run} of new drain line.",
+      "Como está, la distribución necesita {run} de nueva línea de desagüe.",
+      "Como está, a distribuição precisa de {run} de nova linha de esgoto.",
+    ],
+    "studio.room.plumbingNone": [
+      "Everything with a drain is on that wall, so there's no new pipe to run.",
+      "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
+      "Tudo o que tem ralo está nessa parede, então não há tubulação nova a passar.",
+    ],
+    "studio.room.plumbingSet": [
+      "Plumbing wall: {wall}",
+      "Pared de la plomería: {wall}",
+      "Parede da hidráulica: {wall}",
+    ],
+    "studio.room.plumbingBroke": [
+      "Some fixtures are now too far from the plumbing.",
+      "Algunas piezas quedaron demasiado lejos de la plomería.",
+      "Algumas peças ficaram longe demais da hidráulica.",
+    ],
+    "studio.issue.offStack": [
+      "It's off the plumbing wall: {run} of new drain line to wall {wall}.",
+      "Está fuera de la pared de la plomería: {run} de nueva línea de desagüe hasta la pared {wall}.",
+      "Está fora da parede hidráulica: {run} de nova linha de esgoto até a parede {wall}.",
+    ],
+    "studio.issue.noStack": [
+      "It's too far from the plumbing in wall {wall} for its drain to fall: {run} of pipe, and {most} is the most it can run.",
+      "Está demasiado lejos de la plomería de la pared {wall} para que caiga su desagüe: {run} de tubería, y {most} es lo máximo.",
+      "Está longe demais da hidráulica da parede {wall} para o ralo ter queda: {run} de tubulação, e {most} é o máximo.",
+    ],
+    // ---------- isolating what's being worked on ----------
+    "studio.view.isolate": ["Just this", "Solo esto", "Só isto"],
+    "studio.view.isolateOn": ["Showing just this", "Mostrando solo esto", "Mostrando só isto"],
+    "studio.view.isolateHelp": [
+      "Show only {what}, with everything else out of the way",
+      "Mostrar solo {what}, con todo lo demás fuera del camino",
+      "Mostrar só {what}, com todo o resto fora do caminho",
+    ],
+    "studio.sum.stack": ["Plumbing wall: {wall}", "Pared de la plomería: {wall}", "Parede hidráulica: {wall}"],
+    "studio.sum.drainRun": ["New drain line: {run}", "Nueva línea de desagüe: {run}", "Nova linha de esgoto: {run}"],
+    "studio.sum.electrical": ["Electrical: {list}", "Electricidad: {list}", "Elétrica: {list}"],
     "studio.sum.item": [
       "{name}: wall {wall}, center {at} from the left corner",
       "{name}: pared {wall}, centro a {at} de la esquina izquierda",
@@ -1626,6 +1797,60 @@
     ],
     "room3d.option.K-14443-CP": ["Purist robe hook", "Purist, gancho para bata", "Purist, gancho para roupão"],
     "room3d.option.K-23529-CP": ["Parallel robe hook", "Parallel, gancho para bata", "Parallel, gancho para roupão"],
+
+    // ---------- Riley, the guide (js/riley.js) ----------
+    "riley.name": ["Riley", "Riley", "Riley"],
+    "riley.mute": ["Mute Riley", "Silenciar a Riley", "Silenciar a Riley"],
+    "riley.unmute": ["Let Riley speak", "Dejar hablar a Riley", "Deixar a Riley falar"],
+    "riley.yes": ["Yes please", "Sí, por favor", "Sim, por favor"],
+    "riley.showMe": ["Show me", "Muéstrame", "Mostre"],
+    "riley.greeting": [
+      "Hi, I'm Riley. I'll talk you through your bathroom, step by step.",
+      "Hola, soy Riley. Le voy a guiar por su baño, paso a paso.",
+      "Oi, eu sou a Riley. Vou te guiar pelo seu banheiro, passo a passo.",
+    ],
+    "riley.problem": [
+      "Hey, so it looks like {what} isn't going to work there. {why}",
+      "Oiga, parece que {what} no va a funcionar ahí. {why}",
+      "Oi, parece que {what} não vai dar ali. {why}",
+    ],
+    "riley.offer": ["Can I offer an alternative?", "¿Le propongo una alternativa?", "Posso sugerir uma alternativa?"],
+    "riley.offerOut": [
+      "Can I offer an alternative? There's no room for it anywhere in this bathroom, so I'd take it back out.",
+      "¿Le propongo una alternativa? No cabe en ninguna parte de este baño, así que lo quitaría.",
+      "Posso sugerir uma alternativa? Não cabe em nenhum lugar deste banheiro, então eu tiraria.",
+    ],
+    "riley.tight": ["One thing about {what}: {why}", "Una cosa sobre {what}: {why}", "Uma coisa sobre {what}: {why}"],
+    "riley.step.room": [
+      "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",
+      "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué pared está la plomería.",
+      "Vamos começar pelo banheiro. Escolha um parecido com o seu ou informe as suas medidas e depois me diga em qual parede está a hidráulica.",
+    ],
+    "riley.step.layout": [
+      "Now the layout. Add what you want and drag it around; I'll tell you the moment something won't fit.",
+      "Ahora la distribución. Agregue lo que quiera y muévalo; le aviso en el momento en que algo no quepa.",
+      "Agora a distribuição. Adicione o que quiser e arraste; eu aviso na hora em que algo não couber.",
+    ],
+    "riley.step.electrical": [
+      "I've worked out where the outlets, switches, lights and fan should go. Have a look, and move any of them along its wall if you'd rather.",
+      "Ya calculé dónde deberían ir los tomacorrientes, los interruptores, las luces y el extractor. Échele un ojo y mueva lo que quiera por su pared.",
+      "Já calculei onde devem ficar as tomadas, os interruptores, as luzes e o exaustor. Dê uma olhada e mova o que quiser pela parede.",
+    ],
+    "riley.step.products": [
+      "Pick the models you like. I'll show each one on its own so nothing stands in front of it, and anything too big for its spot can't be picked.",
+      "Elija los modelos que le gusten. Muestro cada uno solo, para que nada se le ponga delante, y lo que sea demasiado grande no se puede elegir.",
+      "Escolha os modelos de que você gosta. Mostro cada um sozinho, para nada ficar na frente, e o que for grande demais não pode ser escolhido.",
+    ],
+    "riley.step.finishes": [
+      "Tile, paint and floors. The price follows along as you choose.",
+      "Azulejo, pintura y pisos. El precio se actualiza mientras elige.",
+      "Azulejo, pintura e pisos. O preço acompanha enquanto você escolhe.",
+    ],
+    "riley.step.estimate": [
+      "Here's what it adds up to. Send it over when you're ready and someone will come back to you.",
+      "Esto es lo que suma. Envíelo cuando quiera y alguien le responderá.",
+      "Isto é o total. Envie quando quiser e alguém vai responder.",
+    ],
 
     // ---------- PDF (js/estimate-pdf.js) ----------
     "pdf.preparedFor": ["Prepared for: {name}", "Preparado para: {name}", "Preparado para: {name}"],

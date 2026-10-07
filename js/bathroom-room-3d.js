@@ -2006,6 +2006,12 @@ var state = {
   plan: [],
   // Tile panels on the walls around a tub, see setSurround().
   surround: [],
+  // Outlets, switches, lights and the fan (js/room-plan.js
+  // toElectricalPlacements()), see setElectrical().
+  electrical: [],
+  // While one fixture is being worked on, the item ids to show on their
+  // own (setIsolate()); null shows the whole room.
+  isolate: null,
 };
 var dirty = true;
 // Redrawing every frame at full PBR+shadow cost even while the scene is
@@ -2097,6 +2103,10 @@ function ensureScene() {
     scene.add(surroundGroup);
     var surroundMaterial = new THREE.MeshStandardMaterial();
 
+    // Outlets, switches, lights and the fan (setElectrical()).
+    var electricalGroup = new THREE.Group();
+    scene.add(electricalGroup);
+
     // The studio's marks on the floor (setMarks()) and the outlines of the
     // selected fixture and the one under the pointer (setHighlight()),
     // drawn over everything else so they never hide inside a model.
@@ -2163,6 +2173,7 @@ function ensureScene() {
       wallMeshesById: {},
       surroundGroup: surroundGroup,
       surroundMaterial: surroundMaterial,
+      electricalGroup: electricalGroup,
       markGroup: markGroup,
       selectBox: selectBox,
       hoverBox: hoverBox,
@@ -2917,19 +2928,30 @@ function overviewPose(s, aspect) {
   return { target: target, position: target.clone().addScaledVector(direction, hi), distance: hi };
 }
 
-// The walls between the camera and the room aren't drawn (they're only
-// seen from inside), so neither is a door, mirror or shelf on them: it would
-// float in the air.
+// What's drawn this frame:
+//   - the walls between the camera and the room aren't drawn (they're only
+//     seen from inside), so neither is a door, mirror, shelf or cover plate
+//     on them: it would float in the air;
+//   - while one fixture is being worked on (setIsolate()), the rest of the
+//     room's fixtures step out of the way.
 function applyCutaway(s, camera) {
   var dims = Layout.computeRoomDimensions(state.dims);
   var plane = { N: 0, E: dims.widthFt, S: dims.lengthFt, W: 0 };
   var p = camera.position;
-  s.fixtureGroup.children.forEach(function (inst) {
+  var only = state.isolate;
+  function shown(inst, isFixture) {
+    if (only && isFixture && only.indexOf(inst.userData.itemId) === -1) return false;
     var id = inst.userData.wallId;
-    if (!inst.userData.cutaway || !WALL_INWARD_NORMAL[id]) return;
+    if (!inst.userData.cutaway || !WALL_INWARD_NORMAL[id]) return true;
     var n = WALL_INWARD_NORMAL[id];
     var along = id === "N" || id === "S" ? (p.z - plane[id]) * n.z : (p.x - plane[id]) * n.x;
-    inst.visible = along > -0.05;
+    return along > -0.05;
+  }
+  s.fixtureGroup.children.forEach(function (inst) {
+    inst.visible = shown(inst, true);
+  });
+  s.electricalGroup.children.forEach(function (inst) {
+    inst.visible = shown(inst, false);
   });
 }
 
@@ -2996,6 +3018,7 @@ function rebuild() {
   rebuildFinishes(s);
   rebuildFixtures(s, dims.widthFt, dims.lengthFt, dims.heightFt);
   rebuildSurround(s);
+  rebuildElectrical(s);
   applyStudioView(s);
   if (s.pendingFocus) {
     focusCameraOn(s, s.pendingFocus);
@@ -3024,11 +3047,19 @@ function wallFrame(wallId, w, l) {
 }
 
 // The box around a fixture's base (not a mirror or shelf above it).
+// Only what's actually drawn: a fixture that's been cut away or stepped
+// out of the way for another one has no box, so nothing is highlighted or
+// pointed at where there's nothing to see.
 function itemBox(s, itemId) {
   var box = new THREE.Box3();
   s.fixtureGroup.children.forEach(function (inst) {
-    if (inst.userData.itemId === itemId && !inst.userData.onWall) box.expandByObject(inst);
+    if (inst.userData.itemId === itemId && !inst.userData.onWall && inst.visible) box.expandByObject(inst);
   });
+  if (box.isEmpty()) {
+    s.electricalGroup.children.forEach(function (inst) {
+      if (inst.userData.pointId === itemId && inst.visible) box.expandByObject(inst);
+    });
+  }
   return box;
 }
 
@@ -3122,6 +3153,119 @@ function rebuildMarks(s) {
     fill.renderOrder = 5;
     outline.renderOrder = 6;
     s.markGroup.add(fill, outline);
+  });
+  needsRender = true;
+}
+
+// ---------------------------------------------------------------------
+// Electrical: cover plates, the vanity light and the ceiling fan
+// ---------------------------------------------------------------------
+// Drawn here rather than loaded as models: a receptacle, a switch, a light
+// bar and a fan grille are flat, simple shapes, and a 3 in. plate doesn't
+// earn a download. Each one carries userData.pointId so the studio can
+// pick it up and slide it along the wall.
+var ELEC_COLORS = {
+  plate: 0xf4f2ee,
+  // A plate against a white wall disappears without a shadow line around
+  // it, which a real one casts; this edge stands in for it.
+  edge: 0x9aa0ad,
+  dark: 0x2a2f3a,
+  metal: 0xc9ccd2,
+  glow: 0xfff3d6,
+};
+
+function electricalMaterials(s) {
+  if (!s.elecMat) {
+    s.elecMat = {
+      plate: new THREE.MeshStandardMaterial({ color: ELEC_COLORS.plate, roughness: 0.55 }),
+      edge: new THREE.MeshStandardMaterial({ color: ELEC_COLORS.edge, roughness: 0.8 }),
+      dark: new THREE.MeshStandardMaterial({ color: ELEC_COLORS.dark, roughness: 0.7 }),
+      metal: new THREE.MeshStandardMaterial({ color: ELEC_COLORS.metal, roughness: 0.4, metalness: 0.8 }),
+      glow: new THREE.MeshStandardMaterial({
+        color: ELEC_COLORS.glow,
+        emissive: new THREE.Color(ELEC_COLORS.glow),
+        emissiveIntensity: 0.9,
+        roughness: 0.3,
+      }),
+    };
+  }
+  return s.elecMat;
+}
+
+// One point, modeled facing +z from its own origin (the wall surface).
+function buildElectricalPiece(s, p) {
+  var m = electricalMaterials(s);
+  var g = new THREE.Group();
+  var plate;
+  if (p.kind === "outlet" || p.kind === "switch") {
+    var edge = new THREE.Mesh(new THREE.BoxGeometry(p.width + 0.035, p.height + 0.035, 0.01), m.edge);
+    edge.position.z = 0.005;
+    g.add(edge);
+    plate = new THREE.Mesh(new THREE.BoxGeometry(p.width, p.height, 0.035), m.plate);
+    plate.position.z = 0.019;
+    g.add(plate);
+    if (p.kind === "outlet") {
+      // Two receptacles, one above the other, each with its slots.
+      [-1, 1].forEach(function (dir) {
+        var face = new THREE.Mesh(new THREE.BoxGeometry(p.width * 0.55, p.height * 0.3, 0.012), m.plate);
+        face.position.set(0, dir * p.height * 0.19, 0.04);
+        g.add(face);
+        [-1, 1].forEach(function (side) {
+          var slot = new THREE.Mesh(new THREE.BoxGeometry(0.018, p.height * 0.12, 0.01), m.dark);
+          slot.position.set(side * p.width * 0.12, dir * p.height * 0.21, 0.045);
+          g.add(slot);
+        });
+        var ground = new THREE.Mesh(new THREE.CircleGeometry(0.014, 10), m.dark);
+        ground.position.set(0, dir * p.height * 0.12, 0.046);
+        g.add(ground);
+      });
+    } else {
+      var rocker = new THREE.Mesh(new THREE.BoxGeometry(p.width * 0.5, p.height * 0.55, 0.022), m.plate);
+      rocker.position.z = 0.044;
+      rocker.rotation.x = -0.06;
+      g.add(rocker);
+      var seam = new THREE.Mesh(new THREE.BoxGeometry(p.width * 0.52, 0.01, 0.01), m.dark);
+      seam.position.set(0, 0, 0.05);
+      g.add(seam);
+    }
+  } else if (p.kind === "light") {
+    var bar = new THREE.Mesh(new THREE.BoxGeometry(p.width, 0.1, 0.1), m.metal);
+    bar.position.set(0, p.height / 2 - 0.05, 0.05);
+    g.add(bar);
+    var count = Math.max(2, Math.round(p.width / 0.6));
+    for (var i = 0; i < count; i++) {
+      var bulb = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), m.glow);
+      bulb.position.set((i - (count - 1) / 2) * (p.width / count), p.height / 2 - 0.22, 0.09);
+      g.add(bulb);
+    }
+  } else if (p.kind === "fan") {
+    // A grille in the ceiling, modeled facing down.
+    var body = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.06, 1.05), m.plate);
+    g.add(body);
+    for (var k = -2; k <= 2; k++) {
+      var fin = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.02, 0.07), m.dark);
+      fin.position.set(0, -0.04, k * 0.17);
+      g.add(fin);
+    }
+  }
+  return g;
+}
+
+function rebuildElectrical(s) {
+  disposeGroup(s.electricalGroup);
+  (state.electrical || []).forEach(function (p) {
+    var piece = buildElectricalPiece(s, p);
+    if (p.ceiling) {
+      piece.position.set(p.x, p.y - 0.03, p.z);
+    } else {
+      piece.position.set(p.x, p.y, p.z);
+      piece.rotation.y = p.rotationY || 0;
+    }
+    piece.userData.pointId = p.id;
+    piece.userData.wallId = p.wallId || null;
+    piece.userData.cutaway = !p.ceiling;
+    setShadowFlags(piece);
+    s.electricalGroup.add(piece);
   });
   needsRender = true;
 }
@@ -3463,6 +3607,81 @@ window.BathroomRoom3D = {
       walls: picked.walls ? picked.walls.id : null,
       ceiling: picked.ceiling ? picked.ceiling.id : null,
     };
+  },
+
+  // The outlets, switches, lights and fan to draw (js/room-plan.js
+  // toElectricalPlacements()).
+  setElectrical: function (points) {
+    state.electrical = Array.isArray(points) ? points.slice() : [];
+    markDirty();
+  },
+
+  // Shows only these fixtures (item ids), so nothing stands in front of
+  // the one being worked on; null shows the whole room again.
+  setIsolate: function (itemIds) {
+    var next = Array.isArray(itemIds) && itemIds.length ? itemIds.slice() : null;
+    var same = (!next && !state.isolate) || (next && state.isolate && next.join("|") === state.isolate.join("|"));
+    if (same) return;
+    state.isolate = next;
+    needsRender = true;
+    if (threeState) applyCutaway(threeState, threeState.camera);
+  },
+
+  // The electrical point under a page point: { id, point: { x, y, z } }.
+  pickElectrical: function (clientX, clientY) {
+    var s = threeState;
+    if (!s || !pointerRay(s, clientX, clientY)) return null;
+    var hits = s.raycaster.intersectObjects(s.electricalGroup.children, true);
+    for (var i = 0; i < hits.length; i++) {
+      var o = hits[i].object;
+      while (o && o.parent !== s.electricalGroup) o = o.parent;
+      if (o && o.visible && o.userData.pointId) {
+        var at = hits[i].point;
+        return { id: o.userData.pointId, point: { x: at.x, y: at.y, z: at.z } };
+      }
+    }
+    return null;
+  },
+
+  // Where a page point lands on the room's walls: { x, y, z, wallId }, or
+  // null when it misses them. Only walls the camera is inside of count, so
+  // a drag never jumps to a wall that isn't drawn.
+  wallHit: function (clientX, clientY) {
+    var s = threeState;
+    if (!s || !pointerRay(s, clientX, clientY)) return null;
+    var dims = Layout.computeRoomDimensions(state.dims);
+    var plane = { N: 0, E: dims.widthFt, S: dims.lengthFt, W: 0 };
+    var cam = s.camera.position;
+    var best = null;
+    Object.keys(WALL_INWARD_NORMAL).forEach(function (id) {
+      var n = WALL_INWARD_NORMAL[id];
+      var inside = id === "N" || id === "S" ? (cam.z - plane[id]) * n.z : (cam.x - plane[id]) * n.x;
+      if (inside <= 0) return;
+      var normal = new THREE.Vector3(n.x, 0, n.z);
+      // The plane through the wall: n . x = n . (a point on it).
+      var onWall = new THREE.Vector3(id === "E" ? plane.E : 0, 0, id === "S" ? plane.S : 0);
+      var hit = new THREE.Vector3();
+      if (!s.raycaster.ray.intersectPlane(new THREE.Plane(normal, -normal.dot(onWall)), hit)) return;
+      if (hit.x < -0.1 || hit.x > dims.widthFt + 0.1 || hit.z < -0.1 || hit.z > dims.lengthFt + 0.1) return;
+      if (hit.y < 0 || hit.y > dims.heightFt) return;
+      var away = hit.distanceTo(cam);
+      if (!best || away < best.away) best = { x: hit.x, y: hit.y, z: hit.z, wallId: id, away: away };
+    });
+    return best ? { x: best.x, y: best.y, z: best.z, wallId: best.wallId } : null;
+  },
+
+  // Moves one electrical point while it's dragged, without redrawing.
+  previewElectrical: function (pointId, pose) {
+    var s = threeState;
+    if (!s) return;
+    s.electricalGroup.children.forEach(function (inst) {
+      if (inst.userData.pointId !== pointId) return;
+      inst.position.set(pose.x, pose.y, pose.z);
+      inst.rotation.y = pose.rotationY || 0;
+      if (pose.wallId) inst.userData.wallId = pose.wallId;
+    });
+    applyStudioView(s);
+    needsRender = true;
   },
 
   // Tile panels on the walls (a tub surround): [{ wallId, a0, a1, top }],

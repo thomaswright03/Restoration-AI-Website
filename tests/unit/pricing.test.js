@@ -182,10 +182,20 @@ test("admin prices plumbing per point from toilets, sinks, showers and bathtubs,
   assert.equal(line(r, "noStack").cost, 1000);
   assert.equal(line(r, "badValve"), undefined);
   assert.equal(line(r, "electrical").cost, 400);
-  // The public estimate never prices that work.
+  // The public estimate prices the wiring, but not the per-fixture
+  // plumbing points or the surcharges.
   const pub = P.computePublicEstimate(values, NOTHING);
-  assert.ok(!pub.lines.some((l) => ["plumbing", "noStack", "badValve", "electrical"].includes(l.key)));
+  assert.ok(!pub.lines.some((l) => ["plumbing", "noStack", "badValve"].includes(l.key)));
+  assert.equal(line(pub, "electrical").cost, 400);
   assert.equal(pub.plumbingFixtureCount, 5);
+});
+
+test("a drain line to the plumbing wall is priced by the foot, in the public estimate", () => {
+  const r = P.computePublicEstimate({ Drain_Run_Ft: 6.5 }, NOTHING);
+  assert.equal(line(r, "drainRun").qty, 6.5);
+  assert.equal(line(r, "drainRun").cost, 617.5);
+  // No run, no line.
+  assert.equal(line(P.computePublicEstimate({ Drain_Run_Ft: 0 }, NOTHING), "drainRun"), undefined);
 });
 
 test("tax only applies to admin quotes, at the saved rate", () => {

@@ -156,7 +156,7 @@ test("a bigger picked product changes what fits", () => {
 });
 
 test("a new fixture goes to a spot where it fits, without upsetting the others", () => {
-  const d = P.fromTemplate("full5x8", {});
+  const d = P.fromTemplate("primary", {});
   const before = P.validate(d, {});
   const added = P.addItem(d, "cabinet", {});
   const after = P.validate(added.design, {});
@@ -295,4 +295,243 @@ test("resizing keeps fixtures on their walls, inside the new length", () => {
   const r = P.resize(d, { w: 6, l: 8, h: 8 });
   assert.equal(r.items[0].wall, "N");
   assert.equal(r.items[0].offset, 6);
+});
+
+// ---------------------------------------------------------------------
+// Electrical
+// ---------------------------------------------------------------------
+function elecErrors(d, id) {
+  return (P.validateElectrical(d, {})[id] || []).filter((x) => x.level === "error").map((x) => x.code);
+}
+
+test("every starting layout gets electrical that works, and suggesting again changes nothing", () => {
+  for (const t of P.TEMPLATES) {
+    const d = P.fromTemplate(t.id, {});
+    const issues = P.validateElectrical(d, {});
+    for (const id of Object.keys(issues)) assert.deepEqual(issues[id], [], t.id + " " + id);
+    assert.deepEqual(P.electricalGaps(d), [], t.id);
+    assert.equal(P.suggestElectrical(d, {}).added.length, 0, t.id + " suggested twice");
+  }
+});
+
+test("a bathroom with a basin gets a receptacle within reach of it, a light, a switch and a fan", () => {
+  const d = P.fromTemplate("full5x8", {});
+  const kinds = P.electrical(d).map((p) => p.kind);
+  assert.ok(kinds.includes("outlet"), kinds.join());
+  assert.ok(kinds.includes("light"), kinds.join());
+  assert.ok(kinds.includes("switch"), kinds.join());
+  assert.ok(kinds.includes("fan"), kinds.join());
+  const vanity = d.items.find((it) => it.type === "vanity");
+  const outlet = P.electrical(d).find((p) => p.kind === "outlet");
+  assert.equal(outlet.for, vanity.id);
+  assert.equal(outlet.wall, vanity.wall);
+  assert.equal(Math.round(outlet.height * 12), 42);
+  // The fan hangs in the ceiling over the tub, not on a wall.
+  const fan = P.electrical(d).find((p) => p.kind === "fan");
+  assert.equal(fan.wall, null);
+  const tub = d.items.find((it) => it.type === "tub");
+  const body = P.geometry(tub, d.room, {}).body;
+  const at = P.electricalPose(d, fan, {});
+  assert.ok(at.x >= body.x0 && at.x <= body.x1 && at.z >= body.z0 && at.z <= body.z1, JSON.stringify(at));
+  assert.equal(at.y, d.room.h);
+});
+
+test("a half bath with no tub or shower gets no fan", () => {
+  const d = P.fromTemplate("half", {});
+  assert.equal(
+    P.electrical(d).some((p) => p.kind === "fan"),
+    false,
+  );
+  assert.deepEqual(P.electricalGaps(d), []);
+});
+
+test("a receptacle may not stand within 3 ft of a tub, behind a fixture or past the wall", () => {
+  const d = design({ w: 9, l: 7 }, [
+    { id: "tub", type: "tub", wall: "N", offset: 2.5 },
+    { id: "cab", type: "cabinet", wall: "S", offset: 1 },
+  ]);
+  const put = (point) => Object.assign({}, d, { electrical: [Object.assign({ id: "p", for: "room" }, point)] });
+  assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "N", offset: 6, height: 3.5 }), "p"), ["wet"]);
+  // A light over the tub is fine: only receptacles and switches keep away.
+  assert.deepEqual(elecErrors(put({ kind: "light", wall: "N", offset: 6, height: 6.75 }), "p"), []);
+  assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "S", offset: 1, height: 1.5 }), "p"), ["behind"]);
+  assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "S", offset: 1, height: 3.5 }), "p"), []);
+  assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "E", offset: 7.5, height: 3.5 }), "p"), ["outside"]);
+  assert.deepEqual(elecErrors(put({ kind: "switch", wall: "E", offset: 3, height: 7.9 }), "p"), ["outside"]);
+});
+
+test("two points can't sit on top of each other at the same height", () => {
+  const d = design({ w: 9, l: 7 }, [{ id: "door", type: "door", wall: "S", offset: 4 }]);
+  const two = (gap) =>
+    Object.assign({}, d, {
+      electrical: [
+        { id: "a", kind: "switch", wall: "N", offset: 3, height: 4, for: "room" },
+        { id: "b", kind: "switch", wall: "N", offset: 3 + gap, height: 4, for: "room" },
+      ],
+    });
+  assert.deepEqual(elecErrors(two(0.3), "b"), ["crowded"]);
+  assert.deepEqual(elecErrors(two(0.9), "b"), []);
+});
+
+test("dragging a point puts it on the nearest wall and says whether it works there", () => {
+  const d = Object.assign({}, P.fromTemplate("full5x8", {}), {
+    electrical: [{ id: "p", kind: "outlet", wall: "N", offset: 4, height: 3.5, for: "room" }],
+  });
+  // Close to wall C (south, z = 5) at 4 ft along, 4 ft up.
+  const hit = P.snapElectrical(d, "p", 3, 4, 4.9, {});
+  assert.equal(hit.wall, "S");
+  assert.equal(Math.round(hit.height * 12), 48);
+  assert.equal(Math.round(hit.offset * 12), Math.round((8 - 3) * 12));
+  // Into the tub's 3 ft: it says so rather than refusing to report a spot.
+  const tub = d.items.find((it) => it.type === "tub");
+  const g = P.geometry(tub, d.room, {});
+  const bad = P.snapElectrical(d, "p", (g.body.x0 + g.body.x1) / 2, 3.5, 0.1, {});
+  assert.equal(bad.valid, false);
+});
+
+test("electrical points are added, moved, removed and counted", () => {
+  let d = P.fromTemplate("blank", {});
+  const before = P.electricalPoints(d);
+  const added = P.addElectrical(d, "outlet", {});
+  assert.equal(added.placed, true);
+  d = added.design;
+  assert.equal(P.electricalPoints(d), before + 1);
+  d = P.moveElectrical(d, added.point.id, { offset: 2, height: 2 });
+  assert.equal(P.electrical(d).find((p) => p.id === added.point.id).offset, 2);
+  d = P.removeElectrical(d, added.point.id);
+  assert.equal(P.electricalPoints(d), before);
+});
+
+test("a link carries the electrical, and an older link without any still opens", () => {
+  const d = P.fromTemplate("full5x8", {});
+  const back = P.decode(P.encode(d));
+  // The link rounds to the nearest thousandth of a foot (about 1/100 in.).
+  assert.deepEqual(
+    back.electrical.map((p) => [p.id, p.kind, p.wall, Math.round(p.offset * 96), Math.round(p.height * 96)]),
+    P.electrical(d).map((p) => [p.id, p.kind, p.wall, Math.round(p.offset * 96), Math.round(p.height * 96)]),
+  );
+  const old = P.sanitize({
+    v: 2,
+    room: { w: 8, l: 5, h: 8 },
+    items: [{ id: "t", type: "toilet", wall: "N", offset: 2 }],
+  });
+  assert.deepEqual(old.electrical, []);
+  // Junk is dropped the same way fixtures are.
+  const junk = P.sanitize({
+    v: 3,
+    room: { w: 8, l: 5, h: 8 },
+    items: [],
+    electrical: [
+      { id: "a", kind: "outlet", wall: "N", offset: 3, height: 3.5 },
+      { id: "a", kind: "outlet", wall: "N", offset: 3, height: 3.5 },
+      { id: "b", kind: "laser", wall: "N", offset: 3, height: 3.5 },
+      { id: "c", kind: "switch", wall: "Q", offset: 3, height: 4 },
+      { id: "d", kind: "outlet", wall: "N", offset: 99, height: 99 },
+    ],
+  });
+  assert.deepEqual(
+    junk.electrical.map((p) => p.id),
+    ["a", "d"],
+  );
+  assert.equal(junk.electrical[1].offset, 8);
+  assert.equal(junk.electrical[1].height, 8);
+});
+
+test("resizing the room keeps the electrical on its walls", () => {
+  const d = Object.assign({}, P.fromTemplate("full5x8", {}), {
+    electrical: [
+      { id: "p", kind: "outlet", wall: "N", offset: 7.5, height: 3.5, for: "room" },
+      { id: "f", kind: "fan", wall: null, offset: 0, height: 8, for: "room" },
+    ],
+  });
+  const r = P.resize(d, { w: 5, l: 5, h: 7 });
+  assert.equal(r.electrical[0].offset, 5);
+  assert.equal(r.electrical[0].height, 3.5);
+  assert.equal(r.electrical[1].height, 7);
+});
+
+// ---------- the plumbing stack ----------
+
+test("a fixture on the plumbing wall needs no drain run", () => {
+  const d = design({ w: 8, l: 6 }, [{ id: "wc", type: "toilet", wall: "N", offset: 2 }]);
+  assert.equal(P.stackWall(d), "N");
+  assert.equal(P.stackRun(d, d.items[0]), 0);
+  assert.deepEqual(errors(d, "wc"), []);
+  assert.equal(P.drainRun(d), 0);
+});
+
+test("a fixture a few feet from the plumbing wall is nobody's problem", () => {
+  const d = design({ w: 8, l: 6 }, [{ id: "wc", type: "toilet", wall: "E", offset: 3 }]);
+  assert.equal(P.stackRun(d, d.items[0]), 3);
+  assert.deepEqual(P.validate(d, {}).wc, []);
+  assert.equal(P.drainRun(d), 0);
+});
+
+test("a fixture off the plumbing wall is flagged with the drain run it needs", () => {
+  const d = design({ w: 8, l: 6 }, [{ id: "wc", type: "toilet", wall: "E", offset: 5 }]);
+  const issues = P.validate(d, {}).wc;
+  const off = issues.filter((x) => x.code === "offStack");
+  assert.equal(off.length, 1);
+  assert.equal(off[0].level, "warn");
+  assert.equal(off[0].have, 60);
+  assert.equal(P.drainRun(d), 5);
+});
+
+test("a toilet too far from the stack for its drain to fall is an error", () => {
+  // Across a 10 ft room the run picks up a side wall on the way: 10 + 5.
+  const d = design({ w: 10, l: 10 }, [{ id: "wc", type: "toilet", wall: "S", offset: 5 }]);
+  assert.equal(P.stackRun(d, d.items[0]), 15);
+  assert.deepEqual(errors(d, "wc"), ["noStack"]);
+  // A sink's smaller line reaches further.
+  const s = design({ w: 10, l: 10 }, [{ id: "sk", type: "sink", wall: "S", offset: 5 }]);
+  assert.deepEqual(errors(s, "sk"), []);
+  assert.equal(P.validate(s, {}).sk[0].code, "offStack");
+});
+
+test("a tub's run is measured from whichever end is nearer the stack", () => {
+  const d = design({ w: 8, l: 7 }, [{ id: "tb", type: "tub", wall: "E", offset: 3.5 }]);
+  // Centered on a 7 ft wall, but a 5 ft tub's near end is only 1 ft along.
+  assert.equal(P.stackRun(d, d.items[0], {}), 1);
+  assert.deepEqual(errors(d, "tb"), []);
+  // Measured from its center it would have been a flagged 3.5 ft run.
+  assert.equal(P.drainRun(d, {}), 0);
+});
+
+test("moving the plumbing wall moves the problem", () => {
+  let d = design({ w: 10, l: 10 }, [{ id: "wc", type: "toilet", wall: "S", offset: 5 }]);
+  assert.deepEqual(errors(d, "wc"), ["noStack"]);
+  d = P.setStack(d, "S");
+  assert.equal(P.stackWall(d), "S");
+  assert.deepEqual(errors(d, "wc"), []);
+  // An unknown wall is ignored rather than accepted.
+  assert.equal(P.stackWall(P.setStack(d, "Z")), "S");
+});
+
+test("the suggested plumbing wall is the toilet's, or the one with the least pipe", () => {
+  const withWc = design({ w: 8, l: 6 }, [
+    { id: "wc", type: "toilet", wall: "E", offset: 3 },
+    { id: "sk", type: "sink", wall: "N", offset: 2 },
+  ]);
+  assert.equal(P.suggestStack(withWc, {}), "E");
+  const noWc = design({ w: 8, l: 6 }, [
+    { id: "sk", type: "sink", wall: "W", offset: 2 },
+    { id: "sh", type: "shower", wall: "W", offset: 4.5 },
+  ]);
+  assert.equal(P.suggestStack(noWc, {}), "W");
+});
+
+test("a new fixture goes to the plumbing wall when it can", () => {
+  const d = design({ w: 9, l: 9 }, [{ id: "door", type: "door", wall: "S", offset: 4.5 }]);
+  const added = P.addItem(P.setStack(d, "W"), "toilet", {});
+  assert.equal(added.placed, true);
+  assert.equal(added.item.wall, "W");
+});
+
+test("the plumbing wall survives a link and a resize", () => {
+  const d = P.setStack(design({ w: 8, l: 6 }, [{ id: "sk", type: "sink", wall: "E", offset: 2 }]), "E");
+  const back = P.decode(P.encode(d));
+  assert.equal(P.stackWall(back), "E");
+  assert.equal(P.stackWall(P.resize(back, { w: 7, l: 5, h: 8 })), "E");
+  // A design saved before the plumbing wall existed falls back to one.
+  assert.equal(P.stackWall(P.sanitize({ v: 2, room: { w: 8, l: 6, h: 8 }, items: [] })), "N");
 });

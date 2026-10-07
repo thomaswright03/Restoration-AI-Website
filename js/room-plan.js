@@ -7,9 +7,11 @@
 // result to js/bathroom-room-3d.js (toPlacements) to draw.
 //
 // A design:
-//   { v: 2,
-//     room: { w, l, h },            feet: width (x), length (z), ceiling
+//   { v: 3,
+//     room: { w, l, h, wet },       feet: width (x), length (z), ceiling,
+//                                  and the wall the plumbing stack is in
 //     items: [ { id, type, wall, offset, opts } ],
+//     electrical: [ { id, kind, wall, offset, height, for } ],
 //     finishes: { demolition, floor, walls, ceiling, picks: {} },
 //     products: { <3D product slot id>: <option id> } }
 //
@@ -18,6 +20,10 @@
 // distance in feet from the wall's left end (as seen standing in the room
 // facing it) to the fixture's center. The people-facing names are the
 // letters A to D (WALL_LETTERS).
+//
+// Electrical points (outlets, switches, lights and an exhaust fan) are
+// suggested by suggestElectrical() from where the fixtures stand, and the
+// person confirms or moves each one along its wall.
 //
 // Clearances are typical US residential code minimums and the NKBA
 // recommendations, not a substitute for a code review: 15 in. from a
@@ -42,6 +48,7 @@
   var WALL_LETTERS = { N: "A", E: "B", S: "C", W: "D" };
   var LIMITS = { min: 3, maxW: 30, maxL: 30, minH: 6.5, maxH: 14 };
   var MAX_ITEMS = 16;
+  var MAX_ELECTRICAL = 14;
 
   // What each fixture type is, for the plan and for the 3D room.
   //   fixtureKey: the type's key in js/bathroom-pricing.js and the 3D room
@@ -54,6 +61,8 @@
   //               somewhere along its front, not the whole length
   //   recommend:  roomier NKBA numbers; less only gives a warning
   //   wet:        has plumbing, so it groups with the other wet fixtures
+  //   drainEnd:   its drain is at one end (a tub, a shower), so the run to
+  //               the stack is measured from whichever end is nearer
   var TYPES = {
     toilet: {
       fixtureKey: "Toilet_Quantity",
@@ -84,6 +93,7 @@
       front: { depth: 21, width: null },
       step: 30,
       wet: true,
+      drainEnd: true,
     },
     shower: {
       fixtureKey: "Shower_Quantity",
@@ -91,6 +101,7 @@
       front: { depth: 24, width: null },
       step: 24,
       wet: true,
+      drainEnd: true,
     },
     cabinet: {
       fixtureKey: "Cabinet_Quantity",
@@ -390,6 +401,8 @@
   //   step        no 30 in. (shower 24 in.) wide spot to step into it
   //   swing       it stands in a door's swing
   //   blocking    it stands in another fixture's clear floor
+  //   offStack    away from the plumbing wall: needs a drain run (warn)
+  //   noStack     too far from the plumbing wall for a drain to reach
   //   tightSide / tightFront   fits, but less than recommended (warn)
   function validate(design, sizes, onlyIds) {
     var room = design.room;
@@ -421,6 +434,9 @@
       }
       others.forEach(function (o) {
         if (overlaps(g.body, o.body)) list.push(issue("error", "overlap", { other: o.item.id }));
+      });
+      plumbingIssues(design, g.item, sizes).forEach(function (x) {
+        list.push(x);
       });
       // Its own clear spaces: inside the room, and nothing standing in them.
       g.zones.forEach(function (z) {
@@ -610,6 +626,9 @@
       if (corner.left || corner.right) score += 6;
     }
     if (t.wet) {
+      // Every foot of drain line away from the stack is money, so the
+      // stack wall wins unless the room gives it no room.
+      score -= stackRun(design, item, sizes) * 6;
       var wets = others.filter(function (o) {
         return TYPES[o.item.type].wet;
       });
@@ -654,6 +673,39 @@
     return score;
   }
 
+  // The offsets on `wallId` that put `item` exactly against what's
+  // already there (its own body and clearances touching theirs) or into a
+  // corner: the positions a grid search is most likely to miss.
+  function tightSpots(design, item, sizes, wallId, span) {
+    var t = TYPES[item.type];
+    var size = sizeOf(item, sizes);
+    var half = size.span / 2;
+    // How far the fixture claims each side of its center.
+    var reach = Math.max(half, (t.side || 0) * IN, half + (t.sideGap || 0) * IN);
+    var edges = [];
+    design.items.forEach(function (other) {
+      if (other.id === item.id || other.wall !== wallId) return;
+      var g = geometry(other, design.room, sizes);
+      edges.push([g.a0, g.a1]);
+      g.zones.forEach(function (z) {
+        if (z.kind !== "side") return;
+        var w = toWall(g.wall, z.rect);
+        edges.push([w.a0, w.a1]);
+      });
+    });
+    var out = [reach, span - reach];
+    edges.forEach(function (e) {
+      out.push(e[0] - reach, e[1] + reach);
+    });
+    return out
+      .map(function (a) {
+        return round(a, 4);
+      })
+      .filter(function (a) {
+        return a >= half - EPS && a <= span - half + EPS;
+      });
+  }
+
   // Every spot on every wall where `item` fits, best first, as
   // [{ wall, offset, score }]. step: search spacing in feet (1 in.).
   function findSpots(design, item, sizes, opts) {
@@ -671,6 +723,18 @@
       var positions = [];
       for (var a = half; a <= span - half + EPS; a += step) positions.push(Math.min(a, span - half));
       if (positions[positions.length - 1] < span - half - EPS) positions.push(span - half);
+      // In a tight room the only spot that works can be the one flush
+      // against what's already on the wall, which a grid walks straight
+      // past. So the exact flush positions are candidates too.
+      tightSpots(design, item, sizes, wid, span).forEach(function (a2) {
+        positions.push(a2);
+      });
+      positions.sort(function (p, q) {
+        return p - q;
+      });
+      positions = positions.filter(function (a2, i) {
+        return i === 0 || a2 - positions[i - 1] > EPS;
+      });
       positions.forEach(function (a) {
         var cand = Object.assign({}, item, { wall: wid, offset: round(a, 4) });
         if (!fitsAmong(design, cand, sizes, base)) return;
@@ -730,17 +794,24 @@
   }
 
   // The spot with the fewest problems, for a fixture that doesn't fit
-  // anywhere: the middle of the longest wall it can stand against.
+  // anywhere: the middle of the longest wall it can stand against. A spot
+  // that only flags the newcomer beats one that also upsets what's
+  // already in the room.
   function leastBad(design, item, sizes) {
     var room = design.room;
     var size = sizeOf(item, sizes);
+    var base = validate(design, sizes);
     var best = null;
     WALL_IDS.forEach(function (wid) {
       var span = wallSpan(room, wid);
       var half = Math.min(size.span / 2, span / 2);
       [half, span / 2, span - half].forEach(function (a) {
         var cand = Object.assign({}, item, { wall: wid, offset: round(a, 4) });
-        var errs = errorsOf(validate(withItem(design, cand), sizes), cand.id).length;
+        var issues = validate(withItem(design, cand), sizes);
+        var hurt = design.items.reduce(function (sum, it) {
+          return sum + Math.max(0, errorsOf(issues, it.id).length - errorsOf(base, it.id).length);
+        }, 0);
+        var errs = errorsOf(issues, cand.id).length + hurt * 3;
         if (!best || errs < best.errs || (errs === best.errs && span > best.span)) {
           best = { wall: wid, offset: cand.offset, errs: errs, span: span };
         }
@@ -782,20 +853,27 @@
         var partial = Object.assign({}, design, { items: state.items });
         var spots = findSpots(partial, item, sizes, { step: 2 * IN });
         // A spread of walls among the best spots, so the beam keeps real
-        // alternatives instead of the same spot nudged an inch.
+        // alternatives instead of the same spot nudged an inch: the best
+        // spot on each wall first, then the next best anywhere.
         var chosen = [];
         var perWall = {};
-        spots.forEach(function (s) {
+        var take = function (s, cap) {
           if (chosen.length >= perItem) return;
-          perWall[s.wall] = (perWall[s.wall] || 0) + 1;
-          if (perWall[s.wall] > Math.ceil(perItem / 2)) return;
+          if ((perWall[s.wall] || 0) >= cap) return;
           if (
             chosen.some(function (c) {
               return c.wall === s.wall && Math.abs(c.offset - s.offset) < 0.75;
             })
           )
             return;
+          perWall[s.wall] = (perWall[s.wall] || 0) + 1;
           chosen.push(s);
+        };
+        spots.forEach(function (s) {
+          take(s, 1);
+        });
+        spots.forEach(function (s) {
+          take(s, Math.ceil(perItem / 2));
         });
         chosen.forEach(function (s) {
           var placedItem = Object.assign({}, item, { wall: s.wall, offset: s.offset });
@@ -1060,6 +1138,552 @@
   }
 
   // -------------------------------------------------------------------
+  // Plumbing: the stack wall, and how far a drain can run from it
+  // -------------------------------------------------------------------
+  // A bathroom's drains all join one soil stack, which lives inside one
+  // wall. Fixtures on that wall tie straight in; anything on another wall
+  // needs a drain line run around to it, under the floor, falling about a
+  // quarter inch per foot. That run costs money and can't go on forever,
+  // so where the stack is decides what layouts are real.
+  //
+  // design.room.wet is that wall ("N", "E", "S" or "W"). The run is
+  // measured the way a plumber would route it: around the room's
+  // perimeter from the fixture to the nearest end of the stack wall.
+  //
+  // A toilet's 3 in. soil line is the fussy one (it needs the fall and a
+  // big hole in the floor); a sink's 1.5 in. line travels much further.
+  // FREE_RUN is the bit of slack that comes with cutting in at the corner.
+  var STACK_LIMIT = { toilet: 10, tub: 14, shower: 14, vanity: 16, sink: 16 };
+  // A fixture a few feet along from the stack wall ties in with ordinary
+  // pipe under the floor and no one thinks twice; past that it's a job.
+  var FREE_RUN = 3;
+
+  function stackWall(design) {
+    var wall = design && design.room ? design.room.wet : null;
+    return WALL_IDS.indexOf(wall) === -1 ? "N" : wall;
+  }
+
+  // Whether the design says where the stack is. A design being arranged
+  // from scratch doesn't yet: the layout decides, and the stack follows.
+  function hasStack(design) {
+    return !!design && !!design.room && WALL_IDS.indexOf(design.room.wet) !== -1;
+  }
+
+  // Distance around the room's perimeter from its NW corner, clockwise.
+  // walls() chains head to tail (N ends where E starts, and so on), so a
+  // wall's own offset adds straight onto where that wall begins.
+  function perimeterAt(room, wallId, a) {
+    var base = { N: 0, E: room.w, S: room.w + room.l, W: 2 * room.w + room.l };
+    return base[wallId] + a;
+  }
+
+  function aroundTo(from, to, total) {
+    var d = Math.abs(from - to) % total;
+    return Math.min(d, total - d);
+  }
+
+  // Feet of new drain line a fixture needs where it stands: 0 on the
+  // stack wall, otherwise the shorter way around to one of that wall's
+  // ends. A fixture on the opposite wall picks up the whole side wall on
+  // the way, which is why those runs get long.
+  function stackRun(design, item, sizes) {
+    var t = TYPES[item.type];
+    if (!t || !t.wet || !hasStack(design)) return 0;
+    var room = design.room;
+    var stack = stackWall(design);
+    if (item.wall === stack) return 0;
+    var total = 2 * (room.w + room.l);
+    var start = perimeterAt(room, stack, 0);
+    var end = start + wallSpan(room, stack);
+    var span = wallSpan(room, item.wall);
+    var spots = [item.offset];
+    if (t.drainEnd) {
+      var half = sizeOf(item, sizes).span / 2;
+      spots.push(item.offset - half, item.offset + half);
+    }
+    var best = Infinity;
+    spots.forEach(function (a) {
+      var me = perimeterAt(room, item.wall, clamp(a, 0, span));
+      best = Math.min(best, aroundTo(me, start, total), aroundTo(me, end, total));
+    });
+    return best;
+  }
+
+  // What's wrong with a fixture's plumbing where it stands:
+  //   offStack  it works, but needs this much new drain line (warn)
+  //   noStack   too far from the stack for its drain to fall (error)
+  function plumbingIssues(design, item, sizes) {
+    var limit = STACK_LIMIT[item.type];
+    if (!limit) return [];
+    var run = stackRun(design, item, sizes);
+    if (run <= FREE_RUN + EPS) return [];
+    var extra = { other: "stack", need: Math.round(limit * 12), have: Math.round(run * 12) };
+    return [issue(run > limit + EPS ? "error" : "warn", run > limit + EPS ? "noStack" : "offStack", extra)];
+  }
+
+  // Total feet of new drain line the design needs, for the estimate.
+  function drainRun(design, sizes) {
+    return round(
+      design.items.reduce(function (sum, it) {
+        var run = stackRun(design, it, sizes);
+        return sum + (run > FREE_RUN ? run : 0);
+      }, 0),
+      2,
+    );
+  }
+
+  // The wall that suits the fixtures already in the room best, so the
+  // person can be shown a sensible answer before they confirm it: the one
+  // that leaves the least pipe to run, counting a toilet's soil line for
+  // more than the rest because it's the one nobody wants to move.
+  function suggestStack(design, sizes) {
+    var best = null;
+    WALL_IDS.forEach(function (wid) {
+      var trial = setStack(design, wid);
+      var total = trial.items.reduce(function (sum, it) {
+        return sum + stackRun(trial, it, sizes) * (it.type === "toilet" ? 2.5 : 1);
+      }, 0);
+      if (!best || total < best.total) best = { wall: wid, total: total };
+    });
+    return best ? best.wall : "N";
+  }
+
+  function setStack(design, wallId) {
+    if (WALL_IDS.indexOf(wallId) === -1) return design;
+    return Object.assign({}, design, { room: Object.assign({}, design.room, { wet: wallId }) });
+  }
+
+  // -------------------------------------------------------------------
+  // Electrical: outlets, switches, lights and the fan
+  // -------------------------------------------------------------------
+  // Each point hangs on a wall at a height, except the exhaust fan, which
+  // is in the ceiling over the wet part of the room.
+  //
+  // The rules are the usual US residential ones, as guidance and not a
+  // substitute for an electrician: a GFCI receptacle within 36 in. of the
+  // outside edge of every basin, no receptacle or switch within 3 ft of a
+  // tub or shower, a switch inside the room beside each doorway, a light
+  // over the mirror, and an exhaust fan wherever there's a tub or shower.
+  var WET_CLEAR = 3; // feet from a tub or shower to a receptacle or switch
+  var BASIN_REACH = 3; // feet from a basin's edge to its receptacle
+  var ELEC_MARGIN = 0.35; // feet of wall kept clear at each corner
+  var ELEC_APART = 0.4; // feet between two points on the same wall
+
+  // dry: keeps its distance from a tub or shower (receptacles and
+  // switches); a light may hang over one. margin: wall left clear at a
+  // corner, less for a light so it can still center over a vanity there.
+  var ELECTRICAL_KINDS = {
+    outlet: { height: 3.5, minHeight: 1, plate: { w: 0.31, h: 0.46 }, dry: true, margin: ELEC_MARGIN },
+    switch: { height: 4, minHeight: 3, plate: { w: 0.29, h: 0.46 }, dry: true, margin: ELEC_MARGIN },
+    light: { height: 6.75, minHeight: 5, plate: { w: 2, h: 0.5 }, margin: 0.1 },
+    fan: { ceiling: true },
+  };
+
+  function electricalOf(design) {
+    return Array.isArray(design.electrical) ? design.electrical : [];
+  }
+
+  function withElectrical(design, list) {
+    return Object.assign({}, design, { electrical: list });
+  }
+
+  // Where a point is in the room: { x, z, y, rotY }. The fan sits in the
+  // ceiling over the middle of the wet fixtures (or the room).
+  function electricalPose(design, p, sizes) {
+    var room = design.room;
+    if (p.kind === "fan") {
+      var spot = fanSpot(design, sizes);
+      return { x: spot.x, z: spot.z, y: room.h, rotY: 0, ceiling: true };
+    }
+    var wall = walls(room)[p.wall] || walls(room).N;
+    var at = wallPointOf(wall, p.offset, 0.02);
+    return { x: at.x, z: at.z, y: clamp(p.height, 0.3, room.h - 0.2), rotY: wall.rotY, ceiling: false };
+  }
+
+  function wallPointOf(wall, a, depth) {
+    return { x: wall.ox + wall.dx * a + wall.nx * depth, z: wall.oz + wall.dz * a + wall.nz * depth };
+  }
+
+  function fanSpot(design, sizes) {
+    var room = design.room;
+    var wet = design.items.filter(function (it) {
+      return it.type === "tub" || it.type === "shower";
+    });
+    if (!wet.length) return { x: room.w / 2, z: room.l / 2 };
+    var sx = 0;
+    var sz = 0;
+    wet.forEach(function (it) {
+      var g = geometry(it, room, sizes);
+      sx += (g.body.x0 + g.body.x1) / 2;
+      sz += (g.body.z0 + g.body.z1) / 2;
+    });
+    return { x: round(sx / wet.length, 3), z: round(sz / wet.length, 3) };
+  }
+
+  // Shortest distance (feet) from a point to a rectangle, 0 inside it.
+  function distToRect(x, z, r) {
+    var dx = Math.max(r.x0 - x, 0, x - r.x1);
+    var dz = Math.max(r.z0 - z, 0, z - r.z1);
+    return Math.sqrt(dx * dx + dz * dz);
+  }
+
+  // What a wall point would be hidden behind: each fixture body and each
+  // mirror, as a patch of wall { wall, a0, a1, y0, y1, id }.
+  function wallCoverings(design, sizes) {
+    var out = [];
+    design.items.forEach(function (item) {
+      if (item.type === "door") return;
+      var g = geometry(item, design.room, sizes);
+      out.push({ wall: item.wall, a0: g.a0, a1: g.a1, y0: 0, y1: g.size.height, id: item.id });
+      var mirror = (item.opts || {}).mirror;
+      if ((item.type === "vanity" || item.type === "sink") && mirror && mirror !== "none") {
+        var tall = mirror === "large" ? 4 : 2.5;
+        var mid = MIRROR_MOUNT[mirror] || 3.2;
+        var wide = (mirror === "large" ? g.size.span + 0.5 : g.size.span) / 2;
+        out.push({
+          wall: item.wall,
+          a0: item.offset - wide,
+          a1: item.offset + wide,
+          y0: mid - tall / 2,
+          y1: mid + tall / 2,
+          id: item.id,
+        });
+      }
+    });
+    return out;
+  }
+
+  // What's wrong with one electrical point:
+  //   outside   past the end of its wall, or above the ceiling
+  //   wet       inside the 3 ft a tub or shower has to itself
+  //   behind    hidden behind a fixture or a mirror
+  //   crowded   on top of another point
+  //   farBasin  (warn) more than 3 ft from the basin it serves
+  function electricalIssues(design, sizes, point, coverings, others) {
+    var room = design.room;
+    var list = [];
+    var kind = ELECTRICAL_KINDS[point.kind];
+    if (!kind) return list;
+    if (kind.ceiling) return list;
+    var span = wallSpan(room, point.wall);
+    var halfPlate = kind.plate.w / 2;
+    if (point.offset - halfPlate < -EPS || point.offset + halfPlate > span + EPS) {
+      list.push(issue("error", "outside", { other: "wall" }));
+    }
+    if (point.height + kind.plate.h / 2 > room.h - EPS || point.height < 0.3) {
+      list.push(issue("error", "outside", { other: "ceiling" }));
+    }
+    var pose = electricalPose(design, point, sizes);
+    design.items.forEach(function (it) {
+      if (!kind.dry || (it.type !== "tub" && it.type !== "shower")) return;
+      var g = geometry(it, room, sizes);
+      var d = distToRect(pose.x, pose.z, g.body);
+      if (d < WET_CLEAR - EPS) {
+        list.push(issue("error", "wet", { other: it.id, need: WET_CLEAR * 12, have: Math.floor(d * 12 + EPS) }));
+      }
+    });
+    (coverings || wallCoverings(design, sizes)).forEach(function (c) {
+      if (c.wall !== point.wall) return;
+      if (point.offset + halfPlate <= c.a0 + 0.1 || point.offset - halfPlate >= c.a1 - 0.1) return;
+      if (point.height + kind.plate.h / 2 <= c.y0 + 0.1 || point.height - kind.plate.h / 2 >= c.y1 - 0.1) return;
+      list.push(issue("error", "behind", { other: c.id }));
+    });
+    (others || []).forEach(function (o) {
+      if (o.id === point.id || o.wall !== point.wall || o.kind === "fan") return;
+      var gap = Math.abs(o.offset - point.offset) - halfPlate - ELECTRICAL_KINDS[o.kind].plate.w / 2;
+      var apart = Math.abs(o.height - point.height) > 0.8;
+      if (!apart && gap < ELEC_APART - EPS) list.push(issue("error", "crowded", { other: o.id }));
+    });
+    if (point.kind === "outlet" && point.for) {
+      var basin = design.items.filter(function (it) {
+        return it.id === point.for;
+      })[0];
+      if (basin) {
+        var bg = geometry(basin, room, sizes);
+        var reach = distToRect(pose.x, pose.z, bg.body);
+        if (reach > BASIN_REACH + 0.25) {
+          list.push(
+            issue("warn", "farBasin", { other: basin.id, need: BASIN_REACH * 12, have: Math.round(reach * 12) }),
+          );
+        }
+      }
+    }
+    return list;
+  }
+
+  // Every electrical point's problems: { id: [issues] }.
+  function validateElectrical(design, sizes) {
+    var list = electricalOf(design);
+    var coverings = wallCoverings(design, sizes);
+    var out = {};
+    list.forEach(function (p) {
+      out[p.id] = electricalIssues(design, sizes, p, coverings, list);
+    });
+    return out;
+  }
+
+  // Room-wide gaps in the electrical, as codes: noSwitch (a doorway with no
+  // switch beside it), noLight, noFan (there's a tub or shower), noOutlet.
+  function electricalGaps(design) {
+    var list = electricalOf(design);
+    var out = [];
+    var has = function (kind) {
+      return list.some(function (p) {
+        return p.kind === kind;
+      });
+    };
+    var basins = design.items.filter(function (it) {
+      return it.type === "vanity" || it.type === "sink";
+    });
+    var wet = design.items.filter(function (it) {
+      return it.type === "tub" || it.type === "shower";
+    });
+    if (basins.length && !has("outlet")) out.push({ code: "noOutlet" });
+    if (!has("light")) out.push({ code: "noLight" });
+    if (itemsOfType(design, "door").length && !has("switch")) out.push({ code: "noSwitch" });
+    if (wet.length && !has("fan")) out.push({ code: "noFan" });
+    return out;
+  }
+
+  function itemsOfType(design, type) {
+    return design.items.filter(function (it) {
+      return it.type === type;
+    });
+  }
+
+  // The wall round the corner from this one: dir +1 past its right end,
+  // -1 past its left end (the walls run A, B, C, D around the room).
+  function neighbor(wallId, dir) {
+    var i = WALL_IDS.indexOf(wallId);
+    return WALL_IDS[(i + (dir > 0 ? 1 : 3)) % 4];
+  }
+
+  var elecCounter = 0;
+  function newElectricalId(list) {
+    var used = {};
+    list.forEach(function (p) {
+      used[p.id] = true;
+    });
+    var id;
+    do {
+      elecCounter++;
+      id = "e" + elecCounter;
+    } while (used[id]);
+    return id;
+  }
+
+  // The nearest offset to `want` on `wall` where a point of this kind has
+  // no problem, searched outward an inch at a time. null when the whole
+  // wall is taken.
+  function freeOffset(design, sizes, kind, wall, want, height, forId, coverings, others, reach) {
+    var span = wallSpan(design.room, wall);
+    var half = ELECTRICAL_KINDS[kind].plate.w / 2;
+    var edge = ELECTRICAL_KINDS[kind].margin;
+    var lo = half + edge;
+    var hi = span - half - edge;
+    if (hi < lo) return null;
+    var limit = reach === undefined ? span : reach;
+    for (var d = 0; d <= limit + EPS; d += IN) {
+      var tries = d === 0 ? [want] : [want - d, want + d];
+      for (var i = 0; i < tries.length; i++) {
+        var a = round(clamp(tries[i], lo, hi), 4);
+        if (Math.abs(a - tries[i]) > IN) continue;
+        var cand = { id: "probe", kind: kind, wall: wall, offset: a, height: height, for: forId };
+        if (!electricalIssues(design, sizes, cand, coverings, others).some(isError)) return a;
+      }
+    }
+    return null;
+  }
+
+  // What the room needs, worked out from where the fixtures stand: a GFCI
+  // receptacle beside each basin, a light over each mirror, a switch (and a
+  // fan switch) inside each doorway, and an exhaust fan over the wet area.
+  // Points already in the design stay where they are; this only fills gaps,
+  // so confirming a suggestion and running it again changes nothing.
+  function suggestElectrical(design, sizes) {
+    var room = design.room;
+    var coverings = wallCoverings(design, sizes);
+    var list = electricalOf(design).slice();
+    var added = [];
+    function add(kind, wall, want, height, forId, reach) {
+      if (list.length >= MAX_ELECTRICAL) return null;
+      var at = freeOffset(design, sizes, kind, wall, want, height, forId, coverings, list, reach);
+      if (at === null) return null;
+      var p = { id: newElectricalId(list), kind: kind, wall: wall, offset: at, height: round(height, 3), for: forId };
+      list.push(p);
+      added.push(p);
+      return p;
+    }
+    function have(kind, forId) {
+      return list.some(function (p) {
+        return p.kind === kind && (forId === undefined || p.for === forId);
+      });
+    }
+
+    var basins = design.items.filter(function (it) {
+      return it.type === "vanity" || it.type === "sink";
+    });
+    var lightHeight = Math.min(ELECTRICAL_KINDS.light.height, room.h - 1.1);
+    basins.forEach(function (basin) {
+      var g = geometry(basin, room, sizes);
+      var half = g.size.span / 2;
+      if (!have("outlet", basin.id)) {
+        // Beside the basin: either side of it, or around a corner onto the
+        // next wall, whichever free spot ends up nearest the basin itself.
+        var hi = ELECTRICAL_KINDS.outlet.height;
+        var spots = [
+          { wall: basin.wall, want: basin.offset + half + 0.75 },
+          { wall: basin.wall, want: basin.offset - half - 0.75 },
+          { wall: neighbor(basin.wall, 1), want: 0 },
+          { wall: neighbor(basin.wall, -1), want: wallSpan(room, neighbor(basin.wall, -1)) },
+        ];
+        var best = null;
+        spots.forEach(function (t) {
+          var at = freeOffset(design, sizes, "outlet", t.wall, t.want, hi, basin.id, coverings, list);
+          if (at === null) return;
+          var pose = electricalPose(design, { kind: "outlet", wall: t.wall, offset: at, height: hi }, sizes);
+          // A foot of slack in favor of the basin's own wall: beside it is
+          // where a receptacle belongs, round the corner is the fallback.
+          var away = distToRect(pose.x, pose.z, g.body) + (t.wall === basin.wall ? 0 : 1);
+          if (!best || away < best.away) best = { wall: t.wall, offset: at, away: away };
+        });
+        if (best) add("outlet", best.wall, best.offset, hi, basin.id, IN);
+      }
+      if (!have("light", basin.id)) add("light", basin.wall, basin.offset, lightHeight, basin.id, 1.5);
+    });
+    if (!basins.length && !have("light")) {
+      // No vanity: a light on the wall across from the first doorway.
+      var door0 = itemsOfType(design, "door")[0];
+      var wall = door0 ? { N: "S", S: "N", E: "W", W: "E" }[door0.wall] : "N";
+      add("light", wall, wallSpan(room, wall) / 2, lightHeight, "room");
+    }
+
+    var wet = design.items.filter(function (it) {
+      return it.type === "tub" || it.type === "shower";
+    });
+    itemsOfType(design, "door").forEach(function (door, i) {
+      var g = geometry(door, room, sizes);
+      var span = wallSpan(room, door.wall);
+      var half = g.size.span / 2;
+      var side = span - (door.offset + half) >= door.offset - half ? 1 : -1;
+      // About 7 in. clear of the casing, the way a switch sits by a door.
+      var want = door.offset + side * (half + 0.6);
+      if (!have("switch", door.id)) add("switch", door.wall, want, ELECTRICAL_KINDS.switch.height, door.id);
+      if (i === 0 && wet.length && !have("switch", "fan")) {
+        add("switch", door.wall, want + side * 0.45, ELECTRICAL_KINDS.switch.height, "fan");
+      }
+    });
+    if (wet.length && !have("fan")) {
+      if (list.length < MAX_ELECTRICAL) {
+        var fan = { id: newElectricalId(list), kind: "fan", wall: null, offset: 0, height: room.h, for: "room" };
+        list.push(fan);
+        added.push(fan);
+      }
+    }
+    return { design: withElectrical(design, list), added: added };
+  }
+
+  // Where a dragged point lands: the wall nearest the room point (x, z),
+  // at the height y. { wall, offset, height, valid }.
+  function snapElectrical(design, pointId, x, y, z, sizes) {
+    var point = electricalOf(design).filter(function (p) {
+      return p.id === pointId;
+    })[0];
+    if (!point || point.kind === "fan") return null;
+    var room = design.room;
+    var kind = ELECTRICAL_KINDS[point.kind];
+    var cands = [
+      { wall: "N", dist: z, along: x },
+      { wall: "E", dist: room.w - x, along: z },
+      { wall: "S", dist: room.l - z, along: room.w - x },
+      { wall: "W", dist: x, along: room.l - z },
+    ];
+    var best = cands.reduce(function (p, q) {
+      return q.dist < p.dist ? q : p;
+    });
+    var span = wallSpan(room, best.wall);
+    var half = kind.plate.w / 2;
+    var offset = round(clamp(best.along, half, span - half), 4);
+    var height = round(clamp(y, Math.max(kind.minHeight, 0.3), room.h - 0.4), 3);
+    var cand = Object.assign({}, point, { wall: best.wall, offset: offset, height: height });
+    var others = electricalOf(design);
+    var valid = !electricalIssues(design, sizes, cand, null, others).some(isError);
+    return { wall: best.wall, offset: offset, height: height, valid: valid };
+  }
+
+  function moveElectrical(design, id, change) {
+    return withElectrical(
+      design,
+      electricalOf(design).map(function (p) {
+        return p.id === id ? Object.assign({}, p, change) : p;
+      }),
+    );
+  }
+
+  function addElectrical(design, kind, sizes) {
+    var list = electricalOf(design).slice();
+    if (list.length >= MAX_ELECTRICAL) return { design: design, point: null, placed: false };
+    var room = design.room;
+    if (kind === "fan") {
+      var fan = { id: newElectricalId(list), kind: "fan", wall: null, offset: 0, height: room.h, for: "room" };
+      list.push(fan);
+      return { design: withElectrical(design, list), point: fan, placed: true };
+    }
+    var coverings = wallCoverings(design, sizes);
+    var height = Math.min(ELECTRICAL_KINDS[kind].height, room.h - 1.1);
+    var best = null;
+    WALL_IDS.forEach(function (wid) {
+      var at = freeOffset(design, sizes, kind, wid, wallSpan(room, wid) / 2, height, "room", coverings, list);
+      if (at !== null && !best) best = { wall: wid, offset: at };
+    });
+    var spot = best || { wall: "N", offset: wallSpan(room, "N") / 2 };
+    var p = {
+      id: newElectricalId(list),
+      kind: kind,
+      wall: spot.wall,
+      offset: round(spot.offset, 4),
+      height: round(height, 3),
+      for: "room",
+    };
+    list.push(p);
+    return { design: withElectrical(design, list), point: p, placed: !!best };
+  }
+
+  function removeElectrical(design, id) {
+    return withElectrical(
+      design,
+      electricalOf(design).filter(function (p) {
+        return p.id !== id;
+      }),
+    );
+  }
+
+  // What the 3D room draws: one plate per point, in room feet.
+  function toElectricalPlacements(design, sizes) {
+    return electricalOf(design).map(function (p) {
+      var pose = electricalPose(design, p, sizes);
+      var kind = ELECTRICAL_KINDS[p.kind];
+      return {
+        id: p.id,
+        kind: p.kind,
+        x: pose.x,
+        y: pose.y,
+        z: pose.z,
+        rotationY: pose.rotY,
+        wallId: p.wall,
+        ceiling: !!pose.ceiling,
+        width: kind.plate ? kind.plate.w : 1,
+        height: kind.plate ? kind.plate.h : 1,
+      };
+    });
+  }
+
+  // How many points the estimate charges for.
+  function electricalPoints(design) {
+    return electricalOf(design).length;
+  }
+
+  // -------------------------------------------------------------------
   // For the estimate
   // -------------------------------------------------------------------
   // The counts js/bathroom-pricing.js prices. Only a new door is an
@@ -1134,43 +1758,80 @@
   }
 
   function emptyDesign(w, l, h) {
-    return { v: 2, room: { w: w, l: l, h: h }, items: [], finishes: finishesDefault(), products: {} };
+    return {
+      v: 3,
+      room: { w: w, l: l, h: h, wet: "N" },
+      items: [],
+      electrical: [],
+      finishes: finishesDefault(),
+      products: {},
+    };
   }
 
   // The common bathrooms people start from. Fixtures are listed with their
-  // wall; arrange() places them for real, so a template always fits.
+  // wall; arrange() places them for real, so a template always fits. wet
+  // is the wall the plumbing stack is in, opposite the door.
   var TEMPLATES = [
     {
       id: "full5x8",
-      room: { w: 8, l: 5, h: 8 },
+      room: { w: 8, l: 5, h: 8, wet: "N" },
       door: { wall: "S", offset: 4.6 },
       items: ["tub", "vanity", "toilet"],
     },
     {
       id: "showerBath",
-      room: { w: 8, l: 6, h: 8 },
+      room: { w: 8, l: 6, h: 8, wet: "N" },
       door: { wall: "S", offset: 4.5 },
       items: ["shower", "vanity", "toilet"],
     },
     {
       id: "primary",
-      room: { w: 11, l: 9, h: 8.5 },
+      room: { w: 11, l: 9, h: 8.5, wet: "N" },
       door: { wall: "S", offset: 2 },
       items: ["tub", "shower", "vanity", "vanity", "toilet", "cabinet"],
     },
     {
       id: "half",
-      room: { w: 5, l: 5, h: 8 },
+      room: { w: 5, l: 5, h: 8, wet: "N" },
       door: { wall: "S", offset: 2.5 },
       items: ["sink", "toilet"],
     },
     {
       id: "blank",
-      room: { w: 8, l: 6, h: 8 },
+      room: { w: 8, l: 6, h: 8, wet: "N" },
       door: { wall: "S", offset: 4 },
       items: [],
     },
   ];
+
+  // Which of two layouts for the same room is the better one: nothing
+  // broken first, then the least new drain line, then the fewest tight
+  // spots. The wiring counts too, because a basin wedged between a tub
+  // and a shower leaves nowhere legal for its receptacle.
+  function better(design, items, than, sizes) {
+    var score = function (list) {
+      var trial = Object.assign({}, design, { items: list, electrical: [] });
+      var issues = validate(trial, sizes);
+      var bad = 0;
+      var tight = 0;
+      var count = function (list2) {
+        Object.keys(list2).forEach(function (id) {
+          bad += errorsOf(list2, id).length;
+          tight += list2[id].length - errorsOf(list2, id).length;
+        });
+      };
+      count(issues);
+      var wired = suggestElectrical(trial, sizes).design;
+      count(validateElectrical(wired, sizes));
+      return [bad, drainRun(trial, sizes), tight];
+    };
+    var mine = score(items);
+    var theirs = score(than);
+    for (var i = 0; i < mine.length; i++) {
+      if (Math.abs(mine[i] - theirs[i]) > 1e-6) return mine[i] < theirs[i];
+    }
+    return false;
+  }
 
   function fromTemplate(templateId, sizes) {
     var tpl =
@@ -1178,16 +1839,30 @@
         return t.id === templateId;
       })[0] || TEMPLATES[0];
     var design = emptyDesign(tpl.room.w, tpl.room.l, tpl.room.h);
+    design.room.wet = tpl.room.wet || "N";
     var door = { id: "door", type: "door", wall: tpl.door.wall, offset: tpl.door.offset, opts: defaultOpts("door") };
     design.items.push(door);
     tpl.items.forEach(function (type) {
       design.items.push({ id: newId(design), type: type, wall: "N", offset: 0, opts: defaultOpts(type) });
     });
     if (tpl.items.length) {
-      var best = arrange(design, sizes, { count: 1 })[0];
-      if (best) design.items = best.items;
+      // A bathroom that already exists has its stack where its fixtures
+      // are, not the other way round: the room is arranged once with no
+      // plumbing wall in mind, which says where the stack would be, then
+      // again knowing it. The better of the two layouts wins.
+      design.room.wet = null;
+      var tries = arrange(design, sizes, { count: 3 });
+      if (tries.length) design.items = tries[0].items;
+      design.room.wet = suggestStack(design, sizes);
+      arrange(design, sizes, { count: 3 }).forEach(function (option) {
+        tries.push(option);
+      });
+      tries.forEach(function (option) {
+        if (better(design, option.items, design.items, sizes)) design.items = option.items;
+      });
+      design.room.wet = suggestStack(design, sizes);
     }
-    return design;
+    return suggestElectrical(design, sizes).design;
   }
 
   // -------------------------------------------------------------------
@@ -1196,7 +1871,7 @@
   // Whatever comes back from storage or a shared link is checked field by
   // field; anything unusable is dropped or reset to its default.
   function sanitize(raw) {
-    if (!raw || typeof raw !== "object" || raw.v !== 2) return null;
+    if (!raw || typeof raw !== "object" || (raw.v !== 2 && raw.v !== 3)) return null;
     var r = raw.room || {};
     var num = function (v, min, max, dflt) {
       var n = Number(v);
@@ -1207,6 +1882,7 @@
       num(r.l, LIMITS.min, LIMITS.maxL, 5),
       num(r.h, LIMITS.minH, LIMITS.maxH, 8),
     );
+    if (WALL_IDS.indexOf(r.wet) !== -1) design.room.wet = r.wet;
     var seen = {};
     (Array.isArray(raw.items) ? raw.items : []).slice(0, MAX_ITEMS).forEach(function (it) {
       if (!it || !TYPES[it.type] || WALL_IDS.indexOf(it.wall) === -1) return;
@@ -1230,6 +1906,23 @@
         wall: it.wall,
         offset: num(it.offset, 0, span, span / 2),
         opts: opts,
+      });
+    });
+    var seenPoints = {};
+    (Array.isArray(raw.electrical) ? raw.electrical : []).slice(0, MAX_ELECTRICAL).forEach(function (p) {
+      if (!p || !ELECTRICAL_KINDS[p.kind]) return;
+      var id = typeof p.id === "string" && /^[a-z0-9_-]{1,24}$/i.test(p.id) && !seenPoints[p.id] ? p.id : null;
+      if (!id) return;
+      if (p.kind !== "fan" && WALL_IDS.indexOf(p.wall) === -1) return;
+      seenPoints[id] = true;
+      var forId = typeof p.for === "string" && /^[a-z0-9_-]{1,24}$/i.test(p.for) ? p.for : "room";
+      design.electrical.push({
+        id: id,
+        kind: p.kind,
+        wall: p.kind === "fan" ? null : p.wall,
+        offset: p.kind === "fan" ? 0 : num(p.offset, 0, wallSpan(design.room, p.wall), 1),
+        height: num(p.height, 0.3, design.room.h, ELECTRICAL_KINDS[p.kind].height || design.room.h),
+        for: forId,
       });
     });
     var f = raw.finishes && typeof raw.finishes === "object" ? raw.finishes : {};
@@ -1257,10 +1950,25 @@
   // anything that isn't one.
   function encode(design) {
     var compact = {
-      v: 2,
-      room: { w: round(design.room.w, 3), l: round(design.room.l, 3), h: round(design.room.h, 3) },
+      v: 3,
+      room: {
+        w: round(design.room.w, 3),
+        l: round(design.room.l, 3),
+        h: round(design.room.h, 3),
+        wet: stackWall(design),
+      },
       items: design.items.map(function (it) {
         return { id: it.id, type: it.type, wall: it.wall, offset: round(it.offset, 3), opts: it.opts };
+      }),
+      electrical: electricalOf(design).map(function (p) {
+        return {
+          id: p.id,
+          kind: p.kind,
+          wall: p.wall,
+          offset: round(p.offset, 3),
+          height: round(p.height, 3),
+          for: p.for,
+        };
       }),
       finishes: design.finishes,
       products: design.products,
@@ -1286,10 +1994,20 @@
   // Resizing the room keeps every fixture on its wall, the same distance
   // from that wall's left end (as far as the new wall allows).
   function resize(design, room) {
-    var next = Object.assign({}, design, { room: room });
+    var next = Object.assign({}, design, {
+      room: Object.assign({ wet: stackWall(design) }, room),
+    });
     next.items = design.items.map(function (it) {
       var span = wallSpan(room, it.wall);
       return Object.assign({}, it, { offset: clamp(it.offset, 0, span) });
+    });
+    next.electrical = electricalOf(design).map(function (p) {
+      if (p.kind === "fan") return Object.assign({}, p, { height: room.h });
+      var span = wallSpan(room, p.wall);
+      return Object.assign({}, p, {
+        offset: clamp(p.offset, 0, span),
+        height: clamp(p.height, 0.3, room.h - 0.4),
+      });
     });
     return next;
   }
@@ -1320,6 +2038,26 @@
     toPlacements: toPlacements,
     outlines: outlines,
     counts: counts,
+    STACK_LIMIT: STACK_LIMIT,
+    stackWall: stackWall,
+    stackRun: stackRun,
+    drainRun: drainRun,
+    suggestStack: suggestStack,
+    setStack: setStack,
+    MAX_ELECTRICAL: MAX_ELECTRICAL,
+    ELECTRICAL_KINDS: ELECTRICAL_KINDS,
+    ELECTRICAL_IDS: ["outlet", "switch", "light", "fan"],
+    electrical: electricalOf,
+    electricalPose: electricalPose,
+    validateElectrical: validateElectrical,
+    electricalGaps: electricalGaps,
+    suggestElectrical: suggestElectrical,
+    snapElectrical: snapElectrical,
+    moveElectrical: moveElectrical,
+    addElectrical: addElectrical,
+    removeElectrical: removeElectrical,
+    toElectricalPlacements: toElectricalPlacements,
+    electricalPoints: electricalPoints,
     wallAreas: wallAreas,
     defaultOpts: defaultOpts,
     emptyDesign: emptyDesign,

@@ -2239,3 +2239,209 @@ html[data-embed="1"] .studio-page {
 html[data-embed="1"] .studio-stage {
   top: 0;
 }
+
+/* ---------- The plumbing wall and the electrical, on the plan ---------- */
+.plan-stack rect {
+  fill: var(--studio-select);
+  fill-opacity: 0.14;
+  stroke: var(--studio-select);
+  stroke-opacity: 0.4;
+  stroke-width: 0.035;
+  stroke-dasharray: 0.3 0.14;
+}
+
+.plan-point {
+  cursor: grab;
+  outline: none;
+}
+
+.plan-point[tabindex]:active {
+  cursor: grabbing;
+}
+
+.plan-point-dot {
+  fill: var(--studio-plan-body);
+  stroke: var(--studio-plan-ink);
+  stroke-width: 0.04;
+}
+
+.plan-point-mark {
+  fill: var(--studio-plan-ink);
+  text-anchor: middle;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.plan-point.is-light .plan-point-dot,
+.plan-point.is-fan .plan-point-dot {
+  fill: color-mix(in srgb, var(--studio-warn) 22%, var(--studio-plan-body));
+}
+
+.plan-point.is-warn .plan-point-dot {
+  stroke: var(--studio-warn);
+  stroke-width: 0.07;
+}
+
+.plan-point.is-error .plan-point-dot {
+  stroke: var(--studio-error);
+  stroke-width: 0.08;
+}
+
+.plan-point.is-hover .plan-point-dot,
+.plan-point.is-selected .plan-point-dot,
+.plan-point:focus-visible .plan-point-dot {
+  stroke: var(--studio-select);
+  stroke-width: 0.09;
+}
+
+/* A point's glyph where an icon would otherwise go. */
+.studio-add-icon.is-point,
+.studio-item-icon.is-point,
+.studio-selchip-icon.is-point {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.studio-selchip-icon.is-point {
+  display: grid;
+  place-items: center;
+  width: 22px;
+}
+
+/* ---------- Riley ---------- */
+.studio-riley {
+  position: absolute;
+  z-index: 4;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  max-width: min(420px, calc(100% - 2 * var(--space-3)));
+  pointer-events: none;
+}
+
+.studio-stage:has(.riley:not([hidden])) .studio-hint {
+  display: none;
+}
+
+/* Riley has the bottom of the stage, so a toast goes under the view
+   buttons instead of over her. */
+.studio-stage:has(.riley:not([hidden])) .studio-toast {
+  top: calc(var(--space-3) + 56px);
+  bottom: auto;
+}
+
+.riley {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-left: 3px solid var(--studio-ok);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  box-shadow: var(--shadow-soft);
+  pointer-events: auto;
+}
+
+.riley[data-tone="warn"] {
+  border-left-color: var(--studio-warn);
+}
+
+.riley[data-tone="error"] {
+  border-left-color: var(--studio-error);
+}
+
+.riley-avatar {
+  flex: none;
+  color: var(--color-accent-bright);
+  line-height: 0;
+}
+
+.riley-body {
+  min-width: 0;
+}
+
+.riley-name {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.riley-text {
+  margin: 2px 0 0;
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.riley-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}
+
+.riley-actions:empty {
+  display: none;
+}
+
+.riley-action {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.riley-action:first-child {
+  border-color: transparent;
+  background: var(--color-dark);
+  color: #fff;
+}
+
+.riley-action:hover {
+  filter: brightness(1.08);
+}
+
+.riley-mute {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.riley-mute:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+}
+
+.riley-mute[aria-pressed="false"] {
+  color: var(--studio-warn);
+}
+
+@media (max-width: 900px) {
+  .studio-riley {
+    left: var(--space-2);
+    right: var(--space-2);
+    bottom: var(--space-2);
+    max-width: none;
+  }
+
+  .riley-text {
+    font-size: 0.8125rem;
+  }
+}

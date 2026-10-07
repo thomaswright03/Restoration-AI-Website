@@ -23,8 +23,9 @@
   var SVG_NS = "http://www.w3.org/2000/svg";
   var IN = 1 / 12;
 
-  var STEPS = ["room", "layout", "products", "finishes", "estimate"];
+  var STEPS = ["room", "layout", "electrical", "products", "finishes", "estimate"];
   var ADDABLE = ["toilet", "vanity", "sink", "tub", "shower", "cabinet"];
+  var ADDABLE_POINTS = ["outlet", "switch", "light", "fan"];
   var MAX_DOORS = 3;
   var STORE_KEY = "rd3d_design_" + (BIZ.slug || "demo");
   var HASH_KEY = "design";
@@ -126,6 +127,9 @@
     target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
     download: '<path d="M12 3v12m0 0-4-4m4 4 4-4"/><path d="M4 17v3h16v-3"/>',
     close: '<path d="M6 6l12 12M18 6 6 18"/>',
+    isolate:
+      '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21"/>' +
+      '<path d="M6.3 6.3l1.7 1.7M16 16l1.7 1.7M6.3 17.7 8 16M16 8l1.7-1.7" opacity="0.45"/>',
     external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
   };
@@ -154,10 +158,12 @@
   var ui = {
     step: "room",
     view: "3d",
-    selected: null,
+    selected: null, // a fixture's id
+    point: null, // an electrical point's id
     hover: null,
     drag: null,
     arrange: null, // { options: [...] } while "Arrange it for me" shows its choices
+    isolate: false, // show the fixture being worked on by itself
     messageEdited: false,
     livePrices: null, // { zip, store, results } from the pricing service
   };
@@ -173,6 +179,48 @@
     return (d || design).items.filter(function (it) {
       return it.type === type;
     });
+  }
+
+  // Electrical points (outlets, switches, lights, the fan).
+  function points(d) {
+    return Plan.electrical(d || design);
+  }
+
+  function findPoint(id, d) {
+    return points(d).filter(function (p) {
+      return p.id === id;
+    })[0];
+  }
+
+  function pointsOf(kind, d) {
+    return points(d).filter(function (p) {
+      return p.kind === kind;
+    });
+  }
+
+  // "Outlet", or "Outlet 2" when there's more than one.
+  function pointName(point, d) {
+    var same = pointsOf(point.kind, d);
+    var base = T("studio.elec." + point.kind);
+    return same.length > 1 ? base + " " + (same.indexOf(point) + 1) : base;
+  }
+
+  // "Outlet · beside the vanity": what the point is there for.
+  function pointFor(point, d) {
+    if (point.for === "fan") return T("studio.elec.forFan");
+    if (!point.for || point.for === "room") return null;
+    var item = findItem(point.for, d);
+    if (!item) return null;
+    var key = point.kind === "light" ? "studio.elec.over" : "studio.elec.beside";
+    return T(key, { what: theName(point.for, d) });
+  }
+
+  // Either a fixture or an electrical point, by id.
+  function anyName(id, d) {
+    var item = findItem(id, d);
+    if (item) return itemName(item, d);
+    var point = findPoint(id, d);
+    return point ? pointName(point, d) : "";
   }
 
   // "Vanity", or "Vanity 2" when there's more than one.
@@ -227,9 +275,35 @@
   function issueText(item, x, d) {
     var data = { need: x.need, have: x.have, other: theName(x.other, d) };
     var key = "studio.issue." + x.code;
+    if (!item.type) return pointIssueText(item, x, d);
+    if (x.code === "offStack" || x.code === "noStack") {
+      return T(key, {
+        run: len(x.have / 12),
+        most: len(x.need / 12),
+        wall: letter(Plan.stackWall(d || design)),
+      });
+    }
     if (x.code === "side" && item.type !== "toilet") key = "studio.issue.sideGap";
     if ((x.code === "front" || x.code === "tightFront") && x.other === "wall") key += "Wall";
     return T(key, data);
+  }
+
+  // The same, for an electrical point.
+  function pointIssueText(point, x, d) {
+    var other = x.other === "wall" || x.other === "ceiling" ? T("studio.the." + x.other) : theName(x.other, d);
+    if (x.code === "crowded") other = anyName(x.other, d);
+    return T("studio.elecIssue." + x.code + (x.code === "outside" && x.other === "ceiling" ? "Up" : ""), {
+      need: x.need,
+      have: x.have,
+      other: other,
+      feet: x.need ? len(x.need / 12) : "",
+    });
+  }
+
+  // Everything with a problem right now, fixture or point: the same shape
+  // as Plan.validate(), keyed by id (ids never clash between the two).
+  function checkAll(d, forSizes) {
+    return Object.assign({}, Plan.validate(d, forSizes || sizes), Plan.validateElectrical(d, forSizes || sizes));
   }
 
   // ---------------------------------------------------------------------
@@ -290,11 +364,17 @@
 
   // Redraws everything for the design as it is now.
   function refresh(opts) {
+    refreshNow(opts);
+    rileyTalk();
+  }
+
+  function refreshNow(opts) {
     opts = opts || {};
     applyProducts();
     sizes = room3d ? room3d.itemSizes() : null;
-    issues = Plan.validate(design, sizes);
+    issues = checkAll(design);
     if (ui.selected && !findItem(ui.selected)) ui.selected = null;
+    if (ui.point && !findPoint(ui.point)) ui.point = null;
     if (!opts.keepArrange) ui.arrange = null;
     push3d();
     renderStage();
@@ -548,7 +628,10 @@
   // The floor plan (SVG, room feet; wall A at the top)
   // ---------------------------------------------------------------------
   var WALL_T = 0.35; // drawn wall thickness, feet
+  var STACK_BAND = 0.22; // how wide the plumbing wall's hatching reads
   var planIds = 0;
+  // What each electrical point looks like on the plan.
+  var POINT_MARK = { outlet: "⌁", switch: "S", light: "✱", fan: "✜" };
 
   // opts: { mini, list (issues), selected, hover, zones (show every
   // fixture's clear floor), interactive }
@@ -637,7 +720,27 @@
       if (item.type === "door") svg.appendChild(doorEl(d, item, list, opts, fs));
     });
 
+    // Electrical points on the walls, and the fan in the middle.
+    points(d).forEach(function (point) {
+      svg.appendChild(pointEl(d, point, list, opts, fs));
+    });
+
     if (mini && !opts.tags) return svg;
+
+    // The wall the plumbing stack is in, hatched along its inside face.
+    var stack = wallOf(Plan.stackWall(d), d);
+    var sp0 = wallPoint(stack, 0, 0);
+    var sp1 = wallPoint(stack, stack.span, STACK_BAND);
+    svg.appendChild(
+      s("g", { class: "plan-stack" }, [
+        s("rect", {
+          x: num(Math.min(sp0.x, sp1.x)),
+          y: num(Math.min(sp0.z, sp1.z)),
+          width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
+          height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
+        }),
+      ]),
+    );
 
     // Wall letters and the room's size.
     Plan.WALL_IDS.forEach(function (wid) {
@@ -666,6 +769,39 @@
       });
     }
     return svg;
+  }
+
+  // One electrical point on the plan: a small symbol on its wall (the fan
+  // sits over the room, so it's drawn where it hangs).
+  function pointEl(d, point, list, opts, fs) {
+    var pose = Plan.electricalPose(d, point, sizes);
+    var tone = toneOf(point.id, list);
+    var g = s("g", {
+      class:
+        "plan-point is-" +
+        point.kind +
+        " is-" +
+        tone +
+        (point.id === opts.point ? " is-selected" : "") +
+        (point.id === opts.hover ? " is-hover" : ""),
+      "data-pid": point.id,
+    });
+    if (opts.interactive && point.kind !== "fan") {
+      g.setAttribute("tabindex", "0");
+      g.setAttribute("role", "button");
+      g.setAttribute("aria-label", pointLabel(point, d));
+      if (point.id === opts.point) g.setAttribute("aria-pressed", "true");
+    }
+    var r = Math.max(fs * 0.42, 0.17);
+    g.appendChild(s("circle", { cx: num(pose.x), cy: num(pose.z), r: num(r), class: "plan-point-dot" }));
+    g.appendChild(
+      s(
+        "text",
+        { x: num(pose.x), y: num(pose.z), class: "plan-point-mark", "font-size": num(r * 1.25), dy: "0.36em" },
+        [POINT_MARK[point.kind] || ""],
+      ),
+    );
+    return g;
   }
 
   function rectEl(r, cls) {
@@ -900,6 +1036,18 @@
     return T("studio.itemAt", { name: itemName(item, d), wall: letter(item.wall), at: len(item.offset) });
   }
 
+  // "Outlet, wall A at 3′, 3′ 6″ up", or "Exhaust fan, in the ceiling".
+  function pointLabel(point, d) {
+    if (!point) return "";
+    if (point.kind === "fan") return T("studio.pointCeiling", { name: pointName(point, d) });
+    return T("studio.pointAt", {
+      name: pointName(point, d),
+      wall: letter(point.wall),
+      at: len(point.offset),
+      up: len(point.height),
+    });
+  }
+
   // ---------------------------------------------------------------------
   // The stage: the 3D room or the plan, with its labels
   // ---------------------------------------------------------------------
@@ -920,8 +1068,71 @@
       room3d.setSurfaceFinish(cat, product);
     });
     room3d.setSurround(f.walls === "tileWet" ? surroundPanels(design) : []);
+    room3d.setElectrical(Plan.toElectricalPlacements(design, sizes));
+    applyIsolate();
   }
   var pushed3d = {};
+
+  // Which fixtures the room shows on their own while one is being worked
+  // on: the selected one (with the electrical point's fixture counting as
+  // that fixture), or none, which shows the whole room.
+  function applyIsolate() {
+    if (!room3d) return;
+    var ids = null;
+    if (ui.isolate) {
+      if (focusedGroup) ids = itemsForGroup(focusedGroup);
+      else if (ui.selected) ids = [ui.selected];
+      else if (ui.point) {
+        var p = findPoint(ui.point);
+        ids = p && findItem(p.for) ? [p.for] : null;
+      }
+    }
+    room3d.setIsolate(ids && ids.length ? ids : null);
+  }
+
+  // The name of what isolating would leave in the room, or null when
+  // nothing is picked and there's nothing to isolate.
+  function isolateWhat() {
+    if (focusedGroup) return groupLabel(focusedGroup);
+    if (ui.selected) return anyName(ui.selected);
+    if (ui.point) {
+      var p = findPoint(ui.point);
+      var owner = p && findItem(p.for);
+      return owner ? itemName(owner) : null;
+    }
+    return null;
+  }
+
+  // What the 3D room calls a product group ("Toilet", "Mirror").
+  function groupLabel(groupId) {
+    var group = (room3d ? room3d.getProductGroups() : []).filter(function (g) {
+      return g.id === groupId;
+    })[0];
+    return group ? group.label : T("studio.type." + groupId);
+  }
+
+  function setIsolate(on) {
+    if (ui.isolate === on) return;
+    ui.isolate = on;
+    applyIsolate();
+    renderViewbar();
+    announce(T(on ? "studio.view.isolateOn" : "studio.view.isolate"));
+  }
+
+  // The fixtures a product group's models belong to (the mirror group's
+  // models ride on the vanities and sinks that have one).
+  function itemsForGroup(groupId) {
+    return design.items
+      .filter(function (it) {
+        if (groupId === "mirror") {
+          return (it.type === "vanity" || it.type === "sink") && (it.opts || {}).mirror !== "none";
+        }
+        return it.type === groupId;
+      })
+      .map(function (it) {
+        return it.id;
+      });
+  }
 
   // Draws the stage for the design, or for `preview` (a fixture being
   // dragged) with its own issues.
@@ -932,9 +1143,13 @@
     els.planWrap.hidden = !plan;
     if (els.room) els.room.hidden = plan;
     if (plan) {
-      planSvg(d, { list: list, selected: ui.selected, hover: ui.hover, interactive: true }, els.planSvg);
+      planSvg(
+        d,
+        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: true },
+        els.planSvg,
+      );
     } else {
-      planSvg(d, { mini: true, tags: true, list: list, selected: ui.selected }, els.miniSvg);
+      planSvg(d, { mini: true, tags: true, list: list, selected: ui.selected, point: ui.point }, els.miniSvg);
       // While dragging, the outline says whether it fits where it is.
       room3d.setHighlight(ui.selected, ui.drag && ui.drag.moved ? toneOf(ui.selected, list) : "select", ui.hover);
       room3d.setMarks(floorMarks(d, list, ui.selected));
@@ -979,6 +1194,17 @@
       });
       gapsOf(sel, d).forEach(function (g) {
         specs.push({ x: g.mid.x, y: 0.05, z: g.mid.z, text: g.text, cls: "studio-label is-gap" });
+      });
+    }
+    var pick = ui.point && findPoint(ui.point, d);
+    if (pick) {
+      var pose = Plan.electricalPose(d, pick, sizes);
+      specs.push({
+        x: pose.x,
+        y: Math.min(pose.y + 0.45, room.h - 0.15),
+        z: pose.z,
+        text: pointName(pick, d),
+        cls: "studio-label is-name is-" + toneOf(pick.id, ui.drag && ui.drag.issues ? ui.drag.issues : issues),
       });
     }
     labelSpecs = specs;
@@ -1038,18 +1264,39 @@
     chip.disabled = !!previewing;
   }
 
-  // The first fixture with a problem (or, failing that, a tight spot).
+  // The first thing with a problem (or, failing that, a tight spot):
+  // a fixture, or an electrical point.
+  // What Riley talks about and what "show me" goes to: the thing just
+  // picked or added, when that's what has the problem, because that's what
+  // the person is thinking about; otherwise the first one with it.
   function firstTrouble() {
-    var withError = design.items.filter(function (it) {
-      return toneOf(it.id) === "error";
-    })[0];
-    return (
-      withError ||
-      design.items.filter(function (it) {
-        return toneOf(it.id) === "warn";
-      })[0] ||
-      null
-    );
+    var all = design.items.concat(points(design));
+    var mine = ui.selected || ui.point;
+    var worst = function (tone) {
+      var list = all.filter(function (x) {
+        return toneOf(x.id) === tone;
+      });
+      return (
+        list.filter(function (x) {
+          return x.id === mine;
+        })[0] || list[0]
+      );
+    };
+    return worst("error") || worst("warn") || null;
+  }
+
+  // Takes the person to it: its own step, picked and in view.
+  function showTrouble(thing) {
+    if (!thing) return;
+    if (!thing.type) {
+      ui.step = "electrical";
+      renderBar();
+      selectPoint(thing.id, { force: true });
+      return;
+    }
+    ui.step = thing.type === "door" ? "room" : "layout";
+    renderBar();
+    select(thing.id, { force: true });
   }
 
   function setView(view) {
@@ -1081,6 +1328,15 @@
     });
     els.frameBtn.hidden = ui.view === "plan" || !has3d;
     els.mini.hidden = ui.view === "plan" || !has3d;
+    if (els.isoBtn) {
+      var what = isolateWhat();
+      els.isoBtn.hidden = ui.view === "plan" || !has3d;
+      els.isoBtn.disabled = !what;
+      els.isoBtn.setAttribute("aria-pressed", ui.isolate && what ? "true" : "false");
+      var label = T(ui.isolate && what ? "studio.view.isolateOn" : "studio.view.isolate");
+      els.isoBtn.querySelector(".studio-iso-label").textContent = label;
+      els.isoBtn.setAttribute("title", what ? T("studio.view.isolateHelp", { what: what }) : label);
+    }
   }
 
   function renderHint() {
@@ -1101,14 +1357,32 @@
     opts = opts || {};
     if (ui.selected === id && !opts.force) return;
     ui.selected = id || null;
+    if (id) ui.point = null;
     // The panel stays on its step: picking something up in the room while
     // choosing finishes shouldn't throw the finishes away. The chip over the
     // stage (renderSelChip) leads to its settings.
+    applyIsolate();
     renderStage();
     renderBar();
+    renderViewbar();
     renderPanel();
     if (id) revealSelected();
     if (id && opts.announce !== false) announce(itemLabel(findItem(id)));
+  }
+
+  // Picking an electrical point: one or the other is picked, never both.
+  function selectPoint(id, opts) {
+    opts = opts || {};
+    if (ui.point === id && !opts.force) return;
+    ui.point = id || null;
+    if (id) ui.selected = null;
+    applyIsolate();
+    renderStage();
+    renderBar();
+    renderViewbar();
+    renderPanel();
+    if (id) revealSelected();
+    if (id && opts.announce !== false) announce(pointLabel(findPoint(id)));
   }
 
   // On a wide screen the panel scrolls on its own: the picked fixture's
@@ -1133,6 +1407,9 @@
       Array.prototype.forEach.call(els.planSvg.querySelectorAll(".plan-item"), function (g) {
         g.classList.toggle("is-hover", g.getAttribute("data-id") === ui.hover);
       });
+      Array.prototype.forEach.call(els.planSvg.querySelectorAll(".plan-point"), function (g) {
+        g.classList.toggle("is-hover", g.getAttribute("data-pid") === ui.hover);
+      });
     } else {
       room3d.setHighlight(ui.selected, "select", ui.hover);
     }
@@ -1143,6 +1420,7 @@
     if (!item) return;
     var c = centerOf(item);
     ui.drag = {
+      kind: "item",
       id: id,
       pointerId: e.pointerId,
       startX: e.clientX,
@@ -1155,6 +1433,41 @@
       preview: null,
       issues: null,
     };
+  }
+
+  // An electrical point is dragged along the wall it's on, or onto
+  // another wall, at whatever height the pointer is at.
+  function beginPointDrag(id, e) {
+    var point = findPoint(id);
+    if (!point || point.kind === "fan") return;
+    ui.drag = {
+      kind: "point",
+      id: id,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      snap: null,
+      preview: null,
+      issues: null,
+    };
+  }
+
+  function dragPointTo(x, y, z) {
+    var drag = ui.drag;
+    var snapped = Plan.snapElectrical(design, drag.id, x, y, z, sizes);
+    if (!snapped) return;
+    drag.snap = snapped;
+    drag.preview = Plan.moveElectrical(design, drag.id, {
+      wall: snapped.wall,
+      offset: snapped.offset,
+      height: snapped.height,
+    });
+    drag.issues = checkAll(drag.preview);
+    if (has3d && ui.view !== "plan") {
+      room3d.previewElectrical(drag.id, Plan.electricalPose(drag.preview, findPoint(drag.id, drag.preview), sizes));
+    }
+    renderStage(drag.preview, drag.issues);
   }
 
   // The fixture follows the pointer to the room point (x, z): onto the
@@ -1178,6 +1491,10 @@
       if (drag.moved) refresh();
       return;
     }
+    if (drag.kind === "point") {
+      endPointDrag(drag);
+      return;
+    }
     var item = findItem(drag.id);
     if (drag.snap.valid) {
       var moved = findItem(drag.id, drag.preview);
@@ -1195,6 +1512,30 @@
     }
   }
 
+  function endPointDrag(drag) {
+    var point = findPoint(drag.id);
+    var moved = findPoint(drag.id, drag.preview);
+    if (!drag.snap.valid) {
+      var why = Plan.errorsOf(drag.issues, drag.id)[0];
+      refresh();
+      toast(
+        why
+          ? T("studio.dropRefused", { reason: pointIssueText(point, why, drag.preview) })
+          : T("studio.dropRefusedPlain"),
+      );
+      return;
+    }
+    var same =
+      moved.wall === point.wall &&
+      Math.abs(moved.offset - point.offset) < 1e-6 &&
+      Math.abs(moved.height - point.height) < 1e-6;
+    if (same) {
+      refresh();
+      return;
+    }
+    commit(drag.preview, { announce: pointLabel(moved, drag.preview) });
+  }
+
   function wire3d() {
     var wrap = els.canvasWrap;
     // Captured before OrbitControls sees it: a press on a fixture picks it
@@ -1203,16 +1544,24 @@
       "pointerdown",
       function (e) {
         if (!has3d || e.button !== 0) return;
-        var hit = room3d.pickItem(e.clientX, e.clientY);
-        if (!hit) {
+        // An outlet or switch sits on the wall in front of a fixture, so
+        // it gets the press first.
+        var spark = room3d.pickElectrical(e.clientX, e.clientY);
+        var hit = spark ? null : room3d.pickItem(e.clientX, e.clientY);
+        if (!spark && !hit) {
           ui.pressEmpty = { x: e.clientX, y: e.clientY };
           return;
         }
         ui.pressEmpty = null;
         e.stopPropagation();
         e.preventDefault();
-        select(hit.itemId);
-        beginDrag(hit.itemId, e, hit.point);
+        if (spark) {
+          selectPoint(spark.id);
+          beginPointDrag(spark.id, e);
+        } else {
+          select(hit.itemId);
+          beginDrag(hit.itemId, e, hit.point);
+        }
         var canvas = wrap.querySelector("canvas");
         if (canvas) canvas.setPointerCapture(e.pointerId);
         wrap.classList.add("is-dragging");
@@ -1223,15 +1572,21 @@
       var drag = ui.drag;
       if (!drag) {
         if (e.pointerType === "mouse" && !e.buttons) {
-          var hit = room3d.pickItem(e.clientX, e.clientY);
-          hover(hit ? hit.itemId : null);
-          wrap.classList.toggle("can-drag", !!hit);
+          var spark = room3d.pickElectrical(e.clientX, e.clientY);
+          var hit = spark ? null : room3d.pickItem(e.clientX, e.clientY);
+          hover(spark ? spark.id : hit ? hit.itemId : null);
+          wrap.classList.toggle("can-drag", !!(spark || hit));
         }
         return;
       }
       if (e.pointerId !== drag.pointerId) return;
       if (!drag.moved && Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) < 5) return;
       drag.moved = true;
+      if (drag.kind === "point") {
+        var on = room3d.wallHit(e.clientX, e.clientY);
+        if (on) dragPointTo(on.x, on.y, on.z);
+        return;
+      }
       var p = room3d.floorPoint(e.clientX, e.clientY, drag.planeY);
       if (p) dragTo(p.x, p.z);
     });
@@ -1244,7 +1599,10 @@
       // A click on empty floor (not a turn of the room) lets go.
       var press = ui.pressEmpty;
       ui.pressEmpty = null;
-      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 5 && ui.selected) select(null);
+      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 5) {
+        if (ui.selected) select(null);
+        if (ui.point) selectPoint(null);
+      }
     };
     wrap.addEventListener("pointerup", up);
     wrap.addEventListener("pointercancel", up);
@@ -1269,26 +1627,32 @@
     var svg = els.planSvg;
     svg.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
-      var g = e.target.closest && e.target.closest(".plan-item");
-      if (!g) {
+      var spark = e.target.closest && e.target.closest(".plan-point[tabindex]");
+      var g = spark ? null : e.target.closest && e.target.closest(".plan-item");
+      if (!spark && !g) {
         ui.pressEmpty = { x: e.clientX, y: e.clientY };
         return;
       }
       e.preventDefault();
-      var id = g.getAttribute("data-id");
-      select(id);
+      var id = spark ? spark.getAttribute("data-pid") : g.getAttribute("data-id");
       var p = planPoint(e);
-      beginDrag(id, e, p ? { x: p.x, z: p.z } : null);
+      if (spark) {
+        selectPoint(id);
+        beginPointDrag(id, e);
+      } else {
+        select(id);
+        beginDrag(id, e, p ? { x: p.x, z: p.z } : null);
+      }
       svg.setPointerCapture(e.pointerId);
-      g = svg.querySelector('.plan-item[data-id="' + id + '"]');
-      if (g) g.focus({ preventScroll: true });
+      planFocus(id);
     });
     svg.addEventListener("pointermove", function (e) {
       var drag = ui.drag;
       if (!drag) {
         if (e.pointerType === "mouse") {
-          var g = e.target.closest && e.target.closest(".plan-item");
-          hover(g ? g.getAttribute("data-id") : null);
+          var spark = e.target.closest && e.target.closest(".plan-point[tabindex]");
+          var g = spark ? null : e.target.closest && e.target.closest(".plan-item");
+          hover(spark ? spark.getAttribute("data-pid") : g ? g.getAttribute("data-id") : null);
         }
         return;
       }
@@ -1296,45 +1660,66 @@
       if (!drag.moved && Math.abs(e.clientX - drag.startX) + Math.abs(e.clientY - drag.startY) < 4) return;
       drag.moved = true;
       var p = planPoint(e);
-      if (p) dragTo(p.x, p.z);
+      if (!p) return;
+      // The plan has no heights, so a point keeps the one it's at.
+      if (drag.kind === "point") {
+        var at = findPoint(drag.id);
+        dragPointTo(p.x, at ? at.height : 3.5, p.z);
+        return;
+      }
+      dragTo(p.x, p.z);
     });
     var up = function (e) {
       if (ui.drag && e.pointerId === ui.drag.pointerId) {
         endDrag(e.type === "pointercancel");
-        var g = ui.selected && svg.querySelector('.plan-item[data-id="' + ui.selected + '"]');
-        if (g) g.focus({ preventScroll: true });
+        planFocus(ui.point || ui.selected);
         return;
       }
       var press = ui.pressEmpty;
       ui.pressEmpty = null;
-      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 5 && ui.selected) select(null);
+      if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 5) {
+        if (ui.selected) select(null);
+        if (ui.point) selectPoint(null);
+      }
     };
     svg.addEventListener("pointerup", up);
     svg.addEventListener("pointercancel", up);
     svg.addEventListener("keydown", function (e) {
-      var g = e.target.closest && e.target.closest(".plan-item");
-      if (!g) return;
-      var id = g.getAttribute("data-id");
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        select(id, { force: true });
-        var again = svg.querySelector('.plan-item[data-id="' + id + '"]');
-        if (again) again.focus({ preventScroll: true });
-      }
+      var spark = e.target.closest && e.target.closest(".plan-point[tabindex]");
+      var g = spark ? null : e.target.closest && e.target.closest(".plan-item");
+      if (!spark && !g) return;
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      if (spark) selectPoint(spark.getAttribute("data-pid"), { force: true });
+      else select(g.getAttribute("data-id"), { force: true });
+      planFocus(ui.point || ui.selected);
     });
     svg.addEventListener("focusin", function (e) {
-      var g = e.target.closest && e.target.closest(".plan-item");
-      if (g && g.getAttribute("data-id") !== ui.selected && !ui.drag) {
+      if (ui.drag) return;
+      var spark = e.target.closest && e.target.closest(".plan-point[tabindex]");
+      var g = spark ? null : e.target.closest && e.target.closest(".plan-item");
+      if (spark && spark.getAttribute("data-pid") !== ui.point) {
+        selectPoint(spark.getAttribute("data-pid"));
+        planFocus(ui.point);
+      } else if (g && g.getAttribute("data-id") !== ui.selected) {
         select(g.getAttribute("data-id"));
-        var again = svg.querySelector('.plan-item[data-id="' + ui.selected + '"]');
-        if (again) again.focus({ preventScroll: true });
+        planFocus(ui.selected);
       }
     });
   }
 
+  // Focus whatever is picked on the plan again after a redraw.
+  function planFocus(id) {
+    if (!id) return;
+    var g = els.planSvg.querySelector('[data-id="' + id + '"], [data-pid="' + id + '"]');
+    if (g && g.getAttribute("tabindex") !== null) g.focus({ preventScroll: true });
+  }
+
   // Arrow keys move the selected fixture along its wall, the way the arrow
-  // points on screen (1 in., or 6 in. with Shift); Delete removes it;
-  // Escape lets go. Ctrl/Cmd+Z undoes, Ctrl/Cmd+Shift+Z or Ctrl+Y redoes.
+  // points on screen (1 in., or 6 in. with Shift); for an electrical point
+  // left and right run along the wall and up and down change its height.
+  // Delete removes what's picked; Escape lets go. Ctrl/Cmd+Z undoes,
+  // Ctrl/Cmd+Shift+Z or Ctrl+Y redoes.
   function onKey(e) {
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     var mod = e.ctrlKey || e.metaKey;
@@ -1349,10 +1734,14 @@
       redo();
       return;
     }
-    if (typing || mod || !ui.selected) return;
+    if (typing || mod || (!ui.selected && !ui.point)) return;
     var inStudio = els.studio.contains(e.target) || e.target === document.body;
     if (!inStudio) return;
     var dirs = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (ui.point) {
+      onPointKey(e, dirs);
+      return;
+    }
     if (dirs[e.key] && !/^(BUTTON|A)$/.test(e.target.tagName)) {
       e.preventDefault();
       var item = findItem(ui.selected);
@@ -1370,6 +1759,48 @@
     if (e.key === "Escape" && !ui.drag) select(null);
   }
 
+  function onPointKey(e, dirs) {
+    var point = findPoint(ui.point);
+    if (!point) return;
+    var step = (e.shiftKey ? 6 : 1) * IN;
+    if (dirs[e.key] && !/^(BUTTON|A)$/.test(e.target.tagName)) {
+      e.preventDefault();
+      if (point.kind === "fan") return;
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        nudgePoint(point, 0, (e.key === "ArrowUp" ? 1 : -1) * step);
+        return;
+      }
+      var wall = wallOf(point.wall);
+      var along = dirs[e.key][0] * wall.dx + dirs[e.key][1] * wall.dz;
+      if (along) nudgePoint(point, along * step, 0);
+      return;
+    }
+    if ((e.key === "Delete" || e.key === "Backspace") && !/^(BUTTON|A)$/.test(e.target.tagName)) {
+      e.preventDefault();
+      removePoint(point.id);
+      return;
+    }
+    if (e.key === "Escape" && !ui.drag) selectPoint(null);
+  }
+
+  function nudgePoint(point, along, up) {
+    var change = {};
+    if (along) {
+      var span = Plan.wallSpan(design.room, point.wall);
+      var half = Plan.ELECTRICAL_KINDS[point.kind].plate.w / 2;
+      change.offset = clamp(point.offset + along, half, span - half);
+    }
+    if (up) {
+      var kind = Plan.ELECTRICAL_KINDS[point.kind];
+      change.height = clamp(point.height + up, Math.max(kind.minHeight, 0.3), design.room.h - 0.4);
+    }
+    var d = Plan.moveElectrical(design, point.id, change);
+    var moved = findPoint(point.id, d);
+    if (Math.abs(moved.offset - point.offset) < 1e-6 && Math.abs(moved.height - point.height) < 1e-6) return;
+    commit(d, { merge: "nudgePoint:" + point.id, announce: pointLabel(moved, d) });
+    keepFocus();
+  }
+
   function nudge(item, delta) {
     var span = Plan.wallSpan(design.room, item.wall);
     var half = Plan.sizeOf(item, sizes).span / 2;
@@ -1380,17 +1811,28 @@
     keepFocus();
   }
 
-  // After a redraw, focus goes back to the selected fixture on the plan.
+  // After a redraw, focus goes back to whatever is picked on the plan.
   function keepFocus() {
     if (ui.view !== "plan" && has3d) return;
-    var g = ui.selected && els.planSvg.querySelector('.plan-item[data-id="' + ui.selected + '"]');
-    if (g) g.focus({ preventScroll: true });
+    planFocus(ui.point || ui.selected);
   }
 
   // ---------------------------------------------------------------------
   // The bar: steps, undo, link, start over, the estimate total
   // ---------------------------------------------------------------------
   function goTo(step) {
+    rileyLater();
+    return goToStep(step);
+  }
+
+  // After the step's panel is up, so her line matches what's on screen.
+  function rileyLater() {
+    setTimeout(function () {
+      rileyTalk({ step: true });
+    }, 0);
+  }
+
+  function goToStep(step) {
     if (STEPS.indexOf(step) === -1) return;
     ui.step = step;
     renderBar();
@@ -1522,9 +1964,14 @@
     els.requestHome.appendChild(els.request);
     clear(panel);
     var body = h("div", { class: "studio-step is-" + ui.step });
-    ({ room: roomStep, layout: layoutStep, products: productsStep, finishes: finishesStep, estimate: estimateStep })[
-      ui.step
-    ](body);
+    ({
+      room: roomStep,
+      layout: layoutStep,
+      electrical: electricalStep,
+      products: productsStep,
+      finishes: finishesStep,
+      estimate: estimateStep,
+    })[ui.step](body);
     body.appendChild(stepNav());
     panel.appendChild(body);
     panel.scrollTop = opts.top ? 0 : scroll;
@@ -1781,6 +2228,22 @@
       ]),
     );
 
+    var stack = Plan.stackWall(design);
+    var run = Plan.drainRun(design, sizes);
+    body.appendChild(
+      section(T("studio.room.plumbing"), [
+        h("p", { class: "studio-note", text: T("studio.room.plumbingHelp") }),
+        h("div", { class: "studio-field" }, [
+          h("span", { class: "studio-field-label", text: T("studio.room.plumbingWall") }),
+          wallChoice(stack, setStackWall, "stack", T("studio.room.plumbingWall")),
+        ]),
+        h("p", {
+          class: "studio-field-help",
+          text: run > 0 ? T("studio.room.plumbingRun", { run: len(run) }) : T("studio.room.plumbingNone"),
+        }),
+      ]),
+    );
+
     var doors = itemsOf("door");
     var doorKids = doors.map(function (door, i) {
       return h("div", { class: "studio-card" + (door.id === ui.selected ? " is-selected" : "") }, [
@@ -1861,6 +2324,16 @@
     commit(next);
     if (errorCount(issues) > before) {
       toast(T("studio.resizeBroke"), { label: T("studio.rearrange"), run: arrangeNow });
+    }
+  }
+
+  // The wall the stack is in: everything with a drain is measured from
+  // it, so moving it can leave a fixture out of reach.
+  function setStackWall(wallId) {
+    var before = errorCount(issues);
+    commit(Plan.setStack(design, wallId), { announce: T("studio.room.plumbingSet", { wall: letter(wallId) }) });
+    if (errorCount(issues) > before) {
+      toast(T("studio.room.plumbingBroke"), { label: T("studio.rearrange"), run: arrangeNow });
     }
   }
 
@@ -2220,9 +2693,11 @@
         run: undo,
       });
     } else {
+      // Riley offers what can be done about it (rearranging, when that
+      // makes room, or taking it back out), so this only offers Undo.
       toast(T("studio.addedNoRoom", { name: itemName(res.item, res.design) }), {
-        label: T("studio.rearrange"),
-        run: arrangeNow,
+        label: T("studio.undo"),
+        run: undo,
       });
     }
   }
@@ -2264,8 +2739,24 @@
       toast(T("studio.noSpot", { name: itemName(item) }), { label: T("studio.rearrange"), run: arrangeNow });
       return;
     }
-    var d = moveItem(design, item.id, spots[0].wall, spots[0].offset);
+    var d = rewire(moveItem(design, item.id, spots[0].wall, spots[0].offset));
     commit(d, { announce: itemLabel(findItem(item.id, d), d) });
+  }
+
+  // When the room is rearranged for the person: the wiring that went with
+  // a fixture that moved, or that no longer works where it is, is worked
+  // out again, and the rest stays as they left it.
+  function rewire(next) {
+    var list = Plan.validateElectrical(next, sizes);
+    var moved = {};
+    next.items.forEach(function (it) {
+      var was = findItem(it.id);
+      if (!was || was.wall !== it.wall || Math.abs(was.offset - it.offset) > 1e-6) moved[it.id] = true;
+    });
+    var keep = points(next).filter(function (p) {
+      return !(p.for && moved[p.for]) && !Plan.errorsOf(list, p.id).length;
+    });
+    return Plan.suggestElectrical(Object.assign({}, next, { electrical: keep }), sizes).design;
   }
 
   // "Arrange it for me": a few different layouts that fit, to pick from.
@@ -2287,7 +2778,7 @@
   function arrangeNow() {
     var best = Plan.arrange(design, sizes, { count: 1 })[0];
     if (!best) return;
-    commit(Object.assign({}, design, { items: best.items }), { announce: T("studio.arranged") });
+    commit(rewire(Object.assign({}, design, { items: best.items })), { announce: T("studio.arranged") });
     toast(T("studio.arranged"), { label: T("studio.undo"), run: undo });
   }
 
@@ -2327,7 +2818,7 @@
             "data-key": "arr-" + i,
             onclick: function () {
               ui.arrange = null;
-              commit(d, { announce: T("studio.arranged") });
+              commit(rewire(d), { announce: T("studio.arranged") });
               toast(T("studio.arranged"), { label: T("studio.undo"), run: undo });
             },
           },
@@ -2348,6 +2839,288 @@
       }),
     );
     return note ? h("div", {}, [h("p", { class: "studio-note", text: T(note) }), grid]) : grid;
+  }
+
+  // ---------- Step 3: the electrical ----------
+  // The points are suggested from the layout (js/room-plan.js
+  // suggestElectrical); this step is where the person confirms each one,
+  // slides it along its wall or up and down, and adds what they want.
+  function electricalStep(body) {
+    body.appendChild(stepHead("electrical"));
+
+    var list = points(design);
+    var full = list.length >= Plan.MAX_ELECTRICAL;
+    body.appendChild(
+      section(T("studio.elec.add"), [
+        h("p", { class: "studio-note", text: T("studio.elec.addHelp") }),
+        h(
+          "div",
+          { class: "studio-add-grid" },
+          ADDABLE_POINTS.map(function (kind) {
+            var only = kind === "fan" && pointsOf("fan").length > 0;
+            return h(
+              "button",
+              {
+                type: "button",
+                class: "studio-add",
+                "data-key": "addpoint-" + kind,
+                disabled: full || only ? true : null,
+                onclick: function () {
+                  addPoint(kind);
+                },
+              },
+              [
+                h("span", { class: "studio-add-icon is-point", text: POINT_MARK[kind] }),
+                h("span", { text: T("studio.elec." + kind) }),
+              ],
+            );
+          }),
+        ),
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-secondary studio-arrange-btn",
+            "data-key": "elec-suggest",
+            onclick: suggestPoints,
+          },
+          [h("span", { icon: "arrange" }), T("studio.elec.suggestBtn")],
+        ),
+        full ? h("p", { class: "studio-note", text: T("studio.elec.full", { n: Plan.MAX_ELECTRICAL }) }) : null,
+      ]),
+    );
+
+    // What the rules say is still missing.
+    var gaps = Plan.electricalGaps(design);
+    if (gaps.length) {
+      body.appendChild(
+        section(T("studio.elec.missing"), [
+          h(
+            "ul",
+            { class: "studio-issues" },
+            gaps.map(function (g) {
+              return h("li", { class: "is-warn" }, [
+                h("span", { class: "studio-issue-icon", icon: "info" }),
+                h("span", {
+                  class: "studio-issue-text",
+                  text: T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" }),
+                }),
+              ]);
+            }),
+          ),
+        ]),
+      );
+    }
+
+    var rows = h("ul", { class: "studio-items" });
+    list.forEach(function (point) {
+      var on = point.id === ui.point;
+      var tone = toneOf(point.id);
+      rows.appendChild(
+        h("li", { class: "studio-item" + (on ? " is-selected" : "") }, [
+          h(
+            "button",
+            {
+              type: "button",
+              class: "studio-item-btn",
+              "aria-expanded": on ? "true" : "false",
+              "data-key": "point-" + point.id,
+              onclick: function () {
+                selectPoint(on ? null : point.id);
+              },
+            },
+            [
+              h("span", { class: "studio-item-icon is-point", text: POINT_MARK[point.kind] }),
+              h("span", { class: "studio-item-text" }, [
+                h("strong", { text: pointName(point) }),
+                h("small", { text: pointFor(point) || pointWhere(point) }),
+              ]),
+              h("span", {
+                class: "studio-item-status is-" + tone,
+                icon: tone === "ok" ? "check" : "alert",
+                title: T("studio.tone." + tone),
+              }),
+              h("span", { class: "visually-hidden", text: T("studio.tone." + tone) }),
+            ],
+          ),
+          on ? pointInspector(point) : null,
+        ]),
+      );
+    });
+    body.appendChild(
+      section(T("studio.elec.inRoom"), [
+        list.length ? rows : h("p", { class: "studio-note", text: T("studio.elec.empty") }),
+      ]),
+    );
+    body.appendChild(h("p", { class: "studio-note", text: T("studio.elec.disclaimer") }));
+  }
+
+  // "Wall A at 3′ 2″, 3′ 6″ up", or where the fan hangs.
+  function pointWhere(point) {
+    if (point.kind === "fan") return T("studio.elec.inCeiling");
+    return T("studio.pointWhere", { wall: letter(point.wall), at: len(point.offset), up: len(point.height) });
+  }
+
+  // One electrical point: which wall, where along it, how high, and what
+  // the rules say about it there.
+  function pointInspector(point) {
+    var wrap = h("div", { class: "studio-inspector" });
+    var k = "pt-" + point.id;
+    var kind = Plan.ELECTRICAL_KINDS[point.kind];
+    if (point.kind === "fan") {
+      wrap.appendChild(h("p", { class: "studio-note", text: T("studio.elec.fanFixed") }));
+    } else {
+      var span = Plan.wallSpan(design.room, point.wall);
+      var half = kind.plate.w / 2;
+      wrap.appendChild(
+        h("div", { class: "studio-field" }, [
+          h("span", { class: "studio-field-label", text: T("studio.wall") }),
+          wallChoice(
+            point.wall,
+            function (wid) {
+              movePointToWall(point, wid);
+            },
+            k + "-wall",
+            T("studio.wallFor", { what: pointName(point) }),
+          ),
+        ]),
+      );
+      wrap.appendChild(
+        pointSlider(point, k + "-pos", T("studio.position"), half, span - half, point.offset, function (v) {
+          return { offset: v };
+        }),
+      );
+      wrap.appendChild(
+        pointSlider(
+          point,
+          k + "-height",
+          T("studio.elec.height"),
+          Math.max(kind.minHeight, 0.3),
+          design.room.h - 0.4,
+          point.height,
+          function (v) {
+            return { height: v };
+          },
+        ),
+      );
+    }
+
+    var mine = issues[point.id] || [];
+    if (mine.length) {
+      wrap.appendChild(
+        h(
+          "ul",
+          { class: "studio-issues is-compact" },
+          mine.map(function (x) {
+            return h("li", { class: "is-" + x.level }, [
+              h("span", { class: "studio-issue-icon", icon: x.level === "error" ? "alert" : "info" }),
+              h("span", { class: "studio-issue-text", text: pointIssueText(point, x) }),
+            ]);
+          }),
+        ),
+      );
+    } else {
+      wrap.appendChild(h("p", { class: "studio-note", text: T("studio.elec.fine") }));
+    }
+
+    wrap.appendChild(
+      h("div", { class: "studio-inspector-actions" }, [
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-secondary btn-sm is-danger",
+            "data-key": k + "-remove",
+            onclick: function () {
+              removePoint(point.id);
+            },
+          },
+          [h("span", { icon: "trash" }), T("studio.remove")],
+        ),
+      ]),
+    );
+    return wrap;
+  }
+
+  // A slider for one number on a point (along the wall, or up it).
+  function pointSlider(point, key, label, min, max, value, change) {
+    var id = "studio-" + key;
+    var readout = h("output", { class: "studio-readout", for: id });
+    readout.textContent = len(value);
+    var slider = h("input", {
+      type: "range",
+      id: id,
+      min: num(min, 4),
+      max: num(max, 4),
+      step: num(IN, 6),
+      value: num(value, 4),
+      "data-key": key,
+      "aria-label": label + " — " + pointName(point),
+      disabled: max - min < 1e-6 ? true : null,
+    });
+    slider.setAttribute("aria-valuetext", readout.textContent);
+    slider.addEventListener("input", function () {
+      var v = Number(slider.value);
+      readout.textContent = len(v);
+      slider.setAttribute("aria-valuetext", readout.textContent);
+      commit(Plan.moveElectrical(design, point.id, change(v)), { merge: "slide:" + point.id, quiet: true });
+    });
+    slider.addEventListener("change", function () {
+      refresh();
+    });
+    return h("div", { class: "studio-field" }, [
+      h("label", { class: "studio-field-label", for: id, text: label }),
+      h("div", { class: "studio-slide" }, [slider]),
+      readout,
+    ]);
+  }
+
+  function addPoint(kind) {
+    var res = Plan.addElectrical(design, kind, sizes);
+    if (!res || !res.point) return;
+    ui.point = res.point.id;
+    ui.selected = null;
+    if (ui.step !== "electrical") ui.step = "electrical";
+    commit(res.design, { announce: pointLabel(res.point, res.design) });
+    toast(T("studio.elec.added", { name: pointName(res.point, res.design) }), {
+      label: T("studio.undo"),
+      run: undo,
+    });
+  }
+
+  function removePoint(id) {
+    var point = findPoint(id);
+    if (!point) return;
+    var name = pointName(point);
+    ui.point = null;
+    commit(Plan.removeElectrical(design, id), { announce: T("studio.removed", { name: name }) });
+    toast(T("studio.removed", { name: name }), { label: T("studio.undo"), run: undo });
+  }
+
+  // Onto another wall, at the nearest spot there that the rules allow.
+  function movePointToWall(point, wallId) {
+    var d = Plan.moveElectrical(design, point.id, { wall: wallId });
+    var span = Plan.wallSpan(design.room, wallId);
+    var kind = Plan.ELECTRICAL_KINDS[point.kind];
+    var half = kind.plate.w / 2;
+    var want = clamp(point.offset, half, span - half);
+    d = Plan.moveElectrical(d, point.id, { offset: want });
+    var at = wallPoint(wallOf(wallId, d), want, 0);
+    var snapped = Plan.snapElectrical(d, point.id, at.x, point.height, at.z, sizes);
+    if (snapped) d = Plan.moveElectrical(d, point.id, { offset: snapped.offset, height: snapped.height });
+    commit(d, { announce: pointLabel(findPoint(point.id, d), d) });
+  }
+
+  // Fills in whatever the rules ask for that isn't there, leaving every
+  // point the person has already moved where it is.
+  function suggestPoints() {
+    var res = Plan.suggestElectrical(design, sizes);
+    if (!res.added.length) {
+      toast(T("studio.elec.nothingToAdd"));
+      return;
+    }
+    commit(res.design, { announce: T("studio.elec.suggested", { n: res.added.length }) });
+    toast(T("studio.elec.suggested", { n: res.added.length }), { label: T("studio.undo"), run: undo });
   }
 
   // ---------- Step 3: products ----------
@@ -2448,10 +3221,15 @@
 
   var focusedGroup = null;
 
+  // Looking at one kind of product: the room shows just those, so a
+  // toilet being chosen isn't hidden behind the vanity in front of it.
   function focusGroup(groupId) {
     if (!has3d || ui.view === "plan" || focusedGroup === groupId) return;
     focusedGroup = groupId;
     room3d.focusProductGroup(groupId);
+    ui.isolate = true;
+    applyIsolate();
+    renderViewbar();
   }
 
   // ---------- Step 4: finishes ----------
@@ -2634,6 +3412,8 @@
         Bathroom_Height_Ft: num(d.room.h, 3),
         Wall_Openings_SqFt: areas.openingsSqFt,
         Wet_Wall_SqFt: areas.wetSqFt,
+        Electrical_Points: Plan.electricalPoints(d),
+        Drain_Run_Ft: Plan.drainRun(d, sizes),
       },
       Plan.counts(d),
     );
@@ -2813,6 +3593,26 @@
         T("studio.sum.item", { name: itemName(it, d), wall: letter(it.wall), at: len(it.offset) }) + itemExtras(it),
       );
     });
+    out.push(T("studio.sum.stack", { wall: letter(Plan.stackWall(d)) }));
+    var run = Plan.drainRun(d, sizes);
+    if (run > 0) out.push(T("studio.sum.drainRun", { run: len(run) }));
+    var pts = points(d);
+    if (pts.length) {
+      out.push(
+        T("studio.sum.electrical", {
+          list: pts
+            .map(function (point) {
+              return (
+                pointName(point, d) +
+                " (" +
+                (point.kind === "fan" ? T("studio.elec.inCeiling") : letter(point.wall) + " " + len(point.offset)) +
+                ")"
+              );
+            })
+            .join("; "),
+        }),
+      );
+    }
     out.push(T("studio.sum.work", { scope: Pricing.describeScope(est.inputs.scope) }));
     est.materials.forEach(function (m) {
       out.push(m.label + ": " + m.product.name);
@@ -2870,10 +3670,7 @@
             "data-key": "fix",
             text: T("studio.est.fix"),
             onclick: function () {
-              var it = firstTrouble();
-              ui.step = it && it.type === "door" ? "room" : "layout";
-              select(it ? it.id : null, { force: true });
-              renderBar();
+              showTrouble(firstTrouble());
             },
           }),
         ]),
@@ -3213,6 +4010,30 @@
       shapes.arcs.push({ x: sw.x, z: sw.z, r: sw.r, ax: sw.ax, az: sw.az, bx: sw.bx, bz: sw.bz });
       shapes.lines.push({ x0: sw.x, z0: sw.z, x1: sw.x + sw.bx * sw.r, z1: sw.z + sw.bz * sw.r });
     });
+    // The plumbing wall, and a mark where each electrical point goes. The
+    // design list beside the plan names them.
+    var stack = wallOf(Plan.stackWall(d), d);
+    var s0 = wallPoint(stack, 0, 0);
+    var s1 = wallPoint(stack, stack.span, STACK_BAND);
+    shapes.rects.push({
+      x0: Math.min(s0.x, s1.x),
+      x1: Math.max(s0.x, s1.x) + (Math.abs(s1.x - s0.x) < 1e-6 ? STACK_BAND : 0),
+      z0: Math.min(s0.z, s1.z),
+      z1: Math.max(s0.z, s1.z) + (Math.abs(s1.z - s0.z) < 1e-6 ? STACK_BAND : 0),
+      fill: [219, 234, 254],
+      stroke: [37, 99, 235],
+    });
+    points(d).forEach(function (point) {
+      var pose = Plan.electricalPose(d, point, sizes);
+      shapes.rects.push({
+        x0: pose.x - 0.16,
+        x1: pose.x + 0.16,
+        z0: pose.z - 0.16,
+        z1: pose.z + 0.16,
+        fill: [255, 255, 255],
+        stroke: [30, 41, 70],
+      });
+    });
     shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w) });
     shapes.texts.push({ x: -(WALL_T + 1.5), z: room.l / 2, text: len(room.l), vertical: true });
     return shapes;
@@ -3311,26 +4132,144 @@
   }
 
   // ---------------------------------------------------------------------
+  // Riley, the guide
+  // ---------------------------------------------------------------------
+  // js/riley.js is her bubble and her voice; what she says is decided
+  // here, because this is what knows the design. She leads with a problem
+  // when there is one, and offers to put it right; otherwise she says what
+  // the step is for. The same line twice in a row isn't repeated.
+  var rileyFix = null; // what her "yes please" button would do now
+
+  function rileyStart() {
+    if (!window.Riley || !els.riley) return;
+    window.Riley.init(els.riley, function (id) {
+      if (id === "fix" && rileyFix) rileyFix.run();
+      else if (id === "show") showTrouble(firstTrouble());
+    });
+    rileyTalk({ greet: true });
+  }
+
+  function rileyTalk(opts) {
+    if (!window.Riley || !els.riley) return;
+    opts = opts || {};
+    var trouble = firstTrouble();
+    var worst = trouble ? (issues[trouble.id] || []).filter(isError)[0] : null;
+    rileyFix = null;
+    if (trouble && worst) {
+      rileyFix = rileyFixFor(trouble, worst);
+      window.Riley.say({
+        tone: "error",
+        text:
+          T("riley.problem", { what: rileyName(trouble), why: rileyWhy(trouble, worst) }) +
+          (rileyFix ? " " + T(rileyFix.offer) : ""),
+        actions: rileyFix
+          ? [
+              { id: "fix", label: T("riley.yes") },
+              { id: "show", label: T("riley.showMe") },
+            ]
+          : [{ id: "show", label: T("riley.showMe") }],
+      });
+      return;
+    }
+    // Arriving on a step, she says what the step is for; a warning alone
+    // doesn't interrupt that.
+    var tight = trouble && (issues[trouble.id] || []).length ? trouble : null;
+    if (tight && !opts.greet && !opts.step) {
+      window.Riley.say({
+        tone: "warn",
+        text: T("riley.tight", { what: rileyName(tight), why: rileyWhy(tight, issues[tight.id][0]) }),
+        actions: [{ id: "show", label: T("riley.showMe") }],
+      });
+      return;
+    }
+    window.Riley.say({
+      tone: "ok",
+      text: (opts.greet ? T("riley.greeting") + " " : "") + T("riley.step." + ui.step),
+    });
+  }
+
+  function isError(x) {
+    return x.level === "error";
+  }
+
+  // Her name for it mid-sentence: "the shower", or a point by its name.
+  function rileyName(thing) {
+    return thing.type ? theName(thing.id) : anyName(thing.id);
+  }
+
+  // The problem in her words: the same sentence the step shows, without
+  // the fixture's name in front of it.
+  function rileyWhy(thing, x) {
+    return thing.type ? issueText(thing, x) : pointIssueText(thing, x);
+  }
+
+  // What she can do about it: the line that offers it, and the thing it
+  // does. Null when she has nothing to offer.
+  function rileyFixFor(thing, x) {
+    if (!thing.type) {
+      return {
+        offer: "riley.offer",
+        run: function () {
+          var d = Plan.removeElectrical(design, thing.id);
+          var res = Plan.suggestElectrical(d, sizes);
+          ui.point = null;
+          commit(res.design, { announce: T("studio.elec.suggested", { n: res.added.length }) });
+        },
+      };
+    }
+    // Somewhere else for it: away from the plumbing, back onto a wall a
+    // drain can reach; otherwise its best free spot.
+    var spots =
+      x.code === "noStack" || x.code === "offStack" ? [1] : Plan.findSpots(design, thing, sizes, { step: 2 * IN });
+    if (spots.length) {
+      return {
+        offer: "riley.offer",
+        run: function () {
+          bestSpot(findItem(thing.id));
+        },
+      };
+    }
+    // Nowhere for it as the room stands: rearranging everything may make
+    // space, and offering that is only honest if it actually does.
+    var best = Plan.arrange(design, sizes, { count: 1 })[0];
+    if (best) {
+      var trial = Object.assign({}, design, { items: best.items });
+      if (!Plan.errorsOf(Plan.validate(trial, sizes), thing.id).length)
+        return { offer: "riley.offer", run: arrangeNow };
+    }
+    // No arrangement of this room fits it, so the alternative is to take
+    // it back out, which the toast can undo.
+    return {
+      offer: "riley.offerOut",
+      run: function () {
+        removeItem(thing.id);
+      },
+    };
+  }
+
+  // ---------------------------------------------------------------------
   // The selected fixture, over the stage (when the panel shows another step)
   // ---------------------------------------------------------------------
   function renderSelChip() {
     var chip = els.selChip;
     var item = ui.selected && findItem(ui.selected);
-    var editing = item && (item.type === "door" ? ui.step === "room" : ui.step === "layout");
-    if (!item || editing) {
+    var point = !item && ui.point ? findPoint(ui.point) : null;
+    var step = item ? (item.type === "door" ? "room" : "layout") : "electrical";
+    if ((!item && !point) || ui.step === step) {
       chip.hidden = true;
       return;
     }
     clear(chip);
-    chip.appendChild(h("span", { class: "studio-selchip-icon", icon: item.type }));
-    chip.appendChild(h("span", { class: "studio-selchip-name", text: itemName(item) }));
+    if (item) chip.appendChild(h("span", { class: "studio-selchip-icon", icon: item.type }));
+    else chip.appendChild(h("span", { class: "studio-selchip-icon is-point", text: POINT_MARK[point.kind] }));
+    chip.appendChild(h("span", { class: "studio-selchip-name", text: item ? itemName(item) : pointName(point) }));
     chip.appendChild(
       h("button", {
         type: "button",
         class: "studio-link-btn",
         text: T("studio.edit"),
         onclick: function () {
-          goTo(item.type === "door" ? "room" : "layout");
+          goTo(step);
         },
       }),
     );
@@ -3341,7 +4280,8 @@
         "aria-label": T("studio.deselect"),
         icon: "close",
         onclick: function () {
-          select(null);
+          if (item) select(null);
+          else selectPoint(null);
         },
       }),
     );
@@ -3424,6 +4364,17 @@
         );
       }),
     );
+    els.isoBtn = h(
+      "button",
+      {
+        type: "button",
+        class: "studio-view-btn studio-iso-btn",
+        onclick: function () {
+          setIsolate(!ui.isolate);
+        },
+      },
+      [h("span", { icon: "isolate" }), h("span", { class: "studio-iso-label" })],
+    );
     els.frameBtn = h(
       "button",
       {
@@ -3434,6 +4385,9 @@
         onclick: function () {
           if (has3d) room3d.resetView();
           focusedGroup = null;
+          ui.isolate = false;
+          applyIsolate();
+          renderViewbar();
           if (ui.view === "walk") {
             ui.view = "3d";
             renderViewbar();
@@ -3447,14 +4401,11 @@
       type: "button",
       class: "studio-status",
       onclick: function () {
-        var it = firstTrouble();
-        if (!it) return;
-        ui.step = it.type === "door" ? "room" : "layout";
-        renderBar();
-        select(it.id, { force: true });
+        showTrouble(firstTrouble());
       },
     });
     viewbar.appendChild(views);
+    viewbar.appendChild(els.isoBtn);
     viewbar.appendChild(els.frameBtn);
     viewbar.appendChild(els.status);
   }
@@ -3486,7 +4437,7 @@
   // Whether the design still works with these fixture sizes (a product
   // that's bigger than the one picked now): no more problems than it has.
   function fitsWith(nextSizes) {
-    return errorCount(Plan.validate(design, nextSizes)) <= errorCount(issues);
+    return errorCount(checkAll(design, nextSizes)) <= errorCount(issues);
   }
 
   function init() {
@@ -3504,6 +4455,7 @@
     els.toast = document.getElementById("studio-toast");
     els.live = document.getElementById("studio-live");
     els.selChip = document.getElementById("studio-selchip");
+    els.riley = document.getElementById("studio-riley");
     els.request = document.getElementById("studio-request");
     els.requestHome = els.request.parentNode;
     els.linkDialog = document.getElementById("studio-link-dialog");
@@ -3596,7 +4548,8 @@
 
     renderViewbar();
     renderHint();
-    refresh();
+    refreshNow();
+    rileyStart();
     fitStage();
     window.addEventListener("resize", fitStage);
     // The demo note above the studio appears once the page has loaded.
@@ -3612,6 +4565,13 @@
       renderPanel();
     });
   }
+
+  // For the end-to-end tests: the design as it stands.
+  window.RoomStudio = {
+    design: function () {
+      return design;
+    },
+  };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

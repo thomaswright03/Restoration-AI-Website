@@ -3,8 +3,10 @@
 // The single source of truth for bathroom labor prices AND for the
 // calculation itself. The design studio's estimate (js/studio.js) calls
 // computeEstimate() below, with the business's own prices (js/business.js).
-// includeTrade: true adds plumbing, electrical and surcharge lines for a
-// contractor's own quote; the public estimate never prices that work.
+// includeTrade: true adds the per-fixture plumbing points and the
+// surcharges for a contractor's own quote. The estimate people see prices
+// the wiring and any drain line the layout needs, because the design
+// studio knows exactly how many points and how many feet those are.
 //
 // Only the work that is explicitly chosen is priced: nothing is assumed
 // from the room's dimensions alone. The line items are exactly the charges
@@ -74,6 +76,9 @@
     Bad_Valve_Surcharge_Price: 400,
 
     Electrical_Price_Per_Point: 100,
+    // Running a new drain line to a fixture away from the stack wall:
+    // opening the floor, the pipe, the fall and patching after.
+    Drain_Run_Price_Per_Ft: 95,
 
     // Labor on real property may not be taxable. Defaults to 0% so no tax
     // is added unless a tax adviser has confirmed it applies and the rate
@@ -104,17 +109,17 @@
     Bad_Valve_Surcharge_Price: "Surcharge: bad valve needs replacing (flat)",
 
     Electrical_Price_Per_Point: "Electrical (per point: lamp, outlet, fan, switch, electric toilet)",
+    Drain_Run_Price_Per_Ft: "Moving plumbing (per foot of new drain line to the stack)",
 
     Labor_Tax_Rate_Percent: "Tax rate on labor (%) — leave at 0 unless a tax adviser confirms tax applies",
   };
 
-  // Prices the public website shows (the estimate, page text). Plumbing,
-  // electrical and tax are never published.
+  // Prices only the contractor's own quote shows: the per-fixture plumbing
+  // points, the surcharges and tax.
   var UNPUBLISHED_PRICE_KEYS = [
     "Plumbing_Price_Per_Point",
     "No_Stack_Surcharge_Price",
     "Bad_Valve_Surcharge_Price",
-    "Electrical_Price_Per_Point",
     "Labor_Tax_Rate_Percent",
   ];
 
@@ -192,6 +197,7 @@
 
   var MAX_FIXTURE_COUNT = 20;
   var MAX_ELECTRICAL_POINTS = 50;
+  var MAX_DRAIN_RUN_FT = 200;
 
   function roundCents(n) {
     return Math.round((Number(n) || 0) * 100) / 100;
@@ -305,11 +311,9 @@
 
   // Field-level validation of a job's answers and numbers.
   // Returns { valid, errors: { fieldKey: message } }.
-  // options.includeTrade also checks the admin-only electrical points.
-  function validateJob(values, scope, options) {
+  function validateJob(values, scope) {
     values = values || {};
     scope = scope || {};
-    options = options || {};
     var errors = {};
 
     SCOPE_QUESTIONS.forEach(function (q) {
@@ -340,14 +344,12 @@
       }
     });
 
-    if (options.includeTrade) {
-      var points = parseNumber(values.Electrical_Points);
-      if (
-        points !== null &&
-        (isNaN(points) || points < 0 || points > MAX_ELECTRICAL_POINTS || Math.floor(points) !== points)
-      ) {
-        errors.Electrical_Points = T("error.wholeNumber", { max: MAX_ELECTRICAL_POINTS });
-      }
+    var points = parseNumber(values.Electrical_Points);
+    if (
+      points !== null &&
+      (isNaN(points) || points < 0 || points > MAX_ELECTRICAL_POINTS || Math.floor(points) !== points)
+    ) {
+      errors.Electrical_Points = T("error.wholeNumber", { max: MAX_ELECTRICAL_POINTS });
     }
 
     return { valid: Object.keys(errors).length === 0, errors: errors };
@@ -357,7 +359,8 @@
   // fixture counts in `values`.
   //
   // values: { Bathroom_Width_Ft, Bathroom_Length_Ft, Bathroom_Height_Ft,
-  //           <fixture>_Quantity..., and with includeTrade: Electrical_Points,
+  //           <fixture>_Quantity..., Electrical_Points, Drain_Run_Ft,
+  //           and with includeTrade:
   //           No_Stack_Surcharge_Included, Bad_Valve_Surcharge_Included }
   // scope:  { demolition: bool, floorFinish: "tile"|"flooring"|"none",
   //           walls: "tile"|"tileWet"|"paint"|"none", paintCeiling: bool }
@@ -455,6 +458,28 @@
       addLine("ceilingPaint", surfaces, T("line.ceilingPaint"), a.floorSqFt, sqft, prices.Painting_Price_Per_SqFt);
     }
 
+    var drainFt = Math.max(0, Math.min(MAX_DRAIN_RUN_FT, parseNumber(values.Drain_Run_Ft) || 0));
+    if (drainFt > 0) {
+      addLine(
+        "drainRun",
+        T("section.plumbing"),
+        T("line.drainRun"),
+        drainFt,
+        T(drainFt === 1 ? "unit.foot" : "unit.feet"),
+        prices.Drain_Run_Price_Per_Ft,
+      );
+    }
+    var elecPoints = parseNumber(values.Electrical_Points) || 0;
+    if (elecPoints > 0) {
+      addLine(
+        "electrical",
+        T("section.electrical"),
+        T("line.electricalPoints"),
+        elecPoints,
+        T(elecPoints === 1 ? "unit.point" : "unit.points"),
+        prices.Electrical_Price_Per_Point,
+      );
+    }
     var fixtureCount = plumbingFixtureCount(values);
     if (options.includeTrade) {
       var plumbing = T("section.plumbing");
@@ -472,15 +497,6 @@
       if (values.Bad_Valve_Surcharge_Included === true) {
         addFlat("badValve", plumbing, T("line.badValve"), prices.Bad_Valve_Surcharge_Price);
       }
-      var points = parseNumber(values.Electrical_Points) || 0;
-      addLine(
-        "electrical",
-        T("section.electrical"),
-        T("line.electricalPoints"),
-        points,
-        T(points === 1 ? "unit.point" : "unit.points"),
-        prices.Electrical_Price_Per_Point,
-      );
     }
 
     var subtotal = roundCents(
@@ -609,6 +625,7 @@
     DIMENSIONS: DIMENSIONS,
     MAX_FIXTURE_COUNT: MAX_FIXTURE_COUNT,
     MAX_ELECTRICAL_POINTS: MAX_ELECTRICAL_POINTS,
+    MAX_DRAIN_RUN_FT: MAX_DRAIN_RUN_FT,
     bathtubPrice: bathtubPrice,
     money: money,
     shortMoney: shortMoney,

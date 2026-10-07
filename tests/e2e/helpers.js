@@ -19,14 +19,15 @@ async function useConfig(page, overrides) {
   return config;
 }
 
-// Opens the design studio (the sample full bath: 8 ft x 5 ft, a tub on wall
-// B, a vanity on wall D, a toilet on wall A, the door on wall C) and waits
-// until it's drawn. Returns the page errors seen, for a final check.
+// Opens the design studio (the sample full bath: 8 ft x 5 ft, the plumbing
+// in wall A with the vanity and toilet on it, a tub on wall B, the door on
+// wall C) and waits until it's drawn. Returns the page errors seen, for a
+// final check.
 async function openStudio(page, url = "/designer.html") {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto(url);
-  await expect(page.locator(".studio-step-btn")).toHaveCount(5);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
   await expect(page.locator(".studio-status")).toBeVisible();
   return errors;
 }
@@ -35,6 +36,20 @@ async function openStudio(page, url = "/designer.html") {
 async function wait3d(page) {
   await page.waitForFunction(() => window.BathroomRoom3D && window.BathroomRoom3D.available === true);
   await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
+}
+
+// The page point a room point (feet: x across, y up, z back) is drawn at,
+// for driving a drag with the mouse. BathroomRoom3D.project() measures from
+// the canvas; the mouse measures from the page.
+async function onScreen(page, x, y, z) {
+  return page.evaluate(
+    ([a, b, c]) => {
+      const p = window.BathroomRoom3D.project(a, b, c);
+      const rect = document.querySelector("#room-3d-canvas canvas").getBoundingClientRect();
+      return { x: rect.left + p.x, y: rect.top + p.y };
+    },
+    [x, y, z],
+  );
 }
 
 const step = (page, name) => page.locator(`.studio-step-btn[data-step="${name}"]`);
@@ -48,6 +63,7 @@ module.exports = {
   useConfig,
   openStudio,
   wait3d,
+  onScreen,
   step,
   byKey,
   studioStatus,

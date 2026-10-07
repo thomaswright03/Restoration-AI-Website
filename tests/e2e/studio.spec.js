@@ -1,14 +1,16 @@
 "use strict";
 
 const { test, expect } = require("@playwright/test");
-const { useConfig, openStudio, wait3d, step, byKey, studioStatus, studioToast } = require("./helpers");
+const { useConfig, openStudio, wait3d, onScreen, step, byKey, studioStatus, studioToast } = require("./helpers");
 
 test.describe("design studio", () => {
   test("opens on the sample full bath, drawn in 3D, with everything fitting and a price", async ({ page }) => {
     const errors = await openStudio(page);
     await wait3d(page);
     await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
-    await expect(studioStatus(page)).toHaveText("Everything fits");
+    // Everything fits; in a 5 x 8 the toilet only gets code's 15 in. beside
+    // it rather than the recommended 18, which is a note, not a problem.
+    await expect(studioStatus(page)).toHaveText("Fits, 1 is tight");
     await expect(page.locator(".studio-total-chip strong")).toContainText("$");
     await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");
     await expect(page.locator("#studio-labels .is-wall")).toHaveCount(4);
@@ -51,7 +53,7 @@ test.describe("design studio", () => {
     await byKey(page, "tpl-primary").click();
     await expect(studioToast(page)).toContainText("Started from: Primary bath.");
     await expect(page.locator("#studio-size-w")).toHaveValue("11′");
-    await expect(studioStatus(page)).toHaveText("Everything fits");
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await studioToast(page).getByRole("button", { name: "Undo" }).click();
     await expect(page.locator("#studio-size-w")).toHaveValue("8′");
     await page.locator(".studio-action", { hasText: "Redo" }).click();
@@ -70,7 +72,7 @@ test.describe("design studio", () => {
     await expect(page.locator(".studio-issues").first()).toBeVisible();
     await expect(page.locator(".studio-item-btn")).toHaveCount(4);
     await page.keyboard.press("Control+z");
-    await expect(studioStatus(page)).toHaveText("Everything fits");
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await expect(page.locator(".studio-item-btn")).toHaveCount(3);
 
     // The 11 x 9 primary bath has room for another toilet.
@@ -106,11 +108,13 @@ test.describe("design studio", () => {
   test("Show me layouts that fit offers whole-room layouts and uses the one picked", async ({ page }) => {
     const errors = await openStudio(page);
     await step(page, "layout").click();
-    // In the 8 x 5 full bath, the layout it has is the only one that works.
+    // In the 8 x 5 full bath a few layouts work, and the one on screen is
+    // marked as the one in use.
     await byKey(page, "arrange").click();
-    await expect(page.locator(".studio-arrangement")).toHaveCount(1, { timeout: 15000 });
-    await expect(page.locator(".studio-arrangement")).toHaveClass(/is-current/);
-    await expect(page.locator(".studio-step.is-layout")).toContainText("the only one where everything fits");
+    await expect(page.locator(".studio-arrangement").first()).toBeVisible({ timeout: 15000 });
+    await expect(page.locator(".studio-arrangement.is-current")).toHaveCount(1);
+    for (const fit of await page.locator(".studio-arrangement-fit").allInnerTexts())
+      expect(fit).toBe("Everything fits");
 
     await step(page, "room").click();
     await byKey(page, "tpl-showerBath").click();
@@ -131,15 +135,15 @@ test.describe("design studio", () => {
     await expect(page.locator("#studio-plan")).toBeVisible();
     await expect(page.locator("#room-3d")).toBeHidden();
     const toilet = page.locator('#studio-plan .plan-item[data-id="f3"]');
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 3′ 6″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 3″ from the left corner");
     await toilet.click();
     await expect(toilet).toBeFocused();
     await page.keyboard.press("Shift+ArrowRight");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 4′ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 9″ from the left corner");
     await page.keyboard.press("ArrowLeft");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 3′ 11″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 8″ from the left corner");
     await page.keyboard.press("Control+z");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 3′ 6″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 3″ from the left corner");
     await page.keyboard.press("Escape");
     await expect(page.locator("#studio-selchip")).toBeHidden();
     expect(errors).toEqual([]);
@@ -162,20 +166,21 @@ test.describe("design studio", () => {
 
     await drag(await point("f3"), await point("f1"));
     await expect(studioToast(page)).toContainText("That spot doesn't work, so it went back.");
-    await expect(studioStatus(page)).toHaveText("Everything fits");
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await expect(page.locator("#studio-selchip")).toContainText("Toilet");
 
-    // 9 in. to the right along wall A, where there's free floor.
-    const shift = await page.evaluate(() => {
-      const a = window.BathroomRoom3D.project(3.5, 1, 1.2);
-      const b = window.BathroomRoom3D.project(4.25, 1, 1.2);
-      return { x: b.x - a.x, y: b.y - a.y };
-    });
-    const from = await point("f3");
-    await drag(from, { x: from.x + shift.x, y: from.y + shift.y });
+    // A roomier room, then across to wall D, where there's free floor.
+    await step(page, "room").click();
+    const width = page.locator("#studio-size-w");
+    await width.fill("12'");
+    await width.press("Enter");
+    const length = page.locator("#studio-size-l");
+    await length.fill("10'");
+    await length.press("Enter");
+    await expect(length).toHaveValue("10′");
+    await drag(await point("f3"), await onScreen(page, 1.2, 1, 5));
     await step(page, "layout").click();
-    await expect(byKey(page, "item-f3")).toContainText("Wall A");
-    await expect(byKey(page, "item-f3")).not.toContainText("3′ 6″ from the left");
+    await expect(byKey(page, "item-f3")).toContainText("Wall D");
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     expect(errors).toEqual([]);
   });
@@ -274,9 +279,153 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("the plumbing wall decides where a drain can go, and the estimate prices the pipe", async ({ page }) => {
+    const errors = await openStudio(page);
+    // The sample bath's plumbing is in wall A, where the toilet and vanity are.
+    await expect(page.locator(".studio-step.is-room")).toContainText("Everything with a drain is on that wall");
+    await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
+
+    // In a bathroom this small every drain reaches any wall, so grow it:
+    // now the toilet can't reach the far wall (S, shown as C).
+    const width = page.locator("#studio-size-w");
+    const length = page.locator("#studio-size-l");
+    const size = async (w, l) => {
+      await width.fill(w);
+      await width.press("Enter");
+      await length.fill(l);
+      await length.press("Enter");
+    };
+    await size("12'", "12'");
+    await expect(length).toHaveValue("12′");
+    await byKey(page, "stack-S").click();
+    await expect(studioStatus(page)).toHaveClass(/is-error/);
+    await step(page, "layout").click();
+    await expect(page.locator(".studio-issues").first()).toContainText("too far from the plumbing in wall C");
+
+    // Back to the small bath: wall E (shown as B) is around the corner, so
+    // it works, but it's priced.
+    await step(page, "room").click();
+    await size("8'", "5'");
+    await expect(length).toHaveValue("5′");
+    await byKey(page, "stack-E").click();
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    await expect(page.locator(".studio-step.is-room")).toContainText("of new drain line");
+    await step(page, "estimate").click();
+    await expect(page.getByTestId("estimate-card")).toContainText("New drain line to the plumbing wall");
+    expect(errors).toEqual([]);
+  });
+
+  test("the electrical step suggests the wiring, and a point slides along its wall", async ({ page }) => {
+    const errors = await openStudio(page);
+    await step(page, "electrical").click();
+    await expect(page.locator(".studio-step h2")).toHaveText("Electrical");
+    // A GFCI outlet by the vanity, a light over the mirror, a switch by the
+    // door, the fan over the tub and a switch for it.
+    const rows = page.locator(".studio-item-btn");
+    await expect(rows).toHaveCount(5);
+    await expect(rows.nth(0)).toContainText("Outlet");
+    await expect(page.locator(".studio-step.is-electrical")).toContainText("Exhaust fan");
+    await expect(page.locator(".studio-step.is-electrical .studio-issues")).toHaveCount(0);
+
+    await rows.nth(0).click();
+    const slider = page.locator(".studio-inspector input[type=range]").first();
+    const before = await slider.inputValue();
+    await slider.focus();
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    expect(Number(await slider.inputValue())).toBeGreaterThan(Number(before));
+    // Removing it is noticed by the rules and can be undone.
+    const first = await page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design())[0].id);
+    await byKey(page, `pt-${first}-remove`).click();
+    await expect(page.locator(".studio-step.is-electrical")).toContainText("A basin needs a GFCI outlet");
+    await studioToast(page).getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator(".studio-item-btn")).toHaveCount(5);
+    expect(errors).toEqual([]);
+  });
+
+  test("an outlet drags along the wall in 3D, and a bad spot goes back with the reason", async ({ page }) => {
+    test.setTimeout(60000);
+    const errors = await openStudio(page);
+    await wait3d(page);
+    await step(page, "electrical").click();
+    const at = (x, y, z) => onScreen(page, x, y, z);
+    const drag = async (from, to) => {
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      await page.mouse.move((from.x + to.x) / 2, (from.y + to.y) / 2, { steps: 5 });
+      await page.mouse.move(to.x, to.y, { steps: 5 });
+      await page.mouse.up();
+    };
+    const outlet = await page.evaluate(() => {
+      const p = window.RoomPlan.electrical(window.RoomStudio.design())[0];
+      return { id: p.id, offset: p.offset, height: p.height };
+    });
+    const from = await at(outlet.offset, outlet.height, 0.1);
+    // A foot to the left along wall A is free wall.
+    await drag(from, await at(outlet.offset - 1, outlet.height, 0.1));
+    await expect
+      .poll(() => page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design())[0].offset))
+      .toBeLessThan(outlet.offset - 0.5);
+    expect(errors).toEqual([]);
+  });
+
+  test("picking a product shows that fixture on its own, and Just this turns it off", async ({ page }) => {
+    const errors = await openStudio(page);
+    await wait3d(page);
+    await step(page, "products").click();
+    await byKey(page, "focus-toilet").click();
+    const iso = page.locator(".studio-iso-btn");
+    await expect(iso).toHaveAttribute("aria-pressed", "true");
+    await expect(iso).toContainText("Showing just this");
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).toBeNull();
+    await iso.click();
+    await expect(iso).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).not.toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test("Riley talks through each step and offers a fix when something won't work", async ({ page }) => {
+    const errors = await openStudio(page);
+    const riley = page.locator(".riley");
+    await expect(riley).toBeVisible();
+    await expect(riley.locator(".riley-name")).toHaveText("Riley");
+    await expect(riley.locator(".riley-text")).toContainText("Hi, I'm Riley");
+    await expect(riley).toHaveAttribute("data-tone", "ok");
+
+    await step(page, "layout").click();
+    await expect(riley.locator(".riley-text")).toContainText("Now the layout");
+
+    // Something that doesn't fit: she says so and offers to put it right.
+    await byKey(page, "add-shower").click();
+    await expect(riley).toHaveAttribute("data-tone", "error");
+    await expect(riley.locator(".riley-text")).toContainText("Can I offer an alternative?");
+    await expect(riley.locator(".riley-text")).toContainText("I'd take it back out");
+    await riley.getByRole("button", { name: "Yes please" }).click();
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    await expect(riley).not.toHaveAttribute("data-tone", "error");
+
+    // Muting her is remembered, and she keeps writing either way.
+    await riley.locator(".riley-mute").click();
+    await expect(riley.locator(".riley-mute")).toHaveAttribute("aria-pressed", "false");
+    await page.reload();
+    await expect(page.locator(".riley-mute")).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".riley-text")).not.toHaveText("");
+    expect(errors).toEqual([]);
+  });
+
   for (const [dir, lang, labels, fits] of [
-    ["es", "es", ["Baño", "Distribución", "Productos", "Acabados", "Estimación"], "Todo cabe"],
-    ["pt", "pt", ["Banheiro", "Distribuição", "Produtos", "Acabamentos", "Estimativa"], "Tudo cabe"],
+    [
+      "es",
+      "es",
+      ["Baño", "Distribución", "Electricidad", "Productos", "Acabados", "Estimación"],
+      "Cabe, 1 queda justo",
+    ],
+    [
+      "pt",
+      "pt",
+      ["Banheiro", "Distribuição", "Elétrica", "Produtos", "Acabamentos", "Estimativa"],
+      "Cabe, 1 fica apertado",
+    ],
   ]) {
     test(`/${dir}/designer.html runs the studio in that language`, async ({ page }) => {
       const errors = await openStudio(page, `/${dir}/designer.html?lang=${lang}`);

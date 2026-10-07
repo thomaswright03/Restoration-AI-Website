@@ -59,7 +59,7 @@ test("embedded, the designer has no product header or footer", async ({ page }) 
   await expect(page.locator(".site-header")).toBeHidden();
   await expect(page.locator(".site-footer")).toBeHidden();
   await expect(page.locator("#studio")).toBeVisible();
-  await expect(page.locator(".studio-step-btn")).toHaveCount(5);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
 });
 
 test("with no account keys set, sign-up and account say accounts aren't on yet", async ({ page }) => {

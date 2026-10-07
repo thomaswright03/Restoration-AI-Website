@@ -1058,7 +1058,22 @@
     renderStage();
     renderBar();
     renderPanel();
+    if (id) revealSelected();
     if (id && opts.announce !== false) announce(itemLabel(findItem(id)));
+  }
+
+  // On a wide screen the panel scrolls on its own: the picked fixture's
+  // settings come into view there. (On a phone that would scroll the page
+  // out from under a finger moving the fixture.)
+  function revealSelected() {
+    var row = els.panel.querySelector(".studio-item.is-selected, .studio-card.is-selected");
+    if (!row || getComputedStyle(els.body.firstElementChild).position === "sticky") return;
+    var r = row.getBoundingClientRect();
+    var p = els.panel.getBoundingClientRect();
+    var nav = els.panel.querySelector(".studio-step-nav");
+    var bottom = nav ? nav.getBoundingClientRect().top : p.bottom;
+    if (r.top >= p.top && r.bottom <= bottom) return;
+    els.panel.scrollTop += r.top - p.top - 16;
   }
 
   function hover(id) {
@@ -1398,13 +1413,17 @@
       }),
     );
     el.hidden = false;
+    hideToastIn(action ? 8000 : 5000);
+  }
+
+  // The note waits while the pointer or keyboard focus is on it.
+  function hideToastIn(ms) {
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(
-      function () {
-        el.hidden = true;
-      },
-      action ? 8000 : 5000,
-    );
+    toastTimer = setTimeout(function () {
+      var el = els.toast;
+      if (el.matches(":hover") || el.contains(document.activeElement)) hideToastIn(2000);
+      else el.hidden = true;
+    }, ms);
   }
 
   function announce(text) {

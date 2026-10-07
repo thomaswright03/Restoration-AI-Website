@@ -258,7 +258,7 @@ test.describe("design studio", () => {
     await page.reload();
     await expect(page.locator("#studio-size-w")).toHaveValue("9′");
     await expect(studioToast(page)).toContainText("Here's the design you were working on.");
-    await studioToast(page).getByRole("button", { name: "Start over" }).click();
+    await page.locator(".studio-action", { hasText: "Start over" }).click();
     await expect(page.locator("#studio-size-w")).toHaveValue("8′");
     expect(errors).toEqual([]);
   });

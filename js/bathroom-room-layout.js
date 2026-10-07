@@ -225,7 +225,7 @@
     return Math.max(min, Math.min(max, n));
   }
 
-  // Parses a form value the same way the chat's fields do. Returns null for
+  // Parses a form value (a number or numeric text). Returns null for
   // blank/unparsable input so callers can tell "leave unchanged" apart from
   // "explicit zero".
   function parseNumber(value) {
@@ -268,11 +268,8 @@
     return next;
   }
 
-  // Fills in the default footprint for any dimension not yet entered. This
-  // is what lets the room render at 8x5x8 from the moment the estimate
-  // starts, since the dimensions chat group is only asked when the chosen
-  // scope needs floor/wall area (see scopeNeeds() in bathroom-pricing.js) —
-  // a fixtures-only job never asks for width/length/height at all.
+  // Fills in the default footprint for any dimension not set, so the room
+  // always has a size to draw at (8x5x8 until one is given).
   function computeRoomDimensions(dims) {
     dims = dims || {};
     return {

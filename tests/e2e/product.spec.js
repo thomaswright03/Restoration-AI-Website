@@ -34,14 +34,14 @@ test("the landing page shows the plan prices from site-config.json in each langu
 
 test("the demo designer speaks for the sample business", async ({ page }) => {
   await page.goto("/designer.html");
-  await expect(page.locator(".ai-chat-text").first()).toContainText("Sample Remodeling Co.");
+  await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");
   await expect(page.locator(".designer-intro")).toBeVisible();
 });
 
 test("an unknown business shows the unavailable notice, not the demo", async ({ page }) => {
   await page.goto("/designer.html?b=nobody-here");
   await expect(page.locator("#designer-unavailable")).toBeVisible();
-  await expect(page.locator(".ai-chat-section")).toBeHidden();
+  await expect(page.locator("#studio")).toBeHidden();
   await expect(page.locator(".designer-intro")).toBeHidden();
 });
 
@@ -49,7 +49,8 @@ test("embedded, the designer has no product header or footer", async ({ page }) 
   await page.goto("/designer.html?embed=1");
   await expect(page.locator(".site-header")).toBeHidden();
   await expect(page.locator(".site-footer")).toBeHidden();
-  await expect(page.locator("#ai-chat-quote-starter")).toBeVisible();
+  await expect(page.locator("#studio")).toBeVisible();
+  await expect(page.locator(".studio-step-btn")).toHaveCount(5);
 });
 
 test("with no account keys set, sign-up and account say accounts aren't on yet", async ({ page }) => {

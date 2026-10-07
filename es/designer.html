@@ -81,6 +81,7 @@
     <link rel="modulepreload" href="../js/vendor/three/three.module.js" />
     <link rel="modulepreload" href="../js/vendor/three/three.core.js" />
     <link rel="modulepreload" href="../js/vendor/three/addons/controls/OrbitControls.js" />
+    <link rel="stylesheet" href="../css/studio.css" />
   </head>
   <body>
     <a class="skip-link" href="#main">Ir al contenido</a>
@@ -136,15 +137,17 @@
       </nav>
     </header>
 
-    <main id="main" class="solid-header">
+    <main id="main" class="solid-header studio-page">
       <section class="designer-intro product-chrome" data-biz-demo hidden>
-        <p class="eyebrow center">Demo en vivo</p>
-        <h1 class="section-title">Esto es lo que ven sus clientes</h1>
-        <p class="section-subtitle">
-          Pruébelo como lo haría un cliente: empiece la estimación, diseñe el baño y elija productos. Esta demo usa una
-          empresa de ejemplo; la suya muestra su nombre, teléfono y precios.
+        <p class="designer-intro-text">
+          <span class="designer-intro-badge">Demo en vivo</span>
+          <strong>Esto es lo que ven sus clientes</strong>
+          <span
+            >Pruébelo como lo haría un cliente: mida el baño, mueva los accesorios, elija productos y acabados y vea la
+            estimación. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.</span
+          >
         </p>
-        <p class="center"><a href="../es/signup.html" class="btn btn-primary">Prueba gratis</a></p>
+        <a href="../es/signup.html" class="btn btn-primary">Prueba gratis</a>
       </section>
 
       <section class="section designer-unavailable" id="designer-unavailable" hidden>
@@ -154,116 +157,44 @@
         </p>
       </section>
 
-      <section class="ai-chat-section" aria-labelledby="ai-chat-title" data-biz-live>
-        <div class="ai-chat-header">
-          <p class="eyebrow center" data-biz="name"></p>
-          <h2 class="section-title" id="ai-chat-title">Diseñe su baño en 3D</h2>
-          <p class="section-subtitle">
-            Respuestas predefinidas; no es una persona ni una IA. Nada de lo que escriba en el chat se envía a ningún
-            lado.
-            <span data-show-if="priceEstimator.enabled" hidden
-              >Las estimaciones son aproximadas y no vinculantes. Para una cotización real, envíe su solicitud
-              abajo.</span
-            >
-          </p>
-        </div>
-        <div class="ai-chat-window">
-          <div class="ai-chat-toolbar" id="ai-chat-toolbar" hidden>
-            <div class="ai-chat-progress" id="ai-chat-progress" hidden>
-              <div
-                class="ai-chat-progress-track"
-                role="progressbar"
-                aria-label="Progreso de la estimación"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                aria-valuenow="0"
-                id="ai-chat-progress-bar"
-              >
-                <div class="ai-chat-progress-fill" id="ai-chat-progress-fill"></div>
-              </div>
-              <span class="ai-chat-progress-label" id="ai-chat-progress-label"></span>
-            </div>
-            <button type="button" id="ai-chat-close" class="ai-chat-close" aria-label="Cerrar chat" hidden>
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-              </svg>
-            </button>
+      <section class="studio" id="studio" aria-labelledby="studio-title" data-biz-live>
+        <header class="studio-bar">
+          <div class="studio-brand">
+            <p class="studio-biz" data-biz="name"></p>
+            <h1 class="studio-title" id="studio-title">Diseñe su baño</h1>
           </div>
-          <div class="ai-chat-fullscreen-body">
-            <div class="ai-chat-messages" id="ai-chat-messages" aria-live="polite">
-              <div class="ai-chat-row bot">
-                <div class="ai-chat-row-inner">
-                  <div class="ai-chat-avatar" aria-hidden="true" data-biz="initials"></div>
-                  <div class="ai-chat-text">
-                    ¡Hola! Soy el asistente de diseño de baños de <span data-biz="name"></span> (automático, con
-                    respuestas predefinidas; no soy una persona). Le ayudaré a diseñar su baño en 3D y a obtener un
-                    precio aproximado. ¡Comencemos!
-                  </div>
-                </div>
-              </div>
-              <div class="ai-chat-row bot" id="ai-chat-quote-starter-row" hidden>
-                <div class="ai-chat-row-inner">
-                  <div class="ai-chat-avatar" aria-hidden="true" data-biz="initials"></div>
-                  <button type="button" id="ai-chat-quote-starter" class="ai-chat-suggestion">
-                    Obtener una estimación del precio del baño →
-                  </button>
-                </div>
-              </div>
+          <nav class="studio-steps" id="studio-steps" aria-label="Pasos del diseño"></nav>
+          <div class="studio-actions" id="studio-actions"></div>
+        </header>
+        <div class="studio-body">
+          <div class="studio-stage">
+            <div class="studio-viewbar" id="studio-viewbar"></div>
+            <div class="studio-room" id="room-3d">
+              <div class="studio-canvas" id="room-3d-canvas"></div>
+              <div class="studio-labels" id="studio-labels" aria-hidden="true"></div>
+              <button type="button" class="studio-mini" id="studio-mini" title="Abrir el plano">
+                <span class="visually-hidden">Abrir el plano</span>
+              </button>
             </div>
-            <div class="ai-chat-room-3d" id="ai-chat-room-3d" hidden>
-              <p class="ai-chat-room-3d-disclosure">
-                Una vista previa en 3D creada a partir de lo que nos indicó; no es una representación de su baño real.
-                Arrastre para mirar alrededor.
-              </p>
-              <div class="ai-chat-room-3d-canvas-wrap" id="ai-chat-room-3d-canvas-wrap"></div>
-            </div>
+            <div class="studio-plan" id="studio-plan" hidden></div>
+            <div class="studio-selchip" id="studio-selchip" hidden></div>
+            <div class="studio-toast" id="studio-toast" role="status" hidden></div>
+            <p class="studio-hint" id="studio-hint"></p>
           </div>
-          <form class="ai-chat-input-bar" id="ai-chat-form">
-            <div class="ai-chat-input-wrap">
-              <label for="ai-chat-input" class="visually-hidden">Escriba un mensaje al asistente automático</label>
-              <input
-                type="text"
-                id="ai-chat-input"
-                placeholder="Pregunte sobre su baño…"
-                autocomplete="off"
-                maxlength="300"
-              />
-            </div>
-            <button type="submit" class="ai-chat-send" id="ai-chat-send" aria-label="Enviar mensaje">
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <line x1="12" y1="19" x2="12" y2="5"></line>
-                <polyline points="5 12 12 5 19 12"></polyline>
-              </svg>
-            </button>
-          </form>
+          <div class="studio-panel" id="studio-panel"></div>
         </div>
-      </section>
-
-      <section class="section designer-request" id="request" aria-labelledby="request-title" data-biz-live>
-        <h2 class="section-title" id="request-title">Envíe su solicitud</h2>
-        <p class="section-subtitle">
-          Envíe su diseño y su estimación a <span data-biz="name"></span> para recibir una cotización real.
+        <p class="visually-hidden" id="studio-live" aria-live="polite"></p>
+        <p class="studio-disclosure">
+          Una vista previa en 3D hecha con sus medidas y elecciones; no es una imagen de su baño real. Los precios son
+          una estimación aproximada y no vinculante hasta que la empresa le envíe una cotización real.
         </p>
-        <div class="contact-form-col designer-form">
+
+        <div class="studio-request" id="studio-request" hidden>
           <p class="form-prefill-note" data-biz-demo hidden>
             Demo: las solicitudes enviadas desde esta página no le llegan a nadie.
           </p>
           <div id="form-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
-          <form id="lead-form" novalidate>
-            <p id="estimate-prefill-note" class="form-prefill-note" hidden>
-              Agregamos su estimación a los detalles del proyecto más abajo. Modifíquela como quiera antes de enviarla.
-            </p>
+          <form id="lead-form" class="designer-form" novalidate>
             <div class="form-group">
               <label for="name">Nombre completo</label>
               <input type="text" id="name" name="name" autocomplete="name" required aria-describedby="name-error" />
@@ -304,11 +235,10 @@
             </div>
             <div class="form-group">
               <label for="message">Cuéntenos sobre su proyecto</label>
-              <textarea
-                id="message"
-                name="message"
-                placeholder="Tipo de propiedad, plazo aproximado y cualquier otra cosa que debamos saber..."
-              ></textarea>
+              <textarea id="message" name="message" rows="8" aria-describedby="message-help"></textarea>
+              <p class="form-help" id="message-help">
+                Su diseño y su enlace ya están incluidos. Agregue cualquier otra cosa que deban saber, como su plazo.
+              </p>
             </div>
             <div class="form-honeypot" aria-hidden="true">
               <label for="company-website">Deje esto en blanco</label>
@@ -325,9 +255,20 @@
               ¿Prefiere hablar? Llame al <a href="#" data-biz-tel><span data-biz="phone"></span></a>
             </p>
           </form>
+          <p class="powered-by">Con la tecnología de Room Designer 3D</p>
         </div>
-        <p class="powered-by">Con la tecnología de Room Designer 3D</p>
       </section>
+
+      <dialog class="studio-dialog" id="studio-link-dialog" aria-labelledby="studio-link-title">
+        <h2 id="studio-link-title">Enlace a su diseño</h2>
+        <p>
+          Copie este enlace para volver a su diseño en otro dispositivo o para enviárselo a alguien. Quien tenga el
+          enlace ve el diseño, no sus datos de contacto.
+        </p>
+        <label for="studio-link-input" class="visually-hidden">Enlace a su diseño</label>
+        <input type="text" id="studio-link-input" readonly />
+        <button type="button" class="btn btn-primary" data-close>Listo</button>
+      </dialog>
     </main>
 
     <footer class="site-footer product-chrome">
@@ -376,12 +317,13 @@
     <script src="../js/business.js"></script>
     <script src="../js/materials-pricing.js"></script>
     <script src="../js/bathroom-room-layout.js"></script>
+    <script src="../js/room-plan.js"></script>
     <script src="../js/surface-finishes.js"></script>
-    <script src="../js/chat-replies.js"></script>
     <script src="../js/site-config.js"></script>
     <script src="../js/theme.js"></script>
     <script src="../js/estimate-pdf.js"></script>
     <script src="../js/script.js"></script>
     <script type="module" src="../js/bathroom-room-3d.js"></script>
+    <script src="../js/studio.js" defer></script>
   </body>
 </html>

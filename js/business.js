@@ -2,18 +2,18 @@
 //
 // The designer page is shared by every subscriber. Its address says whose it
 // is: designer.html?b=<business-slug>. This script sets window.DesignerBusiness
-// (name, initials, phone, email, labor prices, where leads go) before the chat
-// scripts load, so they speak for that business.
+// (name, initials, phone, email, labor prices, where leads go) before the
+// studio's scripts load, so they speak for that business.
 //
 //   - No ?b= (or ?b=demo): the built-in sample business, for the public demo.
 //   - ?b=<slug>: /api/business?b=<slug> is loaded as a script right here, so it
 //     runs before the next <script> on the page. It calls
 //     DesignerBusiness.load({...}) with the business's public profile, or
 //     DesignerBusiness.load(null, reason) when the slug is unknown or the
-//     subscription isn't active, and the chat is replaced by a short notice.
+//     subscription isn't active, and the studio is replaced by a short notice.
 //
 // Must load after js/bathroom-pricing.js (so a business's own labor prices can
-// replace the defaults) and before js/chat-replies.js and js/script.js.
+// replace the defaults) and before js/script.js and js/studio.js.
 
 (function () {
   "use strict";

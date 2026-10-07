@@ -42,16 +42,20 @@ Pages are built from templates so the three languages can't drift apart:
 - `pages/<page>.html`: each page's content
 - `pages/strings/*.json`: every text as `"key": ["English", "Español", "Português"]`
 
-After editing, run `npm run pages` and commit the rebuilt `*.html`, `es/*.html` and `pt/*.html`. CI fails if a built page is stale or a text is missing a translation. Text shown by JavaScript (the chat, estimate, forms, account page messages) lives in `js/i18n.js`, also in all three languages.
+After editing, run `npm run pages` and commit the rebuilt `*.html`, `es/*.html` and `pt/*.html`. CI fails if a built page is stale or a text is missing a translation. Text shown by JavaScript (the design studio, estimate, forms, account page messages) lives in `js/i18n.js`, also in all three languages.
 
 ## The designer code
 
+The designer is a five-step studio: **Room** (a common bathroom to start from, measurements in feet and inches, doors), **Layout** (add fixtures and move them in 3D or on the floor plan), **Products** (Kohler models, shown at their real size), **Finishes** (demolition, floor, walls, ceiling) and **Estimate** (the price, a PDF with a picture and the floor plan, a link to the design, and the request form). Every move is checked as it happens: a fixture that overlaps, blocks the door or lacks the clearance it needs turns red and says why in plain words, and "Show me layouts that fit" rearranges the whole room.
+
 - `js/business.js`: which business the page is for (`?b=`), applies its name, phone and prices
-- `js/script.js`: chat, estimate flow, request form
-- `js/chat-replies.js`: scripted chat answers (no AI)
+- `js/room-plan.js`: the room engine, with no drawing (walls, fixture sizes, clearance rules, finding spots, arranging the room, snapping a dragged fixture, share links). Also runs in Node for the unit tests.
+- `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
+- `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
 - `js/bathroom-pricing.js`: the estimate math and default labor prices
 - `js/materials-pricing.js`: the materials catalog (catalog prices, may be out of date)
-- `js/bathroom-room-layout.js`, `js/bathroom-room-3d.js`, `js/surface-finishes.js`: the 3D room
+- `js/estimate-pdf.js`: the PDF
+- `js/script.js`: menu, language, FAQ and the request form
 - `models/`: GLB fixture and product models
 - `js/account.js`: sign-up and account pages
 

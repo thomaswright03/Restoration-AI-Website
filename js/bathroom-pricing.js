@@ -1,11 +1,10 @@
 // Room Designer 3D — shared bathroom pricing model.
 //
 // The single source of truth for bathroom labor prices AND for the
-// calculation itself. Both the admin quoting tool (js/admin.js) and the
-// public chat estimate (js/script.js) call computeEstimate() below, so the
-// two always agree for the same inputs. The admin tool may add plumbing,
-// electrical and surcharge lines (includeTrade: true); the public estimate
-// never prices that work.
+// calculation itself. The design studio's estimate (js/studio.js) calls
+// computeEstimate() below, with the business's own prices (js/business.js).
+// includeTrade: true adds plumbing, electrical and surcharge lines for a
+// contractor's own quote; the public estimate never prices that work.
 //
 // Only the work that is explicitly chosen is priced: nothing is assumed
 // from the room's dimensions alone. The line items are exactly the charges
@@ -109,7 +108,7 @@
     Labor_Tax_Rate_Percent: "Tax rate on labor (%) — leave at 0 unless a tax adviser confirms tax applies",
   };
 
-  // Prices the public website shows (chat estimate, page text). Plumbing,
+  // Prices the public website shows (the estimate, page text). Plumbing,
   // electrical and tax are never published.
   var UNPUBLISHED_PRICE_KEYS = [
     "Plumbing_Price_Per_Point",
@@ -153,8 +152,8 @@
 
   var YES_NO = [option(true, "choice.yes"), option(false, "choice.no")];
 
-  // The work questions, asked the same way in the public chat and the admin
-  // quote. Nothing is pre-selected; every question must be answered.
+  // The work questions (the studio's Finishes step). An estimate needs every
+  // one answered.
   var SCOPE_QUESTIONS = [
     { key: "demolition", options: YES_NO },
     {
@@ -171,6 +170,7 @@
       key: "walls",
       options: [
         option("tile", "choice.walls.tile"),
+        option("tileWet", "choice.walls.tileWet"),
         option("paint", "choice.walls.paint"),
         option("none", "choice.neither"),
       ],
@@ -261,17 +261,30 @@
     }, 0);
   }
 
+  // Floor and wall areas. The design studio also passes the doorways'
+  // area (Wall_Openings_SqFt, taken off the walls) and the tile around a
+  // tub (Wet_Wall_SqFt, for walls: "tileWet").
   function areas(values) {
     var w = parseNumber(values.Bathroom_Width_Ft) || 0;
     var l = parseNumber(values.Bathroom_Length_Ft) || 0;
     var h = parseNumber(values.Bathroom_Height_Ft) || 0;
-    return { floorSqFt: roundCents(w * l), wallSqFt: roundCents(2 * h * (w + l)) };
+    var gross = 2 * h * (w + l);
+    var openings = Math.min(Math.max(parseNumber(values.Wall_Openings_SqFt) || 0, 0), gross);
+    var walls = gross - openings;
+    var wet = Math.min(Math.max(parseNumber(values.Wet_Wall_SqFt) || 0, 0), walls);
+    return {
+      floorSqFt: roundCents(w * l),
+      grossWallSqFt: roundCents(gross),
+      openingsSqFt: roundCents(openings),
+      wallSqFt: roundCents(walls),
+      wetWallSqFt: roundCents(wet),
+    };
   }
 
   // What the chosen work needs measured.
   function scopeNeeds(scope) {
     scope = scope || {};
-    var walls = scope.walls === "tile" || scope.walls === "paint";
+    var walls = scope.walls === "tile" || scope.walls === "tileWet" || scope.walls === "paint";
     var floorArea =
       scope.demolition === true ||
       scope.floorFinish === "tile" ||
@@ -290,7 +303,7 @@
     });
   }
 
-  // Field-level validation shared by the public chat and the admin quote.
+  // Field-level validation of a job's answers and numbers.
   // Returns { valid, errors: { fieldKey: message } }.
   // options.includeTrade also checks the admin-only electrical points.
   function validateJob(values, scope, options) {
@@ -347,7 +360,9 @@
   //           <fixture>_Quantity..., and with includeTrade: Electrical_Points,
   //           No_Stack_Surcharge_Included, Bad_Valve_Surcharge_Included }
   // scope:  { demolition: bool, floorFinish: "tile"|"flooring"|"none",
-  //           walls: "tile"|"paint"|"none", paintCeiling: bool }
+  //           walls: "tile"|"tileWet"|"paint"|"none", paintCeiling: bool }
+  //         ("tileWet": tile around the tub, Wet_Wall_SqFt, and paint the
+  //         rest of the walls)
   // options: { prices (default DEFAULT_PRICES), includeTrade (default false) }
   //
   // Every line carries its quantity x rate. Lines costing $0 are left out.
@@ -423,6 +438,16 @@
     }
     if (scope.walls === "tile") {
       addLine("wallTile", surfaces, T("line.wallTile"), a.wallSqFt, sqft, prices.Tile_Price_Per_SqFt);
+    } else if (scope.walls === "tileWet") {
+      addLine("wallTile", surfaces, T("line.wallTileWet"), a.wetWallSqFt, sqft, prices.Tile_Price_Per_SqFt);
+      addLine(
+        "wallPaint",
+        surfaces,
+        T("line.wallPaint"),
+        roundCents(a.wallSqFt - a.wetWallSqFt),
+        sqft,
+        prices.Painting_Price_Per_SqFt,
+      );
     } else if (scope.walls === "paint") {
       addLine("wallPaint", surfaces, T("line.wallPaint"), a.wallSqFt, sqft, prices.Painting_Price_Per_SqFt);
     }
@@ -470,6 +495,9 @@
       lines: lines,
       floorSqFt: a.floorSqFt,
       wallSqFt: a.wallSqFt,
+      grossWallSqFt: a.grossWallSqFt,
+      openingsSqFt: a.openingsSqFt,
+      wetWallSqFt: scope.walls === "tileWet" ? a.wetWallSqFt : 0,
       plumbingFixtureCount: fixtureCount,
       subtotal: subtotal,
       taxRatePercent: taxRatePercent,
@@ -518,7 +546,21 @@
       list.push(T("assume.floorArea", { w: w, l: l, area: formatQty(result.floorSqFt) }));
     }
     if (needs.height) {
-      list.push(T("assume.wallArea", { w: w, l: l, h: h, area: formatQty(result.wallSqFt) }));
+      if (result.openingsSqFt > 0) {
+        list.push(
+          T("assume.wallAreaDoors", {
+            w: w,
+            l: l,
+            h: h,
+            gross: formatQty(result.grossWallSqFt),
+            doors: formatQty(result.openingsSqFt),
+            area: formatQty(result.wallSqFt),
+          }),
+        );
+      } else {
+        list.push(T("assume.wallArea", { w: w, l: l, h: h, area: formatQty(result.wallSqFt) }));
+      }
+      if (scope.walls === "tileWet") list.push(T("assume.wetArea", { area: formatQty(result.wetWallSqFt) }));
     }
     list.push(T("assume.fixtures"));
     return list;

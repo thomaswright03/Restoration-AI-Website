@@ -1,17 +1,17 @@
-// 3D bathroom room preview: an orbitable room, rendered as realistically as
-// this pipeline reasonably allows — real-world proportions, PBR materials
-// (glazed-porcelain clearcoat, chrome), image-based lighting, real shadows —
-// built purely from the customer's entered width/length/height (or a
-// sensible default before those are asked — see js/bathroom-room-layout.js
-// computeRoomDimensions), and updating live as the chat estimate's
-// scope/dimension/fixture fields are answered. Self-hosted Three.js
-// (js/vendor/three/), no build step.
+// The 3D bathroom: an orbitable room, rendered as realistically as this
+// pipeline reasonably allows — real-world proportions, PBR materials
+// (glazed-porcelain clearcoat, chrome), image-based lighting, real shadows.
+// js/studio.js decides what is in the room and where (js/room-plan.js) and
+// hands it over with setPlan(); this module draws it, with the Kohler
+// products picked, the surfaces' real tiles and paints, and the studio's
+// outlines and floor marks. Self-hosted Three.js (js/vendor/three/), no
+// build step.
 //
 // This module is the only first-party file using ES module import/export
 // (see eslint.config.js) — everything else on the page is a classic
 // <script>. window.BathroomRoom3D is always a safe object to call: a
 // WebGL failure (unsupported/disabled) is caught inside ensureScene() and
-// never propagates into js/script.js's event handlers.
+// never reaches js/studio.js's event handlers.
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
@@ -22,8 +22,8 @@ var Layout = window.BathroomRoomLayout;
 // stay as they are; only the words describing them are translated.
 var T = window.I18n.t;
 
-var PANEL_ID = "ai-chat-room-3d";
-var CANVAS_WRAP_ID = "ai-chat-room-3d-canvas-wrap";
+var PANEL_ID = "room-3d";
+var CANVAS_WRAP_ID = "room-3d-canvas";
 
 // Outward-normal wall specs for the shell (BackSide culling needs the
 // normal pointing AWAY from the room interior, so whichever wall sits
@@ -44,10 +44,6 @@ function shellWalls(widthFt, lengthFt) {
 // than importing that module's internals, matching this file's existing
 // convention of duplicating the tiny bits of wall geometry it needs).
 var WALL_INWARD_NORMAL = { N: { x: 0, z: 1 }, E: { x: -1, z: 0 }, S: { x: 0, z: -1 }, W: { x: 1, z: 0 } };
-
-function wallSpanFor(wallId, widthFt, lengthFt) {
-  return wallId === "N" || wallId === "S" ? widthFt : lengthFt;
-}
 
 // Which shared material (see buildMaterials()) represents a fixture type's
 // primary visible finish — matched by reference identity against the
@@ -593,7 +589,7 @@ var FIXTURE_MODELS = {
 
 // Fetched lazily, the first time a fixture of that type is actually placed
 // (see rebuildFixtures()) — most visitors never add a tub, and pulling
-// every model at estimate start competes with the chat UI for the main
+// every model up front competes with the studio's own work for the main
 // thread on slower devices.
 var fixtureModelLoader = null;
 
@@ -1421,13 +1417,6 @@ function productOption(slot, optionId) {
   return null;
 }
 
-// Whether any of a slot's options changes its fixture's size.
-function slotIsSized(slot) {
-  return slot.options.some(function (opt) {
-    return !!opt.footprint;
-  });
-}
-
 // slotId -> the option showing: the pick, unless it doesn't go with an
 // earlier slot's (the slot's first option that does, then). Slots are in
 // dependency order, so a door sees the base already resolved.
@@ -1460,25 +1449,45 @@ function productFootprints(picks) {
   return out;
 }
 
-// productFootprints() for a layout about to be computed from layoutInput
-// (no footprints yet), with any sized pick that no longer fits — the room
-// shrank, or more fixtures were added — treated as its slot's default, so
-// a visual pick never makes a priced fixture disappear from the room or
-// fail the estimate's fit check. commit: also put that pick back to the
-// default in state (the real rebuild does; checkFit()'s what-if doesn't).
-function fittedProductFootprints(layoutInput, commit) {
-  var picks = Object.assign({}, state.productPicks);
-  PRODUCT_SLOTS.forEach(function (slot) {
-    var opt = selectedProducts(picks)[slot.id];
-    if (!opt.footprint || opt === slot.options[0]) return;
-    var others = productFootprints(picks);
-    delete others[slot.fixtureKey];
-    if (productWouldDrop(Object.assign({}, layoutInput, { footprints: others }), slot, opt)) {
-      picks[slot.id] = slot.options[0].id;
-    }
+// Footprints for the studio's placements: the picked products' real sizes
+// over the defaults, keeping each type's mount (the paper holder and
+// accessories look for floor fixtures beside them).
+function planFootprints(picks) {
+  var out = {};
+  var sized = productFootprints(picks);
+  Object.keys(Layout.FIXTURE_LAYOUT).forEach(function (key) {
+    out[key] = Object.assign({}, Layout.FIXTURE_LAYOUT[key], sized[key] || {});
   });
-  if (commit) state.productPicks = picks;
-  return productFootprints(picks);
+  // A vanity top is the countertop: the cabinet under it is stretched to
+  // its size (see buildUndermountVanity()).
+  var sel = selectedProducts(picks);
+  if (sel.vanitySink && sel.vanitySink.top) {
+    out.Vanity_Quantity.wallSpan = sel.vanitySink.top.width;
+    out.Vanity_Quantity.depth = Math.max(sel.vanitySink.top.depth, out.Vanity_Quantity.depth);
+  }
+  return out;
+}
+
+// The size of each kind of fixture in js/room-plan.js's terms ({ type:
+// { span, depth, height } }), for the products picked (or `picks`).
+var PLAN_TYPE_KEYS = {
+  toilet: "Toilet_Quantity",
+  vanity: "Vanity_Quantity",
+  sink: "Sink_Quantity",
+  tub: "Bathtub_Quantity",
+  shower: "Shower_Quantity",
+  cabinet: "Cabinet_Quantity",
+  door: "Door_Quantity",
+};
+
+function planSizes(picks) {
+  var fps = planFootprints(picks);
+  var out = {};
+  Object.keys(PLAN_TYPE_KEYS).forEach(function (type) {
+    var fp = fps[PLAN_TYPE_KEYS[type]];
+    out[type] = { span: fp.wallSpan, depth: fp.depth, height: fp.height };
+  });
+  return out;
 }
 
 var productModelLoader = null;
@@ -1749,127 +1758,18 @@ function productGroupOf(slot) {
   return null;
 }
 
-// A row of fixture tabs, then one labelled dropdown per slot.
-function buildProductSwitcher(panel, wrap) {
-  var container = document.createElement("div");
-  container.className = "ai-chat-room-3d-products";
-  container.hidden = true;
-  var tabsWrap = document.createElement("div");
-  tabsWrap.className = "ai-chat-room-3d-style-switch";
-  tabsWrap.setAttribute("role", "group");
-  tabsWrap.setAttribute("aria-label", T("room3d.products"));
-  var ui = { container: container, rows: {}, tabs: {}, group: null };
-  PRODUCT_GROUPS.forEach(function (group) {
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ai-chat-room-3d-style-btn";
-    btn.textContent = T("room3d.group." + group.id);
-    btn.hidden = true;
-    btn.addEventListener("click", function () {
-      ui.group = group.id;
-      applyProductGroup(ui);
-    });
-    ui.tabs[group.id] = btn;
-    tabsWrap.appendChild(btn);
-  });
-  var rowsWrap = document.createElement("div");
-  rowsWrap.className = "ai-chat-room-3d-product-rows";
-  PRODUCT_SLOTS.forEach(function (slot) {
-    var row = document.createElement("div");
-    row.className = "ai-chat-room-3d-product-row";
-    row.hidden = true;
-    var selectId = "ai-chat-room-3d-product-" + slot.id;
-    var label = document.createElement("label");
-    label.className = "ai-chat-room-3d-product-label";
-    label.htmlFor = selectId;
-    label.textContent = T("room3d.slot." + slot.id);
-    var select = document.createElement("select");
-    select.className = "ai-chat-room-3d-product-select";
-    select.id = selectId;
-    var options = {};
-    slot.options.forEach(function (opt) {
-      var el = document.createElement("option");
-      el.value = opt.id;
-      el.textContent = T("room3d.option." + opt.id);
-      options[opt.id] = el;
-      select.appendChild(el);
-    });
-    select.addEventListener("change", function () {
-      window.BathroomRoom3D.setProductPick(slot.id, select.value);
-    });
-    row.appendChild(label);
-    row.appendChild(select);
-    rowsWrap.appendChild(row);
-    ui.rows[slot.id] = { row: row, select: select, options: options, group: productGroupOf(slot), shown: false };
-  });
-  container.appendChild(tabsWrap);
-  container.appendChild(rowsWrap);
-  panel.insertBefore(container, wrap);
-  return ui;
-}
-
-// Shows the tabs of fixtures with something to pick, and the picked tab's
-// rows (the first tab, if the picked one's fixture is gone).
-function applyProductGroup(ui) {
-  var groupsShown = {};
-  PRODUCT_SLOTS.forEach(function (slot) {
-    var entry = ui.rows[slot.id];
-    if (entry.shown) groupsShown[entry.group] = true;
-  });
-  if (!groupsShown[ui.group]) {
-    ui.group = null;
-    PRODUCT_GROUPS.forEach(function (group) {
-      if (!ui.group && groupsShown[group.id]) ui.group = group.id;
-    });
-  }
-  PRODUCT_GROUPS.forEach(function (group) {
-    var btn = ui.tabs[group.id];
-    var current = ui.group === group.id;
-    btn.hidden = !groupsShown[group.id];
-    btn.classList.toggle("selected", current);
-    btn.setAttribute("aria-pressed", current ? "true" : "false");
-  });
-  PRODUCT_SLOTS.forEach(function (slot) {
-    var entry = ui.rows[slot.id];
-    entry.row.hidden = !entry.shown || entry.group !== ui.group;
-  });
-  ui.container.hidden = !ui.group;
-}
-
-// Reflects what's showing and which fixtures are placed onto the
-// dropdowns. An option too big for the room (the layout would drop a
-// fixture it otherwise places), or one that doesn't go with another pick,
-// is disabled with the reason after its name rather than silently not
-// drawn.
-function syncProductSwitcher(s, layoutInput, placedKeys, sel) {
-  var ui = s.productSwitcher;
-  if (!ui) return;
-  PRODUCT_SLOTS.forEach(function (slot) {
-    var entry = ui.rows[slot.id];
-    entry.shown = slotShown(slot, placedKeys, sel);
-    slotOptionStates(slot, sel, layoutInput, entry.shown).forEach(function (o) {
-      var el = entry.options[o.id];
-      el.disabled = !!o.reason;
-      el.textContent = o.label + (o.reason ? " (" + o.reason + ")" : "");
-    });
-    entry.select.value = sel[slot.id].id;
-  });
-  applyProductGroup(ui);
-}
-
 function slotShown(slot, placedKeys, sel) {
   return !!placedKeys[slot.fixtureKey] && (!slot.showIf || slot.showIf(sel));
 }
 
 // Each of a slot's options with its label and, when it can't be picked
-// right now, why: it doesn't go with another pick, or (for a sized slot
-// that's showing) it's too big for the room.
-function slotOptionStates(slot, sel, layoutInput, shown) {
-  var sized = shown && slotIsSized(slot);
+// right now, why: it doesn't go with another pick, or (for a slot that's
+// showing) it's too big for where its fixture stands.
+function slotOptionStates(slot, sel, shown) {
   return slot.options.map(function (opt) {
     var reason = null;
     if (opt.available && !opt.available(sel)) reason = T(opt.unavailableReason || "room3d.noFit");
-    else if (sized && sel[slot.id] !== opt && productWouldDrop(layoutInput, slot, opt)) reason = T("room3d.tooBig");
+    else if (shown && sel[slot.id] !== opt && productWouldDrop(slot, opt)) reason = T("room3d.tooBig");
     return { id: opt.id, label: T("room3d.option." + opt.id), reason: reason };
   });
 }
@@ -1877,8 +1777,8 @@ function slotOptionStates(slot, sel, layoutInput, shown) {
 // ---------------------------------------------------------------------
 // Product picks for the estimate
 // ---------------------------------------------------------------------
-// The chat's product step (js/script.js) walks the placed fixtures one tab
-// at a time, and prices whatever is showing by Kohler model number.
+// The studio's Products step lists each placed fixture's choices, and the
+// estimate names whatever is showing by Kohler model number.
 
 function mmnFromUrl(url) {
   var m = /\/(K-[A-Z0-9-]+)\.glb$/.exec(url || "");
@@ -1906,26 +1806,15 @@ function optionMmns(slot, opt, sel) {
   return out;
 }
 
-// The layout for the room as it stands in state right now (not the last
-// one drawn, which may lag a frame behind a just-entered count).
+// The fixtures in the room as the plan stands right now (not the last ones
+// drawn, which may lag a frame behind a change).
 function currentLayout() {
-  var dims = Layout.computeRoomDimensions(state.dims);
-  var layoutInput = {
-    widthFt: dims.widthFt,
-    lengthFt: dims.lengthFt,
-    heightFt: dims.heightFt,
-    fixtureCounts: state.fixtures,
-    plumbingWallIds: state.plumbingWallIds,
-    entryPoints: state.entryPoints,
-    fixturePositions: state.fixturePositions,
-  };
-  layoutInput.footprints = fittedProductFootprints(layoutInput, false);
-  var layout = Layout.computeLayout(layoutInput);
+  var placements = state.plan || [];
   var placedKeys = {};
-  layout.placements.forEach(function (p) {
+  placements.forEach(function (p) {
     placedKeys[p.fixtureKey] = true;
   });
-  return { layoutInput: layoutInput, layout: layout, placedKeys: placedKeys };
+  return { layout: { placements: placements }, placedKeys: placedKeys };
 }
 
 function productGroupDef(groupId) {
@@ -1963,17 +1852,18 @@ function focusCameraOn(s, group) {
   return true;
 }
 
-function productWouldDrop(layoutInput, slot, opt) {
-  var footprints = Object.assign({}, layoutInput.footprints);
-  if (opt.footprint) footprints[slot.fixtureKey] = opt.footprint;
-  else delete footprints[slot.fixtureKey];
-  var current = Layout.computeLayout(layoutInput).droppedCounts;
-  var withOpt = Layout.computeLayout(Object.assign({}, layoutInput, { footprints: footprints })).droppedCounts;
-  // Per fixture type, not a total: a bigger tub that no longer fits could
-  // otherwise "free up" room for two other fixtures and look like a win.
-  return Object.keys(withOpt).some(function (k) {
-    return withOpt[k] > (current[k] || 0);
-  });
+// Whether picking opt for slot would make the design stop fitting: a
+// longer tub than its wall has room for, say. The studio decides
+// (setFitCheck()); only a pick that changes a fixture's size can.
+var planFitCheck = null;
+
+function productWouldDrop(slot, opt) {
+  if (!planFitCheck) return false;
+  var picks = Object.assign({}, state.productPicks);
+  picks[slot.id] = opt.id;
+  var next = planSizes(picks);
+  if (JSON.stringify(next) === JSON.stringify(planSizes())) return false;
+  return !planFitCheck(next);
 }
 
 // The deck a drop-in tub is set into: stone side panels from the floor up
@@ -2101,31 +1991,22 @@ function buildFixtureTemplates(geo, mat) {
 var state = {
   scope: {},
   dims: { widthFt: null, lengthFt: null, heightFt: null },
-  fixtures: {},
+  // The stand-in toilet's style: A = skirted two-piece.
   selectedToiletStyle: "A",
-  plumbingWallIds: [],
-  entryPoints: [], // [{ wallId, offsetFt, hasDoor }]
   cameraMode: "orbit", // "orbit" | "walkin"
   walkInEntryIndex: 0,
-  // fixtureKey -> hex color, set once a real product is picked for that
-  // category in the chat's materials flow. Applies to every placed
-  // instance of that fixture uniformly, matching how a pick actually
-  // works today (one product choice covers however many units of that
-  // category were ordered, not a different product per unit).
+  // fixtureKey -> hex color, see setFixtureFinish().
   fixtureFinishes: {},
-  // materials-picker categoryKey (floorTile, wallPaint, ...) -> the picked
-  // product's surface spec (js/surface-finishes.js), see setSurfaceFinish().
+  // Surface category (floorTile, wallPaint, ...) -> the picked product's
+  // surface spec (js/surface-finishes.js), see setSurfaceFinish().
   surfacePicks: {},
-  // PRODUCT_SLOTS id -> picked option id (the 3D switcher's buttons).
+  // PRODUCT_SLOTS id -> picked option id.
   productPicks: defaultProductPicks(),
-  // Where the customer dragged fixtures to: { fixtureKey: { index:
-  // { wallId, offsetFt } } }, see Layout.computeLayout's fixturePositions.
-  fixturePositions: {},
+  // What to draw (js/room-plan.js toPlacements()), see setPlan().
+  plan: [],
+  // Tile panels on the walls around a tub, see setSurround().
+  surround: [],
 };
-// Transient wall-click picking session, entirely separate from `state`
-// (the room's own data) — null when no picking UI is active.
-var picking = null; // { mode: "multi" | "single", onPick, selected: [wallId,...] }
-var hoveredWallId = null;
 var dirty = true;
 // Redrawing every frame at full PBR+shadow cost even while the scene is
 // completely static (no typing, camera settled) is wasted GPU/CPU on every
@@ -2133,232 +2014,6 @@ var dirty = true;
 // call whenever nothing has changed since the last one.
 var needsRender = true;
 var threeState = null; // null = not tried yet, false = tried and failed, object = live scene
-
-// Toilet styles: A = skirted two-piece, B = one-piece seamless.
-var TOILET_STYLE_LABELS = { A: "room3d.toilet.A", B: "room3d.toilet.B" };
-
-function buildToiletStyleSwitch(panel, wrap) {
-  var container = document.createElement("div");
-  container.className = "ai-chat-room-3d-style-switch";
-  container.hidden = true;
-  var buttons = {};
-  ["A", "B"].forEach(function (key) {
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ai-chat-room-3d-style-btn";
-    btn.textContent = T(TOILET_STYLE_LABELS[key]);
-    btn.setAttribute("aria-pressed", key === state.selectedToiletStyle ? "true" : "false");
-    btn.addEventListener("click", function () {
-      if (state.selectedToiletStyle === key) return;
-      state.selectedToiletStyle = key;
-      Object.keys(buttons).forEach(function (k) {
-        buttons[k].classList.toggle("selected", k === key);
-        buttons[k].setAttribute("aria-pressed", k === key ? "true" : "false");
-      });
-      markDirty();
-    });
-    btn.classList.toggle("selected", key === state.selectedToiletStyle);
-    buttons[key] = btn;
-    container.appendChild(btn);
-  });
-  panel.insertBefore(container, wrap);
-  return container;
-}
-
-// The walk-in POV toggle, plus (when more than one entry point is placed) a
-// button row to pick which one to stand at — same reusable button-row
-// pattern as buildToiletStyleSwitch above.
-function buildCameraModeControls(panel, wrap) {
-  var container = document.createElement("div");
-  container.className = "ai-chat-room-3d-camera-controls";
-  container.hidden = true;
-
-  var toggleBtn = document.createElement("button");
-  toggleBtn.type = "button";
-  toggleBtn.className = "ai-chat-room-3d-camera-toggle";
-  toggleBtn.textContent = T("room3d.walkIn");
-  toggleBtn.addEventListener("click", function () {
-    window.BathroomRoom3D.setCameraMode(state.cameraMode === "walkin" ? "orbit" : "walkin");
-  });
-  container.appendChild(toggleBtn);
-
-  var entrySwitch = document.createElement("div");
-  entrySwitch.className = "ai-chat-room-3d-style-switch";
-  entrySwitch.hidden = true;
-  container.appendChild(entrySwitch);
-
-  panel.insertBefore(container, wrap);
-  return { container: container, toggleBtn: toggleBtn, entrySwitch: entrySwitch };
-}
-
-// Rebuilds the entry-point picker buttons from whichever entry points the
-// layout actually placed (not the raw, possibly-dropped, state.entryPoints)
-// and refreshes the toggle button's label/pressed state.
-function syncCameraControls(s) {
-  if (!s.cameraControls) return;
-  var placed = s.lastEntryPlacements || [];
-  s.cameraControls.container.hidden = placed.length === 0;
-  s.cameraControls.toggleBtn.textContent = T(state.cameraMode === "walkin" ? "room3d.overview" : "room3d.walkIn");
-  s.cameraControls.toggleBtn.setAttribute("aria-pressed", state.cameraMode === "walkin" ? "true" : "false");
-
-  var wrap = s.cameraControls.entrySwitch;
-  wrap.hidden = placed.length < 2;
-  while (wrap.firstChild) wrap.removeChild(wrap.firstChild);
-  placed.forEach(function (p, i) {
-    var btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "ai-chat-room-3d-style-btn";
-    btn.textContent = T("room3d.entry", { n: i + 1 });
-    var isSelected = p.index === state.walkInEntryIndex;
-    btn.classList.toggle("selected", isSelected);
-    btn.setAttribute("aria-pressed", isSelected ? "true" : "false");
-    btn.addEventListener("click", function () {
-      window.BathroomRoom3D.setWalkInEntryIndex(p.index);
-    });
-    wrap.appendChild(btn);
-  });
-}
-
-// Tints each wall's highlight overlay: gold + brighter while hovered during
-// an active picking session, a dimmer persistent gold for walls already
-// picked (plumbing multi-select, or the entry point's own wall in single
-// mode), transparent otherwise. Safe to call with any threeState, including
-// false/null (before the scene exists) or mid-rebuild.
-function applyWallHighlightState(s) {
-  if (!s || !s.wallHighlightMaterials) return;
-  var selected = picking ? picking.selected : [];
-  Object.keys(s.wallHighlightMaterials).forEach(function (id) {
-    var mat = s.wallHighlightMaterials[id];
-    if (picking && id === hoveredWallId) {
-      mat.opacity = 0.4;
-    } else if (selected.indexOf(id) !== -1) {
-      mat.opacity = 0.22;
-    } else {
-      mat.opacity = 0;
-    }
-  });
-  needsRender = true;
-}
-
-// Resolves one wall click during an active picking session: toggles it in
-// "multi" mode (plumbing walls), replaces the single selection in "single"
-// mode (one entry point's wall), then reports the updated selection back to
-// whoever called beginWallPicking so the chat UI can reflect it live.
-function handleWallPick(wallId) {
-  if (!picking) return;
-  if (picking.mode === "multi") {
-    var idx = picking.selected.indexOf(wallId);
-    if (idx === -1) picking.selected.push(wallId);
-    else picking.selected.splice(idx, 1);
-  } else {
-    picking.selected = [wallId];
-  }
-  applyWallHighlightState(threeState);
-  if (picking.onPick) picking.onPick(picking.selected.slice(), wallId);
-}
-
-// ---------------------------------------------------------------------
-// Dragging fixtures
-// ---------------------------------------------------------------------
-// Floor fixtures the customer can drag to a new spot. Entry doors have
-// their own wall-click step; mirrors, shelves and shower doors ride along
-// with whatever they're attached to.
-var DRAGGABLE_FIXTURES = [
-  "Toilet_Quantity",
-  "Bathtub_Quantity",
-  "Shower_Quantity",
-  "Vanity_Quantity",
-  "Sink_Quantity",
-  "Cabinet_Quantity",
-];
-
-// Where a fixture being dragged would go with the pointer over floor point
-// (x, z): against the nearest wall, at that point along it. fits: the
-// layout keeps it there (plumbing walls, fit and clearances all hold)
-// without moving or dropping anything else.
-function dragTarget(drag, x, z) {
-  var dims = Layout.computeRoomDimensions(state.dims);
-  var w = dims.widthFt;
-  var l = dims.lengthFt;
-  x = clamp(x, 0, w);
-  z = clamp(z, 0, l);
-  var walls = [
-    { id: "N", dist: z, offsetFt: x },
-    { id: "E", dist: w - x, offsetFt: z },
-    { id: "S", dist: l - z, offsetFt: w - x },
-    { id: "W", dist: x, offsetFt: l - z },
-  ];
-  var wall = walls.reduce(function (a, b) {
-    return b.dist < a.dist ? b : a;
-  });
-  wall.offsetFt = Math.round(wall.offsetFt * 100) / 100; // to the nearest 1/8 in. or so
-  var base = currentLayout();
-  var positions = Object.assign({}, state.fixturePositions);
-  positions[drag.fixtureKey] = Object.assign({}, positions[drag.fixtureKey]);
-  positions[drag.fixtureKey][drag.index] = { wallId: wall.id, offsetFt: wall.offsetFt };
-  var trial = Layout.computeLayout(Object.assign({}, base.layoutInput, { fixturePositions: positions }));
-  var moved = null;
-  var othersStay = trial.placements.every(function (p) {
-    if (p.fixtureKey === drag.fixtureKey && p.index === drag.index) {
-      moved = p;
-      return true;
-    }
-    return base.layout.placements.some(function (q) {
-      return (
-        q.fixtureKey === p.fixtureKey && q.index === p.index && Math.abs(q.x - p.x) < 1e-6 && Math.abs(q.z - p.z) < 1e-6
-      );
-    });
-  });
-  var fits =
-    !!moved &&
-    moved.moved === true &&
-    moved.wallId === wall.id &&
-    othersStay &&
-    trial.placements.length === base.layout.placements.length;
-  if (fits)
-    return {
-      fits: true,
-      wallId: wall.id,
-      offsetFt: moved.offsetFt,
-      x: moved.x,
-      z: moved.z,
-      rotationY: moved.rotationY,
-    };
-  // Doesn't fit: still follow the pointer along that wall, marked red.
-  var n = WALL_INWARD_NORMAL[wall.id];
-  return {
-    fits: false,
-    wallId: wall.id,
-    offsetFt: wall.offsetFt,
-    x: wall.id === "E" ? w : wall.id === "W" ? 0 : x,
-    z: wall.id === "N" ? 0 : wall.id === "S" ? l : z,
-    rotationY: Math.atan2(n.x, n.z),
-  };
-}
-
-// Moves the dragged fixture to its would-be spot, with a green (fits) or
-// red (doesn't) outline around it.
-function showDragTarget(s, drag) {
-  var t = drag.target;
-  if (!t) return;
-  drag.instance.position.x = t.x;
-  drag.instance.position.z = t.z;
-  drag.instance.rotation.y = t.rotationY;
-  if (!s.dragOutline) {
-    s.dragOutline = new THREE.Box3Helper(new THREE.Box3(), 0x2e8b57);
-    s.scene.add(s.dragOutline);
-  }
-  drag.instance.updateMatrixWorld(true);
-  s.dragOutline.box.setFromObject(drag.instance);
-  s.dragOutline.material.color.set(t.fits ? 0x2e8b57 : 0xc0392b);
-  s.dragOutline.visible = true;
-  needsRender = true;
-}
-
-function clearDragTarget(s) {
-  if (s && s.dragOutline) s.dragOutline.visible = false;
-  needsRender = true;
-}
 
 function ensureScene() {
   if (threeState !== null) return threeState;
@@ -2383,9 +2038,8 @@ function ensureScene() {
     renderer.domElement.setAttribute("aria-label", T("room3d.canvasLabel"));
 
     var scene = new THREE.Scene();
-    var skyHex = isDark ? 0x162038 : 0xf5f7fb;
-    var groundHex = isDark ? 0x0b1122 : 0xeef2f8;
-    scene.background = new THREE.Color(skyHex);
+    var sky = skyColors(isDark);
+    scene.background = new THREE.Color(sky.sky);
 
     // Image-based lighting from a procedurally generated studio-like room
     // (self-hosted, no external HDR file) — this is what makes the
@@ -2395,9 +2049,9 @@ function ensureScene() {
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
     pmremGenerator.dispose();
 
-    var camera = new THREE.PerspectiveCamera(50, 1, 0.1, 200);
+    var camera = new THREE.PerspectiveCamera(ORBIT_FOV, 1, 0.1, 200);
 
-    var hemi = new THREE.HemisphereLight(skyHex, groundHex, 0.7);
+    var hemi = new THREE.HemisphereLight(sky.sky, sky.ground, 0.7);
     var dir = new THREE.DirectionalLight(0xffffff, 1.8);
     dir.castShadow = true;
     dir.shadow.mapSize.set(1024, 1024);
@@ -2408,13 +2062,18 @@ function ensureScene() {
     var controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.enablePan = false;
-    controls.minPolarAngle = 0.35;
-    controls.maxPolarAngle = 1.45;
+    // Straight down for a plan-like look, never under the floor.
+    controls.minPolarAngle = 0.02;
+    controls.maxPolarAngle = 1.48;
+    controls.screenSpacePanning = true;
     // Fires on every drag and on every damping-settle frame afterward, and
     // stops firing once the camera is genuinely still — exactly the signal
     // the render loop needs to know a frame is worth actually drawing.
     controls.addEventListener("change", function () {
+      // Panning stays over the room.
+      var dims = Layout.computeRoomDimensions(state.dims);
+      var t = controls.target;
+      t.set(clamp(t.x, 0, dims.widthFt), clamp(t.y, 0, dims.heightFt), clamp(t.z, 0, dims.lengthFt));
       needsRender = true;
     });
 
@@ -2433,152 +2092,33 @@ function ensureScene() {
     var shellGroup = new THREE.Group();
     scene.add(shellGroup);
 
-    var toiletStyleSwitch = buildToiletStyleSwitch(panel, wrap);
-    var productSwitcher = buildProductSwitcher(panel, wrap);
-    var cameraControls = buildCameraModeControls(panel, wrap);
-    var dragHint = document.createElement("p");
-    dragHint.className = "ai-chat-room-3d-hint";
-    dragHint.textContent = T("room3d.dragHint");
-    panel.insertBefore(dragHint, wrap);
-    // "Fits, but tight" (Layout's tight list), under the canvas.
-    var tightNote = document.createElement("p");
-    tightNote.className = "ai-chat-room-3d-tight";
-    tightNote.setAttribute("role", "status");
-    tightNote.hidden = true;
-    wrap.parentNode.insertBefore(tightNote, wrap.nextSibling);
+    // Tile around a tub (setSurround()).
+    var surroundGroup = new THREE.Group();
+    scene.add(surroundGroup);
+    var surroundMaterial = new THREE.MeshStandardMaterial();
+
+    // The studio's marks on the floor (setMarks()) and the outlines of the
+    // selected fixture and the one under the pointer (setHighlight()),
+    // drawn over everything else so they never hide inside a model.
+    var markGroup = new THREE.Group();
+    scene.add(markGroup);
+    var selectBox = new THREE.Box3Helper(new THREE.Box3(), STUDIO_TONES.select);
+    var hoverBox = new THREE.Box3Helper(new THREE.Box3(), STUDIO_TONES.info);
+    [selectBox, hoverBox].forEach(function (helper) {
+      helper.visible = false;
+      helper.material.depthTest = false;
+      helper.material.transparent = true;
+      helper.renderOrder = 20;
+      scene.add(helper);
+    });
+    hoverBox.material.opacity = 0.7;
+
     // Products whose 3D model couldn't load (see ensureProductModel()).
     var modelNote = document.createElement("p");
-    modelNote.className = "ai-chat-room-3d-model-note";
+    modelNote.className = "room-3d-note";
     modelNote.setAttribute("role", "status");
     modelNote.hidden = true;
-    tightNote.parentNode.insertBefore(modelNote, tightNote.nextSibling);
-
-    // Persistent (not recreated per rebuildShell call, unlike wall geometry
-    // itself) so highlight state survives a dimension change without
-    // leaking materials — rebuildShell only repositions/resizes the
-    // highlight mesh for each wall, it never replaces these.
-    var wallHighlightMaterials = {
-      N: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
-      E: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
-      S: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
-      W: new THREE.MeshBasicMaterial({ color: 0x3355f0, transparent: true, opacity: 0, depthWrite: false }),
-    };
-    var raycaster = new THREE.Raycaster();
-    var pointerDownPos = null;
-
-    function raycastWall(clientX, clientY) {
-      var rect = renderer.domElement.getBoundingClientRect();
-      if (!rect.width || !rect.height) return null;
-      var ndc = new THREE.Vector2(
-        ((clientX - rect.left) / rect.width) * 2 - 1,
-        -((clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      raycaster.setFromCamera(ndc, camera);
-      var meshes = threeState && threeState.wallMeshesById ? Object.values(threeState.wallMeshesById) : [];
-      var hits = raycaster.intersectObjects(meshes, false);
-      return hits.length ? hits[0].object : null;
-    }
-
-    renderer.domElement.addEventListener("pointerdown", function (e) {
-      pointerDownPos = { x: e.clientX, y: e.clientY };
-    });
-    renderer.domElement.addEventListener("pointermove", function (e) {
-      if (!picking) return;
-      var hit = raycastWall(e.clientX, e.clientY);
-      var next = hit ? hit.userData.wallId : null;
-      if (next !== hoveredWallId) {
-        hoveredWallId = next;
-        applyWallHighlightState(threeState);
-      }
-    });
-    renderer.domElement.addEventListener("pointerup", function (e) {
-      var down = pointerDownPos;
-      pointerDownPos = null;
-      if (!picking || !down) return;
-      var dx = e.clientX - down.x;
-      var dy = e.clientY - down.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 6) return; // a drag/orbit, not a click
-      var hit = raycastWall(e.clientX, e.clientY);
-      if (hit) handleWallPick(hit.userData.wallId);
-    });
-
-    // Dragging a floor fixture moves it: along its wall, or onto whichever
-    // wall the pointer is nearest. Listened for on the canvas's wrapper in
-    // the capture phase, so a press on a fixture never reaches
-    // OrbitControls (the room stays put while the fixture moves); a press
-    // anywhere else still orbits as before.
-    var drag = null;
-    var floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-
-    function pointerRay(clientX, clientY) {
-      var rect = renderer.domElement.getBoundingClientRect();
-      if (!rect.width || !rect.height) return false;
-      raycaster.setFromCamera(
-        new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1),
-        camera,
-      );
-      return true;
-    }
-
-    function fixtureUnderPointer(clientX, clientY) {
-      if (!threeState || !pointerRay(clientX, clientY)) return null;
-      var hits = raycaster.intersectObjects(threeState.fixtureGroup.children, true);
-      for (var i = 0; i < hits.length; i++) {
-        var o = hits[i].object;
-        while (o && o.parent !== threeState.fixtureGroup) o = o.parent;
-        if (o && o.visible && DRAGGABLE_FIXTURES.indexOf(o.userData.fixtureKey) !== -1) return o;
-      }
-      return null;
-    }
-
-    wrap.addEventListener(
-      "pointerdown",
-      function (e) {
-        if (picking || state.cameraMode !== "orbit" || e.button !== 0) return;
-        var instance = fixtureUnderPointer(e.clientX, e.clientY);
-        if (!instance) return;
-        e.stopPropagation();
-        e.preventDefault();
-        drag = {
-          instance: instance,
-          fixtureKey: instance.userData.fixtureKey,
-          index: instance.userData.placementIndex,
-          pointerId: e.pointerId,
-          target: null,
-        };
-        renderer.domElement.setPointerCapture(e.pointerId);
-        wrap.classList.add("is-dragging");
-      },
-      true,
-    );
-    renderer.domElement.addEventListener("pointermove", function (e) {
-      if (!drag) {
-        if (!picking && state.cameraMode === "orbit") {
-          wrap.classList.toggle("can-drag", !!fixtureUnderPointer(e.clientX, e.clientY));
-        }
-        return;
-      }
-      var hit = new THREE.Vector3();
-      if (!pointerRay(e.clientX, e.clientY) || !raycaster.ray.intersectPlane(floorPlane, hit)) return;
-      drag.target = dragTarget(drag, hit.x, hit.z);
-      showDragTarget(threeState, drag);
-    });
-    function endDrag(e) {
-      if (!drag || e.pointerId !== drag.pointerId) return;
-      var done = drag;
-      drag = null;
-      wrap.classList.remove("is-dragging");
-      if (done.target && done.target.fits) {
-        var positions = Object.assign({}, state.fixturePositions);
-        positions[done.fixtureKey] = Object.assign({}, positions[done.fixtureKey]);
-        positions[done.fixtureKey][done.index] = { wallId: done.target.wallId, offsetFt: done.target.offsetFt };
-        state.fixturePositions = positions;
-      }
-      clearDragTarget(threeState);
-      markDirty(); // redraws it where it now is, or back where it was
-    }
-    renderer.domElement.addEventListener("pointerup", endDrag);
-    renderer.domElement.addEventListener("pointercancel", endDrag);
+    panel.appendChild(modelNote);
 
     var resizeObserver = null;
     if (typeof ResizeObserver !== "undefined") {
@@ -2603,6 +2143,7 @@ function ensureScene() {
       scene: scene,
       camera: camera,
       controls: controls,
+      raycaster: new THREE.Raycaster(),
       geo: geo,
       mat: mat,
       fixtureTemplates: fixtureTemplates,
@@ -2615,31 +2156,62 @@ function ensureScene() {
       vanityTemplates: {}, // vanity sink option id -> buildUndermountVanity() template
       tubTemplates: {}, // drop-in tub option id -> tub model + buildTubDeck()
       bodyTemplates: {}, // productBodyTemplate() cache for the other product bodies
-      productSwitcher: productSwitcher,
       fixtureGroup: fixtureGroup,
       shellMaterials: shellMaterials,
       shellGroup: shellGroup,
       shellGeometries: [],
       wallMeshesById: {},
-      wallHighlightMaterials: wallHighlightMaterials,
+      surroundGroup: surroundGroup,
+      surroundMaterial: surroundMaterial,
+      markGroup: markGroup,
+      selectBox: selectBox,
+      hoverBox: hoverBox,
       lastDims: null,
       lastEntryPlacements: [],
+      hemi: hemi,
       dirLight: dir,
-      toiletStyleSwitch: toiletStyleSwitch,
-      tightNote: tightNote,
       modelNote: modelNote,
-      cameraControls: cameraControls,
       applySize: applySize,
       cameraLerp: null, // { from, to, target, start } while animating, else null
       running: false,
     };
     applySize();
+    watchTheme(threeState);
     window.BathroomRoom3D.available = true;
   } catch (err) {
     console.warn("3D preview unavailable:", err);
     threeState = false;
   }
   return threeState;
+}
+
+// The scene's background and sky light for the page's theme.
+function skyColors(isDark) {
+  return isDark ? { sky: 0x162038, ground: 0x0b1122 } : { sky: 0xf5f7fb, ground: 0xeef2f8 };
+}
+
+// Follows a switch between the light and dark themes while the room is open.
+function watchTheme(s) {
+  function update() {
+    var dark = isDarkTheme();
+    if (dark === s.isDark) return;
+    s.isDark = dark;
+    var sky = skyColors(dark);
+    s.scene.background.setHex(sky.sky);
+    s.hemi.color.setHex(sky.sky);
+    s.hemi.groundColor.setHex(sky.ground);
+    rebuildFinishes(s);
+    rebuildSurround(s);
+    needsRender = true;
+  }
+  if (typeof MutationObserver !== "undefined") {
+    new MutationObserver(update).observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+  }
+  var mq = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)");
+  if (mq && mq.addEventListener) mq.addEventListener("change", update);
 }
 
 // ---------------------------------------------------------------------
@@ -2696,21 +2268,6 @@ function rebuildShell(s, widthFt, lengthFt, heightFt) {
     s.shellGroup.add(wall);
     s.shellGeometries.push(wallGeo);
     s.wallMeshesById[w.id] = wall;
-
-    // A thin, normally-invisible overlay nudged toward the room interior so
-    // it never z-fights with the wall itself — brightened by
-    // applyWallHighlightState() while wall-click picking is active.
-    if (s.wallHighlightMaterials && s.wallHighlightMaterials[w.id]) {
-      var highlightGeo = new THREE.PlaneGeometry(w.spanFt, heightFt);
-      var highlight = new THREE.Mesh(highlightGeo, s.wallHighlightMaterials[w.id]);
-      highlight.rotation.y = w.rotY;
-      var normal = WALL_INWARD_NORMAL[w.id];
-      var nudge = 0.02;
-      highlight.position.set(w.x + normal.x * nudge, heightFt / 2, w.z + normal.z * nudge);
-      highlight.renderOrder = 1;
-      s.shellGroup.add(highlight);
-      s.shellGeometries.push(highlightGeo);
-    }
   });
 }
 
@@ -3135,44 +2692,17 @@ function fixtureFrameBox(p, minX, maxX, minZ, maxZ) {
   };
 }
 
-// Says which placed fixtures have less room than recommended, e.g.
-// "Fits, but tight: Toilet, 15 in. beside it (18 in. recommended)."
-var TIGHT_NAMES = { Toilet_Quantity: "toilet", Sink_Quantity: "sink", Vanity_Quantity: "vanity" };
-
-function showTightNote(s, tight) {
-  if (!s.tightNote) return;
-  var parts = [];
-  tight.forEach(function (t) {
-    var name = T("room3d.group." + TIGHT_NAMES[t.fixtureKey]);
-    if (t.sideIn !== null) parts.push(T("room3d.tightSide", { fixture: name, n: t.sideIn }));
-    if (t.frontIn !== null) parts.push(T("room3d.tightFront", { fixture: name, n: t.frontIn }));
-  });
-  s.tightNote.hidden = !parts.length;
-  s.tightNote.textContent = parts.length ? T("room3d.tight", { list: parts.join("; ") }) : "";
-}
-
 function rebuildFixtures(s, widthFt, lengthFt, heightFt) {
   while (s.fixtureGroup.children.length) {
     var old = s.fixtureGroup.children[0];
     disposeFixtureInstance(old);
     s.fixtureGroup.remove(old);
   }
-  var layoutInput = {
-    widthFt: widthFt,
-    lengthFt: lengthFt,
-    heightFt: heightFt,
-    fixtureCounts: state.fixtures,
-    plumbingWallIds: state.plumbingWallIds,
-    entryPoints: state.entryPoints,
-    fixturePositions: state.fixturePositions,
-  };
-  layoutInput.footprints = fittedProductFootprints(layoutInput, true);
-  var layout = Layout.computeLayout(layoutInput);
-  showTightNote(s, layout.tight || []);
+  var layoutInput = { footprints: planFootprints() };
+  var layout = { placements: state.plan || [] };
   s.lastEntryPlacements = layout.placements.filter(function (p) {
     return p.fixtureKey === "Door_Quantity";
   });
-  var toiletCount = 0;
   var placedKeys = {};
   var sel = selectedProducts();
   var ctx = {
@@ -3223,7 +2753,6 @@ function rebuildFixtures(s, widthFt, lengthFt, heightFt) {
           ? s.toiletTemplates[state.selectedToiletStyle]
           : s.fixtureTemplates[p.fixtureKey]);
     if (!template) return;
-    if (p.fixtureKey === "Toilet_Quantity") toiletCount++;
     var footprint = Layout.FIXTURE_LAYOUT[p.fixtureKey];
     // Wall-mounted builders (mirrors, shelf) are modeled centered on their
     // own origin, so they need placement.y (the mount height). Every other
@@ -3242,17 +2771,21 @@ function rebuildFixtures(s, widthFt, lengthFt, heightFt) {
     // without a full rebuild — see updateFixtureFinishInstances().
     instance.userData.fixtureKey = p.fixtureKey;
     instance.userData.placementIndex = p.index;
+    // The studio's fixture this belongs to (a mirror or shower door rides
+    // with its vanity or shower), and where it stands, for previewItem().
+    instance.userData.itemId = p.itemId || null;
+    instance.userData.pose = { x: p.x, y: y, z: p.z, rotationY: p.rotationY, depthOffset: p.depthOffset || 0 };
+    // Its base, not a mirror or shelf on the wall above (for the outline).
+    instance.userData.onWall = y > 0;
+    // A door, mirror or shelf goes with its wall when the wall is cut away
+    // (applyCutaway()).
+    instance.userData.wallId = p.wallId;
+    instance.userData.cutaway = y > 0 || p.fixtureKey === "Door_Quantity";
     var finish = state.fixtureFinishes[p.fixtureKey];
     if (finish != null) applyFixtureFinish(instance, p.fixtureKey, s.mat, finish);
     setShadowFlags(instance);
     s.fixtureGroup.add(instance);
   });
-  // The style switch only chooses between stand-ins: hidden once a real
-  // toilet (the default model or a Kohler pick) is showing.
-  if (s.toiletStyleSwitch)
-    s.toiletStyleSwitch.hidden = toiletCount === 0 || !!s.realModels.Toilet_Quantity || !!sel.toilet.url;
-  syncProductSwitcher(s, layoutInput, placedKeys, sel);
-  syncCameraControls(s);
   showModelNote(s, placedKeys, sel);
 }
 
@@ -3273,13 +2806,6 @@ function showModelNote(s, placedKeys, sel) {
   s.modelNote.textContent = names.length ? T("room3d.modelFailed", { list: names.join(", ") }) : "";
 }
 
-function startCameraLerp(s, newTarget, newDistance) {
-  var dir = new THREE.Vector3().subVectors(s.camera.position, s.controls.target).normalize();
-  if (!isFinite(dir.x)) dir.set(0.6, 0.5, 0.7).normalize();
-  var desired = new THREE.Vector3().copy(newTarget).addScaledVector(dir, newDistance);
-  s.cameraLerp = { from: s.camera.position.clone(), to: desired, start: performance.now(), durationMs: 300 };
-}
-
 function applyCameraLerp(s) {
   if (!s.cameraLerp) return;
   var t = clamp((performance.now() - s.cameraLerp.start) / s.cameraLerp.durationMs, 0, 1);
@@ -3290,13 +2816,11 @@ function applyCameraLerp(s) {
   if (t >= 1) s.cameraLerp = null;
 }
 
-// Walk-in POV: puts the camera at the chosen entry point's exact position
-// (eye height) and reuses the existing OrbitControls instance for look-
-// around, by pointing its target an imperceptible epsilon into the room and
-// clamping min/maxDistance to that same epsilon — this keeps the camera
-// pinned in place (it can't orbit away or zoom) while still letting the
-// existing drag/damping code rotate the view, since OrbitControls always
-// re-derives camera.position from camera/target offset on every update().
+// Walk-in: puts the camera at the chosen doorway (eye height) and reuses
+// OrbitControls for looking around, by pointing its target an
+// imperceptible epsilon into the room and clamping min/maxDistance to that
+// same epsilon — the camera stays put (it can't orbit away or zoom) while
+// a drag still turns the view.
 function applyCameraMode(s) {
   if (!s) return;
   var dims = Layout.computeRoomDimensions(state.dims);
@@ -3305,46 +2829,133 @@ function applyCameraMode(s) {
       return p.index === state.walkInEntryIndex;
     })[0];
     if (!ep) {
-      // The chosen entry point isn't currently placed (e.g. a room resize
-      // dropped it) — nowhere to stand, fall back to the overview instead
-      // of leaving the camera stranded at a stale position.
+      // That doorway is gone: back to the overview rather than leaving the
+      // camera stranded where it was.
       state.cameraMode = "orbit";
     } else {
       var normal = WALL_INWARD_NORMAL[ep.wallId] || { x: 0, z: 1 };
-      // A typical standing eye height, but never above the ceiling: rooms
-      // can legally be as short as Layout.RENDER_MIN_DIM (2ft), where a
-      // fixed 5.5ft would put the camera outside the shell looking at the
-      // back (non-rendering) side of the BackSide-material ceiling.
-      var eyeHeight = Math.min(5.5, dims.heightFt - 1);
+      // A typical standing eye height, but never above the ceiling.
+      var eyeHeight = Math.min(5.4, dims.heightFt - 0.8);
       var epsilon = 0.05;
+      // Just through the doorway (the door itself is behind), with a wider
+      // lens, the way a room looks when you walk into it.
+      var inside = 0.3;
+      setFov(s, WALK_FOV);
       s.cameraLerp = null;
-      s.camera.position.set(ep.x, eyeHeight, ep.z);
-      s.controls.target.set(ep.x + normal.x * epsilon, eyeHeight, ep.z + normal.z * epsilon);
+      s.camera.position.set(ep.x + normal.x * inside, eyeHeight, ep.z + normal.z * inside);
+      // Looking toward the middle of the room and down at the fixtures, but
+      // not so steeply that the walls drop out of view.
+      var look = new THREE.Vector3(dims.widthFt / 2, 0, dims.lengthFt / 2).sub(s.camera.position);
+      look.y = 0;
+      if (look.x * normal.x + look.z * normal.z <= 0.1) look.set(normal.x, 0, normal.z);
+      var flat = look.length();
+      look.y = -Math.min(eyeHeight - 2.2, flat * Math.tan((26 * Math.PI) / 180));
+      s.controls.target.copy(s.camera.position).addScaledVector(look.normalize(), epsilon);
       s.controls.minDistance = epsilon;
       s.controls.maxDistance = epsilon;
+      s.controls.enablePan = false;
       s.controls.update();
       needsRender = true;
-      syncCameraControls(s);
       return;
     }
   }
+  s.controls.enablePan = true;
+  setFov(s, ORBIT_FOV);
+  frameRoom(s, true);
+}
 
-  // Orbit / overview — same framing math as rebuild()'s dimsChanged branch,
-  // reused here so leaving walk-in mode (with dims unchanged, so rebuild()
-  // itself wouldn't otherwise touch the camera) still returns smoothly.
-  var target = new THREE.Vector3(dims.widthFt / 2, dims.heightFt * 0.4, dims.lengthFt / 2);
+var ORBIT_FOV = 50;
+var WALK_FOV = 70;
+
+function setFov(s, fov) {
+  if (s.camera.fov === fov) return;
+  s.camera.fov = fov;
+  s.camera.updateProjectionMatrix();
+}
+
+// Where the camera looks at the whole room from: above the corner between
+// walls B and C, far enough back that the room fills the view.
+function overviewPose(s, aspect) {
+  var dims = Layout.computeRoomDimensions(state.dims);
+  var w = dims.widthFt;
+  var l = dims.lengthFt;
+  var h = dims.heightFt;
+  aspect = aspect || s.camera.aspect || 1;
+  var target = new THREE.Vector3(w / 2, h * 0.32, l / 2);
+  var direction = new THREE.Vector3(0.62, 0.95, 1).normalize();
+  // The nearest distance at which the whole room box (all eight corners)
+  // is in view, leaving room at the top for the view buttons.
+  var tanV = Math.tan((ORBIT_FOV * Math.PI) / 360);
+  var tanH = tanV * aspect;
+  var forward = direction.clone().negate();
+  var right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+  var up = new THREE.Vector3().crossVectors(right, forward);
+  var corners = [];
+  [0, w].forEach(function (x) {
+    [0, h].forEach(function (y) {
+      [0, l].forEach(function (z) {
+        corners.push(new THREE.Vector3(x, y, z).sub(target));
+      });
+    });
+  });
+  var fits = function (d) {
+    return corners.every(function (c) {
+      var depth = d + c.dot(forward);
+      if (depth <= 0.1) return false;
+      var sx = c.dot(right) / (depth * tanH);
+      var sy = c.dot(up) / (depth * tanV);
+      return Math.abs(sx) <= 0.9 && sy <= 0.8 && sy >= -0.92;
+    });
+  };
+  var lo = 1;
+  var hi = 400;
+  for (var i = 0; i < 40; i++) {
+    var mid = (lo + hi) / 2;
+    if (fits(mid)) hi = mid;
+    else lo = mid;
+  }
+  return { target: target, position: target.clone().addScaledVector(direction, hi), distance: hi };
+}
+
+// The walls between the camera and the room aren't drawn (they're only
+// seen from inside), so neither is a door, mirror or shelf on them: it would
+// float in the air.
+function applyCutaway(s, camera) {
+  var dims = Layout.computeRoomDimensions(state.dims);
+  var plane = { N: 0, E: dims.widthFt, S: dims.lengthFt, W: 0 };
+  var p = camera.position;
+  s.fixtureGroup.children.forEach(function (inst) {
+    var id = inst.userData.wallId;
+    if (!inst.userData.cutaway || !WALL_INWARD_NORMAL[id]) return;
+    var n = WALL_INWARD_NORMAL[id];
+    var along = id === "N" || id === "S" ? (p.z - plane[id]) * n.z : (p.x - plane[id]) * n.x;
+    inst.visible = along > -0.05;
+  });
+}
+
+// Points the camera at the whole room. animate: glide there.
+function frameRoom(s, animate) {
+  var dims = Layout.computeRoomDimensions(state.dims);
+  var pose = overviewPose(s);
   var diag = Math.sqrt(dims.widthFt * dims.widthFt + dims.lengthFt * dims.lengthFt);
-  s.controls.minDistance = clamp(diag * 0.5, 3, 20);
-  s.controls.maxDistance = clamp(diag * 1.9, 12, 160);
-  s.controls.target.copy(target);
-  startCameraLerp(
-    s,
-    target,
-    clamp(s.camera.position.distanceTo(target) || diag, s.controls.minDistance, s.controls.maxDistance),
-  );
+  s.controls.minDistance = clamp(diag * 0.3, 2, 12);
+  s.controls.maxDistance = Math.max(pose.distance * 1.9, 14);
+  if (animate) {
+    s.cameraLerp = {
+      from: s.camera.position.clone(),
+      to: pose.position,
+      targetFrom: s.controls.target.clone(),
+      targetTo: pose.target,
+      start: performance.now(),
+      durationMs: 450,
+    };
+  } else {
+    s.cameraLerp = null;
+    s.camera.position.copy(pose.position);
+    s.controls.target.copy(pose.target);
+  }
   s.controls.update();
   needsRender = true;
-  syncCameraControls(s);
 }
 
 function rebuild() {
@@ -3360,16 +2971,10 @@ function rebuild() {
   if (dimsChanged) {
     rebuildShell(s, dims.widthFt, dims.lengthFt, dims.heightFt);
 
-    var target = new THREE.Vector3(dims.widthFt / 2, dims.heightFt * 0.4, dims.lengthFt / 2);
-    var diag = Math.sqrt(dims.widthFt * dims.widthFt + dims.lengthFt * dims.lengthFt);
-    var minDistance = clamp(diag * 0.5, 3, 20);
-    var maxDistance = clamp(diag * 1.9, 12, 160);
-    s.controls.minDistance = minDistance;
-    s.controls.maxDistance = maxDistance;
-
     // Directional light + its shadow camera frustum are sized to the
     // room's own diagonal so the shadow stays crisp at both the tiny
     // default footprint and the largest legal room.
+    var diag = Math.sqrt(dims.widthFt * dims.widthFt + dims.lengthFt * dims.lengthFt);
     s.dirLight.position.set(dims.widthFt * 0.6, dims.heightFt * 2.2, dims.lengthFt * 0.6);
     s.dirLight.target.position.set(dims.widthFt / 2, 0, dims.lengthFt / 2);
     s.dirLight.target.updateMatrixWorld();
@@ -3382,31 +2987,195 @@ function rebuild() {
     s.dirLight.shadow.camera.far = dims.heightFt * 2.2 + frustum + 5;
     s.dirLight.shadow.camera.updateProjectionMatrix();
 
-    if (!s.lastDims) {
-      // First build: place the camera directly, no lerp needed.
-      s.camera.position.set(dims.widthFt * 1.3, dims.heightFt * 1.1, dims.lengthFt * 1.6);
-      s.controls.target.copy(target);
-    } else {
-      var jump = target.distanceTo(s.controls.target) + Math.abs(diag - (s.lastDiag || diag));
-      s.controls.target.copy(target);
-      if (jump > 0.75) {
-        startCameraLerp(s, target, clamp(s.camera.position.distanceTo(s.controls.target), minDistance, maxDistance));
-      }
-    }
-    s.controls.update();
+    // The first time straight there; after a resize, a glide to the new
+    // framing (unless standing in the doorway, which follows below).
+    if (state.cameraMode !== "walkin") frameRoom(s, !!s.lastDims);
     s.lastDims = dims;
-    s.lastDiag = diag;
   }
 
   rebuildFinishes(s);
   rebuildFixtures(s, dims.widthFt, dims.lengthFt, dims.heightFt);
+  rebuildSurround(s);
+  applyStudioView(s);
   if (s.pendingFocus) {
     focusCameraOn(s, s.pendingFocus);
     s.pendingFocus = null;
   }
-  // Follows the room if it resizes while walking in, or if the layout's
-  // entry-point placement shifted; a no-op re-pin when nothing moved.
+  // Follows the room if it resizes while walking in, or if the doorway
+  // moved; a no-op re-pin when nothing moved.
   if (state.cameraMode === "walkin") applyCameraMode(s);
+}
+
+// ---------------------------------------------------------------------
+// The design studio's view: outlines, floor marks, the tub surround
+// ---------------------------------------------------------------------
+var STUDIO_TONES = { select: 0x3b82f6, ok: 0x14b8a6, warn: 0xf59e0b, error: 0xef4444, info: 0x94a3b8 };
+var studioView = { selected: null, tone: "select", hover: null, marks: [] };
+
+// A wall's left end, direction along it and into the room (the same frames
+// as js/room-plan.js walls()).
+function wallFrame(wallId, w, l) {
+  return {
+    N: { ox: 0, oz: 0, dx: 1, dz: 0, nx: 0, nz: 1 },
+    E: { ox: w, oz: 0, dx: 0, dz: 1, nx: -1, nz: 0 },
+    S: { ox: w, oz: l, dx: -1, dz: 0, nx: 0, nz: -1 },
+    W: { ox: 0, oz: l, dx: 0, dz: -1, nx: 1, nz: 0 },
+  }[wallId];
+}
+
+// The box around a fixture's base (not a mirror or shelf above it).
+function itemBox(s, itemId) {
+  var box = new THREE.Box3();
+  s.fixtureGroup.children.forEach(function (inst) {
+    if (inst.userData.itemId === itemId && !inst.userData.onWall) box.expandByObject(inst);
+  });
+  return box;
+}
+
+function applyStudioView(s) {
+  if (!s) return;
+  [
+    { helper: s.selectBox, id: studioView.selected, tone: studioView.tone },
+    { helper: s.hoverBox, id: studioView.hover !== studioView.selected ? studioView.hover : null, tone: "info" },
+  ].forEach(function (h) {
+    var box = h.id ? itemBox(s, h.id) : null;
+    if (!box || box.isEmpty()) {
+      h.helper.visible = false;
+      return;
+    }
+    h.helper.box.copy(box.expandByScalar(0.04));
+    h.helper.material.color.setHex(STUDIO_TONES[h.tone] || STUDIO_TONES.select);
+    h.helper.visible = true;
+  });
+  needsRender = true;
+}
+
+function disposeGroup(group) {
+  while (group.children.length) {
+    var child = group.children[0];
+    group.remove(child);
+    if (child.geometry) child.geometry.dispose();
+    if (child.material && child.material !== threeState.surroundMaterial) child.material.dispose();
+  }
+}
+
+// Each mark is a rectangle on the floor ({ x0, x1, z0, z1 }) or a door's
+// swing ({ arc: { x, z, r, ax, az, bx, bz } }: the hinge, the radius and
+// the directions the door sweeps between), filled faintly and edged in its
+// tone.
+function rebuildMarks(s) {
+  disposeGroup(s.markGroup);
+  studioView.marks.forEach(function (mark, i) {
+    var color = STUDIO_TONES[mark.tone] || STUDIO_TONES.info;
+    var y = 0.012 + i * 0.0008;
+    var fillMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: mark.fill != null ? mark.fill : 0.2,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+    var lineMaterial = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.9 });
+    var shape;
+    var outline;
+    if (mark.arc) {
+      var a = mark.arc;
+      // CircleGeometry lies in x-y; laid flat, its angle t points at (cos t, -sin t).
+      var from = Math.atan2(-a.az, a.ax);
+      var sweep = Math.atan2(-a.bz, a.bx) - from;
+      while (sweep > Math.PI) sweep -= 2 * Math.PI;
+      while (sweep < -Math.PI) sweep += 2 * Math.PI;
+      if (sweep < 0) {
+        from += sweep;
+        sweep = -sweep;
+      }
+      shape = new THREE.CircleGeometry(a.r, 24, from, sweep);
+      var pts = [new THREE.Vector3(0, 0, 0)];
+      for (var k = 0; k <= 24; k++) {
+        var t = from + (sweep * k) / 24;
+        pts.push(new THREE.Vector3(Math.cos(t) * a.r, Math.sin(t) * a.r, 0));
+      }
+      pts.push(new THREE.Vector3(0, 0, 0));
+      outline = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), lineMaterial);
+      [shape, outline.geometry].forEach(function (g) {
+        g.rotateX(-Math.PI / 2);
+        g.translate(a.x, y, a.z);
+      });
+    } else {
+      var w = mark.x1 - mark.x0;
+      var d = mark.z1 - mark.z0;
+      if (!(w > 0.001) || !(d > 0.001)) return;
+      shape = new THREE.PlaneGeometry(w, d);
+      shape.rotateX(-Math.PI / 2);
+      shape.translate((mark.x0 + mark.x1) / 2, y, (mark.z0 + mark.z1) / 2);
+      outline = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(mark.x0, y, mark.z0),
+          new THREE.Vector3(mark.x1, y, mark.z0),
+          new THREE.Vector3(mark.x1, y, mark.z1),
+          new THREE.Vector3(mark.x0, y, mark.z1),
+        ]),
+        lineMaterial,
+      );
+    }
+    var fill = new THREE.Mesh(shape, fillMaterial);
+    fill.renderOrder = 5;
+    outline.renderOrder = 6;
+    s.markGroup.add(fill, outline);
+  });
+  needsRender = true;
+}
+
+// The tile around a tub when the walls are "tile around the tub": panels
+// on the walls, in the picked wall tile (or a plain tile color).
+function rebuildSurround(s) {
+  disposeGroup(s.surroundGroup);
+  if (!state.surround.length) return;
+  var dims = Layout.computeRoomDimensions(state.dims);
+  applySurfaceFinish(
+    s,
+    s.surroundMaterial,
+    state.surfacePicks.wallTile || null,
+    Layout.colorForWalls("tile", s.isDark),
+    roughnessForWalls("tile"),
+  );
+  state.surround.forEach(function (p) {
+    var f = wallFrame(p.wallId, dims.widthFt, dims.lengthFt);
+    var span = p.a1 - p.a0;
+    var top = Math.min(p.top, dims.heightFt);
+    if (!f || !(span > 0) || !(top > 0)) return;
+    var mesh = new THREE.Mesh(feetUVs(new THREE.PlaneGeometry(span, top), span, top), s.surroundMaterial);
+    var along = (p.a0 + p.a1) / 2;
+    mesh.position.set(f.ox + f.dx * along + f.nx * 0.015, top / 2, f.oz + f.dz * along + f.nz * 0.015);
+    mesh.rotation.y = Math.atan2(f.nx, f.nz);
+    mesh.receiveShadow = true;
+    s.surroundGroup.add(mesh);
+  });
+  needsRender = true;
+}
+
+// Aims the raycaster through a page point. false when the canvas has no size.
+function pointerRay(s, clientX, clientY) {
+  var rect = s.renderer.domElement.getBoundingClientRect();
+  if (!rect.width || !rect.height) return false;
+  s.raycaster.setFromCamera(
+    new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1),
+    s.camera,
+  );
+  return true;
+}
+
+// Called after every frame drawn, see onFrame().
+var frameListeners = [];
+
+function notifyFrame() {
+  frameListeners.slice().forEach(function (fn) {
+    try {
+      fn();
+    } catch (err) {
+      console.error(err);
+    }
+  });
 }
 
 // ---------------------------------------------------------------------
@@ -3416,8 +3185,8 @@ function markDirty() {
   dirty = true;
 }
 
-// Called after every redraw of the room (a pick, a drag, new counts or
-// sizes), so the chat can keep its own dropdowns and the estimate in step
+// Called after every redraw of the room (a pick, a new plan, a model
+// arriving), so the studio can keep its lists and the estimate in step
 // with what the room shows. See onChange().
 var changeListeners = [];
 
@@ -3436,21 +3205,20 @@ var unavailableAnnounced = false;
 window.BathroomRoom3D = {
   available: false,
 
+  // Starts drawing the room. Without WebGL (or if it fails to start) the
+  // panel is hidden again and "bathroomroom3d:unavailable" fires once;
+  // otherwise "bathroomroom3d:ready" fires once the scene exists.
   show: function () {
     var panel = document.getElementById(PANEL_ID);
     if (panel) panel.hidden = false;
     // ensureScene()'s first-ever call does real synchronous work (PMREM
     // environment generation, shader compilation) — deferred one frame so
-    // the browser gets to paint the panel becoming visible (and whatever
-    // else changed in this same call, like the progress bar) before that
-    // work blocks the main thread, instead of both happening in one
-    // uninterrupted synchronous stretch.
+    // the browser gets to paint the page first.
     requestAnimationFrame(function () {
       if (panel && panel.hidden) return; // hidden again before this ran
+      var first = threeState === null;
       var s = ensureScene();
       if (!s) {
-        // No WebGL (or it failed to start): no empty box. The chat says so
-        // once and carries on without the room steps.
         if (panel) panel.hidden = true;
         if (!unavailableAnnounced) {
           unavailableAnnounced = true;
@@ -3458,6 +3226,7 @@ window.BathroomRoom3D = {
         }
         return;
       }
+      if (first) document.dispatchEvent(new CustomEvent("bathroomroom3d:ready"));
       if (s.running) return;
       s.running = true;
       s.renderer.setAnimationLoop(function tick() {
@@ -3476,8 +3245,10 @@ window.BathroomRoom3D = {
         // is actually still moving.
         s.controls.update();
         if (needsRender) {
+          applyCutaway(s, s.camera);
           s.renderer.render(s.scene, s.camera);
           needsRender = false;
+          notifyFrame();
         }
       });
     });
@@ -3492,89 +3263,39 @@ window.BathroomRoom3D = {
     }
   },
 
-  reset: function () {
-    state = {
-      scope: {},
-      dims: { widthFt: null, lengthFt: null, heightFt: null },
-      fixtures: {},
-      selectedToiletStyle: "A",
-      plumbingWallIds: [],
-      entryPoints: [],
-      cameraMode: "orbit",
-      walkInEntryIndex: 0,
-      fixtureFinishes: {},
-      surfacePicks: {},
-      productPicks: defaultProductPicks(),
-      fixturePositions: {},
-    };
-    picking = null;
-    hoveredWallId = null;
-    if (threeState) {
-      threeState.lastDims = null;
-      threeState.lastEntryPlacements = [];
-      if (threeState.toiletStyleSwitch) {
-        Array.prototype.forEach.call(threeState.toiletStyleSwitch.children, function (btn, i) {
-          var isDefault = i === 0;
-          btn.classList.toggle("selected", isDefault);
-          btn.setAttribute("aria-pressed", isDefault ? "true" : "false");
-        });
-      }
-      applyWallHighlightState(threeState);
-    }
+  // The room's inside size, feet.
+  setRoomSize: function (widthFt, lengthFt, heightFt) {
+    state.dims = { widthFt: widthFt, lengthFt: lengthFt, heightFt: heightFt };
     markDirty();
   },
 
+  // How the floor, walls and ceiling look, by js/bathroom-pricing.js scope
+  // key: floorFinish, walls, paintCeiling.
   setScope: function (fieldKey, value) {
+    if (state.scope[fieldKey] === value) return;
     state.scope[fieldKey] = value;
     markDirty();
   },
 
-  setDimension: function (fieldKey, rawValue) {
-    var key =
-      fieldKey === "Bathroom_Width_Ft" ? "widthFt" : fieldKey === "Bathroom_Length_Ft" ? "lengthFt" : "heightFt";
-    state.dims = Layout.applyDimensionInput(state.dims, key, rawValue);
+  // What stands in the room: js/room-plan.js toPlacements().
+  setPlan: function (placements) {
+    state.plan = Array.isArray(placements) ? placements.slice() : [];
     markDirty();
   },
 
-  setFixtureCount: function (fixtureKey, rawValue) {
-    state.fixtures = Layout.applyFixtureInput(state.fixtures, fixtureKey, rawValue);
-    markDirty();
+  // Each kind of fixture's size with the products picked (or `picks`), in
+  // js/room-plan.js's terms: { type: { span, depth, height } }.
+  itemSizes: function (picks) {
+    return planSizes(picks);
   },
 
-  // Whether candidate fixture counts would all actually fit in the current
-  // room (dimensions, plumbing-wall restriction, entry points already
-  // placed) — the same clearance/overlap/anchor checks computeLayout always
-  // runs, just run ahead of time against counts that haven't been
-  // committed to state.fixtures yet, so a submit can be blocked instead of
-  // silently dropping whatever didn't fit. Returns droppedCounts (a plain
-  // {fixtureKey: droppedCount} map, empty when everything fits). Callers
-  // are expected to only pass already-range-validated counts (e.g. after
-  // Pricing.validateJob) — this does no input sanitizing of its own.
-  checkFit: function (fixtureCounts) {
-    var dims = Layout.computeRoomDimensions(state.dims);
-    var layoutInput = {
-      widthFt: dims.widthFt,
-      lengthFt: dims.lengthFt,
-      heightFt: dims.heightFt,
-      fixtureCounts: fixtureCounts,
-      plumbingWallIds: state.plumbingWallIds,
-      entryPoints: state.entryPoints,
-      fixturePositions: state.fixturePositions,
-    };
-    layoutInput.footprints = fittedProductFootprints(layoutInput, false);
-    var result = Layout.computeLayout(layoutInput);
-    return result.droppedCounts;
+  // fn(sizes) answers whether the design still works with those fixture
+  // sizes. A product that would break it is offered disabled, "too big".
+  setFitCheck: function (fn) {
+    planFitCheck = typeof fn === "function" ? fn : null;
   },
 
-  // Applies once a real product is picked for this category in the chat's
-  // materials flow — retints every placed instance of that fixture type
-  // toward colorHex (see applyFixtureFinish()/FIXTURE_FINISH_MATERIAL_KEY
-  // above). colorHex is typically MaterialsPricing.guessFinishColor()'s
-  // result; pass null/undefined to clear back to the default color (e.g.
-  // if the pick is changed to a product with no recognizable finish word).
-  // The 3D product switcher (PRODUCT_SLOTS): shows optionId in slotId's
-  // place. Unknown ids are ignored. With the Kohler picks on, these are
-  // what the estimate prices (getProductPricingItems()).
+  // Shows optionId in slotId's place. Unknown ids are ignored.
   setProductPick: function (slotId, optionId) {
     var slot = productSlot(slotId);
     if (!slot || !productOption(slot, optionId) || state.productPicks[slotId] === optionId) return;
@@ -3582,8 +3303,12 @@ window.BathroomRoom3D = {
     markDirty();
   },
 
-  // Calls fn after every redraw of the room. Returns a function that stops
-  // calling it.
+  getProductPicks: function () {
+    return Object.assign({}, state.productPicks);
+  },
+
+  // Calls fn after every redraw of the room (a pick, a change to the plan,
+  // a model arriving). Returns a function that stops calling it.
   onChange: function (fn) {
     changeListeners.push(fn);
     return function () {
@@ -3593,106 +3318,9 @@ window.BathroomRoom3D = {
     };
   },
 
-  getProductPicks: function () {
-    return Object.assign({}, state.productPicks);
-  },
-
-  // The customer's room as plain data, for saving in this browser: the
-  // answers that shape it, the plumbing walls and doorways, the products
-  // picked in the switcher and where fixtures were dragged.
-  getDesign: function () {
-    return JSON.parse(
-      JSON.stringify({
-        scope: state.scope,
-        dims: state.dims,
-        fixtures: state.fixtures,
-        toiletStyle: state.selectedToiletStyle,
-        plumbingWallIds: state.plumbingWallIds,
-        entryPoints: state.entryPoints,
-        productPicks: state.productPicks,
-        fixturePositions: state.fixturePositions,
-      }),
-    );
-  },
-
-  // Puts a getDesign() result back. Anything that no longer exists (a
-  // product taken off the list, a wall id from an older version) is left
-  // at its default instead.
-  loadDesign: function (design) {
-    if (!design || typeof design !== "object") return;
-    var obj = function (v) {
-      return v && typeof v === "object" && !Array.isArray(v) ? JSON.parse(JSON.stringify(v)) : {};
-    };
-    var picks = defaultProductPicks();
-    var saved = obj(design.productPicks);
-    Object.keys(saved).forEach(function (slotId) {
-      var slot = productSlot(slotId);
-      if (slot && productOption(slot, saved[slotId])) picks[slotId] = saved[slotId];
-    });
-    var dims = obj(design.dims);
-    state.scope = obj(design.scope);
-    state.dims = { widthFt: dims.widthFt || null, lengthFt: dims.lengthFt || null, heightFt: dims.heightFt || null };
-    state.fixtures = obj(design.fixtures);
-    state.selectedToiletStyle = design.toiletStyle === "B" ? "B" : "A";
-    state.plumbingWallIds = (Array.isArray(design.plumbingWallIds) ? design.plumbingWallIds : []).filter(function (id) {
-      return ["N", "E", "S", "W"].indexOf(id) !== -1;
-    });
-    var size = Layout.computeRoomDimensions(state.dims);
-    state.entryPoints = (Array.isArray(design.entryPoints) ? design.entryPoints : [])
-      .filter(function (ep) {
-        return ep && ["N", "E", "S", "W"].indexOf(ep.wallId) !== -1 && isFinite(ep.offsetFt);
-      })
-      .slice(0, 4)
-      .map(function (ep) {
-        var span = wallSpanFor(ep.wallId, size.widthFt, size.lengthFt);
-        return {
-          wallId: ep.wallId,
-          offsetFt: Layout.clampEntryOffset(span, +ep.offsetFt),
-          hasDoor: ep.hasDoor !== false,
-        };
-      });
-    state.productPicks = picks;
-    state.fixturePositions = obj(design.fixturePositions);
-    if (threeState && threeState.toiletStyleSwitch) {
-      Array.prototype.forEach.call(threeState.toiletStyleSwitch.children, function (btn, i) {
-        var on = (i === 0 ? "A" : "B") === state.selectedToiletStyle;
-        btn.classList.toggle("selected", on);
-        btn.setAttribute("aria-pressed", on ? "true" : "false");
-      });
-    }
-    markDirty();
-  },
-
-  // Where the customer has dragged fixtures to (see state.fixturePositions).
-  getFixturePositions: function () {
-    return JSON.parse(JSON.stringify(state.fixturePositions));
-  },
-
-  // The page coordinates of a placed fixture's center, or of a floor point
-  // (feet) when given one — where a pointer would press to drag it (the
-  // browser tests drive dragging through this).
-  screenPoint: function (fixtureKey, floorX, floorZ) {
-    var s = threeState;
-    if (!s) return null;
-    var p;
-    if (fixtureKey) {
-      var inst = s.fixtureGroup.children.filter(function (c) {
-        return c.userData.fixtureKey === fixtureKey;
-      })[0];
-      if (!inst) return null;
-      p = new THREE.Box3().setFromObject(inst).getCenter(new THREE.Vector3());
-    } else {
-      p = new THREE.Vector3(floorX, 0, floorZ);
-    }
-    p.project(s.camera);
-    var rect = s.renderer.domElement.getBoundingClientRect();
-    return { x: rect.left + ((p.x + 1) / 2) * rect.width, y: rect.top + ((1 - p.y) / 2) * rect.height };
-  },
-
-  // The switcher's tabs for the fixtures placed right now, in order, each
-  // with its dropdowns: [{ id, label, slots: [{ id, label, value,
-  // options: [{ id, label, reason }] }] }]. reason is set on an option that
-  // can't be picked, saying why.
+  // The product choices for the fixtures in the room, by fixture: [{ id,
+  // label, slots: [{ id, label, value, options: [{ id, label, reason }] }]
+  // }]. reason is set on an option that can't be picked, saying why.
   getProductGroups: function () {
     var cur = currentLayout();
     var sel = selectedProducts();
@@ -3704,7 +3332,7 @@ window.BathroomRoom3D = {
           id: slot.id,
           label: T("room3d.slot." + slot.id),
           value: sel[slot.id].id,
-          options: slotOptionStates(slot, sel, cur.layoutInput, true),
+          options: slotOptionStates(slot, sel, true),
         };
       });
       return { id: group.id, label: T("room3d.group." + group.id), slots: slots };
@@ -3713,21 +3341,17 @@ window.BathroomRoom3D = {
     });
   },
 
-  // Swaps any stand-in still showing in this tab (the generic toilet, the
-  // glass enclosure, the plain mirror) for its first Kohler product that
-  // fits, so every fixture in it has a real product to price.
+  // Swaps any stand-in still showing for this fixture (the generic toilet,
+  // the plain mirror) for its first Kohler product that fits.
   useRealProducts: function (groupId) {
     var changed = false;
     PRODUCT_SLOTS.forEach(function (slot) {
       if (!slot.body || productGroupOf(slot) !== groupId) return;
       var sel = selectedProducts();
       if (optionMmns(slot, sel[slot.id], sel).length) return;
-      var layoutInput = currentLayout().layoutInput;
       var pick = slot.options.filter(function (opt) {
         return (
-          optionMmns(slot, opt, sel).length &&
-          (!opt.available || opt.available(sel)) &&
-          !productWouldDrop(layoutInput, slot, opt)
+          optionMmns(slot, opt, sel).length && (!opt.available || opt.available(sel)) && !productWouldDrop(slot, opt)
         );
       })[0];
       if (pick) {
@@ -3736,30 +3360,27 @@ window.BathroomRoom3D = {
       }
     });
     if (changed) markDirty();
+    return changed;
   },
 
-  // Turns the camera to frame a tab's fixtures, and shows that tab above
-  // the canvas; null goes back to the whole-room overview. Returns whether
-  // there was anything to frame.
+  // Turns the camera to frame a fixture's products; null goes back to the
+  // whole room. Returns whether there was anything to frame.
   focusProductGroup: function (groupId) {
     var s = threeState;
     if (!s) return false;
     if (!groupId) {
-      applyCameraMode(s);
+      frameRoom(s, true);
       return true;
     }
     var group = productGroupDef(groupId);
     if (!group) return false;
     if (state.cameraMode === "walkin") {
       state.cameraMode = "orbit";
-      syncCameraControls(s);
+      s.controls.enablePan = true;
+      setFov(s, ORBIT_FOV);
     }
-    if (s.productSwitcher) {
-      s.productSwitcher.group = groupId;
-      applyProductGroup(s.productSwitcher);
-    }
-    // The fixtures may not be drawn yet (counts just entered): frame them
-    // once the next rebuild has placed them.
+    // The fixtures may not be drawn yet: frame them once the next rebuild
+    // has placed them.
     if (dirty) {
       s.pendingFocus = group;
       return true;
@@ -3767,12 +3388,11 @@ window.BathroomRoom3D = {
     return focusCameraOn(s, group);
   },
 
-  // What to price: one item per showing product slot of each placed
+  // What to price or list: one item per showing product slot of each placed
   // fixture, with the Kohler model numbers it puts in the room and how many
   // of that fixture are placed. [{ groupId, slotId, slotLabel, optionId,
-  // productLabel, mmns: [...], qty }]. A stand-in with no Kohler product
-  // (the glass enclosure, the plain shower door) comes with no mmns, so the
-  // estimate can say it isn't priced instead of leaving it out silently.
+  // productLabel, mmns: [...], qty, needsValve, needsWiring }]. A stand-in
+  // with no Kohler product comes with no mmns.
   getProductPricingItems: function () {
     var cur = currentLayout();
     var sel = selectedProducts();
@@ -3801,14 +3421,11 @@ window.BathroomRoom3D = {
     return items;
   },
 
+  // Tints every fixture of this kind toward colorHex (null: back to its own
+  // color).
   setFixtureFinish: function (fixtureKey, colorHex) {
     if (colorHex == null) delete state.fixtureFinishes[fixtureKey];
     else state.fixtureFinishes[fixtureKey] = colorHex;
-    // Placement is untouched by a finish change, so this retints whatever
-    // is already placed in place instead of going through markDirty()'s
-    // full rebuild — cheap and safe even if nothing of this type is placed
-    // yet (a no-op then; the eventual real rebuild picks up
-    // state.fixtureFinishes correctly once it exists).
     if (threeState) {
       updateFixtureFinishInstances(threeState, fixtureKey, colorHex);
       needsRender = true;
@@ -3817,27 +3434,26 @@ window.BathroomRoom3D = {
     }
   },
 
-  // Applies once a real floor tile / wall tile / flooring / paint product is
-  // picked in the chat's materials flow (categoryKey is the picker's
-  // category key; product is the catalog option). The room's floor, walls
-  // or ceiling then render as that product — its real tile size, layout,
-  // color, grout and sheen — for as long as the matching scope answer
-  // holds (see SurfaceFinishes.resolveSurfaces()). A product with no
-  // surface spec, or product null, clears back to the generic finish.
+  // A real floor tile / wall tile / flooring / paint for the room's
+  // surfaces (categoryKey: floorTile, wallTile, flooring, wallPaint,
+  // ceilingPaint; product: a js/materials-pricing.js catalog option). The
+  // floor, walls or ceiling show it — its tile size, layout, color, grout
+  // and sheen — while the matching scope holds. null clears it.
   setSurfaceFinish: function (categoryKey, product) {
     var spec = Surfaces ? Surfaces.specFor(product) : null;
     if (spec) state.surfacePicks[categoryKey] = spec;
     else delete state.surfacePicks[categoryKey];
     if (threeState) {
       rebuildFinishes(threeState);
+      rebuildSurround(threeState);
       needsRender = true;
     } else {
       markDirty();
     }
   },
 
-  // Which picked product (by catalog id) each surface currently shows —
-  // null where the generic scope color is showing instead. For tests.
+  // Which picked product (by catalog id) each surface shows right now; null
+  // where the plain color shows instead.
   getSurfaceFinishes: function () {
     var picked = Surfaces
       ? Surfaces.resolveSurfaces(state.scope, state.surfacePicks)
@@ -3849,93 +3465,181 @@ window.BathroomRoom3D = {
     };
   },
 
-  // --- Wall-click picking (plumbing walls + entry points) ---------------
+  // Tile panels on the walls (a tub surround): [{ wallId, a0, a1, top }],
+  // feet along the wall from its left end (as js/room-plan.js measures)
+  // and up from the floor.
+  setSurround: function (panels) {
+    state.surround = (Array.isArray(panels) ? panels : []).filter(function (p) {
+      return p && WALL_INWARD_NORMAL[p.wallId] && isFinite(p.a0) && isFinite(p.a1) && isFinite(p.top);
+    });
+    if (threeState) rebuildSurround(threeState);
+  },
 
-  // mode: "multi" (plumbing walls — click to toggle any number) or "single"
-  // (one entry point's wall — click replaces the selection). onPick(ids,
-  // justClickedId) fires after every click with the running selection so
-  // the chat UI can render it live; the caller reads the final selection
-  // from its own last onPick call, there's nothing to "commit" here.
-  beginWallPicking: function (mode, onPick) {
-    var s = ensureScene();
+  // --- For the studio's pointer and labels ------------------------------
+
+  // The fixture under a page point: { itemId, point: { x, y, z } } (feet)
+  // or null.
+  pickItem: function (clientX, clientY) {
+    var s = threeState;
+    if (!s || !pointerRay(s, clientX, clientY)) return null;
+    var hits = s.raycaster.intersectObjects(s.fixtureGroup.children, true);
+    for (var i = 0; i < hits.length; i++) {
+      var o = hits[i].object;
+      while (o && o.parent !== s.fixtureGroup) o = o.parent;
+      if (o && o.visible && o.userData.itemId) {
+        var p = hits[i].point;
+        return { itemId: o.userData.itemId, point: { x: p.x, y: p.y, z: p.z } };
+      }
+    }
+    return null;
+  },
+
+  // The room point under a page point, on the level plane at height y feet
+  // (the floor by default): { x, z }, or null when the pointer is above
+  // the horizon.
+  floorPoint: function (clientX, clientY, y) {
+    var s = threeState;
+    if (!s || !pointerRay(s, clientX, clientY)) return null;
+    var hit = new THREE.Vector3();
+    var plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(y || 0));
+    if (!s.raycaster.ray.intersectPlane(plane, hit)) return null;
+    return { x: hit.x, z: hit.z };
+  },
+
+  // Shows a fixture at { x, z, rotationY, wall } (toPlacements() terms) without
+  // redrawing the room, while it's dragged. The next setPlan() puts
+  // everything back where the plan says.
+  // Where the camera is, in room feet: { x, y, z }, or null.
+  cameraPosition: function () {
+    var s = threeState;
+    if (!s) return null;
+    return { x: s.camera.position.x, y: s.camera.position.y, z: s.camera.position.z };
+  },
+
+  previewItem: function (itemId, pose) {
+    var s = threeState;
     if (!s) return;
-    picking = { mode: mode === "multi" ? "multi" : "single", onPick: onPick || null, selected: [] };
-    hoveredWallId = null;
-    applyWallHighlightState(s);
+    s.fixtureGroup.children.forEach(function (inst) {
+      if (inst.userData.itemId !== itemId) return;
+      var p = inst.userData.pose;
+      inst.position.set(pose.x, p.y, pose.z);
+      inst.rotation.y = pose.rotationY;
+      if (p.depthOffset) inst.translateZ(p.depthOffset);
+      if (pose.wall) inst.userData.wallId = pose.wall;
+    });
+    applyStudioView(s);
   },
 
-  // The same as clicking a wall, for the wall buttons in the chat (a
-  // keyboard or screen-reader path). Only while picking.
-  pickWall: function (wallId) {
-    if (["N", "E", "S", "W"].indexOf(wallId) !== -1) handleWallPick(wallId);
+  // Outlines the selected fixture in tone ("select", "ok", "warn" or
+  // "error") and, fainter, the one under the pointer. null for none.
+  setHighlight: function (selectedId, tone, hoverId) {
+    studioView.selected = selectedId || null;
+    studioView.tone = tone || "select";
+    studioView.hover = hoverId || null;
+    applyStudioView(threeState);
   },
 
-  endWallPicking: function () {
-    picking = null;
-    hoveredWallId = null;
-    applyWallHighlightState(threeState);
+  // Marks on the floor (clear floor space, a door's swing, a fixture's
+  // footprint): [{ x0, x1, z0, z1, tone, fill }] or [{ arc, tone, fill }],
+  // see rebuildMarks().
+  setMarks: function (marks) {
+    studioView.marks = Array.isArray(marks) ? marks.slice(0, 80) : [];
+    if (threeState) rebuildMarks(threeState);
   },
 
-  setPlumbingWalls: function (wallIds) {
-    state.plumbingWallIds = Array.isArray(wallIds) ? wallIds.slice() : [];
-    markDirty();
+  // "orbit" (around the room) or "walk" (standing in the first doorway).
+  // Returns the view showing, "orbit" when there's no doorway to stand in.
+  setView: function (mode) {
+    var s = threeState;
+    if (!s) return "orbit";
+    var walk = mode === "walk" && (s.lastEntryPlacements || []).length > 0;
+    state.cameraMode = walk ? "walkin" : "orbit";
+    state.walkInEntryIndex = walk ? s.lastEntryPlacements[0].index : 0;
+    applyCameraMode(s);
+    return walk ? "walk" : "orbit";
   },
 
-  // --- Entry points -------------------------------------------------
-
-  // Merges onto the existing entry point at this index when the wall id is
-  // unchanged (e.g. re-calling this to flip hasDoor after the customer
-  // already nudged the position) instead of resetting offsetFt back to
-  // center — only a genuinely new wall pick re-centers it.
-  setEntryPoint: function (index, data) {
-    if (!data || !data.wallId) return;
-    var dims = Layout.computeRoomDimensions(state.dims);
-    var span = wallSpanFor(data.wallId, dims.widthFt, dims.lengthFt);
-    var existing = state.entryPoints[index];
-    var sameWall = existing && existing.wallId === data.wallId;
-    var offsetFt = data.offsetFt != null ? data.offsetFt : sameWall ? existing.offsetFt : span / 2;
-    state.entryPoints[index] = {
-      wallId: data.wallId,
-      offsetFt: Layout.clampEntryOffset(span, offsetFt),
-      hasDoor: data.hasDoor != null ? data.hasDoor !== false : sameWall ? existing.hasDoor : true,
-    };
-    markDirty();
-  },
-
-  removeEntryPoint: function (index) {
-    state.entryPoints.splice(index, 1);
-    markDirty();
-  },
-
-  nudgeEntryPoint: function (index, deltaFt) {
-    var ep = state.entryPoints[index];
-    if (!ep) return;
-    var dims = Layout.computeRoomDimensions(state.dims);
-    var span = wallSpanFor(ep.wallId, dims.widthFt, dims.lengthFt);
-    ep.offsetFt = Layout.clampEntryOffset(span, ep.offsetFt + (deltaFt || 0));
-    markDirty();
-  },
-
-  // A shallow copy of the confirmed entry points so far, each
-  // {wallId, offsetFt, hasDoor} — used to derive the "Entry doors" fixture
-  // count straight from what was actually placed (see appendEntryPointsStep
-  // in js/script.js) instead of asking for it a second time.
-  getEntryPoints: function () {
-    return state.entryPoints.slice();
-  },
-
-  // --- Walk-in POV camera -------------------------------------------
-
-  setCameraMode: function (mode) {
-    var s = ensureScene();
+  // Back to the view of the whole room.
+  resetView: function () {
+    var s = threeState;
     if (!s) return;
-    state.cameraMode = mode === "walkin" ? "walkin" : "orbit";
+    state.cameraMode = "orbit";
     applyCameraMode(s);
   },
 
-  setWalkInEntryIndex: function (index) {
-    state.walkInEntryIndex = index;
-    if (threeState && state.cameraMode === "walkin") applyCameraMode(threeState);
-    else if (threeState) syncCameraControls(threeState);
+  // Calls fn after every frame drawn (the camera moved, the room changed),
+  // for labels that follow the room. Returns a function that stops it.
+  onFrame: function (fn) {
+    frameListeners.push(fn);
+    return function () {
+      frameListeners = frameListeners.filter(function (other) {
+        return other !== fn;
+      });
+    };
+  },
+
+  // Where a room point (feet) shows, in CSS pixels from the canvas's top
+  // left: { x, y, visible } (visible false behind the camera).
+  project: function (x, y, z) {
+    var s = threeState;
+    if (!s) return null;
+    var v = new THREE.Vector3(x, y, z).project(s.camera);
+    var canvas = s.renderer.domElement;
+    return {
+      x: ((v.x + 1) / 2) * canvas.clientWidth,
+      y: ((1 - v.y) / 2) * canvas.clientHeight,
+      visible: v.z > -1 && v.z < 1,
+    };
+  },
+
+  // The page point at the middle of a fixture, or null (for tests driving
+  // a drag).
+  itemScreenPoint: function (itemId) {
+    var s = threeState;
+    if (!s) return null;
+    var box = itemBox(s, itemId);
+    if (box.isEmpty()) return null;
+    var c = box.getCenter(new THREE.Vector3());
+    var v = c.project(s.camera);
+    var rect = s.renderer.domElement.getBoundingClientRect();
+    return { x: rect.left + ((v.x + 1) / 2) * rect.width, y: rect.top + ((1 - v.y) / 2) * rect.height };
+  },
+
+  // A picture of the whole room from the overview angle, without the
+  // studio's outlines and marks: a JPEG data URL, or null.
+  snapshot: function (width, height) {
+    var s = threeState;
+    if (!s) return null;
+    width = width || 1200;
+    height = height || 800;
+    var size = s.renderer.getSize(new THREE.Vector2());
+    var ratio = s.renderer.getPixelRatio();
+    var camera = s.camera.clone();
+    camera.fov = ORBIT_FOV;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    var pose = overviewPose(s, camera.aspect);
+    camera.position.copy(pose.position);
+    camera.lookAt(pose.target);
+    var shown = [s.markGroup.visible, s.selectBox.visible, s.hoverBox.visible];
+    s.markGroup.visible = s.selectBox.visible = s.hoverBox.visible = false;
+    var url = null;
+    try {
+      s.renderer.setPixelRatio(1);
+      s.renderer.setSize(width, height, false);
+      applyCutaway(s, camera);
+      s.renderer.render(s.scene, camera);
+      url = s.renderer.domElement.toDataURL("image/jpeg", 0.9);
+    } catch (err) {
+      console.warn("3D preview: couldn't take a picture of the room.", err);
+    }
+    s.markGroup.visible = shown[0];
+    s.selectBox.visible = shown[1];
+    s.hoverBox.visible = shown[2];
+    s.renderer.setPixelRatio(ratio);
+    s.renderer.setSize(size.x, size.y, false);
+    applyCutaway(s, s.camera);
+    needsRender = true;
+    return url;
   },
 };

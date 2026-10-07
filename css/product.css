@@ -281,16 +281,6 @@ label {
   letter-spacing: 0;
 }
 
-/* Chat: blue avatar, rounded window. */
-.ai-chat-avatar {
-  background: linear-gradient(135deg, #3355f0, #14b8a6);
-  color: #fff;
-}
-
-.ai-chat-suggestion {
-  border-radius: var(--radius-pill);
-}
-
 main.solid-header {
   padding-top: 88px;
 }
@@ -567,14 +557,7 @@ html[data-embed="1"] main.solid-header {
   color: #fff;
 }
 
-/* Blue fills carry white text; on navy, highlights are teal. */
-.ai-chat-row.user .ai-chat-avatar,
-.ai-chat-estimate-cta,
-.ai-chat-estimate-cta:hover {
-  color: #fff;
-}
-
-.ai-chat-estimate-total-value,
+/* On navy, highlights are teal. */
 .section-dark .card-number,
 .footer-col a:hover,
 .nav-links .lang-menu-list a[aria-current="true"] {

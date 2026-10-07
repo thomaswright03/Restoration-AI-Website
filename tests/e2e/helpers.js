@@ -2,6 +2,7 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
+const { expect } = require("@playwright/test");
 
 const ROOT = path.join(__dirname, "..", "..");
 const BASE_CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, "site-config.json"), "utf8"));
@@ -18,78 +19,37 @@ async function useConfig(page, overrides) {
   return config;
 }
 
-async function sendChat(page, text) {
-  await page.fill("#ai-chat-input", text);
-  await page.press("#ai-chat-input", "Enter");
+// Opens the design studio (the sample full bath: 8 ft x 5 ft, a tub on wall
+// B, a vanity on wall D, a toilet on wall A, the door on wall C) and waits
+// until it's drawn. Returns the page errors seen, for a final check.
+async function openStudio(page, url = "/designer.html") {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(url);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(5);
+  await expect(page.locator(".studio-status")).toBeVisible();
+  return errors;
 }
 
-async function startEstimate(page) {
-  await page.goto("/designer.html");
-  await page.click("#ai-chat-quote-starter");
-  await page.locator('form[data-group="scope"]').waitFor();
+// The 3D room is up and drawing (software WebGL in CI is slow to start).
+async function wait3d(page) {
+  await page.waitForFunction(() => window.BathroomRoom3D && window.BathroomRoom3D.available === true);
+  await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
 }
 
-// scope: { demolition: "Yes"|"No", floorFinish: "Tile"|"Other flooring"|"None",
-//          walls: "Tile (full height)"|"Paint"|"Neither", paintCeiling: "Yes"|"No" }
-const SCOPE_LABELS = {
-  demolition: "Remove the existing bathroom first (demolition)?",
-  floorFinish: "New floor?",
-  walls: "Walls?",
-  paintCeiling: "Paint the ceiling?",
-};
-
-async function answerScope(page, scope) {
-  const form = page.locator('form[data-group="scope"]').last();
-  for (const [key, answer] of Object.entries(scope)) {
-    const field = form.locator(".ai-chat-group-field", { hasText: SCOPE_LABELS[key] });
-    await field.getByRole("button", { name: answer, exact: true }).click();
-  }
-  await form.getByRole("button", { name: /Continue/ }).click();
-}
-
-async function fillGroup(page, group, values) {
-  const form = page.locator(`form[data-group="${group}"]`).last();
-  for (const [name, value] of Object.entries(values)) {
-    await form.locator(`input[name="${name}"]`).fill(String(value));
-  }
-  await form.locator(".ai-chat-group-continue").click();
-}
-
-// When the 3D room preview is on, the wall-click plumbing-walls and
-// entry-points steps come right after "dimensions" and before "fixtures" —
-// see room-3d.spec.js for dedicated coverage of that flow. Tests that only
-// care about reaching "fixtures"/the estimate call this (between filling
-// dimensions and fixtures) to skip through both.
-async function skipRoomInteractionSteps(page) {
-  for (let i = 0; i < 2; i++) {
-    const skip = page.locator(".ai-chat-group-cancel", { hasText: "Skip" }).last();
-    // isVisible() alone isn't enough: when only one of the two steps was
-    // inserted, the second loop iteration re-resolves to that SAME Skip
-    // button, now disabled after the first click — still visible, but
-    // clicking it again would just hang waiting for it to re-enable.
-    const usable = (await skip.isVisible().catch(() => false)) && (await skip.isEnabled().catch(() => false));
-    if (usable) await skip.click();
-  }
-}
-
-// Tests that only care about reaching the estimate card and aren't about
-// the materials picker itself (room-shape/3D-camera flow, pure labor
-// pricing math, validation, PDF plumbing) turn materialsEstimator off so a
-// materials category among their fixtures doesn't route them into the
-// ZIP + per-category product-pick steps — see chat.spec.js's "the merged
-// fixtures + real-product-pick flow" describe block for coverage of that.
-async function disableMaterials(page) {
-  await useConfig(page, { materialsEstimator: { enabled: false } });
-}
+const step = (page, name) => page.locator(`.studio-step-btn[data-step="${name}"]`);
+const byKey = (page, key) => page.locator(`[data-key="${key}"]`);
+const studioStatus = (page) => page.locator(".studio-status");
+const studioToast = (page) => page.locator("#studio-toast");
 
 module.exports = {
   ROOT,
   BASE_CONFIG,
   useConfig,
-  sendChat,
-  startEstimate,
-  answerScope,
-  fillGroup,
-  skipRoomInteractionSteps,
-  disableMaterials,
+  openStudio,
+  wait3d,
+  step,
+  byKey,
+  studioStatus,
+  studioToast,
 };

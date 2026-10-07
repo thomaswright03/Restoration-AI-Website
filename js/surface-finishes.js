@@ -1,7 +1,7 @@
 // Room Designer 3D — real-product surface finishes for the 3D preview.
 //
 // When a customer picks an actual floor tile, wall tile, flooring or paint
-// in the chat's materials step, the 3D room should show THAT product, not a
+// in the studio's finishes step, the 3D room should show THAT product, not a
 // generic "tile" color. Flat surface products don't need a 3D scan to look
 // right — what makes them read as the real thing is their true unit size
 // and layout (a 12x24 in. stone-look tile vs. 4x4 in. glossy squares), their

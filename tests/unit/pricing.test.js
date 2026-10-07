@@ -24,11 +24,40 @@ test("bathtub price is always 70% of the shower price", () => {
 });
 
 test("area formulas: floor = W x L, walls = 2 x H x (W + L)", () => {
-  assert.deepEqual(P.areas(ROOM_5x8x8), { floorSqFt: 40, wallSqFt: 208 });
-  assert.deepEqual(P.areas({ Bathroom_Width_Ft: "4", Bathroom_Length_Ft: "8", Bathroom_Height_Ft: "" }), {
-    floorSqFt: 32,
-    wallSqFt: 0,
+  assert.deepEqual(P.areas(ROOM_5x8x8), {
+    floorSqFt: 40,
+    grossWallSqFt: 208,
+    openingsSqFt: 0,
+    wallSqFt: 208,
+    wetWallSqFt: 0,
   });
+  const a = P.areas({ Bathroom_Width_Ft: "4", Bathroom_Length_Ft: "8", Bathroom_Height_Ft: "" });
+  assert.equal(a.floorSqFt, 32);
+  assert.equal(a.wallSqFt, 0);
+});
+
+test("doorways come off the wall area; tile around the tub is priced on its own area", () => {
+  const values = Object.assign({ Wall_Openings_SqFt: 20, Wet_Wall_SqFt: 60 }, ROOM_5x8x8);
+  const a = P.areas(values);
+  assert.equal(a.grossWallSqFt, 208);
+  assert.equal(a.wallSqFt, 188);
+  assert.equal(a.wetWallSqFt, 60);
+
+  const painted = P.computePublicEstimate(values, Object.assign({}, NOTHING, { walls: "paint" }));
+  assert.equal(line(painted, "wallPaint").qty, 188);
+  assert.match(P.estimateAssumptions(values, { walls: "paint" }, painted).join(" "), /less 20 sq ft of doorways/);
+
+  const wet = P.computePublicEstimate(values, Object.assign({}, NOTHING, { walls: "tileWet" }));
+  assert.equal(line(wet, "wallTile").qty, 60);
+  assert.equal(line(wet, "wallTile").cost, 240);
+  assert.equal(line(wet, "wallPaint").qty, 128);
+  assert.equal(line(wet, "wallPaint").cost, 229.12);
+  assert.match(P.estimateAssumptions(values, { walls: "tileWet" }, wet).join(" "), /Tile around the tub: 60 sq ft/);
+
+  // Never more tile than wall, nor negative areas.
+  const odd = P.areas(Object.assign({}, ROOM_5x8x8, { Wall_Openings_SqFt: -5, Wet_Wall_SqFt: 900 }));
+  assert.equal(odd.wallSqFt, 208);
+  assert.equal(odd.wetWallSqFt, 208);
 });
 
 test("nothing is priced from dimensions alone", () => {

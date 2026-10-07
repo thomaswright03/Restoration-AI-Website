@@ -57,14 +57,14 @@
     "Tudo o que um cliente de banheiro precisa"
   ],
   "index.f1.title": [
-    "A 3D room from their answers",
-    "Un baño en 3D según sus respuestas",
-    "Um banheiro em 3D a partir das respostas"
+    "A measured 3D room and floor plan",
+    "Un baño en 3D y un plano con medidas",
+    "Um banheiro em 3D e uma planta com medidas"
   ],
   "index.f1.text": [
-    "The room is built from the size and work the homeowner enters, and they can drag fixtures around it.",
-    "El baño se arma con las medidas y el trabajo que indica el cliente, y puede mover las piezas arrastrándolas.",
-    "O banheiro é montado com as medidas e o serviço que o cliente informa, e ele pode arrastar as peças pelo ambiente."
+    "Homeowners enter their room's size in feet and inches, then drag fixtures in 3D or on the floor plan. Clearances are checked as they go, and one tap arranges the room for them.",
+    "Sus clientes indican las medidas del baño en pies y pulgadas y luego mueven las piezas en 3D o en el plano. Las distancias se revisan sobre la marcha y con un toque el baño se acomoda solo.",
+    "Seus clientes informam as medidas do banheiro em pés e polegadas e depois arrastam as peças em 3D ou na planta. Os espaços livres são conferidos na hora, e com um toque o banheiro se organiza sozinho."
   ],
   "index.f2.title": ["Real product models", "Modelos de productos reales", "Modelos de produtos reais"],
   "index.f2.text": [
@@ -118,9 +118,9 @@
   ],
   "index.plan.badge": ["Best value", "Mejor precio", "Melhor preço"],
   "index.inc.1": [
-    "The 3D designer and estimate chat, for your business",
-    "El diseñador 3D y el chat de estimación, para su empresa",
-    "O projetista 3D e o chat de estimativa, para a sua empresa"
+    "The 3D bathroom designer and estimate, for your business",
+    "El diseñador de baños en 3D y la estimación, para su empresa",
+    "O projetista de banheiros em 3D e a estimativa, para a sua empresa"
   ],
   "index.inc.2": [
     "Your own labor prices",

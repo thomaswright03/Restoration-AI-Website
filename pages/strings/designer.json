@@ -16,9 +16,9 @@
     "É isto que os seus clientes veem"
   ],
   "designer.demo.text": [
-    "Try it as a homeowner would: start the estimate, design the room and pick products. This demo uses a sample business; yours shows your name, phone and prices.",
-    "Pruébelo como lo haría un cliente: empiece la estimación, diseñe el baño y elija productos. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
-    "Teste como um cliente faria: comece a estimativa, projete o banheiro e escolha os produtos. Esta demonstração usa uma empresa de exemplo; a sua mostra o seu nome, telefone e preços."
+    "Try it as a homeowner would: measure the room, move the fixtures, pick products and finishes, and see the estimate. This demo uses a sample business; yours shows your name, phone and prices.",
+    "Pruébelo como lo haría un cliente: mida el baño, mueva los accesorios, elija productos y acabados y vea la estimación. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
+    "Teste como um cliente faria: meça o banheiro, mova as peças, escolha produtos e acabamentos e veja a estimativa. Esta demonstração usa uma empresa de exemplo; a sua mostra o seu nome, telefone e preços."
   ],
   "designer.unavailable.title": [
     "This designer isn't available right now",
@@ -30,60 +30,26 @@
     "Comuníquese directamente con la empresa. Si este es su diseñador, revise su plan en la página de su cuenta.",
     "Entre em contato diretamente com a empresa. Se este é o seu projetista, confira o seu plano na página da sua conta."
   ],
-  "designer.chat.title": ["Design your bathroom in 3D", "Diseñe su baño en 3D", "Projete o seu banheiro em 3D"],
-  "designer.chat.subtitle": [
-    "Scripted replies, not a person and not AI. Nothing you type in the chat is sent anywhere.",
-    "Respuestas predefinidas; no es una persona ni una IA. Nada de lo que escriba en el chat se envía a ningún lado.",
-    "Respostas pré-programadas, não é uma pessoa nem uma IA. Nada do que você digita no chat é enviado a lugar nenhum."
+  "designer.studio.title": ["Design your bathroom", "Diseñe su baño", "Projete o seu banheiro"],
+  "designer.studio.steps": ["Design steps", "Pasos del diseño", "Etapas do projeto"],
+  "designer.studio.mini": ["Open the floor plan", "Abrir el plano", "Abrir a planta"],
+  "designer.studio.disclosure": [
+    "A 3D preview built from your measurements and picks, not a picture of your actual bathroom. Prices are a rough, non-binding estimate until the business sends a real quote.",
+    "Una vista previa en 3D hecha con sus medidas y elecciones; no es una imagen de su baño real. Los precios son una estimación aproximada y no vinculante hasta que la empresa le envíe una cotización real.",
+    "Uma prévia em 3D feita com as suas medidas e escolhas, não uma imagem do seu banheiro real. Os preços são uma estimativa aproximada e sem compromisso até a empresa enviar um orçamento de verdade."
   ],
-  "designer.chat.estimateNote": [
-    "Estimates are rough and non-binding. For a real quote, send your request below.",
-    "Las estimaciones son aproximadas y no vinculantes. Para una cotización real, envíe su solicitud abajo.",
-    "As estimativas são aproximadas e sem compromisso. Para um orçamento de verdade, envie o seu pedido abaixo."
+  "designer.link.title": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
+  "designer.link.text": [
+    "Copy this link to come back to your design on another device or to send it to someone. Anyone with the link sees the design, not your contact details.",
+    "Copie este enlace para volver a su diseño en otro dispositivo o para enviárselo a alguien. Quien tenga el enlace ve el diseño, no sus datos de contacto.",
+    "Copie este link para voltar ao seu projeto em outro aparelho ou para enviá-lo a alguém. Quem tiver o link vê o projeto, não os seus dados de contato."
   ],
-  "designer.chat.progress": ["Estimate progress", "Progreso de la estimación", "Progresso da estimativa"],
-  "designer.chat.close": ["Close chat", "Cerrar chat", "Fechar chat"],
-  "designer.chat.greeting": [
-    "Hi! I'm the bathroom design assistant for <span data-biz=\"name\"></span> (automated, scripted replies, not a person). I'll help you design your bathroom in 3D and get a rough price. Let's get started!",
-    "¡Hola! Soy el asistente de diseño de baños de <span data-biz=\"name\"></span> (automático, con respuestas predefinidas; no soy una persona). Le ayudaré a diseñar su baño en 3D y a obtener un precio aproximado. ¡Comencemos!",
-    "Olá! Eu sou o assistente de projetos de banheiro da <span data-biz=\"name\"></span> (automático, com respostas pré-programadas, não sou uma pessoa). Vou ajudar você a projetar o seu banheiro em 3D e ter um preço aproximado. Vamos começar!"
-  ],
-  "designer.chat.starter": [
-    "Get a bathroom price estimate →",
-    "Obtener una estimación del precio del baño →",
-    "Fazer uma estimativa de preço do banheiro →"
-  ],
-  "designer.chat.disclosure": [
-    "A 3D preview built from what you've told us — not a rendering of your actual bathroom. Drag to look around.",
-    "Una vista previa en 3D creada a partir de lo que nos indicó; no es una representación de su baño real. Arrastre para mirar alrededor.",
-    "Uma prévia em 3D criada a partir do que você nos contou — não é uma imagem do seu banheiro real. Arraste para olhar ao redor."
-  ],
-  "designer.chat.inputLabel": [
-    "Message the automated assistant",
-    "Escriba un mensaje al asistente automático",
-    "Mensagem para o assistente automático"
-  ],
-  "designer.chat.placeholder": [
-    "Ask about your bathroom…",
-    "Pregunte sobre su baño…",
-    "Pergunte sobre o seu banheiro…"
-  ],
-  "designer.chat.send": ["Send message", "Enviar mensaje", "Enviar mensagem"],
-  "designer.form.title": ["Send your request", "Envíe su solicitud", "Envie o seu pedido"],
-  "designer.form.subtitle": [
-    "Send your design and estimate to <span data-biz=\"name\"></span> for a real quote.",
-    "Envíe su diseño y su estimación a <span data-biz=\"name\"></span> para recibir una cotización real.",
-    "Envie o seu projeto e a sua estimativa para <span data-biz=\"name\"></span> e receba um orçamento de verdade."
-  ],
+  "designer.link.label": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
+  "designer.link.done": ["Done", "Listo", "Pronto"],
   "designer.form.demoNote": [
     "Demo: requests sent from this page aren't delivered to anyone.",
     "Demo: las solicitudes enviadas desde esta página no le llegan a nadie.",
     "Demonstração: os pedidos enviados desta página não chegam a ninguém."
-  ],
-  "designer.form.prefill": [
-    "We've added your estimate to the project details below. Edit it as you like before sending.",
-    "Agregamos su estimación a los detalles del proyecto más abajo. Modifíquela como quiera antes de enviarla.",
-    "Adicionamos a sua estimativa aos detalhes do projeto abaixo. Edite como quiser antes de enviar."
   ],
   "designer.form.name": ["Full Name", "Nombre completo", "Nome completo"],
   "designer.form.phone": ["Phone Number", "Número de teléfono", "Telefone"],
@@ -101,10 +67,10 @@
     "Outro serviço de banheiro / ainda não sei"
   ],
   "designer.form.message": ["Tell Us About Your Project", "Cuéntenos sobre su proyecto", "Conte sobre o seu projeto"],
-  "designer.form.placeholder": [
-    "Property type, rough timeline, and anything else we should know...",
-    "Tipo de propiedad, plazo aproximado y cualquier otra cosa que debamos saber...",
-    "Tipo de imóvel, prazo aproximado e qualquer outra coisa que devemos saber..."
+  "designer.form.messageHelp": [
+    "Your design and its link are filled in for you. Add anything else they should know, like your timeline.",
+    "Su diseño y su enlace ya están incluidos. Agregue cualquier otra cosa que deban saber, como su plazo.",
+    "O seu projeto e o link já estão incluídos. Acrescente o que mais eles devem saber, como o seu prazo."
   ],
   "designer.form.honeypot": ["Leave this empty", "Deje esto en blanco", "Deixe este campo vazio"],
   "designer.form.consent": [

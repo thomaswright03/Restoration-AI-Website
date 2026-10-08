@@ -47,6 +47,11 @@
       });
     });
     apply(saved());
+    // A switch made in another page of this site (another tab, or the
+    // project page around an embedded designer) restyles this one too.
+    window.addEventListener("storage", function (e) {
+      if (e.key === KEY || e.key === null) apply(saved());
+    });
   }
 
   if (document.readyState === "loading") {

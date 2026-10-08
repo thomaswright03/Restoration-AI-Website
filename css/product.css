@@ -937,8 +937,31 @@ html[data-embed="1"] main.solid-header {
 }
 
 /* ---------- One project's page ---------- */
+/* The saved design uses the whole width, like the designer itself. */
 .app-wide.project-page {
-  max-width: 1180px;
+  max-width: none;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+/* On the project and designer pages the top bar lines up with the full-width studio. */
+body:has(.project-page, .studio-page) .nav {
+  max-width: none;
+}
+
+/* The info form stays a readable width inside the wide card. */
+#project-info-form {
+  max-width: 760px;
+}
+
+#panel-model {
+  padding: var(--space-4);
+}
+
+@media (max-width: 640px) {
+  #panel-model {
+    padding: var(--space-2);
+  }
 }
 
 .project-back {
@@ -984,8 +1007,7 @@ html[data-embed="1"] main.solid-header {
 .project-model iframe {
   display: block;
   width: 100%;
-  height: min(900px, 80vh);
-  min-height: 560px;
+  height: max(560px, calc(100vh - 140px));
   border: 0;
 }
 

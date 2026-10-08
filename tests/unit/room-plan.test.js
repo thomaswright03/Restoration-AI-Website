@@ -474,7 +474,8 @@ test("a fixture off the plumbing wall is flagged with the drain run it needs", (
   assert.equal(off.length, 1);
   assert.equal(off[0].level, "warn");
   assert.equal(off[0].have, 60);
-  assert.equal(P.drainRun(d), 5);
+  // Only the 2 ft beyond the free 3 ft are billed.
+  assert.equal(P.drainRun(d), 2);
 });
 
 test("a toilet too far from the stack for its drain to fall is an error", () => {
@@ -549,4 +550,24 @@ test("what the person has answered goes with the design, and nothing else does",
   // A design saved before there were answers starts with none.
   const old = P.sanitize(Object.assign({}, d, { answered: undefined }));
   assert.deepEqual(old.answered, { stack: false, products: {} });
+});
+
+test("drain limits: toilet 10 ft, tub and shower 14 ft, basin 16 ft, and the free 3 ft is never billed", () => {
+  const limits = { toilet: 10, tub: 14, shower: 14, sink: 16, vanity: 16 };
+  for (const [type, limit] of Object.entries(limits)) {
+    // Slide the fixture along until its run sits just inside, then just past, its limit.
+    let inside = null;
+    let past = null;
+    for (let offset = 1; offset <= 20 && !past; offset += 0.25) {
+      const d = design({ w: 22, l: 22 }, [{ id: "a", type, wall: "E", offset }]);
+      const run = P.stackRun(d, d.items[0]);
+      if (run <= limit) inside = d;
+      else past = d;
+    }
+    assert.ok(inside && past, type);
+    assert.deepEqual(errors(inside, "a"), [], `${type} at ${P.stackRun(inside, inside.items[0])} ft`);
+    assert.deepEqual(errors(past, "a"), ["noStack"], `${type} at ${P.stackRun(past, past.items[0])} ft`);
+    const run = P.stackRun(inside, inside.items[0]);
+    assert.equal(P.drainRun(inside), Math.round((run - 3) * 100) / 100, type);
+  }
 });

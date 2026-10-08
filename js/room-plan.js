@@ -1226,12 +1226,13 @@
     return [issue(run > limit + EPS ? "error" : "warn", run > limit + EPS ? "noStack" : "offStack", extra)];
   }
 
-  // Total feet of new drain line the design needs, for the estimate.
+  // Feet of new drain line the estimate bills: each fixture's first
+  // FREE_RUN feet come with tying in, only the rest is charged.
   function drainRun(design, sizes) {
     return round(
       design.items.reduce(function (sum, it) {
         var run = stackRun(design, it, sizes);
-        return sum + (run > FREE_RUN ? run : 0);
+        return sum + Math.max(0, run - FREE_RUN);
       }, 0),
       2,
     );

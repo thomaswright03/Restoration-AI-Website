@@ -285,6 +285,12 @@ main.solid-header {
   padding-top: 88px;
 }
 
+/* Sign-up, account and project pages fill in once the sign-in check is
+   done; reserving the screen keeps the footer from jumping up and back. */
+main.app-page {
+  min-height: 100vh;
+}
+
 /* designer.html?embed=1 sits inside a business's own site. */
 html[data-embed="1"] .product-chrome,
 html[data-embed="1"] .skip-link {

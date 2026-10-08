@@ -26,6 +26,12 @@ create table if not exists public.businesses (
   updated_at timestamptz not null default now()
 );
 
+-- prices: the owner's labor prices, shown publicly by their designer. Kept a
+-- small object so nobody can park a huge blob behind their public profile.
+alter table public.businesses drop constraint if exists businesses_prices_object;
+alter table public.businesses add constraint businesses_prices_object
+  check (jsonb_typeof(prices) = 'object' and octet_length(prices::text) <= 4000);
+
 create table if not exists public.subscriptions (
   owner_id uuid primary key references auth.users (id) on delete cascade,
   stripe_customer_id text,

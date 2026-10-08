@@ -56,7 +56,10 @@ module.exports = async function handler(req, res) {
       const sub = await stripe("subscriptions/" + encodeURIComponent(obj.subscription));
       await saveSubscription(obj.client_reference_id || (obj.metadata && obj.metadata.owner_id), sub);
     } else if (/^customer\.subscription\.(created|updated|deleted)$/.test(event.type)) {
-      await saveSubscription(obj.metadata && obj.metadata.owner_id, obj);
+      // Stripe doesn't promise events arrive in order, so record the
+      // subscription as it is now rather than as this (maybe older) event saw it.
+      const sub = await stripe("subscriptions/" + encodeURIComponent(obj.id));
+      await saveSubscription((sub.metadata && sub.metadata.owner_id) || (obj.metadata && obj.metadata.owner_id), sub);
     }
     return sendJson(res, 200, { received: true });
   } catch (e) {

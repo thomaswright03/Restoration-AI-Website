@@ -34,16 +34,17 @@ export const LANGS = [
 
 // file: template in pages/; strings: which strings files it uses (common is always included).
 // designer: loads the 3D designer's scripts and styles.
+// noindex: kept out of search results and the sitemap (signed-in pages, 404).
 export const PAGES = [
   { file: "index.html", strings: ["index"] },
   { file: "designer.html", strings: ["designer"], designer: true },
   { file: "signup.html", strings: ["account", "index"], app: "signup" },
-  { file: "account.html", strings: ["account", "index"], app: "account" },
-  { file: "projects.html", strings: ["projects", "account", "index"], app: "projects" },
-  { file: "project.html", strings: ["projects", "account", "index"], app: "project" },
+  { file: "account.html", noindex: true, strings: ["account", "index"], app: "account" },
+  { file: "projects.html", noindex: true, strings: ["projects", "account", "index"], app: "projects" },
+  { file: "project.html", noindex: true, strings: ["projects", "account", "index"], app: "project" },
   { file: "privacy.html", strings: ["legal"] },
   { file: "terms.html", strings: ["legal"] },
-  { file: "404.html", strings: ["notfound"], absolute: true },
+  { file: "404.html", strings: ["notfound"], absolute: true, noindex: true },
 ];
 
 async function loadStrings(name) {
@@ -91,6 +92,9 @@ export async function buildAll() {
         trialDays: String(Number(plans.trialDays) || 0),
         designerHead: page.designer ? "designer" : "",
         appScript: page.app || "",
+        seoHead: page.noindex
+          ? '<meta name="robots" content="noindex" />'
+          : `<link rel="canonical" href="${SITE_URL}/${lang.dir}${page.file}" />`,
       };
       const fill = (text, depth = 0) =>
         text.replace(/\{\{(@?)([A-Za-z0-9_.-]+)\}\}/g, (match, at, key) => {
@@ -121,7 +125,25 @@ export async function buildAll() {
       out.set(lang.dir + page.file, pretty);
     }
   }
+  out.set("robots.txt", `User-agent: *\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
+  out.set("sitemap.xml", sitemap());
   return { out, problems };
+}
+
+// Every page search engines should list, with its other languages.
+function sitemap() {
+  const urls = PAGES.filter((p) => !p.noindex).map((page) => {
+    const links = LANGS.map(
+      (l) => `    <xhtml:link rel="alternate" hreflang="${l.htmlLang}" href="${SITE_URL}/${l.dir}${page.file}"/>`,
+    ).join("\n");
+    return LANGS.map((l) => `  <url>\n    <loc>${SITE_URL}/${l.dir}${page.file}</loc>\n${links}\n  </url>`).join("\n");
+  });
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    urls.join("\n") +
+    "\n</urlset>\n"
+  );
 }
 
 const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];

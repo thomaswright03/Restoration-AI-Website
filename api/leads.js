@@ -8,6 +8,11 @@ const { env, supabaseReady, sendJson, db, readForm, activeBusiness } = require("
 
 const LIMITS = { name: 120, phone: 40, email: 160, service: 120, message: 6000, language: 40 };
 
+// At most this many requests per business in an hour, so a script can't
+// flood a business's inbox (and its email) with junk.
+const HOURLY_LIMIT = 30;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function field(form, key) {
   return String(form[key] || "")
     .trim()
@@ -61,6 +66,7 @@ module.exports = async function handler(req, res) {
     language: field(form, "language"),
   };
   if (!lead.name || (!lead.phone && !lead.email)) return sendJson(res, 400, { error: "missing" });
+  if (lead.email && !EMAIL.test(lead.email)) return sendJson(res, 400, { error: "email" });
 
   const slug = String(form.business || "").toLowerCase();
   if (!slug || slug === "demo") return sendJson(res, 200, { ok: true, demo: true });
@@ -69,6 +75,16 @@ module.exports = async function handler(req, res) {
   try {
     const biz = await activeBusiness(slug);
     if (!biz || biz.inactive) return sendJson(res, 404, { error: "unavailable" });
+    const since = new Date(Date.now() - 3600 * 1000).toISOString();
+    const recent = await db(
+      "leads?business_id=eq." +
+        encodeURIComponent(biz.id) +
+        "&created_at=gte." +
+        encodeURIComponent(since) +
+        "&select=id&limit=" +
+        HOURLY_LIMIT,
+    );
+    if ((recent || []).length >= HOURLY_LIMIT) return sendJson(res, 429, { error: "busy" });
     await db("leads", {
       method: "POST",
       headers: { Prefer: "return=minimal" },

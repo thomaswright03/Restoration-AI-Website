@@ -147,7 +147,7 @@
         return res.json();
       })
       .catch(function () {
-        return { accounts: false };
+        return { accounts: false, unreachable: true };
       });
   }
 
@@ -194,9 +194,12 @@
   // On the account pages: signed in, or off to log in. Resolves with the
   // session, or false when the page has already shown why it can't go on.
   function signInOrLeave(config, loadingId) {
-    function off() {
+    function off(err) {
       show($(loadingId), false);
-      show($("accounts-off"), true);
+      // No answer from the server is a connection problem, not accounts
+      // being switched off.
+      var down = config.unreachable || Boolean(err);
+      show($(down ? "server-down" : "accounts-off"), true);
       return false;
     }
     if (!config.accounts) return Promise.resolve(off());
@@ -803,7 +806,17 @@
   // The bar above the design studio
   // ===================================================================
   var current = null; // the open project: { id, name, info }
-  var barPlan = "free";
+  var barPlan = "free"; // or "unknown" when the plan couldn't be loaded
+  var barLimits = null; // { monthly, total }
+  var barUsed = null; // { month, total }
+
+  // The limit a new project would run into, from what the bar last heard.
+  function barLimitHit() {
+    if (!barLimits || !barUsed) return "";
+    if (barUsed.month >= barLimits.monthly) return "monthly-limit";
+    if (barUsed.total >= barLimits.total) return "total-limit";
+    return "";
+  }
 
   function studio(fn) {
     var S = window.StudioDesign;
@@ -814,7 +827,11 @@
     var paid = barPlan !== "free";
     var text = $("project-bar-text");
     text.textContent = "";
-    if (!paid) {
+    if (barPlan === "unknown") {
+      // Saving still works if the plan allows it; the server decides.
+      text.appendChild(document.createTextNode(T("proj.bar.down") + " "));
+      text.appendChild(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
+    } else if (!paid) {
       text.appendChild(document.createTextNode(T("proj.bar.free") + " "));
       text.appendChild(el("a", { href: sitePath("account.html"), text: T("proj.bar.pickPlan") }));
     } else if (current) {
@@ -824,6 +841,20 @@
       if (where) text.appendChild(el("span", { class: "project-bar-where", text: " · " + where }));
     } else {
       text.textContent = T("proj.bar.unsaved");
+      if (barLimits && barUsed) {
+        text.appendChild(
+          el("span", {
+            class: "project-bar-where",
+            text:
+              " " +
+              T("proj.bar.left", {
+                month: Math.max(0, barLimits.monthly - barUsed.month),
+                monthly: barLimits.monthly,
+                total: Math.max(0, barLimits.total - barUsed.total),
+              }),
+          }),
+        );
+      }
     }
     show($("project-save-form"), paid);
     show($("project-save-new"), paid && !!current);
@@ -851,6 +882,8 @@
   }
 
   function saved(out, data) {
+    if (data.used) barUsed = data.used;
+    if (data.limits) barLimits = data.limits;
     setCurrent(data.project);
     var used = data.used;
     var msg =
@@ -892,6 +925,9 @@
 
   // A new project: the client's details first, in a dialog.
   function openNewDialog(asCopy) {
+    // Say so now rather than after the client's details are typed in.
+    var hit = barLimitHit();
+    if (hit) return status($("project-status"), "error", errorText({ code: hit, data: { limits: barLimits } }));
     var dialog = $("project-dialog");
     var box = $("project-dialog-fields");
     box.innerHTML = "";
@@ -974,9 +1010,11 @@
         api("GET")
           .then(function (data) {
             barPlan = data.plan;
+            barLimits = data.limits || null;
+            barUsed = data.used || null;
           })
           .catch(function () {
-            barPlan = "free";
+            barPlan = "unknown";
           })
           .then(function () {
             renderBar();

@@ -203,6 +203,27 @@ test("on the free plan the designer works but has no save button", async ({ page
   await expect(page.locator("#project-save")).toBeHidden();
 });
 
+test("the save bar says what's left, and at the monthly cap says so before asking for the client's details", async ({
+  page,
+}) => {
+  await signedIn(page, { used: { month: 10, total: 12 } });
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await expect(page.locator("#project-bar")).toContainText(
+    "0 of 10 new projects left this month, room for 38 more saved.",
+  );
+  await page.locator("#project-save").click();
+  await expect(page.locator("#project-status")).toContainText("Deleting a project doesn't give one back");
+  await expect(page.locator("#project-dialog")).toBeHidden();
+});
+
+test("when the plan can't be loaded, the designer says so instead of calling a paid account free", async ({ page }) => {
+  await signedIn(page);
+  await page.route("**/api/projects**", (route) => route.abort("internetdisconnected"));
+  await openStudio(page, "/es/designer.html?b=smith-bath");
+  await expect(page.locator("#project-bar")).toContainText("No se pudo cargar su plan");
+  await expect(page.locator("#project-bar")).not.toContainText("Plan gratis");
+});
+
 test("homeowners (nobody signed in) never see the save bar", async ({ page }) => {
   await openStudio(page, "/designer.html");
   await page.waitForLoadState("networkidle");

@@ -476,6 +476,17 @@
       "Plano grátis: projete à vontade. Para salvar projetos é preciso um plano pago.",
     ],
     "proj.bar.pickPlan": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+    "proj.bar.down": [
+      "Your plan couldn't be loaded, so saving may not work.",
+      "No se pudo cargar su plan, así que es posible que no pueda guardar.",
+      "Não foi possível carregar o seu plano, então talvez não dê para salvar.",
+    ],
+    "proj.bar.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
+    "proj.bar.left": [
+      "{month} of {monthly} new projects left this month, room for {total} more saved.",
+      "Le quedan {month} de {monthly} proyectos nuevos este mes y espacio para {total} guardados más.",
+      "Restam {month} de {monthly} projetos novos este mês e espaço para mais {total} salvos.",
+    ],
     "proj.bar.unsaved": [
       "This design isn't saved to your projects yet.",
       "Este diseño aún no está guardado en sus proyectos.",

@@ -4,6 +4,11 @@
         <p class="app-loading" id="project-loading">{{account.loading}}</p>
         <p class="form-status" id="project-error" role="alert" hidden></p>
 
+        <div class="app-notice" id="server-down" role="alert" hidden>
+          <p><strong>{{account.down.title}}</strong> {{account.down.text}}</p>
+          <p><a href="">{{account.down.retry}}</a></p>
+        </div>
+
         <div class="app-notice" id="accounts-off" hidden>
           <p><strong>{{account.off.title}}</strong> {{account.off.text}}</p>
           <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>

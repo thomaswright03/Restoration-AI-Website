@@ -1821,8 +1821,183 @@
   // The bar: steps, undo, link, start over, the estimate total
   // ---------------------------------------------------------------------
   function goTo(step) {
+    // Forward only once every step before it is answered; back any time.
+    var stop = unfinishedBefore(step);
+    if (stop) return refuseStep(stop);
+    if (ui.missing && ui.missing !== step) ui.missing = null;
     rileyLater();
     return goToStep(step);
+  }
+
+  // ---------------------------------------------------------------------
+  // What each step needs before moving on
+  // ---------------------------------------------------------------------
+  // Each step's questions have to be answered by the person, not left at
+  // what was suggested, and what's on it has to work:
+  //   room         the plumbing wall picked, the sizes all lengths
+  //   layout       at least one fixture, and everything fits
+  //   electrical   no outlet, switch or light where it can't go
+  //   products     a product picked for every fixture
+  //   finishes     a product picked for every surface being done
+  // missingFor() is what's left, as phrases for "To go on: ...".
+  function answers(d) {
+    return (d || design).answered || { stack: false, products: {} };
+  }
+
+  // The design with one more question answered: the plumbing wall
+  // (slotId null) or a product slot.
+  function withAnswer(d, slotId) {
+    var a = answers(d);
+    var next = { stack: a.stack, products: Object.assign({}, a.products) };
+    if (slotId) next.products[slotId] = true;
+    else next.stack = true;
+    return Object.assign({}, d, { answered: next });
+  }
+
+  // The product slots on show, for the fixtures in the room.
+  function productSlots() {
+    if (!room3d) return [];
+    var out = [];
+    room3d.getProductGroups().forEach(function (group) {
+      group.slots.forEach(function (slot) {
+        out.push(slot);
+      });
+    });
+    return out;
+  }
+
+  // The surfaces a product is picked for: the ones being done that have
+  // products to pick from.
+  function surfaceCats(d) {
+    var f = d.finishes;
+    var walls = wallsOf(d);
+    return [
+      f.floor === "tile" ? "floorTile" : null,
+      f.floor === "flooring" ? "flooring" : null,
+      walls === "tileWet" || walls === "tile" ? "wallTile" : null,
+      walls === "tileWet" || walls === "paint" ? "wallPaint" : null,
+      f.ceiling ? "ceilingPaint" : null,
+    ].filter(function (cat) {
+      return cat && surfaceOptions(cat).length;
+    });
+  }
+
+  // A surface's product, only when the person picked it (and it's still
+  // on the list).
+  function surfacePicked(cat, d) {
+    var picked = (d || design).finishes.picks[cat];
+    return surfaceOptions(cat).some(function (o) {
+      return o.id === picked;
+    })
+      ? picked
+      : null;
+  }
+
+  function missingFor(step) {
+    var d = design;
+    var out = [];
+    if (step === "room") {
+      if (!answers(d).stack) out.push({ key: "stack", text: T("studio.need.stack") });
+      if (ui.step === "room" && els.panel.querySelector('.studio-size-grid [aria-invalid="true"]'))
+        out.push({ key: "size", text: T("studio.need.size") });
+    } else if (step === "layout") {
+      var fixtures = d.items.filter(function (it) {
+        return it.type !== "door";
+      });
+      if (!fixtures.length) out.push({ key: "fixture", text: T("studio.need.fixture") });
+      var bad = d.items.filter(function (it) {
+        return Plan.errorsOf(issues, it.id).length > 0;
+      });
+      if (bad.length)
+        out.push({
+          key: "fit",
+          text: T("studio.need.fit", {
+            what: bad
+              .map(function (it) {
+                return itemName(it);
+              })
+              .join(", "),
+          }),
+        });
+    } else if (step === "electrical") {
+      var wrong = points(d).filter(function (p) {
+        return Plan.errorsOf(issues, p.id).length > 0;
+      });
+      if (wrong.length) out.push({ key: "points", text: T("studio.need.points") });
+    } else if (step === "products") {
+      var open = productSlots().filter(function (slot) {
+        return !answers(d).products[slot.id];
+      });
+      // A few are named; a long list is counted instead.
+      if (open.length > 3) out.push({ key: "products", text: T("studio.need.productsMany", { n: open.length }) });
+      else if (open.length)
+        out.push({
+          key: "products",
+          text: T("studio.need.products", {
+            list: open
+              .map(function (slot) {
+                return slot.label;
+              })
+              .join(", "),
+          }),
+        });
+    } else if (step === "finishes") {
+      var unpicked = surfaceCats(d).filter(function (cat) {
+        return !surfacePicked(cat, d);
+      });
+      if (unpicked.length)
+        out.push({
+          key: "surfaces",
+          text: T("studio.need.surfaces", {
+            list: unpicked
+              .map(function (cat) {
+                return T("studio.need.surface." + cat);
+              })
+              .join(", "),
+          }),
+        });
+    }
+    return out;
+  }
+
+  // The first step before `step` that isn't finished, or null.
+  function unfinishedBefore(step) {
+    var to = STEPS.indexOf(step);
+    for (var i = 0; i < to; i++) {
+      if (missingFor(STEPS[i]).length) return STEPS[i];
+    }
+    return null;
+  }
+
+  function needText(list) {
+    return list
+      .map(function (x) {
+        return x.text;
+      })
+      .join("; ");
+  }
+
+  // Not yet: back to the step that isn't finished, with what it still
+  // needs marked, said by Riley and in a note.
+  function refuseStep(stop) {
+    var list = missingFor(stop);
+    ui.missing = stop;
+    if (ui.step !== stop) goToStep(stop);
+    else renderPanel();
+    toast(T("studio.need", { list: needText(list) }));
+    if (window.Riley && els.riley) window.Riley.say({ tone: "warn", text: T("riley.need", { list: needText(list) }) });
+    var first = els.panel.querySelector(".is-missing");
+    if (first) {
+      first.scrollIntoView({ block: "center" });
+      var control = first.querySelector("button, select, input");
+      if (control) control.focus({ preventScroll: true });
+    }
+  }
+
+  // Marks a field as still needed, once the person has tried to move on.
+  function missingMark(el, missing) {
+    if (missing && ui.missing === ui.step) el.classList.add("is-missing");
+    return el;
   }
 
   // After the step's panel is up, so her line matches what's on screen.
@@ -1852,10 +2027,18 @@
   }
 
   function renderBar() {
+    var stop = null;
     Array.prototype.forEach.call(els.steps.querySelectorAll("[data-step]"), function (btn) {
-      var on = btn.getAttribute("data-step") === ui.step;
+      var step = btn.getAttribute("data-step");
+      var on = step === ui.step;
       if (on) btn.setAttribute("aria-current", "step");
       else btn.removeAttribute("aria-current");
+      // A step past one that isn't finished can't be gone to yet.
+      var locked = !!stop;
+      btn.classList.toggle("is-locked", locked);
+      if (locked) btn.setAttribute("aria-disabled", "true");
+      else btn.removeAttribute("aria-disabled");
+      if (!stop && missingFor(step).length) stop = step;
     });
     els.studio.setAttribute("data-step", ui.step);
     var last = els.steps.querySelector('[data-label="estimate"]');
@@ -2009,7 +2192,16 @@
     var i = STEPS.indexOf(ui.step);
     var prev = STEPS[i - 1];
     var next = STEPS[i + 1];
+    var left = next ? missingFor(ui.step) : [];
+    if (!left.length && ui.missing === ui.step) ui.missing = null;
     return h("nav", { class: "studio-step-nav", "aria-label": T("studio.stepNav") }, [
+      left.length
+        ? h("p", {
+            class: "studio-step-need" + (ui.missing === ui.step ? " is-missing" : ""),
+            id: "studio-step-need",
+            text: T("studio.need", { list: needText(left) }),
+          })
+        : null,
       prev
         ? h("button", {
             type: "button",
@@ -2027,6 +2219,7 @@
             class: "btn btn-primary",
             "data-key": "nav-next",
             text: T("studio.next", { step: stepShort(next) }),
+            "aria-describedby": left.length ? "studio-step-need" : null,
             onclick: function () {
               goTo(next);
             },
@@ -2230,16 +2423,24 @@
 
     var stack = Plan.stackWall(design);
     var run = Plan.drainRun(design, sizes);
+    var stackSet = answers().stack;
     body.appendChild(
       section(T("studio.room.plumbing"), [
         h("p", { class: "studio-note", text: T("studio.room.plumbingHelp") }),
-        h("div", { class: "studio-field" }, [
-          h("span", { class: "studio-field-label", text: T("studio.room.plumbingWall") }),
-          wallChoice(stack, setStackWall, "stack", T("studio.room.plumbingWall")),
-        ]),
+        missingMark(
+          h("div", { class: "studio-field" }, [
+            h("span", { class: "studio-field-label", text: T("studio.room.plumbingWall") }),
+            wallChoice(stackSet ? stack : null, setStackWall, "stack", T("studio.room.plumbingWall")),
+          ]),
+          !stackSet,
+        ),
         h("p", {
           class: "studio-field-help",
-          text: run > 0 ? T("studio.room.plumbingRun", { run: len(run) }) : T("studio.room.plumbingNone"),
+          text: !stackSet
+            ? T("studio.room.plumbingUnset", { wall: letter(stack) })
+            : run > 0
+              ? T("studio.room.plumbingRun", { run: len(run) })
+              : T("studio.room.plumbingNone"),
         }),
       ]),
     );
@@ -2311,6 +2512,9 @@
     var tpl = copy(templateDesign(id));
     tpl.finishes = copy(design.finishes);
     tpl.products = copy(design.products);
+    // The products picked still count; where the plumbing is gets asked
+    // again for the new room.
+    tpl.answered = { stack: false, products: copy(answers().products) };
     ui.selected = null;
     commit(tpl, { announce: T("studio.templateUsed", { name: T("studio.template." + id) }) });
     toast(T("studio.templateUsed", { name: T("studio.template." + id) }), { label: T("studio.undo"), run: undo });
@@ -2331,7 +2535,9 @@
   // it, so moving it can leave a fixture out of reach.
   function setStackWall(wallId) {
     var before = errorCount(issues);
-    commit(Plan.setStack(design, wallId), { announce: T("studio.room.plumbingSet", { wall: letter(wallId) }) });
+    commit(withAnswer(Plan.setStack(design, wallId)), {
+      announce: T("studio.room.plumbingSet", { wall: letter(wallId) }),
+    });
     if (errorCount(issues) > before) {
       toast(T("studio.room.plumbingBroke"), { label: T("studio.rearrange"), run: arrangeNow });
     }
@@ -3167,28 +3373,38 @@
       ]);
       group.slots.forEach(function (slot) {
         var id = "studio-product-" + slot.id;
+        // Until the person picks, the room shows the first that fits and
+        // the list says to choose.
+        var picked = !!answers().products[slot.id];
         var select = h(
           "select",
           { id: id, class: "studio-select", "data-key": "slot-" + slot.id },
-          slot.options.map(function (opt) {
-            return h("option", {
-              value: opt.id,
-              disabled: opt.reason ? true : null,
-              selected: opt.id === slot.value ? true : null,
-              text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
-            });
-          }),
+          (picked ? [] : [h("option", { value: "", disabled: true, text: T("studio.products.choose") })]).concat(
+            slot.options.map(function (opt) {
+              return h("option", {
+                value: opt.id,
+                disabled: opt.reason ? true : null,
+                text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
+              });
+            }),
+          ),
         );
-        select.value = slot.value;
+        select.value = picked ? slot.value : "";
         select.addEventListener("change", function () {
+          if (!select.value) return;
           room3d.setProductPick(slot.id, select.value);
-          commit(Object.assign({}, design, { products: room3d.getProductPicks() }));
+          commit(withAnswer(Object.assign({}, design, { products: room3d.getProductPicks() }), slot.id));
           focusGroup(group.id);
         });
         select.addEventListener("focus", function () {
           focusGroup(group.id);
         });
-        card.appendChild(h("div", { class: "studio-field" }, [h("label", { for: id, text: slot.label }), select]));
+        card.appendChild(
+          missingMark(
+            h("div", { class: "studio-field" }, [h("label", { for: id, text: slot.label }), select]),
+            !picked,
+          ),
+        );
       });
       if (standIn) {
         card.appendChild(
@@ -3338,44 +3554,49 @@
   }
 
   // The products for a surface, as picture buttons with their price.
+  // Until one is picked, none is pressed (the estimate prices the first
+  // meanwhile).
   function swatches(cat, title) {
-    var current = surfaceProduct(cat);
+    var current = surfacePicked(cat);
     var options = surfaceOptions(cat);
     if (!options.length) return null;
     var priced = materialsOn();
-    return h("div", { class: "studio-swatch-group" }, [
-      title ? h("p", { class: "studio-swatch-title", text: title }) : null,
-      h(
-        "div",
-        { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
-        options.map(function (opt) {
-          var on = current && current.id === opt.id;
-          return h(
-            "button",
-            {
-              type: "button",
-              class: "studio-swatch",
-              "aria-pressed": on ? "true" : "false",
-              "data-key": "sw-" + cat + "-" + opt.id,
-              title: opt.name,
-              onclick: function () {
-                if (on) return;
-                var picks = Object.assign({}, design.finishes.picks);
-                picks[cat] = opt.id;
-                commit(withFinishes({ picks: picks }));
+    return missingMark(
+      h("div", { class: "studio-swatch-group", "data-cat": cat }, [
+        title ? h("p", { class: "studio-swatch-title", text: title }) : null,
+        h(
+          "div",
+          { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
+          options.map(function (opt) {
+            var on = current === opt.id;
+            return h(
+              "button",
+              {
+                type: "button",
+                class: "studio-swatch",
+                "aria-pressed": on ? "true" : "false",
+                "data-key": "sw-" + cat + "-" + opt.id,
+                title: opt.name,
+                onclick: function () {
+                  if (on) return;
+                  var picks = Object.assign({}, design.finishes.picks);
+                  picks[cat] = opt.id;
+                  commit(withFinishes({ picks: picks }));
+                },
               },
-            },
-            [
-              opt.imageUrl
-                ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
-                : null,
-              h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
-              priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
-            ],
-          );
-        }),
-      ),
-    ]);
+              [
+                opt.imageUrl
+                  ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
+                  : null,
+                h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
+                priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
+              ],
+            );
+          }),
+        ),
+      ]),
+      !current,
+    );
   }
 
   // Retail names are long: the brand-and-model part is enough on a button.

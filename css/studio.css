@@ -455,6 +455,16 @@
   display: none;
 }
 
+.studio-viewbar > .studio-iso-btn {
+  padding: 0 var(--space-3);
+}
+
+.studio-viewbar > .studio-view-btn[aria-pressed="true"] {
+  border-color: var(--color-dark);
+  background: var(--color-dark);
+  color: #fff;
+}
+
 .studio-status {
   display: inline-flex;
   align-items: center;
@@ -964,6 +974,7 @@
   bottom: 0;
   z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: var(--space-3);
   margin: auto calc(-1 * var(--space-5)) 0;
@@ -2450,4 +2461,28 @@ html[data-embed="1"] .studio-stage {
   .riley-text {
     font-size: 0.8125rem;
   }
+}
+
+/* ---------- What a step still needs before moving on ---------- */
+.studio-step-need {
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
+}
+
+.studio-step-need.is-missing {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.studio-step-btn.is-locked {
+  opacity: 0.55;
+}
+
+.studio-field.is-missing,
+.studio-swatch-group.is-missing {
+  border-radius: 4px;
+  outline: 2px solid var(--color-danger);
+  outline-offset: 4px;
 }

@@ -1,11 +1,23 @@
 "use strict";
 
 const { test, expect } = require("@playwright/test");
-const { useConfig, openStudio, wait3d, onScreen, step, byKey, studioStatus, studioToast } = require("./helpers");
+const {
+  useConfig,
+  openStudio,
+  wait3d,
+  answerAll,
+  confirmStack,
+  onScreen,
+  step,
+  byKey,
+  studioStatus,
+  studioToast,
+} = require("./helpers");
 
 test.describe("design studio", () => {
   test("opens on the sample full bath, drawn in 3D, with everything fitting and a price", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await wait3d(page);
     await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
     // Everything fits; in a 5 x 8 the toilet only gets code's 15 in. beside
@@ -24,6 +36,7 @@ test.describe("design studio", () => {
     page,
   }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     const total = page.locator(".studio-total-chip strong");
     await expect(total).toContainText("$");
     const before = await total.innerText();
@@ -50,6 +63,7 @@ test.describe("design studio", () => {
 
   test("a common bathroom replaces the room, and Undo brings the old one back", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await byKey(page, "tpl-primary").click();
     await expect(studioToast(page)).toContainText("Started from: Primary bath.");
     await expect(page.locator("#studio-size-w")).toHaveValue("11′");
@@ -65,6 +79,7 @@ test.describe("design studio", () => {
     page,
   }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await step(page, "layout").click();
     await byKey(page, "add-shower").click();
     await expect(studioToast(page)).toContainText("Shower added, but there's no free spot where it fits");
@@ -78,6 +93,7 @@ test.describe("design studio", () => {
     // The 11 x 9 primary bath has room for another toilet.
     await step(page, "room").click();
     await byKey(page, "tpl-primary").click();
+    await confirmStack(page);
     await step(page, "layout").click();
     await byKey(page, "add-toilet").click();
     await expect(studioToast(page)).toContainText(/Toilet 2 added on wall [ABCD]\./);
@@ -88,6 +104,7 @@ test.describe("design studio", () => {
 
   test("a fixture can be moved to another wall, removed, and put back with Undo", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await step(page, "layout").click();
     await byKey(page, "item-f3").click();
     await expect(byKey(page, "item-f3")).toHaveAttribute("aria-expanded", "true");
@@ -107,6 +124,7 @@ test.describe("design studio", () => {
 
   test("Show me layouts that fit offers whole-room layouts and uses the one picked", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await step(page, "layout").click();
     // In the 8 x 5 full bath a few layouts work, and the one on screen is
     // marked as the one in use.
@@ -118,6 +136,7 @@ test.describe("design studio", () => {
 
     await step(page, "room").click();
     await byKey(page, "tpl-showerBath").click();
+    await confirmStack(page);
     await step(page, "layout").click();
     await byKey(page, "arrange").click();
     await expect(page.locator(".studio-arrangement").nth(1)).toBeVisible({ timeout: 15000 });
@@ -131,6 +150,7 @@ test.describe("design studio", () => {
 
   test("on the floor plan, the arrow keys slide the selected fixture along its wall", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await page.locator('.studio-view-btn[data-view="plan"]').click();
     await expect(page.locator("#studio-plan")).toBeVisible();
     await expect(page.locator("#room-3d")).toBeHidden();
@@ -154,6 +174,7 @@ test.describe("design studio", () => {
   }) => {
     test.setTimeout(60000);
     const errors = await openStudio(page);
+    await answerAll(page);
     await wait3d(page);
     const point = (id) => page.evaluate((i) => window.BathroomRoom3D.itemScreenPoint(i), id);
     const drag = async (from, to) => {
@@ -187,6 +208,7 @@ test.describe("design studio", () => {
 
   test("walk-in stands inside the doorway, and the room view comes back", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await wait3d(page);
     await page.locator('.studio-view-btn[data-view="walk"]').click();
     await expect(page.locator('.studio-view-btn[data-view="walk"]')).toHaveAttribute("aria-pressed", "true");
@@ -204,6 +226,7 @@ test.describe("design studio", () => {
 
   test("finishes change the room and the price", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     const total = page.locator(".studio-total-chip strong");
     await expect(total).toContainText("$");
     await step(page, "finishes").click();
@@ -223,6 +246,7 @@ test.describe("design studio", () => {
   }) => {
     test.setTimeout(60000);
     const errors = await openStudio(page);
+    await answerAll(page);
     await step(page, "estimate").click();
     await expect(page.getByTestId("estimate-card")).toBeVisible();
     const total = await page.getByTestId("estimate-total").innerText();
@@ -257,6 +281,7 @@ test.describe("design studio", () => {
 
   test("the design is still there after a reload, and Start over begins again", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await page.locator("#studio-size-w").fill("9");
     await page.locator("#studio-size-w").press("Enter");
     await expect(page.locator("#studio-size-w")).toHaveValue("9′");
@@ -271,6 +296,7 @@ test.describe("design studio", () => {
   test("without the price estimator, the last step sends the design without prices", async ({ page }) => {
     await useConfig(page, { priceEstimator: { enabled: false } });
     const errors = await openStudio(page);
+    await answerAll(page);
     await expect(step(page, "estimate")).toContainText("Send");
     await expect(page.locator(".studio-total-chip")).toBeHidden();
     await step(page, "estimate").click();
@@ -281,6 +307,7 @@ test.describe("design studio", () => {
 
   test("the plumbing wall decides where a drain can go, and the estimate prices the pipe", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     // The sample bath's plumbing is in wall A, where the toilet and vanity are.
     await expect(page.locator(".studio-step.is-room")).toContainText("Everything with a drain is on that wall");
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
@@ -317,6 +344,7 @@ test.describe("design studio", () => {
 
   test("the electrical step suggests the wiring, and a point slides along its wall", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await step(page, "electrical").click();
     await expect(page.locator(".studio-step h2")).toHaveText("Electrical");
     // A GFCI outlet by the vanity, a light over the mirror, a switch by the
@@ -346,6 +374,7 @@ test.describe("design studio", () => {
   test("an outlet drags along the wall in 3D, and a bad spot goes back with the reason", async ({ page }) => {
     test.setTimeout(60000);
     const errors = await openStudio(page);
+    await answerAll(page);
     await wait3d(page);
     await step(page, "electrical").click();
     const at = (x, y, z) => onScreen(page, x, y, z);
@@ -371,6 +400,7 @@ test.describe("design studio", () => {
 
   test("picking a product shows that fixture on its own, and Just this turns it off", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await wait3d(page);
     await step(page, "products").click();
     await byKey(page, "focus-toilet").click();
@@ -384,6 +414,49 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("each step waits until its questions are answered; going back is always fine", async ({ page }) => {
+    const errors = await openStudio(page);
+    await wait3d(page);
+    const need = page.locator("#studio-step-need");
+    await expect(need).toHaveText("To go on: pick the wall your plumbing is in.");
+    await expect(step(page, "layout")).toHaveAttribute("aria-disabled", "true");
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-room")).toBeVisible();
+    await expect(studioToast(page)).toContainText("To go on: pick the wall your plumbing is in.");
+    await expect(page.locator(".studio-riley .riley-text")).toContainText("Before we move on");
+    await expect(page.locator(".studio-field.is-missing")).toHaveCount(1);
+    // Jumping ahead from the step bar is refused too.
+    await step(page, "estimate").click({ force: true });
+    await expect(page.locator(".studio-step.is-room")).toBeVisible();
+
+    await byKey(page, "stack-N").click();
+    await expect(need).toHaveCount(0);
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-layout")).toBeVisible();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-products")).toBeVisible();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-products")).toBeVisible();
+    await expect(need).toContainText("Choose one…");
+    const unpicked = page.locator('.studio-product-card select:has(option[value=""])');
+    while (await unpicked.count()) {
+      const list = unpicked.first();
+      await list.selectOption(await list.locator("option:not([disabled])").first().getAttribute("value"));
+    }
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
+    await expect(need).toHaveText("To go on: pick a finish for: floor tile, wall paint, ceiling paint.");
+    const open = page.locator(".studio-swatch-group:not(:has([aria-pressed='true']))");
+    while (await open.count()) await open.first().locator(".studio-swatch").first().click();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-estimate")).toBeVisible();
+    await step(page, "room").click();
+    await expect(page.locator(".studio-step.is-room")).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
   test("Riley talks through each step and offers a fix when something won't work", async ({ page }) => {
     const errors = await openStudio(page);
     const riley = page.locator(".riley");
@@ -391,6 +464,7 @@ test.describe("design studio", () => {
     await expect(riley.locator(".riley-name")).toHaveText("Riley");
     await expect(riley.locator(".riley-text")).toContainText("Hi, I'm Riley");
     await expect(riley).toHaveAttribute("data-tone", "ok");
+    await answerAll(page);
 
     await step(page, "layout").click();
     await expect(riley.locator(".riley-text")).toContainText("Now the layout");
@@ -429,6 +503,7 @@ test.describe("design studio", () => {
   ]) {
     test(`/${dir}/designer.html runs the studio in that language`, async ({ page }) => {
       const errors = await openStudio(page, `/${dir}/designer.html?lang=${lang}`);
+      await answerAll(page);
       await expect(page.locator(".studio-step-label")).toHaveText(labels);
       await expect(studioStatus(page)).toHaveText(fits);
       await step(page, "estimate").click();
@@ -443,6 +518,7 @@ test.describe("design studio on a phone", () => {
 
   test("each step starts just under the room, which stays in view", async ({ page }) => {
     const errors = await openStudio(page);
+    await answerAll(page);
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.locator(".studio-step-nav .btn-primary").click();
     await expect(page.locator(".studio-step h2")).toHaveText("Layout");

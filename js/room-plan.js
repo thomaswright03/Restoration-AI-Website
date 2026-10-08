@@ -13,7 +13,12 @@
 //     items: [ { id, type, wall, offset, opts } ],
 //     electrical: [ { id, kind, wall, offset, height, for } ],
 //     finishes: { demolition, floor, walls, ceiling, picks: {} },
-//     products: { <3D product slot id>: <option id> } }
+//     products: { <3D product slot id>: <option id> },
+//     answered: { stack, products: { <slot id>: true } } }
+//
+// answered is what the person has chosen themselves rather than left at
+// the suggestion: the plumbing wall, and each product. The studio won't go
+// on to the next step until that step's questions are answered.
 //
 // Every fixture stands against a wall, facing into the room. wall is
 // "N" (z = 0), "E" (x = w), "S" (z = l) or "W" (x = 0); offset is the
@@ -1765,6 +1770,7 @@
       electrical: [],
       finishes: finishesDefault(),
       products: {},
+      answered: { stack: false, products: {} },
     };
   }
 
@@ -1943,6 +1949,12 @@
       if (/^[A-Za-z]{1,32}$/.test(k) && typeof products[k] === "string" && products[k].length < 64)
         design.products[k] = products[k];
     });
+    var a = raw.answered && typeof raw.answered === "object" ? raw.answered : {};
+    design.answered.stack = a.stack === true;
+    var picked = a.products && typeof a.products === "object" ? a.products : {};
+    Object.keys(picked).forEach(function (k) {
+      if (/^[A-Za-z]{1,32}$/.test(k) && picked[k] === true) design.answered.products[k] = true;
+    });
     return design;
   }
 
@@ -1972,6 +1984,7 @@
       }),
       finishes: design.finishes,
       products: design.products,
+      answered: design.answered || { stack: false, products: {} },
     };
     var json = JSON.stringify(compact);
     var b64 = btoa(unescape(encodeURIComponent(json)));

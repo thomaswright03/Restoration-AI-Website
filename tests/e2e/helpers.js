@@ -38,6 +38,36 @@ async function wait3d(page) {
   await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
 }
 
+// Answers every step's questions the way a person clicking through would
+// (the plumbing wall, a product in every list, a finish for every
+// surface), so a test can go to any step. Loads it like a shared link.
+async function answerAll(page) {
+  await page.waitForFunction(
+    () => window.RoomStudio && window.BathroomRoom3D && window.BathroomRoom3D.available === true,
+  );
+  await page.evaluate(() => {
+    const d = JSON.parse(JSON.stringify(window.RoomStudio.design()));
+    const products = {};
+    for (const group of window.BathroomRoom3D.getProductGroups())
+      for (const slot of group.slots) products[slot.id] = true;
+    d.answered = { stack: true, products };
+    for (const cat of ["floorTile", "flooring", "wallTile", "wallPaint", "ceilingPaint"]) {
+      const first = window.MaterialsPricing.getOptionsForCategory(cat, "")[0];
+      if (first && !d.finishes.picks[cat]) d.finishes.picks[cat] = first.id;
+    }
+    window.location.hash = "design=" + window.RoomPlan.encode(d);
+  });
+  await page.waitForFunction(() => window.RoomStudio.design().answered.stack === true);
+}
+
+// A new room asks again where the plumbing is: this answers with the wall
+// it suggests.
+async function confirmStack(page) {
+  const wall = await page.evaluate(() => window.RoomPlan.stackWall(window.RoomStudio.design()));
+  await page.locator(`[data-key="stack-${wall}"]`).click();
+  await page.waitForFunction(() => window.RoomStudio.design().answered.stack === true);
+}
+
 // The page point a room point (feet: x across, y up, z back) is drawn at,
 // for driving a drag with the mouse. BathroomRoom3D.project() measures from
 // the canvas; the mouse measures from the page.
@@ -63,6 +93,8 @@ module.exports = {
   useConfig,
   openStudio,
   wait3d,
+  answerAll,
+  confirmStack,
   onScreen,
   step,
   byKey,

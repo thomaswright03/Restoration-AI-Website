@@ -1381,6 +1381,51 @@
       "Como está, la distribución necesita {run} de nueva línea de desagüe.",
       "Como está, a distribuição precisa de {run} de nova linha de esgoto.",
     ],
+    "studio.room.plumbingUnset": [
+      "Not picked yet. Until you pick, drains are measured from wall {wall}.",
+      "Aún sin elegir. Mientras tanto, los desagües se miden desde la pared {wall}.",
+      "Ainda não escolhida. Até lá, os ralos são medidos a partir da parede {wall}.",
+    ],
+    // ---------- what a step needs before moving on ----------
+    "studio.need": ["To go on: {list}.", "Para continuar: {list}.", "Para continuar: {list}."],
+    "studio.need.stack": [
+      "pick the wall your plumbing is in",
+      "elija la pared donde está la plomería",
+      "escolha a parede onde fica a hidráulica",
+    ],
+    "studio.need.size": ["fix the room size", "corrija la medida del baño", "corrija a medida do banheiro"],
+    "studio.need.fixture": ["add at least one fixture", "agregue al menos una pieza", "adicione pelo menos uma peça"],
+    "studio.need.fit": [
+      "move or remove what doesn't fit ({what})",
+      "mueva o quite lo que no cabe ({what})",
+      "mova ou tire o que não cabe ({what})",
+    ],
+    "studio.need.points": [
+      "fix the electrical marked in red",
+      "corrija la parte eléctrica marcada en rojo",
+      "corrija a parte elétrica marcada em vermelho",
+    ],
+    "studio.need.products": [
+      "pick a product for: {list}",
+      "elija un producto para: {list}",
+      "escolha um produto para: {list}",
+    ],
+    "studio.need.productsMany": [
+      "pick a product in each list that still says “Choose one…” ({n} left)",
+      "elija un producto en cada lista que aún dice «Elija uno…» (faltan {n})",
+      "escolha um produto em cada lista que ainda diz “Escolha um…” (faltam {n})",
+    ],
+    "studio.need.surfaces": [
+      "pick a finish for: {list}",
+      "elija un acabado para: {list}",
+      "escolha um acabamento para: {list}",
+    ],
+    "studio.need.surface.floorTile": ["floor tile", "azulejo del piso", "cerâmica do piso"],
+    "studio.need.surface.flooring": ["flooring", "piso vinílico", "piso vinílico"],
+    "studio.need.surface.wallTile": ["wall tile", "azulejo de pared", "revestimento de parede"],
+    "studio.need.surface.wallPaint": ["wall paint", "pintura de paredes", "tinta das paredes"],
+    "studio.need.surface.ceilingPaint": ["ceiling paint", "pintura del techo", "tinta do teto"],
+    "studio.products.choose": ["Choose one…", "Elija uno…", "Escolha um…"],
     "studio.room.plumbingNone": [
       "Everything with a drain is on that wall, so there's no new pipe to run.",
       "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
@@ -1991,6 +2036,7 @@
       "¿Le propongo una alternativa? No cabe en ninguna parte de este baño, así que lo quitaría.",
       "Posso sugerir uma alternativa? Não cabe em nenhum lugar deste banheiro, então eu tiraria.",
     ],
+    "riley.need": ["Before we move on, {list}.", "Antes de seguir, {list}.", "Antes de continuar, {list}."],
     "riley.tight": ["One thing about {what}: {why}", "Una cosa sobre {what}: {why}", "Uma coisa sobre {what}: {why}"],
     "riley.step.room": [
       "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",

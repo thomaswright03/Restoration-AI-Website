@@ -535,3 +535,18 @@ test("the plumbing wall survives a link and a resize", () => {
   // A design saved before the plumbing wall existed falls back to one.
   assert.equal(P.stackWall(P.sanitize({ v: 2, room: { w: 8, l: 6, h: 8 }, items: [] })), "N");
 });
+
+test("what the person has answered goes with the design, and nothing else does", () => {
+  const d = P.fromTemplate("full5x8", {});
+  assert.deepEqual(d.answered, { stack: false, products: {} });
+  d.answered = { stack: true, products: { toilet: true } };
+  const back = P.decode(P.encode(d));
+  assert.deepEqual(back.answered, { stack: true, products: { toilet: true } });
+  const odd = P.sanitize(
+    Object.assign({}, d, { answered: { stack: "yes", products: { toilet: 1, "bad key": true } } }),
+  );
+  assert.deepEqual(odd.answered, { stack: false, products: {} });
+  // A design saved before there were answers starts with none.
+  const old = P.sanitize(Object.assign({}, d, { answered: undefined }));
+  assert.deepEqual(old.answered, { stack: false, products: {} });
+});

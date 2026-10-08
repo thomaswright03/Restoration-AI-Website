@@ -6,7 +6,9 @@
 //     into the room toward +z; centered on x; resting on the floor (y = 0)
 // Only geometry is kept (positions, normals, triangle indices). These
 // OBJs ship without usable materials/textures, so the preview assigns its
-// own glazed-porcelain material at load time.
+// own glazed-porcelain material at load time. An OBJ split into groups
+// ("g cabinet", "g top", ...) keeps each group as its own named mesh, so a
+// product option can give each part a material (its `parts` map).
 //
 // Manual/offline, same "generate once, commit the result" pattern as the
 // materials catalog. No dependencies.
@@ -77,8 +79,11 @@ function parseObj(text) {
   const positions = [];
   const normals = [];
   const faces = []; // [[v, vn], ...] per polygon, 0-based
+  const faceGroups = []; // each face's "g" group name (null before any)
+  let group = null;
   for (const line of text.split(/\r?\n/)) {
-    if (line.startsWith("v ")) positions.push(line.trim().split(/\s+/).slice(1, 4).map(Number));
+    if (line.startsWith("g ")) group = line.slice(2).trim() || null;
+    else if (line.startsWith("v ")) positions.push(line.trim().split(/\s+/).slice(1, 4).map(Number));
     else if (line.startsWith("vn ")) normals.push(line.trim().split(/\s+/).slice(1, 4).map(Number));
     else if (line.startsWith("f ")) {
       const poly = line
@@ -92,13 +97,14 @@ function parseObj(text) {
           return [vi < 0 ? positions.length + vi : vi - 1, ni ? (ni < 0 ? normals.length + ni : ni - 1) : -1];
         });
       faces.push(poly);
+      faceGroups.push(group);
     }
   }
-  return { positions, normals, faces };
+  return { positions, normals, faces, faceGroups };
 }
 
 function convert(text, opts) {
-  const { positions, faces } = parseObj(text);
+  const { positions, faces, faceGroups } = parseObj(text);
   const B = basis(opts.up, opts.front);
   const scale = UNIT_TO_FT[opts.units];
   if (!scale) throw new Error("bad --units " + opts.units);
@@ -107,10 +113,18 @@ function convert(text, opts) {
   const P = positions.map((p) => rot(p).map((c) => c * scale));
 
   // Triangulate (fan) into position-index triangles.
+  // Each triangle carries its face's group (index into groupNames).
+  const groupNames = [];
   let tris = [];
-  for (const poly of faces) {
-    for (let i = 1; i + 1 < poly.length; i++) tris.push([poly[0][0], poly[i][0], poly[i + 1][0]]);
-  }
+  faces.forEach((poly, f) => {
+    let g = groupNames.indexOf(faceGroups[f]);
+    if (g === -1) g = groupNames.push(faceGroups[f]) - 1;
+    for (let i = 1; i + 1 < poly.length; i++) {
+      const t = [poly[0][0], poly[i][0], poly[i + 1][0]];
+      t.group = g;
+      tris.push(t);
+    }
+  });
 
   // Vertex-clustering simplification: snap vertices to a grid of
   // --cluster inches, merge each cell to its members' average, drop the
@@ -140,7 +154,11 @@ function convert(text, opts) {
     V = sums.map((a) => [a[0] / a[3], a[1] / a[3], a[2] / a[3]]);
     const seen = new Set();
     tris = tris
-      .map((t) => t.map((v) => remap[v]))
+      .map((t) => {
+        const m = t.map((v) => remap[v]);
+        m.group = t.group;
+        return m;
+      })
       .filter((t) => {
         if (t[0] === t[1] || t[1] === t[2] || t[0] === t[2]) return false;
         const k = [...t].sort((a, b) => a - b).join(",");
@@ -169,7 +187,7 @@ function convert(text, opts) {
 
   const outPos = [];
   const outNrm = [];
-  const indices = [];
+  const indices = groupNames.map(() => []);
   const key = new Map();
   tris.forEach((t, f) => {
     for (const v of t) {
@@ -192,7 +210,7 @@ function convert(text, opts) {
         outPos.push(...V[v]);
         outNrm.push(...nn);
       }
-      indices.push(idx);
+      indices[t.group].push(idx);
     }
   });
 
@@ -215,21 +233,34 @@ function convert(text, opts) {
     outPos[i + 2] += dz;
   }
   const size = [max[0] - min[0], max[1] - min[1], max[2] - min[2]];
-  return { positions: new Float32Array(outPos), normals: new Float32Array(outNrm), indices, size, dy };
+  // One part per OBJ group ("g" line) that kept any triangles; an OBJ
+  // without groups is a single part.
+  const parts = groupNames
+    .map((name, g) => ({ name, indices: indices[g] }))
+    .filter((p) => p.indices.length);
+  return { positions: new Float32Array(outPos), normals: new Float32Array(outNrm), parts, size, dy };
 }
 
-function writeGlb({ positions, normals, indices }, name) {
+// A model with several parts (OBJ groups) gets one named node/mesh per
+// part, sharing one vertex buffer, so the preview can give each part its
+// own material by name (a vanity's cabinet, top, bowl and hardware).
+function writeGlb({ positions, normals, parts }, name) {
   const vertexCount = positions.length / 3;
-  const index = vertexCount > 65535 ? new Uint32Array(indices) : new Uint16Array(indices);
+  const Index = vertexCount > 65535 ? Uint32Array : Uint16Array;
+  const indexArrays = parts.map((p) => new Index(p.indices));
   const pad4 = (n) => (n + 3) & ~3;
   const posBytes = positions.byteLength;
   const nrmBytes = normals.byteLength;
-  const idxBytes = index.byteLength;
-  const binLength = pad4(posBytes) + pad4(nrmBytes) + pad4(idxBytes);
+  const idxOffsets = [];
+  let binLength = pad4(posBytes) + pad4(nrmBytes);
+  for (const a of indexArrays) {
+    idxOffsets.push(binLength);
+    binLength += pad4(a.byteLength);
+  }
   const bin = Buffer.alloc(binLength);
   Buffer.from(positions.buffer).copy(bin, 0);
   Buffer.from(normals.buffer).copy(bin, pad4(posBytes));
-  Buffer.from(index.buffer).copy(bin, pad4(posBytes) + pad4(nrmBytes));
+  indexArrays.forEach((a, i) => Buffer.from(a.buffer, a.byteOffset, a.byteLength).copy(bin, idxOffsets[i]));
 
   const pmin = [Infinity, Infinity, Infinity];
   const pmax = [-Infinity, -Infinity, -Infinity];
@@ -242,20 +273,30 @@ function writeGlb({ positions, normals, indices }, name) {
   const gltf = {
     asset: { version: "2.0", generator: "room-designer-3d tools/models/obj-to-glb.mjs" },
     scene: 0,
-    scenes: [{ nodes: [0] }],
-    nodes: [{ mesh: 0, name }],
-    meshes: [{ name, primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2 }] }],
+    scenes: [{ nodes: parts.map((p, i) => i) }],
+    nodes: parts.map((p, i) => ({ mesh: i, name: parts.length > 1 ? p.name : name })),
+    meshes: parts.map((p, i) => ({
+      name: parts.length > 1 ? p.name : name,
+      primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2 + i }],
+    })),
     buffers: [{ byteLength: binLength }],
     bufferViews: [
       { buffer: 0, byteOffset: 0, byteLength: posBytes, target: 34962 },
       { buffer: 0, byteOffset: pad4(posBytes), byteLength: nrmBytes, target: 34962 },
-      { buffer: 0, byteOffset: pad4(posBytes) + pad4(nrmBytes), byteLength: idxBytes, target: 34963 },
-    ],
+    ].concat(
+      indexArrays.map((a, i) => ({ buffer: 0, byteOffset: idxOffsets[i], byteLength: a.byteLength, target: 34963 })),
+    ),
     accessors: [
       { bufferView: 0, componentType: 5126, count: vertexCount, type: "VEC3", min: pmin, max: pmax },
       { bufferView: 1, componentType: 5126, count: vertexCount, type: "VEC3" },
-      { bufferView: 2, componentType: index instanceof Uint32Array ? 5125 : 5123, count: index.length, type: "SCALAR" },
-    ],
+    ].concat(
+      indexArrays.map((a, i) => ({
+        bufferView: 2 + i,
+        componentType: Index === Uint32Array ? 5125 : 5123,
+        count: a.length,
+        type: "SCALAR",
+      })),
+    ),
   };
   let json = Buffer.from(JSON.stringify(gltf), "utf8");
   json = Buffer.concat([json, Buffer.alloc(pad4(json.length) - json.length, 0x20)]);
@@ -280,6 +321,9 @@ writeFileSync(output, glb);
 const ft = result.size.map((s) => s.toFixed(2));
 const inches = result.size.map((s) => (s * 12).toFixed(1));
 console.log(
-  `${output}: ${result.positions.length / 3} vertices, ${result.indices.length / 3} triangles, ` +
+  `${output}: ${result.positions.length / 3} vertices, ` +
+    `${result.parts.reduce((n, p) => n + p.indices.length, 0) / 3} triangles` +
+    (result.parts.length > 1 ? ` in ${result.parts.length} parts (${result.parts.map((p) => p.name).join(", ")})` : "") +
+    `, ` +
     `${(glb.length / 1024).toFixed(0)} KB — ${ft[0]} x ${ft[1]} x ${ft[2]} ft (W x H x D) = ${inches.join(" x ")} in.`,
 );

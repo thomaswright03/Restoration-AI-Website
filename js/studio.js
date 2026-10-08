@@ -104,6 +104,8 @@
     tub: '<path d="M3 12h18v2a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M5 12V6a2 2 0 0 1 4 0"/><path d="M7 19l-1 2m12-2 1 2"/>',
     shower: '<path d="M5 21V8a4 4 0 0 1 8 0"/><path d="M10 11h6"/><path d="M11 14v1M13 14v2M15 14v1M12 17v1M14 18v1"/>',
     cabinet: '<rect x="5" y="3" width="14" height="18" rx="1"/><path d="M12 3v18"/><path d="M10 11v2M14 11v2"/>',
+    light:
+      '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
     door: '<path d="M5 21V4a1 1 0 0 1 1-1h9v18"/><path d="M15 3l4 2v16h-4"/><path d="M12 12h.01"/><path d="M3 21h18"/>',
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
     redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/>',
@@ -3338,6 +3340,7 @@
     shower: "shower",
     mirror: "frame",
     door: "door",
+    lighting: "light",
   };
 
   function productsStep(body) {

@@ -1,0 +1,14 @@
+{
+  "source": "SketchUp 3D Warehouse user uploads of the exact Broan-NuTone product (Broan-NuTone publishes Revit files only). Converted with: node tools/models/glb-transform.mjs <download>.glb <file> <convertArgs>, which keeps the model's own materials and texture.",
+  "products": [
+    {
+      "mmn": "LP80",
+      "name": "Broan-NuTone LoProfile 80 CFM Ceiling/Wall Bathroom Exhaust Fan with 4 in. Oval Duct or 3 in. Round Duct, ENERGY STAR",
+      "file": "models/products/broan/LP80.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/Broan-NuTone-LoProfile-80-CFM-Ceiling-Wall-Bathroom-Exhaust-Fan-with-4-in-Oval-Duct-or-3-in-Round-Duct-ENERGY-STAR-LP80/301729699",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/59ee9c402abf859bcc9195ed0bd6e9c",
+      "convertArgs": ["--flip", "--drop", "^(Color_004|0\\.60\\.60\\.6)$", "--keep", "0.75"],
+      "slot": "exhaustFan"
+    }
+  ]
+}

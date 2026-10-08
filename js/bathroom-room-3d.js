@@ -264,11 +264,25 @@ function buildMaterials(isDark) {
   // Stone/quartz vanity top — only used once a real undermount bowl
   // swaps the vanity to buildUndermountVanity().
   var countertop = new THREE.MeshStandardMaterial({ color: isDark ? 0xd9d5cc : 0xeeebe5, roughness: 0.35 });
+  // A whole vanity's painted cabinet (the Kohler vanities come in white).
+  var vanityPaint = new THREE.MeshStandardMaterial({ color: isDark ? 0xdcd9d2 : 0xf3f1ec, roughness: 0.6 });
+  // Dark anodized aluminum (the Maxstow medicine cabinets' frame).
+  var darkMetal = new THREE.MeshStandardMaterial({ color: 0x3c3d40, roughness: 0.4, metalness: 0.7 });
+  // A light fixture's glass shade, lit from inside.
+  var shadeGlass = new THREE.MeshStandardMaterial({
+    color: 0xf6f1e6,
+    emissive: 0xfff1d6,
+    emissiveIntensity: 0.55,
+    roughness: 0.3,
+  });
   // Mirror glass: a smooth, fully metallic surface, so it reflects the
   // room's environment light instead of showing the wall through it.
   var mirrorGlass = new THREE.MeshStandardMaterial({ color: 0xdfe5e8, roughness: 0.04, metalness: 1 });
   return {
     countertop: countertop,
+    vanityPaint: vanityPaint,
+    darkMetal: darkMetal,
+    shadeGlass: shadeGlass,
     mirrorGlass: mirrorGlass,
     stainless: stainless,
     porcelain: porcelain,
@@ -670,9 +684,63 @@ function ensureFixtureModel(s, fixtureKey) {
 //   alcove:    an alcove tub with its own apron (or a tub-and-walls kit),
 //              set against the wall as it is: no deck, and no floor filler
 //   hasWalls:  a shower kit with its walls built in (no separate wall kit)
+//   complete:  a whole vanity (cabinet, top and bowl in one model): the
+//              vanity sink row goes away, and the faucet sits on its top
+//   parts:     { meshName: material key } for a model converted with its
+//              parts kept apart (cabinet, top, bowl, hardware)
+//   keepMaterials: the model's own materials and textures (a fan grille
+//              that only exists as a texture), not one of ours
+//   recessed:  a medicine cabinet set into the wall, its door standing
+//              just proud of the wall's face
 
 // Where a mirror's bottom edge goes: ~10 in. above a 31 in. vanity top.
 var MIRROR_BOTTOM_FT = 3.4;
+// A whole vanity stands taller (about 36 in.) than the drawn one, so the
+// mirror goes up with it to stay clear of the faucet.
+function mirrorBottom(sel) {
+  return sel.vanity.complete ? MIRROR_BOTTOM_FT + Math.round((sel.vanity.deckY - 2.6) * 100) / 100 : MIRROR_BOTTOM_FT;
+}
+
+// Kohler vanity lights sold at Home Depot (under their model numbers
+// without the K-), from KOHLER Co.'s 3D Warehouse models with the shades
+// kept apart from the metal: [model number, the metal's material].
+var VANITY_LIGHTS = [
+  ["31769-SC02-CPL", "chrome"],
+  ["31770-SC03-CPL", "chrome"],
+  ["31756-SC02-BNL", "stainless"],
+  ["31757-SC03-CPL", "chrome"],
+  ["38398-SC03-2GL", "brass"],
+  ["38399-SC04-CPL", "chrome"],
+  ["26849-SC04-CPL", "chrome"],
+  ["28973-SC04-BNL", "stainless"],
+  ["35875-SC04-BNL", "stainless"],
+];
+
+// Product slots for electrical points rather than placed fixtures: the
+// slot's fixtureKey for each kind of point.
+var ELECTRICAL_SLOT_KEYS = { light: "Light_Point" };
+
+// Marks the electrical points in the room as placed, so their slots show.
+function addElectricalKeys(placedKeys) {
+  (state.electrical || []).forEach(function (p) {
+    if (ELECTRICAL_SLOT_KEYS[p.kind]) placedKeys[ELECTRICAL_SLOT_KEYS[p.kind]] = true;
+  });
+  return placedKeys;
+}
+
+// Kohler medicine cabinets: mirror doors over a cabinet box. Recessed ones
+// sit in the wall; the surface-mount Maxstow ones hang on it, in their dark
+// anodized frame (models converted with that frame as a "metal" part).
+function medicineCabinet(id, recessed) {
+  return {
+    id: id,
+    url: kohlerUrl(id),
+    material: "mirrorGlass",
+    parts: recessed ? null : { metal: "darkMetal" },
+    recessed: recessed,
+  };
+}
+
 // Top of a shower arm's wall flange (about 80 in.).
 var SHOWER_ARM_TOP_FT = 6.75;
 
@@ -802,9 +870,33 @@ function kohlerUrl(id) {
   return "models/products/kohler/" + id + ".glb";
 }
 
+function broanUrl(id) {
+  return "models/products/broan/" + id + ".glb";
+}
+
 // The Sterling models (models/products/sterling/, from Sterling's own
 // 3D Warehouse catalog — see that folder's manifest.json), named by their
 // Home Depot model numbers.
+// Kohler vanities sold whole (cabinet, quartz top and undermount bowl
+// assembled), from KOHLER Co.'s 3D Warehouse models: models/products/kohler/
+// with their parts kept apart. width/depth: the model's size (ft); holes:
+// the top's faucet drilling (the 24 in. ones have one hole, the rest 8 in.
+// widespread), all 0.2 ft from the back.
+var VANITY_PARTS = { body: "vanityPaint", top: "countertop", bowl: "porcelainGloss", metal: "stainless" };
+
+function kohlerVanity(id, width, depth, deckY) {
+  return {
+    id: id,
+    url: kohlerUrl(id),
+    complete: true,
+    parts: VANITY_PARTS,
+    holes: width < 2.2 ? "single" : "widespread",
+    deckY: deckY,
+    faucetLine: 0.2,
+    footprint: { wallSpan: width, depth: depth },
+  };
+}
+
 function sterlingUrl(id) {
   return "models/products/sterling/" + id + ".glb";
 }
@@ -927,6 +1019,16 @@ var PRODUCT_SLOTS = [
         rotation: [Math.PI / 2, 0, 0],
         place: function (sel, opt, size, ctx) {
           return [0, ctx.heightFt, 1.2 - size.y / 2];
+        },
+      },
+      // Broan-NuTone LoProfile, grille down, the housing above the ceiling.
+      {
+        id: "LP80",
+        url: broanUrl("LP80"),
+        needsWiring: true,
+        keepMaterials: true,
+        place: function (sel, opt, size, ctx) {
+          return [0, ctx.heightFt - 0.02, 1.2 - size.z / 2];
         },
       },
     ],
@@ -1093,8 +1195,36 @@ var PRODUCT_SLOTS = [
     }),
   },
   {
+    id: "vanity",
+    fixtureKey: "Vanity_Quantity",
+    body: true,
+    options: [
+      // The cabinet drawn here, with the sink and top picked below.
+      { id: "standard-vanity", url: null },
+      kohlerVanity("K-33577-ASB-0", 2.01, 1.56, 2.966),
+      kohlerVanity("K-33578-ASB-0", 2.51, 1.56, 2.966),
+      kohlerVanity("K-33579-ASB-0", 3.01, 1.56, 2.966),
+      kohlerVanity("K-33580-ASB-0", 4.01, 1.56, 2.966),
+      kohlerVanity("K-33535-ASB-0", 2.05, 1.58, 2.982),
+      kohlerVanity("K-33536-ASB-0", 2.55, 1.58, 2.982),
+      kohlerVanity("K-33537-ASB-0", 3.04, 1.58, 2.982),
+      kohlerVanity("K-33538-ASB-0", 4.05, 1.58, 2.982),
+      kohlerVanity("K-33551-ASB-0", 2.01, 1.62, 2.982),
+      kohlerVanity("K-33552-ASB-0", 2.51, 1.62, 2.982),
+      kohlerVanity("K-33553-ASB-0", 3.01, 1.62, 2.982),
+      kohlerVanity("K-33554-ASB-0", 4.01, 1.62, 2.982),
+      kohlerVanity("K-33543-ASB-0", 2.04, 1.58, 2.982),
+      kohlerVanity("K-33545-ASB-0", 3.03, 1.58, 2.982),
+      kohlerVanity("K-33546-ASB-0", 4.03, 1.58, 2.982),
+    ],
+  },
+  {
     id: "vanitySink",
     fixtureKey: "Vanity_Quantity",
+    // A whole vanity comes with its own top and bowl.
+    showIf: function (sel) {
+      return !sel.vanity.complete;
+    },
     options: [
       // centerZ: where the bowl's center sits in the vanity; hole: the
       // countertop cutout's radii, just inside the bowl's top opening;
@@ -1204,10 +1334,11 @@ var PRODUCT_SLOTS = [
     fixtureKey: "Vanity_Quantity",
     options: sinkFaucetOptions(
       function (sel) {
-        return { y: sel.vanitySink.deckY, line: sel.vanitySink.faucetLine };
+        var top = sel.vanity.complete ? sel.vanity : sel.vanitySink;
+        return { y: top.deckY, line: top.faucetLine };
       },
       function (sel) {
-        return sel.vanitySink;
+        return sel.vanity.complete ? sel.vanity : sel.vanitySink;
       },
     ),
   },
@@ -1427,6 +1558,13 @@ var PRODUCT_SLOTS = [
       { id: "K-31364-BLL", url: kohlerUrl("K-31364-BLL"), material: "chrome" },
       { id: "K-31367-BLL", url: kohlerUrl("K-31367-BLL"), material: "chrome" },
       { id: "K-31368", url: kohlerUrl("K-31368"), material: "chrome" },
+      medicineCabinet("K-3073-NA", true),
+      medicineCabinet("K-99000-NA", true),
+      medicineCabinet("K-99002-NA", true),
+      medicineCabinet("K-99003-SCF-NA", true),
+      medicineCabinet("K-99007-NA", true),
+      medicineCabinet("K-81144-DA1", false),
+      medicineCabinet("K-81146-DA1", false),
     ],
   },
   {
@@ -1438,6 +1576,8 @@ var PRODUCT_SLOTS = [
       { id: "K-31365-BLL", url: kohlerUrl("K-31365-BLL"), material: "chrome" },
       { id: "K-31369-BLL", url: kohlerUrl("K-31369-BLL"), material: "chrome" },
       { id: "K-99573-TL-NA", url: kohlerUrl("K-99573-TL-NA"), material: "chrome", needsWiring: true },
+      medicineCabinet("K-99008-NA", true),
+      medicineCabinet("K-99010-NA", true),
     ],
   },
   {
@@ -1451,6 +1591,18 @@ var PRODUCT_SLOTS = [
     options: accessoryOptions(ROBE_HOOKS, "chrome", function (sel, opt, size) {
       return [-0.7, 5.5 - size.y / 2, 0.075];
     }),
+  },
+  {
+    id: "vanityLight",
+    // Not a placed fixture: drawn at each light point the Electrical step
+    // put over a mirror (see rebuildElectrical()).
+    fixtureKey: "Light_Point",
+    body: true,
+    options: [{ id: "standard-light", url: null }].concat(
+      VANITY_LIGHTS.map(function (light) {
+        return { id: light[0], url: kohlerUrl(light[0]), parts: { metal: light[1], glass: "shadeGlass" } };
+      }),
+    ),
   },
 ];
 
@@ -1557,6 +1709,7 @@ function productFootprints(picks) {
   var out = {};
   PRODUCT_SLOTS.forEach(function (slot) {
     var opt = sel[slot.id];
+    if (slot.showIf && !slot.showIf(sel)) return;
     if (opt && opt.footprint) out[slot.fixtureKey] = opt.footprint;
   });
   return out;
@@ -1574,7 +1727,7 @@ function planFootprints(picks) {
   // A vanity top is the countertop: the cabinet under it is stretched to
   // its size (see buildUndermountVanity()).
   var sel = selectedProducts(picks);
-  if (sel.vanitySink && sel.vanitySink.top) {
+  if (!sel.vanity.complete && sel.vanitySink.top) {
     out.Vanity_Quantity.wallSpan = sel.vanitySink.top.width;
     out.Vanity_Quantity.depth = Math.max(sel.vanitySink.top.depth, out.Vanity_Quantity.depth);
   }
@@ -1647,12 +1800,16 @@ function ensureProductModel(s, opt) {
       var materialKey = opt.material || "porcelainGloss";
       var material = s.mat[materialKey];
       model.traverse(function (child) {
-        if (child.isMesh) {
-          child.material = material;
-          // Porcelain bodies stay retintable by setFixtureFinish(); chrome
-          // and steel trim keep their finish.
-          if (!opt.material) child.userData.finishBase = materialKey;
+        if (!child.isMesh || opt.keepMaterials) return;
+        var partKey = opt.parts && opt.parts[child.name];
+        if (partKey) {
+          child.material = s.mat[partKey];
+          return;
         }
+        child.material = material;
+        // Porcelain bodies stay retintable by setFixtureFinish(); chrome
+        // and steel trim keep their finish.
+        if (!opt.material) child.userData.finishBase = materialKey;
       });
       model.userData.size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
       s.productModels[opt.url] = model;
@@ -1731,6 +1888,7 @@ function productBodyTemplate(s, fixtureKey, sel) {
     return s.tubTemplates[sel.tub.id];
   }
   if (fixtureKey === "Vanity_Quantity") {
+    if (sel.vanity.url) return productModelsReady(s, [sel.vanity]) ? s.productModels[sel.vanity.url] : null;
     if (!productModelsReady(s, optionModels(sel.vanitySink))) return null;
     var key = sel.vanitySink.id;
     if (!s.vanityTemplates[key]) s.vanityTemplates[key] = buildUndermountVanity(s.geo, s.mat, sel.vanitySink);
@@ -1775,13 +1933,24 @@ function productBodyTemplate(s, fixtureKey, sel) {
   }
   if (fixtureKey === "Mirror_Quantity" || fixtureKey === "Mirror_Huge_Quantity") {
     var mirror = fixtureKey === "Mirror_Quantity" ? sel.mirror : sel.mirrorLarge;
-    if (!mirror.url || !productModelsReady(s, [mirror])) return null;
+    var bottom = mirrorBottom(sel);
+    if (!mirror.url) {
+      // The plain mirror goes up over a whole vanity too.
+      if (bottom === MIRROR_BOTTOM_FT || !s.fixtureTemplates[fixtureKey]) return null;
+      return cachedBodyTemplate(s, "mirror|" + fixtureKey + "|" + bottom, function () {
+        return offsetModel(s.fixtureTemplates[fixtureKey], 0, bottom - MIRROR_BOTTOM_FT, 0);
+      });
+    }
+    if (!productModelsReady(s, [mirror])) return null;
     // Wall-mounted instances sit at the layout's mountHeight; the Kohler
     // mirror hangs its bottom edge at MIRROR_BOTTOM_FT instead, on the
     // wall's face (its back at z = 0), not sunk into it.
-    return cachedBodyTemplate(s, "mirror|" + mirror.id, function () {
+    return cachedBodyTemplate(s, "mirror|" + mirror.id + "|" + bottom, function () {
       var mountY = Layout.FIXTURE_LAYOUT[fixtureKey].mountHeight;
-      return offsetModel(s.productModels[mirror.url], 0, MIRROR_BOTTOM_FT - mountY, 0.005);
+      var model = s.productModels[mirror.url];
+      // A recessed cabinet's door stands 3/4 in. proud of the wall.
+      var z = mirror.recessed ? 0.06 - model.userData.size.z : 0.005;
+      return offsetModel(model, 0, bottom - mountY, z);
     });
   }
   return null;
@@ -1866,6 +2035,7 @@ var PRODUCT_GROUPS = [
   { id: "shower", fixtureKeys: ["Shower_Quantity", "Shower_Door_Quantity", "Shower_Shelf_Quantity"] },
   { id: "mirror", fixtureKeys: ["Mirror_Quantity", "Mirror_Huge_Quantity"] },
   { id: "door", fixtureKeys: ["Door_Quantity"] },
+  { id: "lighting", fixtureKeys: ["Light_Point"] },
 ];
 
 function productGroupOf(slot) {
@@ -1898,7 +2068,7 @@ function slotOptionStates(slot, sel, shown) {
 // estimate names whatever is showing by Kohler model number.
 
 function mmnFromUrl(url) {
-  var m = /\/products\/(?:kohler|sterling)\/([A-Z0-9-]+)\.glb$/.exec(url || "");
+  var m = /\/products\/(?:kohler|sterling|broan)\/([A-Z0-9-]+)\.glb$/.exec(url || "");
   return m ? m[1] : null;
 }
 
@@ -1931,7 +2101,7 @@ function currentLayout() {
   placements.forEach(function (p) {
     placedKeys[p.fixtureKey] = true;
   });
-  return { layout: { placements: placements }, placedKeys: placedKeys };
+  return { layout: { placements: placements }, placedKeys: addElectricalKeys(placedKeys) };
 }
 
 function productGroupDef(groupId) {
@@ -2914,7 +3084,7 @@ function rebuildFixtures(s, widthFt, lengthFt, heightFt) {
     setShadowFlags(instance);
     s.fixtureGroup.add(instance);
   });
-  showModelNote(s, placedKeys, sel);
+  showModelNote(s, addElectricalKeys(placedKeys), sel);
 }
 
 // Names the picked products showing as a stand-in because their model
@@ -3368,10 +3538,19 @@ function buildElectricalPiece(s, p) {
   return g;
 }
 
+// The picked vanity light, centered on its point with its back on the
+// wall; null for the drawn one, or until its model arrives.
+function lightTemplate(s, light) {
+  if (!light.url || !productModelsReady(s, [light])) return null;
+  var model = s.productModels[light.url];
+  return offsetModel(model, 0, -model.userData.size.y / 2, 0);
+}
+
 function rebuildElectrical(s) {
   disposeGroup(s.electricalGroup);
+  var light = selectedProducts().vanityLight;
   (state.electrical || []).forEach(function (p) {
-    var piece = buildElectricalPiece(s, p);
+    var piece = (p.kind === "light" && lightTemplate(s, light)) || buildElectricalPiece(s, p);
     if (p.ceiling) {
       piece.position.set(p.x, p.y - 0.03, p.z);
     } else {
@@ -3666,6 +3845,12 @@ window.BathroomRoom3D = {
       var qty = cur.layout.placements.filter(function (p) {
         return p.fixtureKey === slot.fixtureKey && !(slot.skip && slot.skip(p));
       }).length;
+      Object.keys(ELECTRICAL_SLOT_KEYS).forEach(function (kind) {
+        if (ELECTRICAL_SLOT_KEYS[kind] !== slot.fixtureKey) return;
+        qty = (state.electrical || []).filter(function (p) {
+          return p.kind === kind;
+        }).length;
+      });
       if (!qty) return;
       items.push({
         groupId: productGroupOf(slot),

@@ -1,5 +1,5 @@
 {
-  "source": "Studio Kohler .obj downloads (Restor step 3), filtered to products sold at Home Depot (step 2), plus the missing-products download (download_results_missing.json). Converted with: node tools/models/obj-to-glb.mjs <MMN>.obj <file> <convertArgs>. slot: the 3D room's product switcher row it appears in (PRODUCT_SLOTS in js/bathroom-room-3d.js).",
+  "source": "Studio Kohler .obj downloads (Restor step 3), filtered to products sold at Home Depot (step 2), plus the missing-products download (download_results_missing.json). Converted with: node tools/models/obj-to-glb.mjs <MMN>.obj <file> <convertArgs>. slot: the 3D room's product switcher row it appears in (PRODUCT_SLOTS in js/bathroom-room-3d.js). Entries with source3dWarehouse came from KOHLER Co.'s official SketchUp 3D Warehouse account instead (GLB, see prep).",
   "products": [
     {
       "mmn": "K-14426-CP",
@@ -857,6 +857,369 @@
       "kohlerUrl": "https://www.studiokohler.com/products/bathroom/bathroom-accessories/exhaust-fans/34454?sku=K-34454-NA",
       "convertArgs": ["--up", "y", "--front", "+z", "--cluster", "0.15"],
       "slot": "exhaustFan"
+    },
+    {
+      "mmn": "K-33577-ASB-0",
+      "name": "KOHLER Winnow 24 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33577-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Winnow-24-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33577-ASB-0/317945691",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/7eef6935-c016-46d9-a463-a360804ad73e",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33578-ASB-0",
+      "name": "KOHLER Winnow 30 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33578-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Winnow-30-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33578-ASB-0/317945699",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/16cd363c-9686-4297-bad7-01bb1aae712b",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33579-ASB-0",
+      "name": "KOHLER Winnow 36 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33579-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Winnow-36-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33579-ASB-0/317945709",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/901ac598-2604-4545-a28b-631e95027a37",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33580-ASB-0",
+      "name": "KOHLER Winnow 48 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33580-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Winnow-48-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33580-ASB-0/317945722",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/aa7eed43-0cda-4ce8-b562-500beebef16d",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33535-ASB-0",
+      "name": "KOHLER Hearthaven 24 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33535-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Hearthaven-24-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33535-ASB-0/317945762",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ed5a3e88-8e89-4369-b746-ffca9aa1cbc4",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33536-ASB-0",
+      "name": "KOHLER Hearthaven 31 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33536-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Hearthaven-31-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33536-ASB-0/317945758",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/c10fce3a-62fd-4c81-96ee-d7a94cf6bdbb",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33537-ASB-0",
+      "name": "KOHLER Hearthaven 37 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33537-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Hearthaven-37-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33537-ASB-0/317945689",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ecfab75d-ef27-41d6-b8c0-1b4acf109394",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33538-ASB-0",
+      "name": "KOHLER Hearthaven 49 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33538-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Hearthaven-49-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33538-ASB-0/317945707",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/7e37e02c-fceb-4ca4-a863-2ab739c6da37",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33551-ASB-0",
+      "name": "KOHLER Seer 24 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33551-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Seer-24-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33551-ASB-0/317945668",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/38dec444-058a-450d-af45-6b5300721f93",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33552-ASB-0",
+      "name": "KOHLER Seer 30 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33552-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Seer-30-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33552-ASB-0/317945663",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/326f70e8-1484-4c6a-8dbd-eba5175c32c4",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33553-ASB-0",
+      "name": "KOHLER Seer 36 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33553-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Seer-36-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33553-ASB-0/317945676",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/1ae39aad-4ba4-49c4-99c6-463977cb1bd0",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33554-ASB-0",
+      "name": "KOHLER Seer 48 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33554-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Seer-48-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33554-ASB-0/317945671",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/a5a1fab4-6891-4a53-bb68-68e8ab43873e",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33543-ASB-0",
+      "name": "KOHLER Southerk 23 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33543-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Southerk-23-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33543-ASB-0/317945649",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/89d9517b-3cd0-4121-a1ca-c374530c558b",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33545-ASB-0",
+      "name": "KOHLER Southerk 37 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33545-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Southerk-37-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33545-ASB-0/317945657",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/e599599c-b0ce-4627-aed2-6095a7d956f0",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-33546-ASB-0",
+      "name": "KOHLER Southerk 49 in. Single Sink Freestanding White Bath Vanity with White Quartz Top Assembled",
+      "category": "vanities",
+      "file": "models/products/kohler/K-33546-ASB-0.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Southerk-49-in-Single-Sink-Freestanding-White-Bath-Vanity-with-White-Quartz-Top-Assembled-K-33546-ASB-0/317945653",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/b03d5e43-4b14-420a-820a-09f952d320eb",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Silver -> metal, 0128_White -> bowl, faces within 1.2 in. of the top -> top, the rest -> body",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.25"],
+      "slot": "vanity"
+    },
+    {
+      "mmn": "K-3073-NA",
+      "name": "KOHLER Archer 20 in. W x 31 in. H Single Door Mirrored Recessed Medicine Cabinet in Anodized Aluminum",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-3073-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Archer-20-in-W-x-31-in-H-Single-Door-Mirrored-Recessed-Medicine-Cabinet-in-Anodized-Aluminum-K-3073-NA/100604980",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/1b1fdc2c-88c7-4697-8991-f27076eedf29",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-99000-NA",
+      "name": "KOHLER Verdera 15 in. W x 30 in. H Recessed Medicine Cabinet",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99000-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-15-in-W-x-30-in-H-Recessed-Medicine-Cabinet-K-99000-NA/204633466",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/9ba49f03-b83e-4b22-b184-56f322f2977b",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-99002-NA",
+      "name": "KOHLER Verdera 20 in. W x 30 in. H Recessed Medicine Cabinet",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99002-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-20-in-W-x-30-in-H-Recessed-Medicine-Cabinet-K-99002-NA/204633468",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/84d2098a-1c55-4811-b755-4896bcd4aa3c",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-99007-NA",
+      "name": "KOHLER Verdera 24 in. W x 30 in. H Recessed Medicine Cabinet with Magnifying Mirror",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99007-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-24-in-W-x-30-in-H-Recessed-Medicine-Cabinet-with-Magnifying-Mirror-K-99007-NA/204633473",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/194e5aaa-1d0b-44a4-9af2-188bb54e46df",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-99003-SCF-NA",
+      "name": "KOHLER Verdera 20 in. W x 30 in. H Recessed Medicine Cabinet with Flip-Out Mirror",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99003-SCF-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-20-in-W-x-30-in-H-Recessed-Medicine-Cabinet-with-Flip-Out-Mirror-K-99003-SCF-NA/301675057",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/4224b7a5-a7fc-44ff-be5b-6de459a4bc65",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material (Mirror=glass, the rest -> glass)",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-99008-NA",
+      "name": "KOHLER Verdera 34 in. W x 30 in. H Recessed Medicine Cabinet",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99008-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-34-in-W-x-30-in-H-Recessed-Medicine-Cabinet-K-99008-NA/204633474",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/7f96913d-ffc4-4cfe-b829-1d6bf7e6e5df",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirrorLarge"
+    },
+    {
+      "mmn": "K-99010-NA",
+      "name": "KOHLER Verdera 40 in. W x 30 in. H Recessed Medicine Cabinet",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-99010-NA.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Verdera-40-in-W-x-30-in-H-Recessed-Medicine-Cabinet-K-99010-NA/204633476",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/ce48c424-f84e-42c8-b53b-fd8c8c66bbe7",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirrorLarge"
+    },
+    {
+      "mmn": "K-81144-DA1",
+      "name": "KOHLER Maxstow 15 in. x 24 in. Surface-Mount Medicine Cabinet with Mirror in Dark Anodized Aluminum",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-81144-DA1.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Maxstow-15-in-x-24-in-Surface-Mount-Medicine-Cabinet-with-Mirror-in-Dark-Anodized-Aluminum-K-81144-DA1/316880007",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/7511682f-4e7f-4e92-9e6b-0337ee3522fe",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material (Silver=metal, the rest -> glass)",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "K-81146-DA1",
+      "name": "KOHLER Maxstow 30 in. x 24 in. Surface-Mount Medicine Cabinet with Mirror in Dark Anodized Aluminum",
+      "category": "medicine_cabinets",
+      "file": "models/products/kohler/K-81146-DA1.glb",
+      "homeDepotUrl": "https://www.homedepot.com/p/KOHLER-Maxstow-30-in-x-24-in-Surface-Mount-Medicine-Cabinet-with-Mirror-in-Dark-Anodized-Aluminum-K-81146-DA1/316880012",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/22bbcdc3-a000-40de-bedb-2077b42f30b2",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material (Silver=metal, the rest -> glass)",
+      "convertArgs": ["--up", "y", "--front", "+x", "--units", "cm", "--cluster", "0.12"],
+      "slot": "mirror"
+    },
+    {
+      "mmn": "26849-SC04-CPL",
+      "name": "KOHLER Simplice 4-Light Polished Chrome Wall Mount Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/26849-SC04-CPL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/26849-SC04-CPL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/701c36ac-8100-4ab2-8944-9eb52370231b",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "28973-SC04-BNL",
+      "name": "KOHLER Honesty 4-Light Brushed Nickel Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/28973-SC04-BNL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/28973-SC04-BNL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/732718d5-8a60-4502-8242-02f6c02b5242",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "31756-SC02-BNL",
+      "name": "KOHLER Riff 2-Light Brushed Nickel Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/31756-SC02-BNL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/31756-SC02-BNL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/65d2419b-db4e-4dbd-9da6-1a33671cb8ba",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "31757-SC03-CPL",
+      "name": "KOHLER Riff 3-Light Polished Chrome Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/31757-SC03-CPL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/31757-SC03-CPL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/33be8d39-5622-4066-9bb3-196be4214709",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "31769-SC02-CPL",
+      "name": "KOHLER Tone 2 Light Polished Chrome Indoor Bathroom Vanity Light Fixture, UL Listed",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/31769-SC02-CPL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/31769-SC02-CPL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/c7771249-67f1-4acd-80a1-71dce17cb112",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "31770-SC03-CPL",
+      "name": "KOHLER Tone 3 Light Polished Chrome Indoor Bathroom Vanity Light Fixture, UL Listed",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/31770-SC03-CPL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/31770-SC03-CPL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/adee4b3e-723d-413c-ba96-895b2af3c814",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "35875-SC04-BNL",
+      "name": "KOHLER Crue 4-Light Brushed Nickel Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/35875-SC04-BNL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/35875-SC04-BNL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/0aea9ba2-1129-47aa-8b10-dd886e7dacb9",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "38398-SC03-2GL",
+      "name": "KOHLER Hint 3-Light Brushed Moderne Brass Frosted Glass Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/38398-SC03-2GL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/38398-SC03-2GL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/0279b654-f472-4a08-ad63-c66670372e4e",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
+    },
+    {
+      "mmn": "38399-SC04-CPL",
+      "name": "KOHLER Hint 4-Light Polished Chrome Frosted Glass Wall Sconce",
+      "category": "vanity_lights",
+      "file": "models/products/kohler/38399-SC04-CPL.glb",
+      "homeDepotUrl": "https://www.homedepot.com/s/38399-SC04-CPL",
+      "source3dWarehouse": "https://3dwarehouse.sketchup.com/model/f0b0c45a-6133-4369-a9f1-7149018b22ff",
+      "prep": "3D Warehouse GLB flattened to OBJ in cm with parts by material: Glass -> glass, the rest -> metal",
+      "convertArgs": ["--up", "y", "--front", "+z", "--units", "cm", "--cluster", "0.15"],
+      "slot": "vanityLight"
     }
   ]
 }

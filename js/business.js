@@ -58,6 +58,13 @@
 
   biz.load = function (data, reason) {
     if (!data) {
+      // Not live yet: ask again with the sign-in, in case this is the owner
+      // previewing their own designer. Only then, so a sign-in never rides
+      // along in the address of every business's designer someone opens.
+      if (reason === "inactive" && !profileScript.withToken) {
+        var token = signInToken();
+        if (token) return profileScript(token);
+      }
       biz.unavailable = reason || "unavailable";
       return;
     }
@@ -77,8 +84,8 @@
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in
-  // localStorage as sb-<project>-auth-token). Sent along so a business
-  // owner can see their own designer before their plan is active.
+  // localStorage as sb-<project>-auth-token). Sent along, only when the
+  // business isn't live, so its owner can see their designer beforehand.
   function signInToken() {
     try {
       for (var i = 0; i < localStorage.length; i++) {
@@ -101,10 +108,16 @@
     // Assume unavailable until the profile script says otherwise (it may 404
     // or be blocked), so a broken link never shows the sample business.
     biz.unavailable = "loading";
-    var token = signInToken();
+    profileScript("");
+  }
+
+  // Loads the business's profile as a script, so it runs before the next
+  // <script> on the page (also when called from inside that script).
+  function profileScript(token) {
+    profileScript.withToken = !!token;
     document.write(
       '<script src="/api/business?b=' +
-        encodeURIComponent(slug) +
+        encodeURIComponent(biz.slug) +
         (token ? "&t=" + encodeURIComponent(token) : "") +
         '"></' +
         "script>",

@@ -1,0 +1,63 @@
+"use strict";
+
+// js/business.js: a signed-in visitor's sign-in only goes to
+// /api/business when the business isn't live, so its owner can preview it.
+
+const { test, expect } = require("@playwright/test");
+
+async function signedIn(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "sb-test-auth-token",
+      JSON.stringify({ access_token: "tok-123", expires_at: Math.floor(Date.now() / 1000) + 3600 }),
+    );
+  });
+}
+
+test("a live business's designer is asked for without the visitor's sign-in", async ({ page }) => {
+  await signedIn(page);
+  const asked = [];
+  await page.route("**/api/business?**", (route) => {
+    asked.push(route.request().url());
+    return route.fulfill({
+      contentType: "application/javascript",
+      body: 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{}});',
+    });
+  });
+  await page.goto("/designer.html?b=smith-bath");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  expect(asked).toHaveLength(1);
+  expect(asked[0]).not.toContain("t=");
+});
+
+test("a business that isn't live is asked again with the sign-in, and its owner gets the preview", async ({ page }) => {
+  await signedIn(page);
+  const asked = [];
+  await page.route("**/api/business?**", (route) => {
+    const url = route.request().url();
+    asked.push(url);
+    const body = url.includes("t=tok-123")
+      ? 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{},"preview":true});'
+      : 'window.DesignerBusiness.load(null, "inactive");';
+    return route.fulfill({ contentType: "application/javascript", body });
+  });
+  await page.goto("/designer.html?b=smith-bath");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  expect(asked).toHaveLength(2);
+  expect(asked[1]).toContain("t=tok-123");
+  expect(await page.evaluate(() => window.DesignerBusiness.preview)).toBe(true);
+});
+
+test("signed out, a business that isn't live shows the unavailable notice after one request", async ({ page }) => {
+  const asked = [];
+  await page.route("**/api/business?**", (route) => {
+    asked.push(route.request().url());
+    return route.fulfill({
+      contentType: "application/javascript",
+      body: 'window.DesignerBusiness.load(null, "inactive");',
+    });
+  });
+  await page.goto("/designer.html?b=smith-bath");
+  await expect(page.locator("#designer-unavailable")).toBeVisible();
+  expect(asked).toHaveLength(1);
+});

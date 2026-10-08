@@ -50,7 +50,7 @@
   "riley": {
     "_help": "Riley's default voice per language, by the voice's name as her voice list in the designer shows it (designer.html?voices). Voices come from each visitor's device, so this is used only where that voice exists; blank lets her pick.",
     "voice": {
-      "en": "",
+      "en": "Google US English",
       "es": "",
       "pt": ""
     }

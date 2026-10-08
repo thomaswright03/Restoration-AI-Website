@@ -6,7 +6,9 @@
 // she says (it knows the design); this file is her voice and her bubble.
 //
 // She speaks out loud with the browser's own speech (no network, no key),
-// in the page's language, and can be muted. Browsers don't let a page make
+// in the page's language, and can be muted. The voices come from the
+// person's own device and browser, so they differ from one to the next; her
+// voice list (the wave button) plays each one and remembers the pick. Browsers don't let a page make
 // noise before the person has touched it, so her first line waits for the
 // first click, tap or key press and then catches up.
 (function () {
@@ -15,6 +17,8 @@
   var I18n = window.I18n;
   var T = I18n ? I18n.t : null;
   var MUTE_KEY = "rd3d_riley_muted";
+  // The voice picked in her voice list, one per language ("" = automatic).
+  var VOICE_KEY = "rd3d_riley_voice_";
   // Voices that sound like a person called Riley, best first. Browsers
   // name voices differently, so this is a preference, not a requirement.
   var PREFERRED = {
@@ -34,6 +38,7 @@
   var els = {};
   var onAction = null;
   var lastText = "";
+  var defaultVoice = {}; // site-config.json riley.voice: { en, es, pt } voice names
 
   function lang() {
     return (I18n && I18n.locale ? String(I18n.locale()).slice(0, 2) : "en") || "en";
@@ -55,21 +60,62 @@
     }
   }
 
-  // The nicest voice for the page's language, once the browser has them.
-  function pickVoice() {
-    if (!speech || !speech.getVoices) return null;
-    var all = speech.getVoices() || [];
-    if (!all.length) return null;
+  function readVoice() {
+    try {
+      return localStorage.getItem(VOICE_KEY + lang()) || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function writeVoice(name) {
+    try {
+      if (name) localStorage.setItem(VOICE_KEY + lang(), name);
+      else localStorage.removeItem(VOICE_KEY + lang());
+    } catch (e) {
+      /* storage blocked: the pick lasts for this visit only */
+    }
+  }
+
+  var chosen = null; // the name picked this visit (null: read it from storage)
+
+  function chosenName() {
+    return chosen === null ? readVoice() : chosen;
+  }
+
+  // The voices this browser has for the page's language. They come from
+  // the person's own device and browser, so the list differs between them.
+  function voicesHere() {
+    if (!speech || !speech.getVoices) return [];
     var want = lang();
-    var mine = all.filter(function (v) {
+    return (speech.getVoices() || []).filter(function (v) {
       return (
         String(v.lang || "")
           .toLowerCase()
           .indexOf(want) === 0
       );
     });
+  }
+
+  function byName(list, name) {
+    return list.filter(function (v) {
+      return v.name === name;
+    })[0];
+  }
+
+  // The voice she uses: the one picked in her voice list, else the site's
+  // default (site-config.json), else the nicest one for the language.
+  function pickVoice() {
+    var mine = voicesHere();
     if (!mine.length) return null;
-    var names = PREFERRED[want] || [];
+    var picked = byName(mine, chosenName());
+    if (picked) return picked;
+    return autoVoice(mine);
+  }
+
+  function autoVoice(mine) {
+    var want = lang();
+    var names = (defaultVoice[want] ? [String(defaultVoice[want]).toLowerCase()] : []).concat(PREFERRED[want] || []);
     for (var i = 0; i < names.length; i++) {
       var hit = mine.filter(function (v) {
         return (
@@ -119,8 +165,10 @@
     if (text) speak(text);
   }
 
-  function speak(text, noWait) {
-    if (!speech || muted || !text) return;
+  // withVoice: a sample in that voice from her voice list (plays even muted).
+  function speak(text, noWait, withVoice) {
+    if (!speech || !text) return;
+    if (!withVoice && muted) return;
     if (!unlocked) {
       waiting = text;
       return;
@@ -136,8 +184,9 @@
       }
       speech.cancel();
       var line = new SpeechSynthesisUtterance(text);
-      if (voice) line.voice = voice;
-      line.lang = (voice && voice.lang) || LANG_TAGS[want] || "en-US";
+      var use = withVoice || voice;
+      if (use) line.voice = use;
+      line.lang = (use && use.lang) || LANG_TAGS[want] || "en-US";
       line.rate = 1.02;
       line.pitch = 1.05;
       speech.speak(line);
@@ -198,6 +247,60 @@
     'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/>' +
     '<path d="M16 9.5l5 5m0-5l-5 5"/></svg>';
 
+  var VOICE_ICON =
+    '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>';
+
+  // Her voice list: every voice this browser has for the page's language,
+  // each with a button that plays a sample line, and the one in use marked.
+  function renderVoices() {
+    if (!els.voices || els.voices.hidden) return;
+    var list = els.voiceList;
+    while (list.firstChild) list.removeChild(list.firstChild);
+    var mine = voicesHere();
+    var current = chosenName();
+    if (current && !byName(mine, current)) current = "";
+    els.voiceEmpty.hidden = mine.length > 0;
+    if (!mine.length) return;
+    var auto = autoVoice(mine);
+    var rows = [{ name: "", label: T ? T("riley.voiceAuto", { name: auto ? auto.name : "" }) : "Automatic", v: auto }];
+    mine.forEach(function (v) {
+      rows.push({ name: v.name, label: v.name, v: v, note: v.lang });
+    });
+    rows.forEach(function (r) {
+      var on = r.name === current;
+      list.appendChild(
+        el("li", { class: "riley-voice" + (on ? " is-on" : "") }, [
+          el(
+            "button",
+            {
+              type: "button",
+              class: "riley-voice-pick",
+              "aria-pressed": on ? "true" : "false",
+              onclick: function () {
+                Riley.useVoice(r.name);
+                speak(T ? T("riley.sample") : "Hi, I'm Riley.", true, r.v);
+              },
+            },
+            [
+              el("span", { class: "riley-voice-name", text: r.label }),
+              r.note ? el("span", { class: "riley-voice-note", text: r.note }) : null,
+            ],
+          ),
+          el("button", {
+            type: "button",
+            class: "riley-voice-play",
+            text: T ? T("riley.play") : "Play",
+            "aria-label": T ? T("riley.playVoice", { name: r.label }) : "Play " + r.label,
+            onclick: function () {
+              speak(T ? T("riley.sample") : "Hi, I'm Riley.", true, r.v);
+            },
+          }),
+        ]),
+      );
+    });
+  }
+
   function renderMute() {
     if (!els.mute) return;
     els.mute.innerHTML = muted ? MUTE_OFF : MUTE_ON;
@@ -217,14 +320,43 @@
       els.text = el("p", { class: "riley-text" });
       els.actions = el("div", { class: "riley-actions" });
       els.mute = el("button", { type: "button", class: "riley-mute", onclick: Riley.toggleMute });
+      var voiceLabel = T ? T("riley.voices") : "Choose Riley's voice";
+      els.voiceBtn = el("button", {
+        type: "button",
+        class: "riley-tool riley-voice-btn",
+        html: VOICE_ICON,
+        "aria-label": voiceLabel,
+        title: voiceLabel,
+        "aria-expanded": "false",
+        onclick: function () {
+          Riley.showVoices(els.voices.hidden);
+        },
+      });
+      els.voiceList = el("ul", { class: "riley-voice-list" });
+      els.voiceEmpty = el("p", { class: "riley-voice-note", hidden: true, text: T ? T("riley.voicesNone") : "" });
+      els.voices = el("div", { class: "riley-voices", hidden: true }, [
+        el("p", { class: "riley-name riley-voices-title", text: voiceLabel }),
+        el("p", { class: "riley-voice-help", text: T ? T("riley.voicesHelp") : "" }),
+        els.voiceEmpty,
+        els.voiceList,
+        el("button", {
+          type: "button",
+          class: "riley-action",
+          text: T ? T("riley.voicesDone") : "Done",
+          onclick: function () {
+            Riley.showVoices(false);
+          },
+        }),
+      ]);
       els.root = el("div", { class: "riley", hidden: true }, [
         el("span", { class: "riley-avatar", html: AVATAR, "aria-hidden": "true" }),
         el("div", { class: "riley-body" }, [
           el("p", { class: "riley-name", text: T ? T("riley.name") : "Riley" }),
           els.text,
           els.actions,
+          els.voices,
         ]),
-        els.mute,
+        el("div", { class: "riley-tools" }, [els.mute, els.voiceBtn]),
       ]);
       els.root.setAttribute("role", "status");
       els.root.setAttribute("aria-live", "polite");
@@ -237,9 +369,22 @@
         speech.addEventListener("voiceschanged", function () {
           voice = pickVoice();
           releaseHeld();
+          renderVoices();
         });
         // Asking once now gets Chrome loading its voices before she speaks.
         pickVoice();
+      }
+      if (!speech) els.voiceBtn.hidden = true;
+      if (window.SiteConfig && window.SiteConfig.ready) {
+        window.SiteConfig.ready.then(function (config) {
+          defaultVoice = (config && config.riley && config.riley.voice) || {};
+          voice = pickVoice();
+          renderVoices();
+        });
+      }
+      // designer.html?voices opens her voice list straight away.
+      if (/[?&]voices\b/.test(location.search)) {
+        Riley.showVoices(true);
       }
     },
 
@@ -282,6 +427,24 @@
         unlock();
         speak(lastText);
       }
+    },
+
+    // Opens or closes her voice list.
+    showVoices: function (open) {
+      if (!els.voices) return;
+      els.voices.hidden = !open;
+      els.voiceBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) els.root.hidden = false;
+      renderVoices();
+    },
+
+    // Uses the voice with this name from now on, in this language on this
+    // browser ("" goes back to automatic).
+    useVoice: function (name) {
+      chosen = name || "";
+      writeVoice(chosen);
+      voice = pickVoice();
+      renderVoices();
     },
 
     muted: function () {

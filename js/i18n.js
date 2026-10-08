@@ -2203,6 +2203,26 @@
     "riley.name": ["Riley", "Riley", "Riley"],
     "riley.mute": ["Mute Riley", "Silenciar a Riley", "Silenciar a Riley"],
     "riley.unmute": ["Let Riley speak", "Dejar hablar a Riley", "Deixar a Riley falar"],
+    "riley.voices": ["Choose Riley's voice", "Elegir la voz de Riley", "Escolher a voz da Riley"],
+    "riley.voicesHelp": [
+      "These are the voices on this device. Tap one to hear it and use it. Other phones and computers have their own voices.",
+      "Estas son las voces de este dispositivo. Toque una para oírla y usarla. Otros teléfonos y computadoras tienen sus propias voces.",
+      "Estas são as vozes deste aparelho. Toque em uma para ouvir e usar. Outros celulares e computadores têm as próprias vozes.",
+    ],
+    "riley.voicesNone": [
+      "This browser has no voices for this language.",
+      "Este navegador no tiene voces para este idioma.",
+      "Este navegador não tem vozes para este idioma.",
+    ],
+    "riley.voiceAuto": ["Automatic ({name})", "Automática ({name})", "Automática ({name})"],
+    "riley.play": ["Play", "Escuchar", "Ouvir"],
+    "riley.playVoice": ["Play {name}", "Escuchar {name}", "Ouvir {name}"],
+    "riley.voicesDone": ["Done", "Listo", "Pronto"],
+    "riley.sample": [
+      "Hi, I'm Riley. This is how I'll sound while I walk you through your bathroom.",
+      "Hola, soy Riley. Así sonaré mientras le guío por su baño.",
+      "Oi, eu sou a Riley. É assim que vou soar enquanto te guio pelo seu banheiro.",
+    ],
     "riley.yes": ["Yes please", "Sí, por favor", "Sim, por favor"],
     "riley.showMe": ["Show me", "Muéstrame", "Mostre"],
     "riley.greeting": [

@@ -29,6 +29,8 @@
   var waiting = null; // a line held back until the person touches the page
   var unlocked = false;
   var voice = null;
+  var held = null; // a line waiting for the browser's voices to load
+  var heldTimer = null;
   var els = {};
   var onAction = null;
   var lastText = "";
@@ -86,18 +88,56 @@
     );
   }
 
-  function speak(text) {
+  function speaksLang(v, want) {
+    return (
+      !!v &&
+      String(v.lang || "")
+        .toLowerCase()
+        .indexOf(want) === 0
+    );
+  }
+
+  // Some browsers (Chrome) load their voices a moment after the page asks,
+  // and with no voice set they read any language in their default (English)
+  // accent. So a line spoken before the voices arrive waits for them briefly.
+  function holdForVoices(text) {
+    held = text;
+    if (heldTimer) return;
+    heldTimer = setTimeout(function () {
+      heldTimer = null;
+      var text = held;
+      held = null;
+      if (text) speak(text, true);
+    }, 1500);
+  }
+
+  function releaseHeld() {
+    if (heldTimer) clearTimeout(heldTimer);
+    heldTimer = null;
+    var text = held;
+    held = null;
+    if (text) speak(text);
+  }
+
+  function speak(text, noWait) {
     if (!speech || muted || !text) return;
     if (!unlocked) {
       waiting = text;
       return;
     }
     try {
+      // The voice always follows the page's current language, never one
+      // remembered from an earlier line.
+      var want = lang();
+      if (!speaksLang(voice, want)) voice = pickVoice();
+      if (!voice && !noWait && speech.getVoices && !(speech.getVoices() || []).length) {
+        holdForVoices(text);
+        return;
+      }
       speech.cancel();
       var line = new SpeechSynthesisUtterance(text);
-      voice = voice || pickVoice();
       if (voice) line.voice = voice;
-      line.lang = (voice && voice.lang) || LANG_TAGS[lang()] || "en-US";
+      line.lang = (voice && voice.lang) || LANG_TAGS[want] || "en-US";
       line.rate = 1.02;
       line.pitch = 1.05;
       speech.speak(line);
@@ -107,6 +147,7 @@
   }
 
   function stop() {
+    held = null;
     try {
       if (speech) speech.cancel();
     } catch (e) {
@@ -118,7 +159,7 @@
   function unlock() {
     if (unlocked) return;
     unlocked = true;
-    voice = voice || pickVoice();
+    voice = pickVoice();
     if (waiting) {
       var text = waiting;
       waiting = null;
@@ -195,7 +236,10 @@
       if (speech && typeof speech.addEventListener === "function") {
         speech.addEventListener("voiceschanged", function () {
           voice = pickVoice();
+          releaseHeld();
         });
+        // Asking once now gets Chrome loading its voices before she speaks.
+        pickVoice();
       }
     },
 

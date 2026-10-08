@@ -487,6 +487,62 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Riley speaks a new language in its own accent after mute and unmute", async ({ page }) => {
+    // A fake of the browser's speech, shaped like Chrome's: the voices arrive
+    // a moment after the page first asks, and a line with no voice set is
+    // read in the default (English) voice whatever its language.
+    await page.addInitScript(() => {
+      const voices = [
+        { name: "Samantha", lang: "en-US", localService: true },
+        { name: "Mónica", lang: "es-ES", localService: true },
+        { name: "Luciana", lang: "pt-BR", localService: true },
+      ];
+      let loaded = false;
+      const listeners = [];
+      window.__spoken = [];
+      window.SpeechSynthesisUtterance = function (text) {
+        this.text = text;
+      };
+      Object.defineProperty(window, "speechSynthesis", {
+        value: {
+          getVoices() {
+            if (!loaded) {
+              setTimeout(() => {
+                loaded = true;
+                listeners.forEach((fn) => fn());
+              }, 300);
+              return [];
+            }
+            return voices;
+          },
+          addEventListener(name, fn) {
+            if (name === "voiceschanged") listeners.push(fn);
+          },
+          speak(line) {
+            window.__spoken.push({ text: line.text, accent: line.voice ? line.voice.lang : "en-US" });
+          },
+          cancel() {},
+        },
+      });
+    });
+    await page.addInitScript(() => localStorage.setItem("rd3d_riley_muted", "0"));
+
+    await openStudio(page);
+    await page.locator(".riley-text").click();
+    await expect.poll(() => page.evaluate(() => window.__spoken.length)).toBeGreaterThan(0);
+
+    const errors = await openStudio(page, "/es/designer.html?lang=es");
+    const mute = page.locator(".riley-mute");
+    await mute.click();
+    await expect(mute).toHaveAttribute("aria-pressed", "false");
+    await mute.click();
+    await expect(mute).toHaveAttribute("aria-pressed", "true");
+    await expect.poll(() => page.evaluate(() => window.__spoken.length)).toBeGreaterThan(0);
+    const spoken = await page.evaluate(() => window.__spoken);
+    expect(spoken.map((s) => s.accent)).toEqual(spoken.map(() => "es-ES"));
+    expect(errors).toEqual([]);
+  });
+
   for (const [dir, lang, labels, fits] of [
     [
       "es",

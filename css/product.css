@@ -42,7 +42,7 @@ body:has(main.solid-header) .site-header {
   height: 22px;
   margin-right: 10px;
   vertical-align: -4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: url("../favicon.svg") center / contain no-repeat;
 }
 
@@ -65,7 +65,7 @@ body:has(main.solid-header) .site-header {
 }
 
 .nav-links a.nav-cta:hover {
-  background: #4b6bff;
+  background: color-mix(in srgb, var(--color-accent-bright) 85%, #fff);
   color: #fff;
 }
 
@@ -219,7 +219,7 @@ body:has(main.solid-header) .site-header {
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--color-surface-alt);
   font-size: var(--fs-sm);
 }
@@ -843,9 +843,9 @@ html[data-embed="1"] main.solid-header {
 /* A business owner previewing their own designer before their plan is live. */
 .owner-preview {
   padding: var(--space-2) var(--gutter);
-  background: #fff7e0;
-  border-bottom: 1px solid #e9c46a;
-  color: #4a3500;
+  background: var(--color-notice-bg);
+  border-bottom: 1px solid var(--color-notice-line);
+  color: var(--color-notice-ink);
   font-size: var(--fs-sm);
 }
 
@@ -858,7 +858,7 @@ html[data-embed="1"] main.solid-header {
 }
 
 .owner-preview a {
-  color: #4a3500;
+  color: var(--color-notice-ink);
   font-weight: 600;
 }
 

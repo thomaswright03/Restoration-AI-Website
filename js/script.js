@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Scroll-reveal (skipped when the visitor prefers reduced motion).
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var revealTargets = document.querySelectorAll(
-    ".card, .value-item, .faq-item, .about-photo, .about-copy, .contact-info-card, #lead-form, .scope-note",
+    ".card, .value-item, .faq-item, .contact-info-card, #lead-form, .scope-note",
   );
   if (!reduceMotion && "IntersectionObserver" in window) {
     var observer = new IntersectionObserver(

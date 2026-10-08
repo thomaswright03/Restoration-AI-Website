@@ -61,3 +61,23 @@ test("signed out, a business that isn't live shows the unavailable notice after 
   await expect(page.locator("#designer-unavailable")).toBeVisible();
   expect(asked).toHaveLength(1);
 });
+
+test("a designer link with capitals finds the business; one that can't be a slug says it's unavailable", async ({
+  page,
+}) => {
+  const asked = [];
+  await page.route("**/api/business?**", (route) => {
+    asked.push(route.request().url());
+    return route.fulfill({
+      contentType: "application/javascript",
+      body: 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{}});',
+    });
+  });
+  await page.goto("/designer.html?b=Smith-Bath");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  expect(asked[0]).toContain("b=smith-bath");
+
+  await page.goto("/designer.html?b=smith.bath");
+  await expect(page.locator("#designer-unavailable")).toBeVisible();
+  expect(asked).toHaveLength(1);
+});

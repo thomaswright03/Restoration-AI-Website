@@ -100,9 +100,20 @@
     return "";
   }
 
-  var match = /[?&]b=([a-z0-9-]{1,64})\b/.exec(window.location.search);
-  var slug = match ? match[1] : "";
-  if (slug && slug !== "demo") {
+  // Slugs are lowercase; a link typed with capitals still finds the business.
+  // One that can't be a slug at all is a broken link, not the demo.
+  var match = /[?&]b=([^&#]*)/.exec(window.location.search);
+  var slug = "";
+  try {
+    slug = match ? decodeURIComponent(match[1].replace(/\+/g, " ")).trim().toLowerCase() : "";
+  } catch (e) {
+    slug = "%";
+  }
+  if (slug && slug !== "demo" && !/^[a-z0-9-]{1,64}$/.test(slug)) {
+    biz.slug = "";
+    biz.demo = false;
+    biz.unavailable = "not-found";
+  } else if (slug && slug !== "demo") {
     biz.slug = slug;
     biz.demo = false;
     // Assume unavailable until the profile script says otherwise (it may 404

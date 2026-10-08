@@ -4208,7 +4208,36 @@
     ]);
   }
 
+  // The priced lines, once, for both the Estimate step and the PDF, so the
+  // two always agree line for line.
+  function estimateLines(est) {
+    var labor = est.labor.lines.map(function (l) {
+      return { label: l.label, detail: l.detail, amount: Pricing.money(l.cost) };
+    });
+    var materials = [];
+    if (est.hasMaterials) {
+      est.materials.forEach(function (m) {
+        materials.push({
+          label: m.label + ": " + shortName(m.product.name),
+          detail: m.quantityLabel + " · " + m.product.best.name,
+          amount: Pricing.money(m.cost),
+          image: m.product.imageUrl,
+        });
+      });
+      est.products.forEach(function (p) {
+        if (p.cost === null) return;
+        materials.push({
+          label: p.label,
+          detail: p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""),
+          amount: Pricing.money(p.cost),
+        });
+      });
+    }
+    return { labor: labor, materials: materials };
+  }
+
   function estimateCard(est) {
+    var lines = estimateLines(est);
     var card = h("article", { class: "studio-estimate", "data-testid": "estimate-card" });
     card.appendChild(
       h("header", { class: "studio-estimate-head" }, [
@@ -4220,30 +4249,18 @@
     var labor = h("div", { class: "studio-lines" }, [
       h("p", { class: "studio-lines-title", text: T("studio.est.labor") }),
     ]);
-    est.labor.lines.forEach(function (l) {
-      labor.appendChild(lineEl(l.label, l.detail, Pricing.money(l.cost)));
+    lines.labor.forEach(function (l) {
+      labor.appendChild(lineEl(l.label, l.detail, l.amount));
     });
-    if (!est.labor.lines.length) labor.appendChild(lineEl(T("card.noWork"), null, Pricing.money(0)));
+    if (!lines.labor.length) labor.appendChild(lineEl(T("card.noWork"), null, Pricing.money(0)));
     card.appendChild(labor);
     if (est.hasMaterials) {
       card.appendChild(lineEl(T("card.laborSubtotal"), null, Pricing.money(est.labor.subtotal), "is-subtotal"));
       var mats = h("div", { class: "studio-lines" }, [
         h("p", { class: "studio-lines-title", text: T("studio.est.materials") }),
       ]);
-      est.materials.forEach(function (m) {
-        mats.appendChild(
-          lineEl(
-            m.label + ": " + shortName(m.product.name),
-            m.quantityLabel + " · " + m.product.best.name,
-            Pricing.money(m.cost),
-            null,
-            m.product.imageUrl,
-          ),
-        );
-      });
-      est.products.forEach(function (p) {
-        if (p.cost === null) return;
-        mats.appendChild(lineEl(p.label, p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""), Pricing.money(p.cost)));
+      lines.materials.forEach(function (l) {
+        mats.appendChild(lineEl(l.label, l.detail, l.amount, null, l.image));
       });
       card.appendChild(mats);
       card.appendChild(lineEl(T("card.materialsSubtotal"), null, Pricing.money(est.materialsTotal), "is-subtotal"));
@@ -4526,7 +4543,8 @@
     button.disabled = true;
     button.textContent = T("pdf.preparing");
     status.hidden = true;
-    var picture = has3d && ui.view !== "plan" ? room3d.snapshot(1500, 950) : null;
+    // The snapshot renders its own overview, so plan view gets a picture too.
+    var picture = has3d ? room3d.snapshot(1500, 950) : null;
     window.EstimatePdf.load()
       .then(function () {
         var est = estimate();
@@ -4534,19 +4552,9 @@
         var lines = [];
         var totals = [];
         if (priced) {
-          lines = est.labor.lines.map(function (r) {
-            return { label: r.label, detail: r.detail, amount: Pricing.money(r.cost) };
-          });
-          est.materials.forEach(function (m) {
-            lines.push({
-              label: m.label + ": " + m.product.name,
-              detail: m.quantityLabel + " · " + m.product.best.name,
-              amount: Pricing.money(m.cost),
-            });
-          });
-          est.products.forEach(function (p) {
-            if (p.cost !== null)
-              lines.push({ label: p.label, detail: p.mmns.join(" + "), amount: Pricing.money(p.cost) });
+          var shared = estimateLines(est);
+          lines = shared.labor.concat(shared.materials).map(function (l) {
+            return { label: l.label, detail: l.detail, amount: l.amount };
           });
           totals = est.hasMaterials
             ? [

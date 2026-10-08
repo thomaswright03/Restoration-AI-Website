@@ -154,12 +154,24 @@ test("admin and public totals match across a table of inputs (admin adds only pl
     );
     // With no trade work at all, the totals are identical.
     const plainAdmin = P.computeEstimate(
-      Object.assign({}, values, { Toilet_Quantity: 0, Sink_Quantity: 0, Shower_Quantity: 0, Bathtub_Quantity: 0 }),
+      Object.assign({}, values, {
+        Toilet_Quantity: 0,
+        Sink_Quantity: 0,
+        Shower_Quantity: 0,
+        Bathtub_Quantity: 0,
+        Vanity_Quantity: 0,
+      }),
       scope,
       { includeTrade: true },
     );
     const plainPublic = P.computePublicEstimate(
-      Object.assign({}, values, { Toilet_Quantity: 0, Sink_Quantity: 0, Shower_Quantity: 0, Bathtub_Quantity: 0 }),
+      Object.assign({}, values, {
+        Toilet_Quantity: 0,
+        Sink_Quantity: 0,
+        Shower_Quantity: 0,
+        Bathtub_Quantity: 0,
+        Vanity_Quantity: 0,
+      }),
       scope,
     );
     assert.equal(plainAdmin.total, plainPublic.subtotal);
@@ -283,4 +295,9 @@ test("money formatting", () => {
   assert.equal(P.money(3315.92), "$3,315.92");
   assert.equal(P.shortMoney(60), "$60");
   assert.equal(P.shortMoney(37.5), "$37.50");
+});
+
+test("a vanity's sink counts toward the plumbing the estimate leaves out", () => {
+  const pub = P.computePublicEstimate({ Toilet_Quantity: 1, Vanity_Quantity: 1, Bathtub_Quantity: 1 }, NOTHING);
+  assert.equal(pub.plumbingFixtureCount, 3);
 });

@@ -265,12 +265,12 @@
       "Total estimado (mão de obra + materiais), sem o encanamento",
     ],
     "card.plumbingTotalNote": [
-      "This is not the full cost of your job: plumbing work for the {n} toilet/sink/shower/bathtub item(s) you listed will be added on top of this total.",
+      "This is not the full cost of your job: plumbing work for the {n} toilet, sink, shower or bathtub item(s) you listed will be added on top of this total.",
       "Este no es el costo total de su trabajo: la plomería de las {n} pieza(s) que indicó (inodoro, lavabo, ducha o bañera) se sumará a este total.",
       "Este não é o custo total do seu serviço: o encanamento das {n} peça(s) que você informou (vaso, pia, chuveiro ou banheira) será somado a este total.",
     ],
     "card.excluded.listedPlumbing": [
-      "Plumbing for the {n} toilet/sink/shower/bathtub item(s) you listed",
+      "Plumbing for the {n} toilet, sink, shower or bathtub item(s) you listed",
       "Plomería de las {n} pieza(s) indicadas (inodoro, lavabo, ducha o bañera)",
       "Encanamento das {n} peça(s) informadas (vaso, pia, chuveiro ou banheira)",
     ],

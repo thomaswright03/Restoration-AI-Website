@@ -115,7 +115,8 @@
 }
 
 .studio-brand {
-  min-width: 0;
+  min-width: 7rem;
+  max-width: 16rem;
   flex: 0 1 auto;
 }
 
@@ -138,6 +139,8 @@
   font-size: var(--fs-md);
   line-height: 1.2;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .studio-steps {
@@ -1803,6 +1806,7 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .studio-line-label small {
@@ -2050,7 +2054,9 @@
 }
 
 /* ---------- Narrower screens ---------- */
-@media (max-width: 1180px) {
+/* Below this the step names (but the current one) and the action names
+   fold away, so the business and title keep their room in every language. */
+@media (max-width: 1600px) {
   .studio-step-label {
     display: none;
   }

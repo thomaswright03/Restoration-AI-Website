@@ -139,7 +139,8 @@
     { key: "Shower_Quantity", priceKey: "Shower_Price", needsPlumbing: true },
     { key: "Shower_Door_Quantity", priceKey: "Shower_Door_Price" },
     { key: "Door_Quantity", priceKey: "Door_Price" },
-    { key: "Vanity_Quantity", priceKey: "Vanity_Price" },
+    // A vanity carries its own sink, so its plumbing counts too.
+    { key: "Vanity_Quantity", priceKey: "Vanity_Price", needsPlumbing: true },
     { key: "Cabinet_Quantity", priceKey: "Cabinet_Price" },
     { key: "Mirror_Quantity", priceKey: "Mirror_Price" },
     { key: "Mirror_Huge_Quantity", priceKey: "Mirror_Huge_Price" },

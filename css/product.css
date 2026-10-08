@@ -125,10 +125,15 @@ body:has(main.solid-header) .site-header {
 
 .hero.hero-page,
 .hero.hero-page .hero-inner,
+.hero.hero-page h1,
 .hero.hero-page p {
   text-align: center;
   margin-left: auto;
   margin-right: auto;
+}
+
+.hero.hero-page .hero-actions {
+  justify-content: center;
 }
 
 /* Eyebrows become small pills. */
@@ -1075,5 +1080,14 @@ html[data-embed="1"] main.solid-header {
 
   #panel-materials {
     display: block !important;
+  }
+}
+
+/* The phone menu: solid navy like the header, so the page never shows through. */
+@media (max-width: 1080px) {
+  .nav-links {
+    background: var(--color-dark);
+    border-bottom: 1px solid var(--color-on-dark-line);
+    box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
   }
 }

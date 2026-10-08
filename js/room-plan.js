@@ -1226,6 +1226,15 @@
     return [issue(run > limit + EPS ? "error" : "warn", run > limit + EPS ? "noStack" : "offStack", extra)];
   }
 
+  // Total length of every run longer than FREE_RUN, which arranging tries
+  // to keep short (billing is drainRun's, below).
+  function offStackFeet(design, sizes) {
+    return design.items.reduce(function (sum, it) {
+      var run = stackRun(design, it, sizes);
+      return sum + (run > FREE_RUN ? run : 0);
+    }, 0);
+  }
+
   // Feet of new drain line the estimate bills: each fixture's first
   // FREE_RUN feet come with tying in, only the rest is charged.
   function drainRun(design, sizes) {
@@ -1867,7 +1876,7 @@
       count(issues);
       var wired = suggestElectrical(trial, sizes).design;
       count(validateElectrical(wired, sizes));
-      return [bad, drainRun(trial, sizes), tight];
+      return [bad, offStackFeet(trial, sizes), tight];
     };
     var mine = score(items);
     var theirs = score(than);

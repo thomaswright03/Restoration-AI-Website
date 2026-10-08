@@ -72,26 +72,46 @@
         <p class="eyebrow center">{{nav.pricing}}</p>
         <h2 class="section-title" id="pricing-title">{{index.pricing.title}}</h2>
         <p class="section-subtitle">{{index.pricing.subtitle}}</p>
-        <div class="plan-grid">
+        <div class="plan-grid plan-grid-3">
           <div class="plan-card">
-            <h3>{{index.plan.monthly}}</h3>
-            <p class="plan-price"><span>{{@priceMonthly}}</span> {{index.plan.perMonth}}</p>
-            <p class="plan-note">{{index.plan.monthlyNote}}</p>
-            <a href="{{@root}}{{@dir}}signup.html?plan=monthly" class="btn btn-primary btn-block">{{nav.cta}}</a>
+            <h3>{{index.plan.starter}}</h3>
+            <p class="plan-price"><span>{{@priceStarter}}</span> {{index.plan.perMonth}}</p>
+            <ul class="plan-limits">
+              <li>{{index.plan.starter.monthly}}</li>
+              <li>{{index.plan.starter.total}}</li>
+              <li>{{index.plan.starter.website}}</li>
+            </ul>
+            <a href="{{@root}}{{@dir}}signup.html?plan=starter" class="btn btn-outline btn-block">{{nav.cta}}</a>
           </div>
           <div class="plan-card plan-card-featured">
             <p class="plan-badge">{{index.plan.badge}}</p>
-            <h3>{{index.plan.yearly}}</h3>
-            <p class="plan-price"><span>{{@priceYearly}}</span> {{index.plan.perYear}}</p>
-            <p class="plan-note">{{index.plan.yearlyNote}}</p>
-            <a href="{{@root}}{{@dir}}signup.html?plan=yearly" class="btn btn-primary btn-block">{{nav.cta}}</a>
+            <h3>{{index.plan.pro}}</h3>
+            <p class="plan-price"><span>{{@pricePro}}</span> {{index.plan.perMonth}}</p>
+            <ul class="plan-limits">
+              <li>{{index.plan.pro.monthly}}</li>
+              <li>{{index.plan.pro.total}}</li>
+              <li>{{index.plan.pro.website}}</li>
+            </ul>
+            <a href="{{@root}}{{@dir}}signup.html?plan=pro" class="btn btn-primary btn-block">{{nav.cta}}</a>
+          </div>
+          <div class="plan-card">
+            <h3>{{index.plan.max}}</h3>
+            <p class="plan-price"><span>{{@priceMax}}</span> {{index.plan.perMonth}}</p>
+            <ul class="plan-limits">
+              <li>{{index.plan.max.monthly}}</li>
+              <li>{{index.plan.max.total}}</li>
+              <li>{{index.plan.max.website}}</li>
+            </ul>
+            <a href="{{@root}}{{@dir}}signup.html?plan=max" class="btn btn-outline btn-block">{{nav.cta}}</a>
           </div>
         </div>
+        <p class="plan-addon"><strong>{{index.addon.title}}</strong> {{index.addon.text}}</p>
+        <p class="plan-free">{{index.plan.free}}</p>
         <ul class="plan-includes">
           <li>{{index.inc.1}}</li>
           <li>{{index.inc.2}}</li>
-          <li>{{index.inc.3}}</li>
           <li>{{index.inc.4}}</li>
+          <li>{{index.inc.6}}</li>
           <li>{{index.inc.5}}</li>
         </ul>
       </section>
@@ -99,6 +119,17 @@
       <section class="section faq-list" id="faq" aria-labelledby="faq-title">
         <p class="eyebrow center">{{nav.faq}}</p>
         <h2 class="section-title" id="faq-title">{{index.faq.title}}</h2>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              {{index.q7}}
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner"><p>{{index.a7}}</p></div>
+          </div>
+        </div>
         <div class="faq-item">
           <h3 class="faq-heading">
             <button class="faq-question" type="button">

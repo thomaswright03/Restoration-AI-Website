@@ -5,7 +5,8 @@
 // Environment variables (set them in the Vercel project; see .env.example):
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 //   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-//   STRIPE_PRICE_MONTHLY, STRIPE_PRICE_YEARLY
+//   STRIPE_PRICE_STARTER, STRIPE_PRICE_PRO, STRIPE_PRICE_MAX (monthly prices)
+//   STRIPE_PRICE_WEBSITE (the "Put it on your website" add-on, monthly)
 //   TRIAL_DAYS (optional, e.g. 14), SITE_URL (optional, e.g. https://example.com)
 //   RESEND_API_KEY, LEADS_FROM_EMAIL (optional: email each new lead to the business)
 "use strict";
@@ -21,7 +22,10 @@ function supabaseReady() {
 }
 
 function stripeReady() {
-  return !!(env("STRIPE_SECRET_KEY") && (env("STRIPE_PRICE_MONTHLY") || env("STRIPE_PRICE_YEARLY")));
+  return !!(
+    env("STRIPE_SECRET_KEY") &&
+    (env("STRIPE_PRICE_STARTER") || env("STRIPE_PRICE_PRO") || env("STRIPE_PRICE_MAX"))
+  );
 }
 
 function sendJson(res, status, body) {

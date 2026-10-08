@@ -10,7 +10,9 @@
 //   @root      path back to the site root ("", "../", or "/" on 404.html)
 //   @lang      en | es | pt          @htmlLang  en | es | pt-BR
 //   @dir       "" | "es/" | "pt/"    @page      the page's file name
-//   @priceMonthly, @priceYearly, @trialDays   from site-config.json "plans"
+//   @priceStarter, @pricePro, @priceMax, @priceWebsite, @trialDays, and each
+//   plan's limits (@starterMonthly, @starterTotal, @proMonthly, ...)
+//                                    from site-config.json "plans"
 // Text values may use the same {{@name}} values.
 //
 // The built pages are committed (Vercel serves them as plain files).
@@ -55,9 +57,26 @@ function money(amount, locale) {
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
+}
+
+function count(n, locale) {
+  return new Intl.NumberFormat(locale).format(Number(n) || 0);
+}
+
+// Prices and project limits for each plan, as the pricing section shows them.
+function planBuiltins(plans, locale) {
+  const out = { priceWebsite: money(Number(plans.websiteAddOn) || 0, locale) };
+  for (const name of ["starter", "pro", "max"]) {
+    const p = plans[name] || {};
+    const cap = name[0].toUpperCase() + name.slice(1);
+    out["price" + cap] = money(Number(p.price) || 0, locale);
+    out[name + "Monthly"] = count(p.newPerMonth, locale);
+    out[name + "Total"] = count(p.maxProjects, locale);
+  }
+  return out;
 }
 
 export async function buildAll() {
@@ -87,8 +106,7 @@ export async function buildAll() {
         dir: lang.dir,
         page: page.file,
         siteUrl: SITE_URL,
-        priceMonthly: money(Number(plans.monthly) || 0, lang.locale),
-        priceYearly: money(Number(plans.yearly) || 0, lang.locale),
+        ...planBuiltins(plans, lang.locale),
         trialDays: String(Number(plans.trialDays) || 0),
         designerHead: page.designer ? "designer" : "",
         appScript: page.app || "",

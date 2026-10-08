@@ -32,9 +32,9 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 ## Going live (one-time setup)
 
 1. **Supabase**: create a project. In SQL Editor, run `supabase/schema.sql` (and run it again whenever it changes; it's safe to re-run). In Authentication > URL Configuration, set the Site URL to your domain and add `https://<domain>/account.html`, `/es/account.html` and `/pt/account.html` as redirect URLs.
-2. **Stripe**: create one product with a monthly and a yearly recurring price. Add a webhook to `https://<domain>/api/stripe-webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Turn on the customer portal (Settings > Billing > Customer portal).
+2. **Stripe**: create three monthly recurring prices, one per plan (Starter, Pro, Max), with lookup keys `starter`, `pro` and `max`, plus one monthly price for the "Put it on your website" add-on. Put their IDs in `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MAX` and `STRIPE_PRICE_WEBSITE`. Add a webhook to `https://<domain>/api/stripe-webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Turn on the customer portal (Settings > Billing > Customer portal).
 3. **Vercel**: import this repo as a project (no build settings needed) and set the environment variables in `.env.example`.
-4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json`, run `npm run pages`, commit.
+4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json` (prices, and the project limits the server enforces), run `npm run pages`, commit.
 
 Start with Stripe test keys; switch to live keys once a test sign-up, checkout and request all work.
 

@@ -159,11 +159,22 @@
           <div class="app-card" id="plan-card">
             <h2>Seu plano</h2>
             <p class="plan-status" id="plan-status"></p>
-            <div class="app-actions" id="plan-buy" hidden>
-              <button type="button" class="btn btn-primary" data-plan="monthly">Começar teste: US$ 79 por mês</button>
-              <button type="button" class="btn btn-outline-dark" data-plan="yearly">
-                Começar teste: US$ 790 por ano
-              </button>
+            <div id="plan-buy" hidden>
+              <div class="app-actions">
+                <button type="button" class="btn btn-outline-dark" data-plan="starter">
+                  Começar teste: Starter, US$ 49,99 por mês
+                </button>
+                <button type="button" class="btn btn-primary" data-plan="pro">
+                  Começar teste: Pro, US$ 99,99 por mês
+                </button>
+                <button type="button" class="btn btn-outline-dark" data-plan="max">
+                  Começar teste: Max, US$ 199,99 por mês
+                </button>
+              </div>
+              <label class="check-row" id="plan-website-row" hidden>
+                <input type="checkbox" id="plan-website" />
+                <span>Adicionar "Coloque no seu site" (+US$ 9,99 por mês; incluído no Max)</span>
+              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               O pagamento é feito pela Stripe. Você pode cancelar antes do fim do teste e não pagar nada.

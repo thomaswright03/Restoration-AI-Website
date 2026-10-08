@@ -15,9 +15,21 @@ function periodEnd(sub) {
   return seconds ? new Date(seconds * 1000).toISOString() : null;
 }
 
+// The plan's line item: a subscription can also carry the "Put it on your
+// website" add-on (STRIPE_PRICE_WEBSITE), which isn't a plan.
+function planItem(sub) {
+  const items = (sub.items && sub.items.data) || [];
+  const website = env("STRIPE_PRICE_WEBSITE");
+  return (
+    items.find((i) => planFromPrice(i.price)) ||
+    items.find((i) => !(website && i.price && i.price.id === website)) ||
+    items[0]
+  );
+}
+
 async function saveSubscription(ownerId, sub) {
   if (!ownerId) return;
-  const item = sub.items && sub.items.data && sub.items.data[0];
+  const item = planItem(sub);
   // Only when the price names its plan, so a plan set by hand isn't wiped.
   const plan = planFromPrice(item && item.price) || undefined;
   await db("subscriptions?on_conflict=owner_id", {

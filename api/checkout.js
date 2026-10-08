@@ -1,11 +1,16 @@
-// POST /api/checkout {plan: "monthly"|"yearly", lang: ""|"es"|"pt"}
+// POST /api/checkout {plan: "starter"|"pro"|"max", website: true|false, lang: ""|"es"|"pt"}
 // with the signed-in user's Supabase access token as a Bearer token.
 // Starts a Stripe Checkout subscription and answers {url} to send them to.
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson, siteUrl, db, currentUser, stripe, readForm } = require("./_lib.js");
 
-const PRICE_ENV = { monthly: "STRIPE_PRICE_MONTHLY", yearly: "STRIPE_PRICE_YEARLY" };
+const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", max: "STRIPE_PRICE_MAX" };
+
+// The first id when the variable lists several (see api/_plans.js).
+function priceOf(name) {
+  return env(name).split(",")[0].trim();
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -18,9 +23,14 @@ module.exports = async function handler(req, res) {
   if (!user) return sendJson(res, 401, { error: "signin" });
 
   const body = await readForm(req);
-  const plan = PRICE_ENV[body.plan] ? body.plan : "monthly";
-  const price = env(PRICE_ENV[plan]);
+  const plan = PRICE_ENV[body.plan] ? body.plan : "starter";
+  const price = priceOf(PRICE_ENV[plan]);
   if (!price) return sendJson(res, 400, { error: "plan" });
+  // "Put it on your website": an add-on, already part of Max.
+  const website =
+    plan !== "max" && (body.website === true || body.website === "true") ? env("STRIPE_PRICE_WEBSITE") : "";
+  const lineItems = { 0: { price, quantity: 1 } };
+  if (website) lineItems[1] = { price: website, quantity: 1 };
   const dir = body.lang === "es" || body.lang === "pt" ? body.lang + "/" : "";
   const base = siteUrl(req) + "/" + dir + "account.html";
 
@@ -33,7 +43,7 @@ module.exports = async function handler(req, res) {
     const trialDays = Number(env("TRIAL_DAYS")) || 0;
     const session = await stripe("checkout/sessions", {
       mode: "subscription",
-      line_items: { 0: { price, quantity: 1 } },
+      line_items: lineItems,
       success_url: base + "?checkout=success",
       cancel_url: base + "?checkout=cancelled",
       client_reference_id: user.id,
@@ -41,7 +51,7 @@ module.exports = async function handler(req, res) {
       customer_email: existing && existing.stripe_customer_id ? undefined : user.email,
       allow_promotion_codes: "true",
       subscription_data: {
-        metadata: { owner_id: user.id },
+        metadata: { owner_id: user.id, plan, website: plan === "max" || website ? "yes" : "no" },
         // One free trial per account: not again after an earlier subscription.
         trial_period_days: trialDays > 0 && !(existing && existing.stripe_subscription_id) ? trialDays : undefined,
       },

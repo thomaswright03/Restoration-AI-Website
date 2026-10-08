@@ -1,8 +1,23 @@
 {
-  "_help": "Site settings. Edit, commit and push; Vercel redeploys and the next page load picks up the change. Plan prices here are what the pages SHOW: keep them equal to the prices set in Stripe, then run npm run pages so the built pages pick them up. See README 'Settings'.",
+  "_help": "Site settings. Edit, commit and push; Vercel redeploys and the next page load picks up the change. Plans: the prices here are what the pages SHOW (keep them equal to Stripe, then run npm run pages); the project limits here are also what the server enforces (api/_plans.js). See README 'Settings'.",
   "plans": {
-    "monthly": 79,
-    "yearly": 790,
+    "starter": {
+      "price": 49.99,
+      "newPerMonth": 10,
+      "maxProjects": 50
+    },
+    "pro": {
+      "price": 99.99,
+      "newPerMonth": 25,
+      "maxProjects": 100
+    },
+    "max": {
+      "price": 199.99,
+      "newPerMonth": 100,
+      "maxProjects": 1000,
+      "websiteIncluded": true
+    },
+    "websiteAddOn": 9.99,
     "trialDays": 14
   },
   "company": {

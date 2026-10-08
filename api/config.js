@@ -5,6 +5,11 @@
 
 const { env, supabaseReady, stripeReady, sendJson } = require("./_lib.js");
 
+// STRIPE_PRICE_PRO / _MAX may list several price ids; checkout uses the first.
+function firstPrice(name) {
+  return env(name).split(",")[0].trim();
+}
+
 module.exports = function handler(req, res) {
   const ready = supabaseReady();
   sendJson(res, 200, {
@@ -12,7 +17,12 @@ module.exports = function handler(req, res) {
     payments: ready && stripeReady(),
     supabaseUrl: ready ? env("SUPABASE_URL") : "",
     supabaseAnonKey: ready ? env("SUPABASE_ANON_KEY") : "",
-    plans: { monthly: !!env("STRIPE_PRICE_MONTHLY"), yearly: !!env("STRIPE_PRICE_YEARLY") },
+    plans: {
+      starter: !!env("STRIPE_PRICE_STARTER"),
+      pro: !!firstPrice("STRIPE_PRICE_PRO"),
+      max: !!firstPrice("STRIPE_PRICE_MAX"),
+      website: !!env("STRIPE_PRICE_WEBSITE"),
+    },
     trialDays: Number(env("TRIAL_DAYS")) || 0,
   });
 };

@@ -1,5 +1,7 @@
 // The plans and how many projects each may save. A project is one saved
-// design in a subscriber's account (api/projects.js).
+// design in a subscriber's account (api/projects.js). The limits come from
+// site-config.json "plans" (newPerMonth, maxProjects), the same numbers the
+// pricing section shows.
 //
 //   monthly  new projects a month (calendar month, UTC). Deleting a project
 //            does not give one back.
@@ -13,13 +15,28 @@
 // be set by hand), else its Stripe price id matched against
 // STRIPE_PRICE_PRO / STRIPE_PRICE_MAX (comma-separated lists allowed), else
 // Starter.
+//
+// "Put it on your website" (the designer link and embed code for homeowners)
+// is an add-on: STRIPE_PRICE_WEBSITE, added at checkout; Max includes it.
 "use strict";
+
+const CONFIG = require("../site-config.json").plans || {};
+
+function limits(name, fallback) {
+  const p = CONFIG[name] || {};
+  const monthly = Number(p.newPerMonth);
+  const total = Number(p.maxProjects);
+  return {
+    monthly: monthly > 0 ? monthly : fallback.monthly,
+    total: total > 0 ? total : fallback.total,
+  };
+}
 
 const PLANS = {
   free: { monthly: 0, total: 0 },
-  starter: { monthly: 10, total: 50 },
-  pro: { monthly: 25, total: 100 },
-  max: { monthly: 100, total: 1000 },
+  starter: limits("starter", { monthly: 10, total: 50 }),
+  pro: limits("pro", { monthly: 25, total: 100 }),
+  max: limits("max", { monthly: 100, total: 1000 }),
 };
 
 const ACTIVE = ["active", "trialing"];

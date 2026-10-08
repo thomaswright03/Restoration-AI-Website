@@ -60,15 +60,25 @@
   "account.newPassword.label": ["New password", "Contraseña nueva", "Senha nova"],
   "account.newPassword.save": ["Save password", "Guardar contraseña", "Salvar senha"],
   "account.plan.title": ["Your plan", "Su plan", "Seu plano"],
-  "account.plan.buyMonthly": [
-    "Start trial: {{@priceMonthly}} a month",
-    "Empezar prueba: {{@priceMonthly}} al mes",
-    "Começar teste: {{@priceMonthly}} por mês"
+  "account.plan.buyStarter": [
+    "Start trial: Starter, {{@priceStarter}} a month",
+    "Empezar prueba: Starter, {{@priceStarter}} al mes",
+    "Começar teste: Starter, {{@priceStarter}} por mês"
   ],
-  "account.plan.buyYearly": [
-    "Start trial: {{@priceYearly}} a year",
-    "Empezar prueba: {{@priceYearly}} al año",
-    "Começar teste: {{@priceYearly}} por ano"
+  "account.plan.buyPro": [
+    "Start trial: Pro, {{@pricePro}} a month",
+    "Empezar prueba: Pro, {{@pricePro}} al mes",
+    "Começar teste: Pro, {{@pricePro}} por mês"
+  ],
+  "account.plan.buyMax": [
+    "Start trial: Max, {{@priceMax}} a month",
+    "Empezar prueba: Max, {{@priceMax}} al mes",
+    "Começar teste: Max, {{@priceMax}} por mês"
+  ],
+  "account.plan.website": [
+    "Add \"Put it on your website\" (+{{@priceWebsite}} a month; included in Max)",
+    "Agregar \"Póngalo en su sitio web\" (+{{@priceWebsite}} al mes; incluido en Max)",
+    "Adicionar \"Coloque no seu site\" (+{{@priceWebsite}} por mês; incluído no Max)"
   ],
   "account.plan.trialNote": [
     "Checkout is handled by Stripe. You can cancel before the trial ends and pay nothing.",

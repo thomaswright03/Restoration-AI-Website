@@ -109,7 +109,13 @@ test("webhook: a stale subscription event records the subscription as Stripe has
         customer: "cus_1",
         status: "active",
         metadata: { owner_id: OWNER },
-        items: { data: [{ price: { id: "price_m", lookup_key: "pro_monthly" }, current_period_end: 1900000000 }] },
+        // The website add-on listed first: the plan still comes from the plan's price.
+        items: {
+          data: [
+            { price: { id: "price_web" }, current_period_end: 1900000000 },
+            { price: { id: "price_m", lookup_key: "pro_monthly" }, current_period_end: 1900000000 },
+          ],
+        },
       });
     }
     if (u.pathname === "/rest/v1/subscriptions") {
@@ -139,5 +145,6 @@ test("webhook: a stale subscription event records the subscription as Stripe has
   assert.equal(saved.length, 1);
   assert.equal(saved[0].status, "active");
   assert.equal(saved[0].plan, "pro");
+  assert.equal(saved[0].price_id, "price_m");
   assert.equal(saved[0].owner_id, OWNER);
 });

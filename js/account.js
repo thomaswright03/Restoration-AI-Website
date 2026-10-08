@@ -20,6 +20,7 @@
   var LANG = window.I18n.lang();
   var DIR = LANG === "en" ? "" : LANG + "/";
   var params = new URLSearchParams(window.location.search);
+  var PLANS = ["starter", "pro", "max"];
   var client = null;
   var config = null;
 
@@ -113,7 +114,7 @@
 
     function next() {
       var plan = params.get("plan");
-      return sitePath("account.html") + (plan === "monthly" || plan === "yearly" ? "?plan=" + plan : "");
+      return sitePath("account.html") + (PLANS.indexOf(plan) >= 0 ? "?plan=" + plan : "");
     }
 
     form.addEventListener("submit", function (e) {
@@ -216,8 +217,9 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
     });
+    show($("plan-website-row"), canBuy && !!(config.plans && config.plans.website));
     var wanted = params.get("plan");
-    if (canBuy && (wanted === "monthly" || wanted === "yearly")) {
+    if (canBuy && PLANS.indexOf(wanted) >= 0) {
       var btn = document.querySelector('[data-plan="' + wanted + '"]');
       if (btn) btn.classList.add("is-suggested");
     }
@@ -470,7 +472,8 @@
     var out = $("plan-message");
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
     button.disabled = true;
-    api("/api/checkout", { plan: plan, lang: LANG === "en" ? "" : LANG })
+    var website = plan !== "max" && $("plan-website").checked;
+    api("/api/checkout", { plan: plan, website: website, lang: LANG === "en" ? "" : LANG })
       .then(function (data) {
         window.location.href = data.url;
       })

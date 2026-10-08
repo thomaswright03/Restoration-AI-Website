@@ -157,9 +157,22 @@
           <div class="app-card" id="plan-card">
             <h2>Su plan</h2>
             <p class="plan-status" id="plan-status"></p>
-            <div class="app-actions" id="plan-buy" hidden>
-              <button type="button" class="btn btn-primary" data-plan="monthly">Empezar prueba: $79 al mes</button>
-              <button type="button" class="btn btn-outline-dark" data-plan="yearly">Empezar prueba: $790 al año</button>
+            <div id="plan-buy" hidden>
+              <div class="app-actions">
+                <button type="button" class="btn btn-outline-dark" data-plan="starter">
+                  Empezar prueba: Starter, $49.99 al mes
+                </button>
+                <button type="button" class="btn btn-primary" data-plan="pro">
+                  Empezar prueba: Pro, $99.99 al mes
+                </button>
+                <button type="button" class="btn btn-outline-dark" data-plan="max">
+                  Empezar prueba: Max, $199.99 al mes
+                </button>
+              </div>
+              <label class="check-row" id="plan-website-row" hidden>
+                <input type="checkbox" id="plan-website" />
+                <span>Agregar "Póngalo en su sitio web" (+$9.99 al mes; incluido en Max)</span>
+              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               El pago lo procesa Stripe. Puede cancelar antes de que termine la prueba y no pagar nada.

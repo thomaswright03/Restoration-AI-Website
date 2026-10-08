@@ -36,9 +36,17 @@ for (const dir of ["", "es/", "pt/"]) {
 
 test("the landing page shows the plan prices from site-config.json in each language's format", async ({ page }) => {
   await page.goto("/index.html?lang=en");
-  await expect(page.locator(".plan-price").first()).toContainText("$79");
+  const prices = page.locator(".plan-price");
+  await expect(prices).toHaveCount(3);
+  await expect(prices.nth(0)).toContainText("$49.99");
+  await expect(prices.nth(1)).toContainText("$99.99");
+  await expect(prices.nth(2)).toContainText("$199.99");
+  await expect(page.locator(".plan-limits").first()).toContainText("10 new projects a month");
+  await expect(page.locator(".plan-limits").nth(2)).toContainText("1,000");
+  await expect(page.locator(".plan-addon")).toContainText("$9.99");
+  await expect(page.locator('a[href="signup.html?plan=max"]')).toBeVisible();
   await page.goto("/pt/index.html?lang=pt");
-  await expect(page.locator(".plan-price").first()).toContainText("US$");
+  await expect(page.locator(".plan-price").first()).toContainText("US$ 49,99");
 });
 
 test("the demo designer speaks for the sample business", async ({ page }) => {

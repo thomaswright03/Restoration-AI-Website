@@ -34,9 +34,9 @@
   "index.how.title": ["Live on your site in three steps", "En su sitio en tres pasos", "No seu site em três passos"],
   "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],
   "index.how.1.text": [
-    "Create an account and start your free trial with a monthly or yearly plan.",
-    "Cree una cuenta y empiece su prueba gratis con un plan mensual o anual.",
-    "Crie uma conta e comece o teste grátis com um plano mensal ou anual."
+    "Create an account and start your free trial on the Starter, Pro or Max plan.",
+    "Cree una cuenta y empiece su prueba gratis con el plan Starter, Pro o Max.",
+    "Crie uma conta e comece o teste grátis no plano Starter, Pro ou Max."
   ],
   "index.how.2.title": ["Make it yours", "Hágalo suyo", "Deixe com a sua cara"],
   "index.how.2.text": [
@@ -96,27 +96,77 @@
     "Hecho para celulares, tabletas y computadoras, sin nada que el cliente tenga que instalar.",
     "Feito para celulares, tablets e computadores, sem nada para o cliente instalar."
   ],
-  "index.pricing.title": ["One plan, everything included", "Un plan, todo incluido", "Um plano, tudo incluído"],
+  "index.pricing.title": [
+    "Pick the plan that fits your workload",
+    "Elija el plan que se ajuste a su volumen de trabajo",
+    "Escolha o plano que combina com o seu volume de trabalho"
+  ],
   "index.pricing.subtitle": [
-    "Start with a {{@trialDays}}-day free trial. Prices in US dollars.",
-    "Empiece con {{@trialDays}} días de prueba gratis. Precios en dólares estadounidenses.",
-    "Comece com {{@trialDays}} dias de teste grátis. Preços em dólares americanos."
+    "Every plan starts with a {{@trialDays}}-day free trial. Billed monthly, cancel any time. Prices in US dollars.",
+    "Todos los planes empiezan con {{@trialDays}} días de prueba gratis. Se cobran cada mes y puede cancelar cuando quiera. Precios en dólares estadounidenses.",
+    "Todos os planos começam com {{@trialDays}} dias de teste grátis. Cobrança mensal, cancele quando quiser. Preços em dólares americanos."
   ],
-  "index.plan.monthly": ["Monthly", "Mensual", "Mensal"],
-  "index.plan.yearly": ["Yearly", "Anual", "Anual"],
+  "index.plan.starter": ["Starter", "Starter", "Starter"],
+  "index.plan.starter.monthly": [
+    "{{@starterMonthly}} new projects a month",
+    "{{@starterMonthly}} proyectos nuevos al mes",
+    "{{@starterMonthly}} projetos novos por mês"
+  ],
+  "index.plan.starter.total": [
+    "Keep up to {{@starterTotal}} projects",
+    "Guarde hasta {{@starterTotal}} proyectos",
+    "Guarde até {{@starterTotal}} projetos"
+  ],
+  "index.plan.starter.website": [
+    "Put it on your website: +{{@priceWebsite}} a month",
+    "Póngalo en su sitio web: +{{@priceWebsite}} al mes",
+    "Coloque no seu site: +{{@priceWebsite}} por mês"
+  ],
+  "index.plan.pro": ["Pro", "Pro", "Pro"],
+  "index.plan.pro.monthly": [
+    "{{@proMonthly}} new projects a month",
+    "{{@proMonthly}} proyectos nuevos al mes",
+    "{{@proMonthly}} projetos novos por mês"
+  ],
+  "index.plan.pro.total": [
+    "Keep up to {{@proTotal}} projects",
+    "Guarde hasta {{@proTotal}} proyectos",
+    "Guarde até {{@proTotal}} projetos"
+  ],
+  "index.plan.pro.website": [
+    "Put it on your website: +{{@priceWebsite}} a month",
+    "Póngalo en su sitio web: +{{@priceWebsite}} al mes",
+    "Coloque no seu site: +{{@priceWebsite}} por mês"
+  ],
+  "index.plan.max": ["Max", "Max", "Max"],
+  "index.plan.max.monthly": [
+    "{{@maxMonthly}} new projects a month",
+    "{{@maxMonthly}} proyectos nuevos al mes",
+    "{{@maxMonthly}} projetos novos por mês"
+  ],
+  "index.plan.max.total": [
+    "Keep up to {{@maxTotal}} projects",
+    "Guarde hasta {{@maxTotal}} proyectos",
+    "Guarde até {{@maxTotal}} projetos"
+  ],
+  "index.plan.max.website": [
+    "Put it on your website: included",
+    "Póngalo en su sitio web: incluido",
+    "Coloque no seu site: incluído"
+  ],
   "index.plan.perMonth": ["per month", "al mes", "por mês"],
-  "index.plan.perYear": ["per year", "al año", "por ano"],
-  "index.plan.monthlyNote": [
-    "Billed monthly. Cancel any time.",
-    "Se cobra cada mes. Cancele cuando quiera.",
-    "Cobrado todo mês. Cancele quando quiser."
+  "index.plan.badge": ["Most popular", "El más elegido", "O mais escolhido"],
+  "index.addon.title": ["Put it on your website.", "Póngalo en su sitio web.", "Coloque no seu site."],
+  "index.addon.text": [
+    "A link to share with homeowners and one line of code that puts the designer on your own website. {{@priceWebsite}} a month on Starter and Pro, included in Max.",
+    "Un enlace para compartir con sus clientes y una línea de código que pone el diseñador en su propio sitio web. {{@priceWebsite}} al mes en Starter y Pro, incluido en Max.",
+    "Um link para compartilhar com os clientes e uma linha de código que coloca o projetista no seu próprio site. {{@priceWebsite}} por mês no Starter e no Pro, incluído no Max."
   ],
-  "index.plan.yearlyNote": [
-    "Billed once a year. Two months free.",
-    "Se cobra una vez al año. Dos meses gratis.",
-    "Cobrado uma vez por ano. Dois meses grátis."
+  "index.plan.free": [
+    "Just looking? A free account lets you use the designer; saving projects needs a plan.",
+    "¿Solo quiere probar? Con una cuenta gratis puede usar el diseñador; para guardar proyectos necesita un plan.",
+    "Só quer conhecer? Com uma conta grátis você usa o projetista; para salvar projetos é preciso um plano."
   ],
-  "index.plan.badge": ["Best value", "Mejor precio", "Melhor preço"],
   "index.inc.1": [
     "The 3D bathroom designer and estimate, for your business",
     "El diseñador de baños en 3D y la estimación, para su empresa",
@@ -127,23 +177,29 @@
     "Sus propios precios de mano de obra",
     "Os seus próprios preços de mão de obra"
   ],
-  "index.inc.3": [
-    "A link to share and a line of code for your website",
-    "Un enlace para compartir y una línea de código para su sitio",
-    "Um link para compartilhar e uma linha de código para o seu site"
-  ],
   "index.inc.4": [
     "Homeowner requests saved in your account",
     "Solicitudes de clientes guardadas en su cuenta",
     "Pedidos dos clientes salvos na sua conta"
   ],
+  "index.inc.6": [
+    "Saved projects with client details, the 3D model and a materials list",
+    "Proyectos guardados con los datos del cliente, el modelo 3D y la lista de materiales",
+    "Projetos salvos com os dados do cliente, o modelo 3D e a lista de materiais"
+  ],
   "index.inc.5": ["English, Spanish and Portuguese", "Inglés, español y portugués", "Inglês, espanhol e português"],
   "index.faq.title": ["Questions", "Preguntas frecuentes", "Perguntas frequentes"],
   "index.q1": ["Do I need a web developer?", "¿Necesito un desarrollador web?", "Preciso de um desenvolvedor?"],
   "index.a1": [
-    "No. Your account page gives you a link you can share right away, and one line of code to paste into your website builder (WordPress, Wix, Squarespace and others accept it).",
-    "No. La página de su cuenta le da un enlace que puede compartir de inmediato y una línea de código para pegar en el editor de su sitio (WordPress, Wix, Squarespace y otros la aceptan).",
-    "Não. A página da sua conta dá um link que você pode compartilhar na hora e uma linha de código para colar no editor do seu site (WordPress, Wix, Squarespace e outros aceitam)."
+    "No. With the \"Put it on your website\" add-on (included in Max), your account page gives you a link you can share right away and one line of code to paste into your website builder (WordPress, Wix, Squarespace and others accept it).",
+    "No. Con el complemento \"Póngalo en su sitio web\" (incluido en Max), la página de su cuenta le da un enlace que puede compartir de inmediato y una línea de código para pegar en el editor de su sitio (WordPress, Wix, Squarespace y otros la aceptan).",
+    "Não. Com o adicional \"Coloque no seu site\" (incluído no Max), a página da sua conta dá um link que você pode compartilhar na hora e uma linha de código para colar no editor do seu site (WordPress, Wix, Squarespace e outros aceitam)."
+  ],
+  "index.q7": ["What counts as a project?", "¿Qué cuenta como un proyecto?", "O que conta como um projeto?"],
+  "index.a7": [
+    "Each design you save in your account, with its client details and materials list. Your plan sets how many new projects you can start each month and how many you can keep at once. Deleting a project frees a spot under the total, but doesn't give back one of the month's new projects.",
+    "Cada diseño que guarda en su cuenta, con los datos del cliente y la lista de materiales. Su plan fija cuántos proyectos nuevos puede empezar cada mes y cuántos puede guardar a la vez. Borrar un proyecto libera un lugar en el total, pero no le devuelve uno de los proyectos nuevos del mes.",
+    "Cada projeto que você salva na sua conta, com os dados do cliente e a lista de materiais. O seu plano define quantos projetos novos você pode começar por mês e quantos pode guardar ao mesmo tempo. Apagar um projeto libera uma vaga no total, mas não devolve um dos projetos novos do mês."
   ],
   "index.q2": ["Can I use my own prices?", "¿Puedo usar mis propios precios?", "Posso usar os meus próprios preços?"],
   "index.a2": [
@@ -182,8 +238,8 @@
     "Dê aos seus clientes um jeito melhor de começar"
   ],
   "index.cta.text": [
-    "Try it free for {{@trialDays}} days, then {{@priceMonthly}} a month.",
-    "Pruébelo gratis {{@trialDays}} días; después, {{@priceMonthly}} al mes.",
-    "Teste grátis por {{@trialDays}} dias; depois, {{@priceMonthly}} por mês."
+    "Try it free for {{@trialDays}} days, then plans start at {{@priceStarter}} a month.",
+    "Pruébelo gratis {{@trialDays}} días; después, planes desde {{@priceStarter}} al mes.",
+    "Teste grátis por {{@trialDays}} dias; depois, planos a partir de {{@priceStarter}} por mês."
   ]
 }

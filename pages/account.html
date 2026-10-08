@@ -31,11 +31,18 @@
           <div class="app-card" id="plan-card">
             <h2>{{account.plan.title}}</h2>
             <p class="plan-status" id="plan-status"></p>
-            <div class="app-actions" id="plan-buy" hidden>
-              <button type="button" class="btn btn-primary" data-plan="monthly">
-                {{account.plan.buyMonthly}}
-              </button>
-              <button type="button" class="btn btn-outline-dark" data-plan="yearly">{{account.plan.buyYearly}}</button>
+            <div id="plan-buy" hidden>
+              <div class="app-actions">
+                <button type="button" class="btn btn-outline-dark" data-plan="starter">
+                  {{account.plan.buyStarter}}
+                </button>
+                <button type="button" class="btn btn-primary" data-plan="pro">{{account.plan.buyPro}}</button>
+                <button type="button" class="btn btn-outline-dark" data-plan="max">{{account.plan.buyMax}}</button>
+              </div>
+              <label class="check-row" id="plan-website-row" hidden>
+                <input type="checkbox" id="plan-website" />
+                <span>{{account.plan.website}}</span>
+              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>{{account.plan.trialNote}}</p>
             <div class="app-actions" id="plan-manage" hidden>

@@ -1853,6 +1853,7 @@ function cachedBodyTemplate(s, key, build) {
 // fixture's origin.
 function offsetModel(model, x, y, z) {
   var g = new THREE.Group();
+  g.userData.sharedModel = true; // disposeGroup leaves the clone's geometry alone
   var m = model.clone(true);
   m.position.set(x, y, z);
   g.add(m);
@@ -3373,13 +3374,25 @@ function applyStudioView(s) {
   needsRender = true;
 }
 
+// Empties a group of one-off objects (marks, electrical points, the tub
+// surround). Their geometry is built per object, so it's freed all the way
+// down, except inside a product model's clone (offsetModel), which shares
+// the cached model's geometry. Nested materials are shared caches
+// (electricalMaterials, product models); only a top-level object's own
+// material is freed, and never the shared surround material.
 function disposeGroup(group) {
   while (group.children.length) {
     var child = group.children[0];
     group.remove(child);
-    if (child.geometry) child.geometry.dispose();
+    disposeGeometries(child);
     if (child.material && child.material !== threeState.surroundMaterial) child.material.dispose();
   }
+}
+
+function disposeGeometries(node) {
+  if (node.userData.sharedModel) return;
+  if (node.geometry) node.geometry.dispose();
+  node.children.forEach(disposeGeometries);
 }
 
 // Each mark is a rectangle on the floor ({ x0, x1, z0, z1 }) or a door's

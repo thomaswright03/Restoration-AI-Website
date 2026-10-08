@@ -189,6 +189,8 @@ test.describe("design studio", () => {
 
     await drag(await point("f3"), await point("f1"));
     await expect(studioToast(page)).toContainText("That spot doesn't work, so it went back.");
+    // The toast offers a way out, never just a dead end.
+    await expect(studioToast(page).locator(".studio-toast-action")).toHaveText(/Best spot|Arrange for me/);
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await expect(page.locator("#studio-selchip")).toContainText("Toilet");
 

@@ -1515,8 +1515,18 @@
     } else {
       var why = Plan.errorsOf(drag.issues, drag.id)[0];
       refresh();
+      // With a way out: the best spot that does work, when there is one.
+      var fits = Plan.findSpots(design, item, sizes, { step: IN }).length > 0;
       toast(
         why ? T("studio.dropRefused", { reason: issueText(item, why, drag.preview) }) : T("studio.dropRefusedPlain"),
+        fits
+          ? {
+              label: T("studio.bestSpot"),
+              run: function () {
+                bestSpot(findItem(item.id));
+              },
+            }
+          : { label: T("studio.rearrange"), run: arrangeNow },
       );
     }
   }
@@ -4650,7 +4660,7 @@
     var worst = trouble ? (issues[trouble.id] || []).filter(isError)[0] : null;
     rileyFix = null;
     if (trouble && worst) {
-      rileyFix = rileyFixFor(trouble, worst);
+      rileyFix = rileyFixFor(trouble);
       window.Riley.say({
         tone: "error",
         text:
@@ -4699,7 +4709,7 @@
 
   // What she can do about it: the line that offers it, and the thing it
   // does. Null when she has nothing to offer.
-  function rileyFixFor(thing, x) {
+  function rileyFixFor(thing) {
     if (!thing.type) {
       return {
         offer: "riley.offer",
@@ -4711,10 +4721,10 @@
         },
       };
     }
-    // Somewhere else for it: away from the plumbing, back onto a wall a
-    // drain can reach; otherwise its best free spot.
-    var spots =
-      x.code === "noStack" || x.code === "offStack" ? [1] : Plan.findSpots(design, thing, sizes, { step: 2 * IN });
+    // Somewhere else for it (back onto a wall a drain can reach, or its
+    // best free spot), offered only when there is one, so "Yes" never ends
+    // in "no spot".
+    var spots = Plan.findSpots(design, thing, sizes, { step: 2 * IN });
     if (spots.length) {
       return {
         offer: "riley.offer",

@@ -116,3 +116,23 @@ test("Delete account asks for the sign-in email, then deletes and signs out", as
   await expect(page.locator("#auth-status")).toContainText("deleted");
   expect(await page.evaluate(() => localStorage.getItem("sb-fakeproject-auth-token"))).toBeNull();
 });
+
+test("signed in, the nav's Log in reads Log out in each language and signs out", async ({ page }) => {
+  await page.goto("/index.html?lang=en");
+  const link = page.locator("[data-auth-link]");
+  await expect(link).toHaveText("Log in");
+  await page.evaluate(() => localStorage.setItem("sb-fakeproject-auth-token", "{}"));
+  await page.reload();
+  await expect(link).toHaveText("Log out");
+  await expect(link).toHaveAttribute("href", /account\.html\?logout=1$/);
+  await page.goto("/es/designer.html?lang=es");
+  await expect(page.locator("[data-auth-link]")).toHaveText("Cerrar sesión");
+  await page.goto("/pt/project.html?lang=pt");
+  await expect(page.locator("[data-auth-link]")).toHaveText("Sair");
+
+  await page.goto("/index.html?lang=en");
+  await page.locator("[data-auth-link]").click();
+  await page.waitForURL(/\/index\.html$/);
+  expect(await page.evaluate(() => localStorage.getItem("sb-fakeproject-auth-token"))).toBeNull();
+  await expect(page.locator("[data-auth-link]")).toHaveText("Log in");
+});

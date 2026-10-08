@@ -2013,6 +2013,15 @@
 
   function goToStep(step) {
     if (STEPS.indexOf(step) === -1) return;
+    // A product being chosen is shown by itself only while on Products;
+    // other steps start with the whole room, as Layout always does.
+    if (step !== "products" && focusedGroup) {
+      focusedGroup = null;
+      if (has3d) room3d.focusProductGroup(null);
+      ui.isolate = false;
+      applyIsolate();
+      renderViewbar();
+    }
     ui.step = step;
     renderBar();
     renderPanel({ top: true });

@@ -416,6 +416,20 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("leaving Products brings the whole room back, so isolation never follows into Finishes", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "products").click();
+    await byKey(page, "focus-toilet").click();
+    const iso = page.locator(".studio-iso-btn");
+    await expect(iso).toHaveAttribute("aria-pressed", "true");
+    await step(page, "finishes").click();
+    await expect(iso).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).not.toBeNull();
+    expect(errors).toEqual([]);
+  });
+
   test("Show examples opens a product's listing photos as a slideshow", async ({ page }) => {
     // The photos come from Home Depot's image server: stand in a local
     // picture so the test doesn't depend on it.

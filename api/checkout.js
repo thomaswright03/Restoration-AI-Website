@@ -1,9 +1,14 @@
 // POST /api/checkout {plan: "starter"|"pro"|"max", website: true|false, lang: ""|"es"|"pt"}
 // with the signed-in user's Supabase access token as a Bearer token.
 // Starts a Stripe Checkout subscription and answers {url} to send them to.
+//
+// POST /api/checkout {addon: "website"}: adds "Put it on your website" to the
+// subscription they already have (Stripe prorates it on the next invoice)
+// and answers {ok: true}; the designer link and embed code unlock at once.
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson, siteUrl, db, currentUser, stripe, readForm } = require("./_lib.js");
+const { planOf, websiteOf } = require("./_plans.js");
 
 const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", max: "STRIPE_PRICE_MAX" };
 
@@ -23,6 +28,7 @@ module.exports = async function handler(req, res) {
   if (!user) return sendJson(res, 401, { error: "signin" });
 
   const body = await readForm(req);
+  if (body.addon === "website") return addWebsite(req, res, user);
   const plan = PRICE_ENV[body.plan] ? body.plan : "starter";
   const price = priceOf(PRICE_ENV[plan]);
   if (!price) return sendJson(res, 400, { error: "plan" });
@@ -63,3 +69,33 @@ module.exports = async function handler(req, res) {
     return sendJson(res, 502, { error: "stripe" });
   }
 };
+
+async function addWebsite(req, res, user) {
+  const price = priceOf("STRIPE_PRICE_WEBSITE");
+  if (!price) return sendJson(res, 400, { error: "plan" });
+  try {
+    const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
+    const sub = subs && subs[0];
+    if (planOf(sub) === "free") return sendJson(res, 409, { error: "no-plan" });
+    if (websiteOf(sub)) return sendJson(res, 200, { ok: true, already: true });
+    // A plan set by hand (no Stripe subscription) has nothing to add it to.
+    if (!sub.stripe_subscription_id) return sendJson(res, 409, { error: "no-stripe" });
+    await stripe("subscription_items", {
+      subscription: sub.stripe_subscription_id,
+      price,
+      quantity: 1,
+      proration_behavior: "create_prorations",
+    });
+    await stripe("subscriptions/" + encodeURIComponent(sub.stripe_subscription_id), { metadata: { website: "yes" } });
+    // The webhook records it too; this makes it true before that arrives.
+    await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id), {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: { website: true, updated_at: new Date().toISOString() },
+    });
+    return sendJson(res, 200, { ok: true });
+  } catch (e) {
+    console.error(e);
+    return sendJson(res, 502, { error: "stripe" });
+  }
+}

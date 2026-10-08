@@ -7,7 +7,7 @@
 "use strict";
 
 const { env, supabaseReady, sendJson, db, stripe, verifyStripeSignature, readRawBody } = require("./_lib.js");
-const { planFromPrice } = require("./_plans.js");
+const { planFromPrice, isWebsitePrice } = require("./_plans.js");
 
 function periodEnd(sub) {
   const item = sub.items && sub.items.data && sub.items.data[0];
@@ -19,12 +19,15 @@ function periodEnd(sub) {
 // website" add-on (STRIPE_PRICE_WEBSITE), which isn't a plan.
 function planItem(sub) {
   const items = (sub.items && sub.items.data) || [];
-  const website = env("STRIPE_PRICE_WEBSITE");
-  return (
-    items.find((i) => planFromPrice(i.price)) ||
-    items.find((i) => !(website && i.price && i.price.id === website)) ||
-    items[0]
-  );
+  return items.find((i) => planFromPrice(i.price)) || items.find((i) => !isWebsitePrice(i.price)) || items[0];
+}
+
+// Whether the subscription carries the website add-on: as a line item, or
+// (a price not recognised by id) as the "website" metadata checkout sets.
+function hasWebsite(sub) {
+  const items = (sub.items && sub.items.data) || [];
+  if (items.some((i) => isWebsitePrice(i.price))) return true;
+  return !!(sub.metadata && sub.metadata.website === "yes");
 }
 
 async function saveSubscription(ownerId, sub) {
@@ -42,6 +45,7 @@ async function saveSubscription(ownerId, sub) {
       status: sub.status,
       price_id: item && item.price ? item.price.id : null,
       plan,
+      website: hasWebsite(sub),
       current_period_end: periodEnd(sub),
       cancel_at_period_end: !!sub.cancel_at_period_end,
       updated_at: new Date().toISOString(),

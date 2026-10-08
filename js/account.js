@@ -111,6 +111,7 @@
       setMode("login");
     });
     setMode(mode);
+    if (params.get("deleted")) status(statusEl, "success", T("acct.delete.done"));
 
     function next() {
       var plan = params.get("plan");
@@ -175,6 +176,8 @@
   var session = null;
   var business = null;
   var subscription = null;
+  // What the plan includes, from /api/projects: null until it answers.
+  var entitlements = null;
 
   function api(path, body) {
     return fetch(path, {
@@ -223,7 +226,7 @@
       var btn = document.querySelector('[data-plan="' + wanted + '"]');
       if (btn) btn.classList.add("is-suggested");
     }
-    show($("share-inactive"), !isLive());
+    if (business) renderShare();
   }
 
   function loadSubscription() {
@@ -267,12 +270,23 @@
     });
   }
 
+  // The share card: the link and embed code once the plan is live and
+  // includes "Put it on your website"; otherwise why not, and how to add it.
   function renderShare() {
     var on = !!business;
     show($("prices-card"), on);
     show($("share-card"), on);
     show($("leads-card"), on);
     if (!on) return;
+    var live = isLive();
+    // If /api/projects can't say, show the link: the server still decides
+    // who may open it.
+    var website = !entitlements || entitlements.website !== false;
+    show($("share-inactive"), !live);
+    show($("share-locked"), live && !website);
+    show($("share-open"), live && website);
+    show($("share-add-website"), !!(config.payments && config.plans && config.plans.website));
+    if (!website) return;
     var dir = $("share-lang").value;
     var url = window.location.origin + "/" + dir + "designer.html?b=" + business.slug;
     $("share-link").href = url;
@@ -451,6 +465,8 @@
         return null;
       })
       .then(function (data) {
+        entitlements = data ? { plan: data.plan, website: data.website === true } : null;
+        renderShare();
         var text = !data
           ? ""
           : data.plan === "free"
@@ -466,6 +482,60 @@
         show($("projects-summary"), !!text);
         show($("projects-card"), true);
       });
+  }
+
+  // Adds "Put it on your website" to the plan they already have.
+  function addWebsite(button) {
+    var out = $("share-message");
+    button.disabled = true;
+    api("/api/checkout", { addon: "website" })
+      .then(function () {
+        entitlements = Object.assign({}, entitlements, { website: true });
+        renderShare();
+        status(out, "success", T("acct.share.added"));
+      })
+      .catch(function (err) {
+        status(out, "error", T(err.code === "no-stripe" ? "acct.share.byHand" : "acct.error"));
+        button.disabled = false;
+      });
+  }
+
+  // Delete account: shown behind a button, confirmed by typing the sign-in
+  // email, done by api/account.js.
+  function initDelete() {
+    var form = $("delete-form");
+    var out = $("delete-status");
+    $("delete-start").addEventListener("click", function () {
+      show($("delete-start"), false);
+      show(form, true);
+      $("delete-confirm").focus();
+    });
+    $("delete-cancel").addEventListener("click", function () {
+      show(form, false);
+      show($("delete-start"), true);
+      status(out, "info", "");
+    });
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var typed = $("delete-confirm").value.trim().toLowerCase();
+      if (typed !== String(session.user.email || "").toLowerCase()) {
+        return status(out, "error", T("acct.delete.mismatch"));
+      }
+      $("delete-submit").disabled = true;
+      status(out, "info", T("acct.delete.working"));
+      api("/api/account", { action: "delete", confirm: typed })
+        .then(function () {
+          // The sign-in is gone on the server; forget it here too.
+          return client.auth.signOut({ scope: "local" }).catch(function () {});
+        })
+        .then(function () {
+          window.location.href = sitePath("signup.html") + "?deleted=1";
+        })
+        .catch(function (err) {
+          status(out, "error", T(err.code === "stripe" ? "acct.delete.stripe" : "acct.error"));
+          $("delete-submit").disabled = false;
+        });
+    });
   }
 
   function buy(plan, button) {
@@ -548,6 +618,10 @@
       savePrices(null, true);
     });
     $("share-lang").addEventListener("change", renderShare);
+    $("share-add-website").addEventListener("click", function () {
+      addWebsite($("share-add-website"));
+    });
+    initDelete();
     $("copy-embed").addEventListener("click", function () {
       var code = $("embed-code");
       code.select();

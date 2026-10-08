@@ -74,7 +74,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const biz = await activeBusiness(slug);
-    if (!biz || biz.inactive) return sendJson(res, 404, { error: "unavailable" });
+    // Only a designer that's open to homeowners takes requests.
+    if (!biz || biz.inactive || biz.noWebsite) return sendJson(res, 404, { error: "unavailable" });
     const since = new Date(Date.now() - 3600 * 1000).toISOString();
     const recent = await db(
       "leads?business_id=eq." +

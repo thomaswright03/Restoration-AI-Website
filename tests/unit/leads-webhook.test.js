@@ -44,13 +44,15 @@ function setEnv() {
   delete process.env.RESEND_API_KEY;
 }
 
-function fakeLeadsDb(existing) {
+// sub: the business's subscriptions row (active with the website add-on
+// unless said otherwise).
+function fakeLeadsDb(existing, sub = { status: "active", website: true }) {
   const data = { leads: existing };
   global.fetch = async (url, opts = {}) => {
     const u = new URL(url);
     const method = opts.method || "GET";
     if (u.pathname === "/rest/v1/businesses") return reply(200, [{ id: BIZ, owner_id: OWNER, slug: "smith" }]);
-    if (u.pathname === "/rest/v1/subscriptions") return reply(200, [{ status: "active" }]);
+    if (u.pathname === "/rest/v1/subscriptions") return reply(200, [sub]);
     if (u.pathname === "/rest/v1/leads" && method === "GET") {
       const since = u.searchParams.get("created_at").replace(/^gte\./, "");
       const limit = Number(u.searchParams.get("limit"));
@@ -83,6 +85,19 @@ test("leads: saved for an active business; a bad email is refused", async () => 
   assert.equal(data.leads.length, 1);
 });
 
+test('leads: a plan without "Put it on your website" takes no requests; Max always does', async () => {
+  setEnv();
+  const data = fakeLeadsDb([], { status: "active", plan: "pro" });
+  const locked = await postLead({ name: "Ana", email: "ana@example.com", business: "smith" });
+  assert.equal(locked.statusCode, 404);
+  assert.equal(locked.json().error, "unavailable");
+  assert.equal(data.leads.length, 0);
+  fakeLeadsDb(data.leads, { status: "trialing", plan: "max" });
+  const max = await postLead({ name: "Ana", email: "ana@example.com", business: "smith" });
+  assert.equal(max.statusCode, 200);
+  assert.equal(data.leads.length, 1);
+});
+
 test("leads: more than 30 in an hour for one business are turned away; older ones don't count", async () => {
   setEnv();
   const hourAgo = new Date(Date.now() - 2 * 3600 * 1000).toISOString();
@@ -100,6 +115,7 @@ test("webhook: a stale subscription event records the subscription as Stripe has
   setEnv();
   process.env.STRIPE_SECRET_KEY = "sk_test_x";
   process.env.STRIPE_WEBHOOK_SECRET = "whsec_test";
+  process.env.STRIPE_PRICE_WEBSITE = "price_web";
   const saved = [];
   global.fetch = async (url, opts = {}) => {
     const u = new URL(url);
@@ -146,5 +162,7 @@ test("webhook: a stale subscription event records the subscription as Stripe has
   assert.equal(saved[0].status, "active");
   assert.equal(saved[0].plan, "pro");
   assert.equal(saved[0].price_id, "price_m");
+  assert.equal(saved[0].website, true);
   assert.equal(saved[0].owner_id, OWNER);
+  delete process.env.STRIPE_PRICE_WEBSITE;
 });

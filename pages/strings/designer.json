@@ -96,6 +96,12 @@
     "O seu projetista ainda não está no ar para os clientes, e não dá para enviar pedidos por ele, até você escolher um plano."
   ],
   "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+  "designer.websiteLocked.text": [
+    "Your designer is for your own use: customers can't open this link or send requests from it until your plan includes \"Put it on your website\".",
+    "Su diseñador es solo para su propio uso: sus clientes no pueden abrir este enlace ni enviar solicitudes desde él hasta que su plan incluya \"Póngalo en su sitio web\".",
+    "O seu projetista é só para o seu próprio uso: os clientes não podem abrir este link nem enviar pedidos por ele até o seu plano incluir \"Coloque no seu site\"."
+  ],
+  "designer.websiteLocked.cta": ["See your plan", "Ver su plan", "Ver seu plano"],
   "designer.project.newTitle": ["New project", "Nuevo proyecto", "Novo projeto"],
   "designer.project.newText": [
     "Who and where is this job for? Everything is optional, and you can change it later on the project's page.",

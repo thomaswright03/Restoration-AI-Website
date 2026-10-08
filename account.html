@@ -390,24 +390,43 @@
           <div class="app-card" id="share-card" hidden>
             <h2>Put it on your website</h2>
             <p class="form-note" id="share-inactive" hidden>Your designer goes live once your plan is active.</p>
-            <div class="form-group">
-              <label for="share-lang">Language</label>
-              <select id="share-lang">
-                <option value="">English</option>
-                <option value="es/">Español</option>
-                <option value="pt/">Português</option>
-              </select>
-            </div>
-            <p>Your link: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
-            <div class="form-group">
-              <label for="embed-code">Code for your website</label>
-              <textarea id="embed-code" readonly rows="4"></textarea>
-              <p class="form-note">
-                Paste it where the designer should appear, in an HTML or embed block of your website builder.
+            <div id="share-locked" hidden>
+              <p>
+                Your designer link and the code for your website come with the "Put it on your website" add-on ($9.99 a
+                month; included in Max). Until then, your designer is for your own use: open it from My projects.
               </p>
+              <div class="app-actions">
+                <button type="button" class="btn btn-primary" id="share-add-website" hidden>
+                  Add it: $9.99 a month
+                </button>
+              </div>
+              <p class="form-note" id="share-locked-help" data-show-if="company.supportEmail" hidden>
+                Questions, or a plan set up for you by hand? Email
+                <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a> and we'll
+                add it.
+              </p>
+              <p class="form-status" id="share-message" role="status" aria-live="polite" hidden></p>
             </div>
-            <button type="button" class="btn btn-outline-dark" id="copy-embed">Copy code</button>
-            <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
+            <div id="share-open" hidden>
+              <div class="form-group">
+                <label for="share-lang">Language</label>
+                <select id="share-lang">
+                  <option value="">English</option>
+                  <option value="es/">Español</option>
+                  <option value="pt/">Português</option>
+                </select>
+              </div>
+              <p>Your link: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
+              <div class="form-group">
+                <label for="embed-code">Code for your website</label>
+                <textarea id="embed-code" readonly rows="4"></textarea>
+                <p class="form-note">
+                  Paste it where the designer should appear, in an HTML or embed block of your website builder.
+                </p>
+              </div>
+              <button type="button" class="btn btn-outline-dark" id="copy-embed">Copy code</button>
+              <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
+            </div>
           </div>
 
           <div class="app-card" id="leads-card" hidden>
@@ -416,6 +435,28 @@
               No requests yet. They appear here when a customer sends their design.
             </p>
             <ol class="lead-list" id="leads-list"></ol>
+          </div>
+
+          <div class="app-card app-card-danger" id="delete-card">
+            <h2>Delete account</h2>
+            <p class="form-note">
+              Closes your account for good: your business profile, prices, saved projects (with their clients' details),
+              homeowner requests and sign-in are deleted, and any subscription is cancelled. Billing records stay with
+              Stripe as the law requires.
+            </p>
+            <button type="button" class="btn btn-outline-dark" id="delete-start">Delete my account…</button>
+            <form id="delete-form" novalidate hidden>
+              <p>This can't be undone. Download anything you want to keep first.</p>
+              <div class="form-group">
+                <label for="delete-confirm">Type your sign-in email to confirm</label>
+                <input type="email" id="delete-confirm" autocomplete="off" />
+              </div>
+              <div class="app-actions">
+                <button type="submit" class="btn btn-danger" id="delete-submit">Delete everything</button>
+                <button type="button" class="btn btn-outline-dark" id="delete-cancel">Keep my account</button>
+              </div>
+              <p class="form-status" id="delete-status" role="status" aria-live="polite" hidden></p>
+            </form>
           </div>
         </div>
       </section>

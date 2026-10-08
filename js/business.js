@@ -9,8 +9,11 @@
 //   - ?b=<slug>: /api/business?b=<slug> is loaded as a script right here, so it
 //     runs before the next <script> on the page. It calls
 //     DesignerBusiness.load({...}) with the business's public profile, or
-//     DesignerBusiness.load(null, reason) when the slug is unknown or the
-//     subscription isn't active, and the studio is replaced by a short notice.
+//     DesignerBusiness.load(null, reason) when the slug is unknown, the
+//     subscription isn't active or the plan lacks "Put it on your website",
+//     and the studio is replaced by a short notice. The business's own
+//     signed-in owner still gets their designer in those last two cases
+//     (preview / websiteLocked), with a banner saying customers can't.
 //
 // Must load after js/bathroom-pricing.js (so a business's own labor prices can
 // replace the defaults) and before js/script.js and js/studio.js.
@@ -58,10 +61,10 @@
 
   biz.load = function (data, reason) {
     if (!data) {
-      // Not live yet: ask again with the sign-in, in case this is the owner
-      // previewing their own designer. Only then, so a sign-in never rides
-      // along in the address of every business's designer someone opens.
-      if (reason === "inactive" && !profileScript.withToken) {
+      // Not open to customers: ask again with the sign-in, in case this is
+      // the owner using their own designer. Only then, so a sign-in never
+      // rides along in the address of every business's designer someone opens.
+      if ((reason === "inactive" || reason === "no-website") && !profileScript.withToken) {
         var token = signInToken();
         if (token) return profileScript(token);
       }
@@ -78,8 +81,10 @@
     biz.leadEndpoint = "/api/leads";
     biz.demo = false;
     biz.unavailable = "";
-    // The owner looking at their own designer before it's live.
+    // The owner looking at their own designer before it's live, or on a plan
+    // without "Put it on your website" (then it's for their own use only).
     biz.preview = data.preview === true;
+    biz.websiteLocked = data.websiteLocked === true;
     applyPrices(data.prices);
   };
 
@@ -150,6 +155,9 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-preview]"), function (el) {
       el.hidden = !biz.preview;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-biz-website-locked]"), function (el) {
+      el.hidden = !biz.websiteLocked;
     });
     if (biz.unavailable) {
       Array.prototype.forEach.call(document.querySelectorAll("[data-biz-live]"), function (el) {

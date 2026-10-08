@@ -48,6 +48,34 @@ test("a business that isn't live is asked again with the sign-in, and its owner 
   expect(await page.evaluate(() => window.DesignerBusiness.preview)).toBe(true);
 });
 
+// A plan without "Put it on your website": its owner gets the designer for
+// their own use, with the banner; anyone else the unavailable notice.
+function noWebsite(page) {
+  return page.route("**/api/business?**", (route) => {
+    const body = route.request().url().includes("t=tok-123")
+      ? 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{},"websiteLocked":true});'
+      : 'window.DesignerBusiness.load(null, "no-website");';
+    return route.fulfill({ contentType: "application/javascript", body });
+  });
+}
+
+test("a plan without the website add-on: the owner gets their designer, with the locked banner", async ({ page }) => {
+  await signedIn(page);
+  await noWebsite(page);
+  await page.goto("/designer.html?b=smith-bath");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator("[data-biz-website-locked]")).toBeVisible();
+  await expect(page.locator("[data-biz-website-locked]")).toContainText("Put it on your website");
+  await expect(page.locator("[data-biz-preview]")).toBeHidden();
+});
+
+test("a plan without the website add-on: visitors get the unavailable notice", async ({ page }) => {
+  await noWebsite(page);
+  await page.goto("/designer.html?b=smith-bath");
+  await expect(page.locator("#designer-unavailable")).toBeVisible();
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+});
+
 test("signed out, a business that isn't live shows the unavailable notice after one request", async ({ page }) => {
   const asked = [];
   await page.route("**/api/business?**", (route) => {

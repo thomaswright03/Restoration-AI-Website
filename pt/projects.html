@@ -188,9 +188,10 @@
               <label for="projects-search">Buscar por nome, cliente ou endereço</label>
               <input type="search" id="projects-search" autocomplete="off" />
             </div>
-            <p class="form-note" id="projects-empty" hidden>
-              Ainda não há projetos. Abra o projetista e use Salvar projeto no topo para guardar um projeto aqui.
-            </p>
+            <div class="app-empty" id="projects-empty" hidden>
+              <p>Ainda não há projetos. Abra o projetista e use Salvar projeto no topo para guardar um projeto aqui.</p>
+              <a class="btn btn-primary" href="../pt/designer.html">Abrir o projetista</a>
+            </div>
             <p class="form-note" id="projects-no-match" hidden>Nenhum projeto corresponde a essa busca.</p>
             <ul class="project-list" id="projects-list"></ul>
           </div>

@@ -63,6 +63,7 @@
     "Aún no hay lista de materiales. Abra el proyecto en el diseñador y haga clic en Guardar cambios para crearla.",
     "Ainda não há lista de materiais. Abra o projeto no projetista e clique em Salvar alterações para criá-la."
   ],
+  "projects.list.emptyAction": ["Open the designer", "Abrir el diseñador", "Abrir o projetista"],
   "projects.list.empty": [
     "No projects yet. Open the designer and use Save project at the top to keep a design here.",
     "Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.",

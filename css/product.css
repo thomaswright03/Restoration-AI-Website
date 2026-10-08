@@ -42,7 +42,7 @@ body:has(main.solid-header) .site-header {
   height: 22px;
   margin-right: 10px;
   vertical-align: -4px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: url("../favicon.svg") center / contain no-repeat;
 }
 
@@ -65,7 +65,7 @@ body:has(main.solid-header) .site-header {
 }
 
 .nav-links a.nav-cta:hover {
-  background: #4b6bff;
+  background: color-mix(in srgb, var(--color-accent-bright) 85%, #fff);
   color: #fff;
 }
 
@@ -219,7 +219,7 @@ body:has(main.solid-header) .site-header {
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius);
   background: var(--color-surface-alt);
   font-size: var(--fs-sm);
 }
@@ -490,6 +490,61 @@ html[data-embed="1"] main.solid-header {
 .app-loading {
   color: var(--color-muted);
   margin: 0;
+}
+
+/* Loading: a small turning ring before the text, still with reduced motion. */
+.app-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.app-loading::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  border: 2px solid var(--color-line-strong);
+  border-top-color: var(--color-accent-bright);
+  border-radius: 50%;
+  animation: app-spin 0.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loading::before {
+    animation: none;
+  }
+}
+
+@keyframes app-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* No projects yet: a blueprint sheet with the way to start one. */
+.app-empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-7) var(--space-5);
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius);
+  background-color: var(--color-surface-alt);
+  background-image:
+    linear-gradient(rgba(51, 85, 240, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(51, 85, 240, 0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  text-align: center;
+}
+
+.app-empty[hidden] {
+  display: none;
+}
+
+.app-empty p {
+  max-width: 46ch;
+  margin: 0;
+  color: var(--color-ink-soft);
 }
 
 .app-card,
@@ -788,9 +843,9 @@ html[data-embed="1"] main.solid-header {
 /* A business owner previewing their own designer before their plan is live. */
 .owner-preview {
   padding: var(--space-2) var(--gutter);
-  background: #fff7e0;
-  border-bottom: 1px solid #e9c46a;
-  color: #4a3500;
+  background: var(--color-notice-bg);
+  border-bottom: 1px solid var(--color-notice-line);
+  color: var(--color-notice-ink);
   font-size: var(--fs-sm);
 }
 
@@ -803,7 +858,7 @@ html[data-embed="1"] main.solid-header {
 }
 
 .owner-preview a {
-  color: #4a3500;
+  color: var(--color-notice-ink);
   font-weight: 600;
 }
 

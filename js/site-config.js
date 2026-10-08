@@ -33,6 +33,9 @@
     owner: { legalName: "", contactAddress: "" },
     privacy: { responsePeriod: "" },
     company: { supportEmail: "" },
+    // Riley's default voice per language, by the name the browser gives it
+    // (her voice list shows the names). Blank: she picks one herself.
+    riley: { voice: { en: "", es: "", pt: "" } },
   };
 
   var T = window.I18n.t;
@@ -60,6 +63,7 @@
     var owner = raw.owner || {};
     var privacy = raw.privacy || {};
     var company = raw.company || {};
+    var rv = (raw.riley && raw.riley.voice) || {};
     var endpoint = clean(lf.endpoint);
     var pricingEndpoint = clean(pp.endpoint);
     // The business using the designer (js/business.js) decides where its
@@ -87,6 +91,7 @@
       },
       owner: { legalName: clean(owner.legalName), contactAddress: clean(owner.contactAddress) },
       privacy: { responsePeriod: localPeriod(clean(privacy.responsePeriod)) },
+      riley: { voice: { en: clean(rv.en), es: clean(rv.es), pt: clean(rv.pt) } },
       // The product's own support address (footer). Blank = left out.
       company: {
         supportEmail: /^[^\s@]+@[^\s@]+$/.test(clean(company.supportEmail)) ? clean(company.supportEmail) : "",

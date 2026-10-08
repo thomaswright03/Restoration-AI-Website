@@ -457,11 +457,58 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Riley's voice list plays each voice on this device and remembers the pick", async ({ page }) => {
+    // A stand-in for the browser's speech, with two English voices and one Spanish.
+    await page.addInitScript(() => {
+      const voices = [
+        { name: "Samantha", lang: "en-US", localService: true },
+        { name: "Daniel", lang: "en-GB", localService: true },
+        { name: "Mónica", lang: "es-ES", localService: true },
+      ];
+      window.__spoken = [];
+      const synth = {
+        getVoices: () => voices,
+        speak: (u) => window.__spoken.push({ text: u.text, voice: u.voice && u.voice.name }),
+        cancel: () => {},
+        addEventListener: () => {},
+      };
+      Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true });
+      window.SpeechSynthesisUtterance = function (text) {
+        this.text = text;
+      };
+    });
+    const errors = await openStudio(page);
+    const riley = page.locator(".riley");
+    await riley.getByRole("button", { name: "Choose Riley's voice" }).click();
+    const list = riley.locator(".riley-voice");
+    await expect(list).toHaveCount(3);
+    await expect(list.nth(0)).toContainText("Automatic (Samantha)");
+    await expect(list.nth(0)).toHaveClass(/is-on/);
+
+    await list.nth(2).getByRole("button", { name: "Play Daniel" }).click();
+    let spoken = await page.evaluate(() => window.__spoken.at(-1));
+    expect(spoken).toEqual({ text: expect.stringContaining("This is how I'll sound"), voice: "Daniel" });
+
+    await list.nth(2).locator(".riley-voice-pick").click();
+    await expect(list.nth(2)).toHaveClass(/is-on/);
+    expect(await page.evaluate(() => localStorage.getItem("rd3d_riley_voice_en"))).toBe("Daniel");
+
+    // She keeps it after a reload, and speaks with it.
+    await page.goto("designer.html?voices");
+    await expect(riley.locator(".riley-voice.is-on")).toContainText("Daniel");
+    await riley.getByRole("button", { name: "Done" }).click();
+    await expect(riley.locator(".riley-voices")).toBeHidden();
+    await answerAll(page);
+    spoken = await page.evaluate(() => window.__spoken.at(-1));
+    expect(spoken.voice).toBe("Daniel");
+    expect(errors).toEqual([]);
+  });
+
   test("Riley talks through each step and offers a fix when something won't work", async ({ page }) => {
     const errors = await openStudio(page);
     const riley = page.locator(".riley");
     await expect(riley).toBeVisible();
-    await expect(riley.locator(".riley-name")).toHaveText("Riley");
+    await expect(riley.locator(".riley-body > .riley-name")).toHaveText("Riley");
     await expect(riley.locator(".riley-text")).toContainText("Hi, I'm Riley");
     await expect(riley).toHaveAttribute("data-tone", "ok");
     await answerAll(page);

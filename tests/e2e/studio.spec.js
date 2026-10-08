@@ -1,6 +1,8 @@
 "use strict";
 
+const path = require("path");
 const { test, expect } = require("@playwright/test");
+const AxeBuilder = require("@axe-core/playwright").default;
 const {
   useConfig,
   openStudio,
@@ -411,6 +413,85 @@ test.describe("design studio", () => {
     await iso.click();
     await expect(iso).toHaveAttribute("aria-pressed", "false");
     await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).not.toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test("Show examples opens a product's listing photos as a slideshow", async ({ page }) => {
+    // The photos come from Home Depot's image server: stand in a local
+    // picture so the test doesn't depend on it.
+    await page.route("https://images.thdstatic.com/**", (route) =>
+      route.fulfill({ path: path.join(__dirname, "../../apple-touch-icon.png"), contentType: "image/png" }),
+    );
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await step(page, "products").click();
+    const button = page.locator(".studio-examples-btn").first();
+    await expect(button).toHaveText("Show examples");
+    const mmns = await page.evaluate(() => {
+      const item = window.BathroomRoom3D.getProductPricingItems().filter((it) => it.mmns.length)[0];
+      return item.mmns;
+    });
+    await button.click();
+    const dialog = page.locator("#studio-photos-dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator(".studio-photos-model")).toHaveText(mmns.join(" + "));
+    const total = await page.evaluate(() => document.querySelectorAll(".studio-photos-thumb").length);
+    expect(total).toBeGreaterThan(1);
+    await expect(dialog.locator(".studio-photos-stage img")).toHaveAttribute("src", /images\.thdstatic\.com/);
+    await expect(dialog.locator(".studio-photos-count")).toHaveText(`1 of ${total}`);
+    await byKey(page, "photo-next").click();
+    await expect(dialog.locator(".studio-photos-count")).toHaveText(`2 of ${total}`);
+    await page.keyboard.press("ArrowLeft");
+    await expect(dialog.locator(".studio-photos-count")).toHaveText(`1 of ${total}`);
+    await page.keyboard.press("ArrowLeft");
+    await expect(dialog.locator(".studio-photos-count")).toHaveText(`${total} of ${total}`);
+    await dialog.locator(".studio-photos-thumb").nth(1).click();
+    await expect(dialog.locator(".studio-photos-count")).toHaveText(`2 of ${total}`);
+    await expect(dialog.locator(".studio-photos-foot a")).toHaveAttribute("href", /homedepot\.com/);
+    const axe = await new AxeBuilder({ page })
+      .include("#studio-photos-dialog")
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(axe.violations.map((v) => v.id)).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test("a product with no in-home photos says so, and one with no photos links to Home Depot", async ({ page }) => {
+    await page.route("https://images.thdstatic.com/**", (route) =>
+      route.fulfill({ path: path.join(__dirname, "../../apple-touch-icon.png"), contentType: "image/png" }),
+    );
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await step(page, "products").click();
+    await page.locator(".studio-examples-btn").first().click();
+    const dialog = page.locator("#studio-photos-dialog");
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press("Escape");
+    // Sterling 402078-0's listing has only product photos; a model with no
+    // matching listing has none.
+    await page.evaluate(() => {
+      const p = window.ProductPhotos.products;
+      p["TEST-ONLY"] = { listing: p["402078-0"].listing, home: [], other: p["402078-0"].other };
+    });
+    expect(await page.evaluate(() => window.ProductPhotos.products["402078-0"].home.length)).toBe(0);
+    await page.evaluate(() => {
+      const item = window.BathroomRoom3D.getProductPricingItems().filter((it) => it.mmns.length)[0];
+      window.__examplesItem = Object.assign({}, item, { mmns: ["TEST-ONLY"] });
+    });
+    await page.evaluate(() => window.RoomStudio.showExamples(window.__examplesItem));
+    await expect(dialog.locator(".studio-photos-note")).toContainText("no photos of this one in a home");
+    await page.keyboard.press("Escape");
+    await page.evaluate(() =>
+      window.RoomStudio.showExamples(Object.assign({}, window.__examplesItem, { mmns: ["K-NOPE-0"] })),
+    );
+    await expect(dialog.locator(".studio-photos-note")).toContainText("don't have photos of this model");
+    await expect(dialog.locator(".studio-photos-stage")).toHaveCount(0);
+    await expect(dialog.locator(".studio-photos-foot a")).toHaveAttribute(
+      "href",
+      "https://www.homedepot.com/s/K-NOPE-0",
+    );
     expect(errors).toEqual([]);
   });
 

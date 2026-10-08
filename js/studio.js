@@ -96,6 +96,8 @@
   // Icons (24 x 24, drawn in the text color)
   // ---------------------------------------------------------------------
   var ICONS = {
+    photo:
+      '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.6"/><path d="m21 16-5-5-9 8"/>',
     toilet:
       '<path d="M7 4h7v5H7z"/><path d="M6 9h9c1 0 1.6.8 1.4 1.8l-1 5.2A3 3 0 0 1 12.5 18.5h-1A3 3 0 0 1 8.6 16l-1-5.2C7.4 9.8 8 9 9 9"/><path d="M8.5 18.5 8 21m7-2.5.5 2.5"/>',
     vanity:
@@ -3402,9 +3404,31 @@
         select.addEventListener("focus", function () {
           focusGroup(group.id);
         });
+        var item = items.filter(function (it) {
+          return it.slotId === slot.id && it.mmns.length;
+        })[0];
         card.appendChild(
           missingMark(
-            h("div", { class: "studio-field" }, [h("label", { for: id, text: slot.label }), select]),
+            h("div", { class: "studio-field" }, [
+              h("label", { for: id, text: slot.label }),
+              select,
+              item
+                ? h(
+                    "button",
+                    {
+                      type: "button",
+                      class: "studio-link-btn studio-examples-btn",
+                      "data-key": "examples-" + slot.id,
+                      "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
+                      icon: "photo",
+                      onclick: function () {
+                        openPhotos(item);
+                      },
+                    },
+                    [T("studio.photos.show")],
+                  )
+                : null,
+            ]),
             !picked,
           ),
         );
@@ -3436,6 +3460,230 @@
         text: T(productPricingOn() ? "studio.products.priceLive" : "studio.products.priceNote"),
       }),
     );
+  }
+
+  // ---------- Show examples: a product's photos from its listing ----------
+  // js/product-photos.js holds, per model number, the Home Depot listing
+  // and its photos (tools/photos/), split into the ones showing the product
+  // in a home and the rest. The pictures load from Home Depot's image server.
+  var PHOTO_CDN = "https://images.thdstatic.com/productImages/";
+  // Beside this file; loaded the first time someone asks for photos.
+  var PHOTOS_SRC = ((document.currentScript && document.currentScript.src) || "js/studio.js").replace(
+    /studio\.js(\?.*)?$/,
+    "product-photos.js",
+  );
+  var photosLoading = null;
+  var photos = { list: [], at: 0, item: null };
+
+  function loadPhotoData() {
+    if (window.ProductPhotos) return Promise.resolve();
+    if (!photosLoading) {
+      photosLoading = new Promise(function (resolve) {
+        var script = document.createElement("script");
+        script.src = PHOTOS_SRC;
+        script.onload = resolve;
+        // Without the list the dialog still opens, with the link to the listing.
+        script.onerror = function () {
+          photosLoading = null;
+          resolve();
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return photosLoading;
+  }
+
+  function photoUrl(path, size) {
+    return PHOTO_CDN + path + "_" + size + ".jpg";
+  }
+
+  // What to show for a product: its in-home photos, else the listing's
+  // product photos, from the first of its model numbers that has any.
+  function photosFor(mmns) {
+    var data = (window.ProductPhotos && window.ProductPhotos.products) || {};
+    var listing = null;
+    for (var i = 0; i < mmns.length; i++) {
+      var p = data[mmns[i]];
+      if (!p) continue;
+      listing = listing || p.listing;
+      if (p.home.length) return { list: p.home.slice(), home: true, listing: p.listing };
+    }
+    for (var j = 0; j < mmns.length; j++) {
+      var q = data[mmns[j]];
+      if (q && q.other.length) return { list: q.other.slice(), home: false, listing: q.listing };
+    }
+    return { list: [], home: false, listing: listing };
+  }
+
+  function openPhotos(item) {
+    loadPhotoData().then(function () {
+      showPhotos(item);
+    });
+  }
+
+  function showPhotos(item) {
+    var found = photosFor(item.mmns);
+    photos = {
+      list: found.list,
+      home: found.home,
+      at: 0,
+      item: item,
+      listing: found.listing || "https://www.homedepot.com/s/" + encodeURIComponent(item.mmns[0]),
+    };
+    var dialog = photosDialog();
+    renderPhotos();
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    var first =
+      dialog.querySelector(".studio-photos-nav button:not([disabled])") || dialog.querySelector("[data-close]");
+    first.focus();
+  }
+
+  function photosDialog() {
+    if (els.photosDialog) return els.photosDialog;
+    var dialog = h("dialog", {
+      class: "studio-dialog studio-photos",
+      id: "studio-photos-dialog",
+      "aria-labelledby": "studio-photos-title",
+    });
+    dialog.addEventListener("click", function (e) {
+      if (e.target === dialog || e.target.closest("[data-close]")) dialog.close();
+    });
+    dialog.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        if (e.target.tagName === "A") return;
+        e.preventDefault();
+        stepPhoto(e.key === "ArrowLeft" ? -1 : 1);
+      }
+    });
+    document.body.appendChild(dialog);
+    els.photosDialog = dialog;
+    return dialog;
+  }
+
+  function stepPhoto(by) {
+    var n = photos.list.length;
+    if (n < 2) return;
+    photos.at = (photos.at + by + n) % n;
+    renderPhotos(true);
+  }
+
+  // A photo Home Depot no longer serves drops out of the slideshow.
+  function dropPhoto(path) {
+    var i = photos.list.indexOf(path);
+    if (i < 0) return;
+    photos.list.splice(i, 1);
+    if (photos.at >= photos.list.length) photos.at = Math.max(0, photos.list.length - 1);
+    renderPhotos();
+  }
+
+  function renderPhotos(keepFocus) {
+    var dialog = els.photosDialog;
+    var focused = keepFocus && document.activeElement && document.activeElement.getAttribute("data-key");
+    var item = photos.item;
+    var n = photos.list.length;
+    var kids = [
+      h("div", { class: "studio-photos-head" }, [
+        h("div", {}, [
+          h("h2", { id: "studio-photos-title", text: item.productLabel }),
+          h("p", { class: "studio-photos-model", text: item.mmns.join(" + ") }),
+        ]),
+        h("button", {
+          type: "button",
+          class: "studio-icon-btn",
+          "data-close": true,
+          "aria-label": T("studio.photos.close"),
+          icon: "close",
+        }),
+      ]),
+    ];
+    if (!n) {
+      kids.push(h("p", { class: "studio-photos-note", text: T("studio.photos.none") }));
+    } else {
+      var path = photos.list[photos.at];
+      var alt = T("studio.photos.alt", { product: item.productLabel, n: photos.at + 1, total: n });
+      kids.push(
+        h("figure", { class: "studio-photos-stage" }, [
+          h("img", {
+            src: photoUrl(path, 1000),
+            alt: alt,
+            referrerpolicy: "no-referrer",
+            onerror: function () {
+              dropPhoto(path);
+            },
+          }),
+          n > 1
+            ? h("div", { class: "studio-photos-nav" }, [
+                h("button", {
+                  type: "button",
+                  class: "studio-photos-arrow",
+                  "data-key": "photo-prev",
+                  "aria-label": T("studio.photos.prev"),
+                  icon: "left",
+                  onclick: function () {
+                    stepPhoto(-1);
+                  },
+                }),
+                h("button", {
+                  type: "button",
+                  class: "studio-photos-arrow",
+                  "data-key": "photo-next",
+                  "aria-label": T("studio.photos.next"),
+                  icon: "right",
+                  onclick: function () {
+                    stepPhoto(1);
+                  },
+                }),
+              ])
+            : null,
+          h("figcaption", {
+            class: "studio-photos-count",
+            "aria-live": "polite",
+            text: T("studio.photos.count", { n: photos.at + 1, total: n }),
+          }),
+        ]),
+      );
+      if (n > 1) {
+        var strip = h("div", { class: "studio-photos-strip" });
+        photos.list.forEach(function (p, i) {
+          strip.appendChild(
+            h(
+              "button",
+              {
+                type: "button",
+                class: "studio-photos-thumb",
+                "data-key": "photo-" + i,
+                "aria-label": T("studio.photos.goTo", { n: i + 1 }),
+                "aria-current": i === photos.at ? "true" : null,
+                onclick: function () {
+                  photos.at = i;
+                  renderPhotos(true);
+                },
+              },
+              [h("img", { src: photoUrl(p, 145), alt: "", loading: "lazy", referrerpolicy: "no-referrer" })],
+            ),
+          );
+        });
+        kids.push(strip);
+      }
+      if (!photos.home) kids.push(h("p", { class: "studio-photos-note", text: T("studio.photos.noHome") }));
+    }
+    kids.push(
+      h("div", { class: "studio-photos-foot" }, [
+        h("span", { class: "studio-photos-credit", text: T("studio.photos.credit") }),
+        h("a", { href: photos.listing, target: "_blank", rel: "noopener noreferrer", class: "studio-ext-link" }, [
+          T(n ? "studio.photos.listing" : "studio.est.findAt"),
+        ]),
+      ]),
+    );
+    clear(dialog);
+    append(dialog, kids);
+    if (focused) {
+      var again = dialog.querySelector('[data-key="' + focused + '"]');
+      if (again) again.focus();
+    }
+    var current = dialog.querySelector('.studio-photos-thumb[aria-current="true"]');
+    if (current && current.scrollIntoView) current.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 
   var focusedGroup = null;
@@ -4795,6 +5043,8 @@
     design: function () {
       return design;
     },
+    // Opens the photos for a product item ({ productLabel, mmns }).
+    showExamples: openPhotos,
   };
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

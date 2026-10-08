@@ -1164,6 +1164,38 @@
       "Adicione um vaso, pia, gabinete, banheira ou box para escolher os produtos.",
     ],
     "studio.products.show": ["Show in 3D", "Ver en 3D", "Ver em 3D"],
+    "studio.photos.show": ["Show examples", "Ver ejemplos", "Ver exemplos"],
+    "studio.photos.showFor": [
+      "Show examples of {product} in real homes",
+      "Ver ejemplos de {product} en casas reales",
+      "Ver exemplos de {product} em casas reais",
+    ],
+    "studio.photos.alt": [
+      "{product}, photo {n} of {total}",
+      "{product}, foto {n} de {total}",
+      "{product}, foto {n} de {total}",
+    ],
+    "studio.photos.count": ["{n} of {total}", "{n} de {total}", "{n} de {total}"],
+    "studio.photos.prev": ["Previous photo", "Foto anterior", "Foto anterior"],
+    "studio.photos.next": ["Next photo", "Foto siguiente", "Próxima foto"],
+    "studio.photos.goTo": ["Show photo {n}", "Ver la foto {n}", "Ver a foto {n}"],
+    "studio.photos.close": ["Close", "Cerrar", "Fechar"],
+    "studio.photos.credit": [
+      "Photos from the product's Home Depot listing.",
+      "Fotos del anuncio del producto en Home Depot.",
+      "Fotos do anúncio do produto na Home Depot.",
+    ],
+    "studio.photos.listing": ["See the listing", "Ver el anuncio", "Ver o anúncio"],
+    "studio.photos.noHome": [
+      "The listing has no photos of this one in a home, so these are its product photos.",
+      "El anuncio no tiene fotos de este producto en una casa, así que estas son sus fotos de producto.",
+      "O anúncio não tem fotos deste produto em uma casa, então estas são as fotos do produto.",
+    ],
+    "studio.photos.none": [
+      "We don't have photos of this model yet. Its listing may have some.",
+      "Todavía no tenemos fotos de este modelo. Puede que su anuncio tenga algunas.",
+      "Ainda não temos fotos deste modelo. O anúncio dele pode ter algumas.",
+    ],
     "studio.products.useKohler": [
       "Use real Kohler and Sterling products",
       "Usar productos Kohler y Sterling reales",

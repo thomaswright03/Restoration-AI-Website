@@ -235,6 +235,21 @@
   }
 
   // "the vanity" (es "el mueble de lavabo"), for sentences about it.
+  // On a phone the room is too small to share with Riley's card, so she
+  // sits just under it, above the step, instead of over the 3D view.
+  var PHONE = window.matchMedia ? window.matchMedia("(max-width: 640px)") : null;
+  function placeRiley() {
+    var stage = els.body.querySelector(".studio-stage");
+    var under = Boolean(PHONE && PHONE.matches);
+    if (under && els.riley.parentNode !== els.body) els.body.insertBefore(els.riley, els.panel);
+    if (!under && els.riley.parentNode !== stage) stage.insertBefore(els.riley, els.selChip);
+    els.riley.classList.toggle("is-under", under);
+  }
+  if (PHONE && PHONE.addEventListener)
+    PHONE.addEventListener("change", function () {
+      if (els.body) placeRiley();
+    });
+
   // "the vanity needs..." starts a sentence: "The vanity needs...".
   function sentence(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
@@ -4964,6 +4979,7 @@
     els.requestHome = els.request.parentNode;
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
+    placeRiley();
     els.planSvg = s("svg", { class: "plan-svg" });
     els.planWrap.appendChild(els.planSvg);
     els.miniSvg = s("svg", { class: "plan-svg is-mini" });

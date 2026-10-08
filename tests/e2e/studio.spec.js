@@ -768,4 +768,15 @@ test.describe("design studio on a phone", () => {
     expect(heading.y + heading.height).toBeLessThan(844);
     expect(errors).toEqual([]);
   });
+
+  test("Riley's card sits under the room, not over the 3D view", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    const riley = page.locator(".riley");
+    await expect(riley).toBeVisible();
+    const stage = await page.locator(".studio-stage").boundingBox();
+    const card = await riley.boundingBox();
+    expect(card.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
+    expect(errors).toEqual([]);
+  });
 });

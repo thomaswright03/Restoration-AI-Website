@@ -35,7 +35,7 @@ The weakest spot left is the designer's performance score on a throttled phone. 
 
 | Feature                                                  | Files                                                                | Status                 | Notes                                                                                                                           |
 | -------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Landing page (pricing, FAQ)                              | pages/index.html, pages/strings/index.json                           | working                | Still shows the $79 / $790 placeholder prices (question 1)                                                                      |
+| Landing page (pricing, FAQ)                              | pages/index.html, pages/strings/index.json                           | working                | Shows the decided plans: Starter $49.99, Pro $99.99, Max $199.99, website add-on $9.99 (updated 2026-10-08)                     |
 | Live demo designer, 6 steps                              | designer.html, js/studio.js, js/room-plan.js, js/bathroom-room-3d.js | fixed                  | Header squeeze and estimate label overlap fixed                                                                                 |
 | Plumbing stack and drain runs                            | js/room-plan.js                                                      | working                | Unit-tested                                                                                                                     |
 | Electrical suggestions                                   | js/room-plan.js, js/studio.js                                        | working                |                                                                                                                                 |
@@ -88,7 +88,7 @@ The weakest spot left is the designer's performance score on a throttled phone. 
 
 ## 5. Questions for the owner
 
-1. **Prices on the site.** Your decided plans (Starter $49.99, Pro $99.99, Max $199.99, and "Put it on your website" +$9.99 on Starter/Pro) are not on the site; it still shows $79/mo, $790/yr and a 14-day trial. They were left off as you asked. Say go and they'll be added together with Stripe.
+1. **Prices on the site.** Done 2026-10-08: the decided plans (Starter $49.99, Pro $99.99, Max $199.99, and "Put it on your website" +$9.99 on Starter/Pro) are on the site. Stripe prices are still to be created.
 2. **Privacy policy.** It says "we don't store" a design and doesn't mention that subscribers save projects with their clients' names, phones, emails and addresses. Suggested addition to "What we collect from businesses": "Projects you save, including the design and the client details you enter (name, phone, email, address, job notes), are stored in your account until you delete them." This needs your OK, and ideally a lawyer's.
 3. **Live sign-up test.** Turning off "Confirm email" in Supabase (or adding Resend SMTP) would let a throwaway sign-up be tested end to end on the live site without real email going out.
 4. **Support email.** Still empty, so the privacy and terms pages have no contact line, even though they promise people can ask to see or delete their data.

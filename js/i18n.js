@@ -2246,6 +2246,7 @@
     "riley.name": ["Riley", "Riley", "Riley"],
     "riley.mute": ["Mute Riley", "Silenciar a Riley", "Silenciar a Riley"],
     "riley.unmute": ["Let Riley speak", "Dejar hablar a Riley", "Deixar a Riley falar"],
+    "riley.voiceOn": ["Riley's voice", "Voz de Riley", "Voz da Riley"],
     "riley.voices": ["Choose Riley's voice", "Elegir la voz de Riley", "Escolher a voz da Riley"],
     "riley.voicesHelp": [
       "These are the voices on this device. Tap one to hear it and use it. Other phones and computers have their own voices.",

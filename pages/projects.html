@@ -52,7 +52,10 @@
               <label for="projects-search">{{projects.search}}</label>
               <input type="search" id="projects-search" autocomplete="off" />
             </div>
-            <p class="form-note" id="projects-empty" hidden>{{projects.list.empty}}</p>
+            <div class="app-empty" id="projects-empty" hidden>
+              <p>{{projects.list.empty}}</p>
+              <a class="btn btn-primary" href="{{@root}}{{@dir}}designer.html">{{projects.list.emptyAction}}</a>
+            </div>
             <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
             <ul class="project-list" id="projects-list"></ul>
           </div>

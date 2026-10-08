@@ -193,9 +193,10 @@
               <label for="projects-search">Buscar por nombre, cliente o dirección</label>
               <input type="search" id="projects-search" autocomplete="off" />
             </div>
-            <p class="form-note" id="projects-empty" hidden>
-              Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.
-            </p>
+            <div class="app-empty" id="projects-empty" hidden>
+              <p>Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.</p>
+              <a class="btn btn-primary" href="../es/designer.html">Abrir el diseñador</a>
+            </div>
             <p class="form-note" id="projects-no-match" hidden>Ningún proyecto coincide con esa búsqueda.</p>
             <ul class="project-list" id="projects-list"></ul>
           </div>

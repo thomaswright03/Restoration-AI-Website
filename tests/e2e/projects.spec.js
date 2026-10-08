@@ -138,6 +138,7 @@ test("My projects on the free plan says saving needs a paid plan, in Spanish too
   await expect(page.locator("#projects-free")).toContainText("plan de pago");
   await expect(page.locator("#projects-usage")).toBeHidden();
   await expect(page.locator("#projects-empty")).toBeVisible();
+  await expect(page.locator("#projects-empty").getByRole("link", { name: "Abrir el diseñador" })).toBeVisible();
 });
 
 test("the designer saves a new project with the client's details, then saves changes", async ({ page }) => {

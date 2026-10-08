@@ -235,6 +235,11 @@
   }
 
   // "the vanity" (es "el mueble de lavabo"), for sentences about it.
+  // "the vanity needs..." starts a sentence: "The vanity needs...".
+  function sentence(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
   function theName(id, d) {
     if (id === "wall") return T("studio.the.wall");
     if (id === "ceiling") return T("studio.the.ceiling");
@@ -3110,7 +3115,7 @@
     );
 
     // What the rules say is still missing.
-    var gaps = Plan.electricalGaps(design);
+    var gaps = Plan.electricalGaps(design, sizes);
     if (gaps.length) {
       body.appendChild(
         section(T("studio.elec.missing"), [
@@ -3122,7 +3127,7 @@
                 h("span", { class: "studio-issue-icon", icon: "info" }),
                 h("span", {
                   class: "studio-issue-text",
-                  text: T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" }),
+                  text: sentence(T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" })),
                 }),
               ]);
             }),

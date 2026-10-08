@@ -406,7 +406,7 @@ test.describe("design studio", () => {
     // Removing it is noticed by the rules and can be undone.
     const first = await page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design())[0].id);
     await byKey(page, `pt-${first}-remove`).click();
-    await expect(page.locator(".studio-step.is-electrical")).toContainText("A basin needs a GFCI outlet");
+    await expect(page.locator(".studio-step.is-electrical")).toContainText("The vanity needs a GFCI outlet");
     await studioToast(page).getByRole("button", { name: "Undo" }).click();
     await expect(page.locator(".studio-item-btn")).toHaveCount(5);
     expect(errors).toEqual([]);

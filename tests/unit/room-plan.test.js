@@ -571,3 +571,29 @@ test("drain limits: toilet 10 ft, tub and shower 14 ft, basin 16 ft, and the fre
     assert.equal(P.drainRun(inside), Math.round((run - 3) * 100) / 100, type);
   }
 });
+
+test("electrical gaps are judged per basin and per doorway, by where the points actually are", () => {
+  const d = P.fromTemplate("full5x8", {});
+  assert.deepEqual(P.electricalGaps(d, {}), []);
+  const vanity = d.items.find((it) => it.type === "vanity");
+  const door = d.items.find((it) => it.type === "door");
+  // Move the basin's receptacle and light to the far side of the room.
+  const far = { N: "S", S: "N", E: "W", W: "E" }[vanity.wall];
+  const moved = Object.assign({}, d, {
+    electrical: d.electrical.map((p) =>
+      p.for === vanity.id && (p.kind === "outlet" || p.kind === "light") ? Object.assign({}, p, { wall: far }) : p,
+    ),
+  });
+  const codes = P.electricalGaps(moved, {}).map((g) => g.code + ":" + g.for);
+  assert.ok(codes.includes("noOutlet:" + vanity.id), codes.join());
+  assert.ok(codes.includes("noLightOver:" + vanity.id), codes.join());
+  // Suggesting fills exactly those gaps.
+  assert.deepEqual(P.electricalGaps(P.suggestElectrical(moved, {}).design, {}), []);
+  // A second doorway with no switch of its own is named.
+  const second = Object.assign({}, door, { id: "door2", wall: far, offset: 1.5 });
+  const twoDoors = Object.assign({}, d, { items: d.items.concat([second]) });
+  assert.deepEqual(
+    P.electricalGaps(twoDoors, {}).map((g) => g.code + ":" + g.for),
+    ["noSwitch:door2"],
+  );
+});

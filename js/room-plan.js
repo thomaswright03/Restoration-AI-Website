@@ -1428,9 +1428,35 @@
     return out;
   }
 
-  // Room-wide gaps in the electrical, as codes: noSwitch (a doorway with no
-  // switch beside it), noLight, noFan (there's a tub or shower), noOutlet.
-  function electricalGaps(design) {
+  // Does the basin / doorway have its point? Judged by where the points
+  // are, not what they were added for, so a point dragged away no longer
+  // counts.
+  var SWITCH_REACH = 2.5; // feet from a doorway to its switch
+  function pointNear(design, sizes, list, kind, body, reach) {
+    return list.some(function (p) {
+      if (p.kind !== kind) return false;
+      var pose = electricalPose(design, p, sizes);
+      return distToRect(pose.x, pose.z, body) <= reach + EPS;
+    });
+  }
+  function basinHasOutlet(design, sizes, list, basin) {
+    return pointNear(design, sizes, list, "outlet", geometry(basin, design.room, sizes).body, BASIN_REACH + 0.25);
+  }
+  function basinHasLight(design, sizes, list, basin) {
+    var half = geometry(basin, design.room, sizes).size.span / 2;
+    return list.some(function (p) {
+      return p.kind === "light" && p.wall === basin.wall && Math.abs(p.offset - basin.offset) <= half + 0.5;
+    });
+  }
+  function doorHasSwitch(design, sizes, list, door) {
+    return pointNear(design, sizes, list, "switch", geometry(door, design.room, sizes).body, SWITCH_REACH);
+  }
+
+  // Gaps in the electrical, as { code, for }: noOutlet (a basin with no
+  // receptacle within reach), noLightOver (a basin with no light over its
+  // mirror), noLight (no light at all), noSwitch (a doorway with no switch
+  // beside it), noFan (there's a tub or shower).
+  function electricalGaps(design, sizes) {
     var list = electricalOf(design);
     var out = [];
     var has = function (kind) {
@@ -1444,9 +1470,18 @@
     var wet = design.items.filter(function (it) {
       return it.type === "tub" || it.type === "shower";
     });
-    if (basins.length && !has("outlet")) out.push({ code: "noOutlet" });
+    basins.forEach(function (basin) {
+      if (!basinHasOutlet(design, sizes, list, basin)) out.push({ code: "noOutlet", for: basin.id });
+    });
     if (!has("light")) out.push({ code: "noLight" });
-    if (itemsOfType(design, "door").length && !has("switch")) out.push({ code: "noSwitch" });
+    else {
+      basins.forEach(function (basin) {
+        if (!basinHasLight(design, sizes, list, basin)) out.push({ code: "noLightOver", for: basin.id });
+      });
+    }
+    itemsOfType(design, "door").forEach(function (door) {
+      if (!doorHasSwitch(design, sizes, list, door)) out.push({ code: "noSwitch", for: door.id });
+    });
     if (wet.length && !has("fan")) out.push({ code: "noFan" });
     return out;
   }
@@ -1533,7 +1568,7 @@
     basins.forEach(function (basin) {
       var g = geometry(basin, room, sizes);
       var half = g.size.span / 2;
-      if (!have("outlet", basin.id)) {
+      if (!basinHasOutlet(design, sizes, list, basin)) {
         // Beside the basin: either side of it, or around a corner onto the
         // next wall, whichever free spot ends up nearest the basin itself.
         var hi = ELECTRICAL_KINDS.outlet.height;
@@ -1555,7 +1590,8 @@
         });
         if (best) add("outlet", best.wall, best.offset, hi, basin.id, IN);
       }
-      if (!have("light", basin.id)) add("light", basin.wall, basin.offset, lightHeight, basin.id, 1.5);
+      if (!basinHasLight(design, sizes, list, basin))
+        add("light", basin.wall, basin.offset, lightHeight, basin.id, 1.5);
     });
     if (!basins.length && !have("light")) {
       // No vanity: a light on the wall across from the first doorway.
@@ -1574,7 +1610,8 @@
       var side = span - (door.offset + half) >= door.offset - half ? 1 : -1;
       // About 7 in. clear of the casing, the way a switch sits by a door.
       var want = door.offset + side * (half + 0.6);
-      if (!have("switch", door.id)) add("switch", door.wall, want, ELECTRICAL_KINDS.switch.height, door.id);
+      if (!doorHasSwitch(design, sizes, list, door))
+        add("switch", door.wall, want, ELECTRICAL_KINDS.switch.height, door.id);
       if (i === 0 && wet.length && !have("switch", "fan")) {
         add("switch", door.wall, want + side * 0.45, ELECTRICAL_KINDS.switch.height, "fan");
       }

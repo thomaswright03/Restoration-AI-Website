@@ -1377,9 +1377,14 @@
     "studio.elec.beside": ["beside {what}", "al lado de {what}", "ao lado de {what}"],
     "studio.elec.forFan": ["for the exhaust fan", "para el extractor", "para o exaustor"],
     "studio.elec.gap.noOutlet": [
-      "A basin needs a GFCI outlet within 36 in. of it.",
-      "Un lavabo necesita un tomacorriente GFCI a menos de 36 pulg.",
-      "Uma pia precisa de uma tomada GFCI a menos de 36 pol.",
+      "{what} needs a GFCI outlet within 36 in. of it.",
+      "{what} necesita un tomacorriente GFCI a menos de 36 pulg.",
+      "{what} precisa de uma tomada GFCI a menos de 36 pol.",
+    ],
+    "studio.elec.gap.noLightOver": [
+      "{what} has no light over its mirror.",
+      "{what} no tiene luz sobre su espejo.",
+      "{what} não tem luz sobre o espelho.",
     ],
     "studio.elec.gap.noLight": [
       "There's no light in the room yet.",
@@ -1387,9 +1392,9 @@
       "Ainda não há nenhuma luz no banheiro.",
     ],
     "studio.elec.gap.noSwitch": [
-      "There's no switch beside the door.",
-      "No hay ningún interruptor al lado de la puerta.",
-      "Não há nenhum interruptor ao lado da porta.",
+      "{what} has no switch beside it.",
+      "{what} no tiene un interruptor al lado.",
+      "{what} não tem um interruptor ao lado.",
     ],
     "studio.elec.gap.noFan": [
       "A bathroom with a tub or shower needs an exhaust fan.",

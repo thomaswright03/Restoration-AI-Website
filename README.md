@@ -74,4 +74,7 @@ npm ci
 npm run check      # lint, formatting, pages in sync, unit tests
 npm run test:e2e   # browser tests (Playwright)
 npm run serve      # local server at http://localhost:8000, runs api/ like Vercel
+npm test           # all of the above in one go
 ```
+
+`vercel.json` sets the security headers (only `designer.html` may be framed by other sites, for the embed). `robots.txt` and `sitemap.xml` are built by `npm run pages`. The last full audit and what's still open: `AUDIT_REPORT.md`.

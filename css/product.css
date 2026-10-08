@@ -1138,6 +1138,21 @@ html[data-embed="1"] main.solid-header {
   }
 }
 
+/* Account: deleting the account, kept apart and in red */
+.app-card-danger {
+  border-color: var(--color-danger);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
 /* Account: the "Put it on your website" add-on next to the plan buttons */
 .check-row {
   display: flex;

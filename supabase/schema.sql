@@ -10,6 +10,10 @@
 --
 -- Row-level security lets a signed-in owner read and edit their own rows
 -- from the browser; everything else goes through the api/ functions.
+--
+-- Every table hangs off auth.users with "on delete cascade" (leads through
+-- businesses), so deleting the auth user (api/account.js, "Delete account")
+-- removes the business, its leads, the subscription row and all projects.
 
 create extension if not exists pgcrypto;
 
@@ -45,6 +49,10 @@ create table if not exists public.subscriptions (
 -- starter | pro | max: which plan the subscription is on (api/_plans.js).
 -- Filled by the Stripe webhook; can also be set by hand in Table Editor.
 alter table public.subscriptions add column if not exists plan text;
+-- "Put it on your website": the designer link and embed code for homeowners.
+-- True when the add-on is on the Stripe subscription (the webhook keeps it
+-- up to date); Max includes it whatever this says. Can be set by hand.
+alter table public.subscriptions add column if not exists website boolean not null default false;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),

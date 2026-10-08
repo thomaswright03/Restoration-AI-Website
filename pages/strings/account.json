@@ -199,6 +199,21 @@
     "Su diseñador se activa cuando su plan esté activo.",
     "O seu projetista entra no ar quando o seu plano estiver ativo."
   ],
+  "account.share.locked": [
+    "Your designer link and the code for your website come with the \"Put it on your website\" add-on ({{@priceWebsite}} a month; included in Max). Until then, your designer is for your own use: open it from My projects.",
+    "Su enlace del diseñador y el código para su sitio web vienen con el complemento \"Póngalo en su sitio web\" ({{@priceWebsite}} al mes; incluido en Max). Mientras tanto, su diseñador es solo para su propio uso: ábralo desde Mis proyectos.",
+    "O link do seu projetista e o código para o seu site vêm com o adicional \"Coloque no seu site\" ({{@priceWebsite}} por mês; incluído no Max). Até lá, o seu projetista é só para o seu próprio uso: abra-o em Meus projetos."
+  ],
+  "account.share.addWebsite": [
+    "Add it: {{@priceWebsite}} a month",
+    "Agregarlo: {{@priceWebsite}} al mes",
+    "Adicionar: {{@priceWebsite}} por mês"
+  ],
+  "account.share.lockedHelp": [
+    "Questions, or a plan set up for you by hand? Email <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> and we'll add it.",
+    "¿Preguntas, o un plan que le configuramos a mano? Escriba a <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> y lo agregamos.",
+    "Dúvidas, ou um plano configurado à mão para você? Escreva para <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> e nós adicionamos."
+  ],
   "account.share.lang": ["Language", "Idioma", "Idioma"],
   "account.share.link": ["Your link:", "Su enlace:", "Seu link:"],
   "account.share.embed": ["Code for your website", "Código para su sitio web", "Código para o seu site"],
@@ -215,5 +230,24 @@
     "Ainda não há pedidos. Eles aparecem aqui quando um cliente envia o projeto."
   ],
   "account.projects.title": ["Projects", "Proyectos", "Projetos"],
-  "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"]
+  "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"],
+  "account.delete.title": ["Delete account", "Eliminar cuenta", "Excluir conta"],
+  "account.delete.help": [
+    "Closes your account for good: your business profile, prices, saved projects (with their clients' details), homeowner requests and sign-in are deleted, and any subscription is cancelled. Billing records stay with Stripe as the law requires.",
+    "Cierra su cuenta definitivamente: se eliminan el perfil de su empresa, los precios, los proyectos guardados (con los datos de sus clientes), las solicitudes de clientes y su inicio de sesión, y se cancela cualquier suscripción. Los registros de facturación se conservan en Stripe como exige la ley.",
+    "Encerra a sua conta de vez: o perfil da empresa, os preços, os projetos salvos (com os dados dos clientes), os pedidos de clientes e o seu login são excluídos, e qualquer assinatura é cancelada. Os registros de cobrança ficam na Stripe como a lei exige."
+  ],
+  "account.delete.start": ["Delete my account…", "Eliminar mi cuenta…", "Excluir minha conta…"],
+  "account.delete.warning": [
+    "This can't be undone. Download anything you want to keep first.",
+    "Esto no se puede deshacer. Descargue antes lo que quiera conservar.",
+    "Isto não pode ser desfeito. Baixe antes o que você quiser guardar."
+  ],
+  "account.delete.confirmLabel": [
+    "Type your sign-in email to confirm",
+    "Escriba el correo de su cuenta para confirmar",
+    "Digite o e-mail da sua conta para confirmar"
+  ],
+  "account.delete.submit": ["Delete everything", "Eliminar todo", "Excluir tudo"],
+  "account.delete.cancel": ["Keep my account", "Conservar mi cuenta", "Manter minha conta"]
 }

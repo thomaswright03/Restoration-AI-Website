@@ -1,7 +1,8 @@
 // /api/projects: a subscriber's saved designs ("projects"), with the
 // signed-in user's Supabase access token as a Bearer token.
 //
-//   GET                       the plan, its limits, what's used, and the list
+//   GET                       the plan, its limits, whether it includes "Put
+//                             it on your website", what's used, and the list
 //   GET    ?id=<id>           one project, with its design
 //   POST   {name, design, info?, summary?}   save a new project (needs a paid
 //                             plan, within its limits)
@@ -18,7 +19,7 @@
 "use strict";
 
 const { supabaseReady, sendJson, db, currentUser, readForm } = require("./_lib.js");
-const { planOf, limitsOf } = require("./_plans.js");
+const { planOf, limitsOf, websiteOf } = require("./_plans.js");
 const Plan = require("../js/room-plan.js");
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -84,8 +85,9 @@ function monthStart(now = new Date()) {
 
 async function planFor(userId) {
   const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(userId) + "&select=*");
-  const plan = planOf(subs && subs[0]);
-  return { plan, limits: limitsOf(plan) };
+  const sub = subs && subs[0];
+  const plan = planOf(sub);
+  return { plan, limits: limitsOf(plan), website: websiteOf(sub) };
 }
 
 async function usage(userId) {
@@ -118,12 +120,12 @@ module.exports = async function handler(req, res) {
         if (!rows || !rows[0]) return sendJson(res, 404, { error: "not-found" });
         return sendJson(res, 200, { project: rows[0] });
       }
-      const [{ plan, limits }, used, projects] = await Promise.all([
+      const [{ plan, limits, website }, used, projects] = await Promise.all([
         planFor(user.id),
         usage(user.id),
         db("projects?" + owner + "&select=" + LIST_FIELDS + "&order=updated_at.desc&limit=1000"),
       ]);
-      return sendJson(res, 200, { plan, limits, used, projects: projects || [] });
+      return sendJson(res, 200, { plan, limits, website, used, projects: projects || [] });
     }
 
     const body = req.method === "DELETE" ? {} : await readForm(req);

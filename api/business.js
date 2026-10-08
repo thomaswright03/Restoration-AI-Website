@@ -1,9 +1,11 @@
 // GET /api/business?b=<slug>: a tiny script the designer page loads (see
 // js/business.js). It hands the page the business's public profile, or
-// tells it the designer isn't available (unknown slug, inactive plan, or
-// accounts not set up yet). A business without an active plan is still shown
-// to its own owner, as a preview: js/business.js passes their sign-in token
-// as ?t=, and that answer is never cached.
+// tells it the designer isn't available (unknown slug, inactive plan, a plan
+// without "Put it on your website", or accounts not set up yet). A business
+// that isn't open to homeowners is still shown to its own owner: as a
+// preview when the plan isn't active, or for their own use (websiteLocked)
+// when the plan lacks the add-on. js/business.js passes their sign-in token
+// as ?t= for that, and the answer is never cached.
 "use strict";
 
 const { supabaseReady, activeBusiness, currentUser } = require("./_lib.js");
@@ -34,11 +36,13 @@ module.exports = async function handler(req, res) {
   try {
     const biz = await activeBusiness(slug);
     if (!biz) return script(res, null, "not-found", 60);
-    if (biz.inactive) {
+    if (biz.inactive || biz.noWebsite) {
+      const reason = biz.inactive ? "inactive" : "no-website";
       const token = String((req.query && req.query.t) || "");
       const owner = token ? await currentUser({ headers: { authorization: "Bearer " + token } }) : null;
-      if (!owner || owner.id !== biz.business.owner_id) return script(res, null, "inactive", token ? -1 : 60);
-      return script(res, Object.assign(profile(biz.business), { preview: true }), "", -1);
+      if (!owner || owner.id !== biz.business.owner_id) return script(res, null, reason, token ? -1 : 60);
+      const flag = biz.inactive ? { preview: true } : { websiteLocked: true };
+      return script(res, Object.assign(profile(biz.business), flag), "", -1);
     }
     return script(res, profile(biz), "", 60);
   } catch (e) {

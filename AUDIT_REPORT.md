@@ -2,6 +2,8 @@
 
 Audit of https://restoration-ai-website-nu.vercel.app and this repo, run 2026-10-08 from the FULL_AUDIT.md playbook. Nothing touched the live database's records: the only live calls were read-only checks with the public (anon) key and Lighthouse page loads. Accounts, projects, leads and Stripe were tested against stand-ins (unit tests with a fake Supabase/Stripe, browser tests with mocked APIs), because the live Supabase sends a real confirmation email for every sign-up.
 
+> **Done since this audit (October 8, 2026):** the decided prices are on the site (question 1); the privacy policy covers saved projects and account deletion (question 2); the support email is set (question 4); "Put it on your website" is enforced (a plan without the add-on opens only for its owner, and takes no requests); and businesses can delete their own account from the account page (`api/account.js`), which cancels Stripe and cascades through the database. Still open: the live sign-up test (question 3) and the 3D model licences (question 5), which the owner is handling.
+
 ## 1. Summary
 
 The product is in good shape. The build is static, so there's nothing to break at deploy. Lint, formatting, the page/translation check, unit tests and browser tests (with axe accessibility scans in light and dark) were all green before the audit, and `npm audit` reports 0 vulnerabilities. Row-level security holds: as an anonymous visitor every table reads empty, and writes and the `create_project()` function are refused. The audit found and fixed:

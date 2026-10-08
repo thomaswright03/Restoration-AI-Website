@@ -7,7 +7,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const Plan = require("../../js/room-plan.js");
-const { planOf, planFromPrice, limitsOf } = require("../../api/_plans.js");
+const { planOf, planFromPrice, limitsOf, websiteOf, isWebsitePrice } = require("../../api/_plans.js");
 
 const USER = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -126,6 +126,20 @@ test("plans: free unless active or trialing; plan column, then Pro/Max price ids
   assert.equal(planFromPrice({ lookup_key: "something" }), "");
 });
 
+test("plans: the website add-on comes with Max, with the add-on's price, or set by hand; never free", () => {
+  assert.equal(websiteOf(null), false);
+  assert.equal(websiteOf({ status: "active", plan: "starter" }), false);
+  assert.equal(websiteOf({ status: "active", plan: "starter", website: true }), true);
+  assert.equal(websiteOf({ status: "trialing", plan: "max" }), true);
+  assert.equal(websiteOf({ status: "canceled", plan: "max", website: true }), false);
+  process.env.STRIPE_PRICE_WEBSITE = "price_web";
+  assert.equal(isWebsitePrice({ id: "price_web" }), true);
+  assert.equal(isWebsitePrice({ id: "price_x", lookup_key: "website_monthly" }), true);
+  assert.equal(isWebsitePrice({ id: "price_x", metadata: { addon: "website" } }), true);
+  assert.equal(isWebsitePrice({ id: "price_x", lookup_key: "pro" }), false);
+  delete process.env.STRIPE_PRICE_WEBSITE;
+});
+
 test("projects: signed-out callers are refused", async () => {
   fakeSupabase({ status: "active" });
   const res = await call("GET", { token: "bad" });
@@ -137,6 +151,7 @@ test("projects: a free account can list but not save", async () => {
   const list = await call("GET");
   assert.equal(list.statusCode, 200);
   assert.equal(list.json().plan, "free");
+  assert.equal(list.json().website, false);
   const save = await call("POST", { body: { name: "Smith bath", design: DESIGN } });
   assert.equal(save.statusCode, 403);
   assert.equal(save.json().error, "plan");

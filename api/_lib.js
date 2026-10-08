@@ -12,6 +12,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { websiteOf } = require("./_plans.js");
 
 function env(name) {
   return (process.env[name] || "").trim();
@@ -146,7 +147,12 @@ async function readForm(req) {
 
 const ACTIVE_STATUSES = ["active", "trialing"];
 
-// The public profile of a business whose subscription is active, or null.
+// The public profile of a business whose subscription is active and includes
+// "Put it on your website", or null when there's no such business.
+//   { inactive: true, business }   no active plan: only its owner may see it,
+//                                  as a preview (api/business.js)
+//   { noWebsite: true, business }  a plan without the add-on: the designer is
+//                                  for its owner's own use, not for homeowners
 async function activeBusiness(slug) {
   if (!/^[a-z0-9-]{1,64}$/.test(slug || "")) return null;
   const rows = await db(
@@ -154,10 +160,12 @@ async function activeBusiness(slug) {
   );
   const biz = rows && rows[0];
   if (!biz) return null;
-  const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(biz.owner_id) + "&select=status");
-  const status = subs && subs[0] ? subs[0].status : "none";
-  // inactive: only its owner may see it, as a preview (api/business.js).
-  if (!ACTIVE_STATUSES.includes(status)) return { inactive: true, business: biz };
+  // select=* rather than naming columns: a column schema.sql added later
+  // (website) then reads as missing instead of making every designer fail.
+  const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(biz.owner_id) + "&select=*");
+  const sub = subs && subs[0];
+  if (!sub || !ACTIVE_STATUSES.includes(sub.status)) return { inactive: true, business: biz };
+  if (!websiteOf(sub)) return { noWebsite: true, business: biz };
   return biz;
 }
 

@@ -7,6 +7,7 @@
   "nav.pricing": ["Pricing", "Precios", "Preços"],
   "nav.faq": ["FAQ", "Preguntas", "Perguntas"],
   "nav.login": ["Log in", "Iniciar sesión", "Entrar"],
+  "nav.logout": ["Log out", "Cerrar sesión", "Sair"],
   "nav.cta": ["Start free trial", "Prueba gratis", "Teste grátis"],
   "nav.language": ["Language", "Idioma", "Idioma"],
   "nav.langCode": ["EN", "ES", "PT"],

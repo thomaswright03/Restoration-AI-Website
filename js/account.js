@@ -653,8 +653,31 @@
     });
   }
 
+  // The nav's Log out link: sign out, then back to the home page.
+  function logOut() {
+    function clearLocal() {
+      try {
+        for (var i = localStorage.length - 1; i >= 0; i--) {
+          var key = localStorage.key(i) || "";
+          if (/^sb-.+-auth-token$/.test(key)) localStorage.removeItem(key);
+        }
+      } catch (e) {
+        /* storage blocked: nothing stored to clear */
+      }
+    }
+    var done = client ? client.auth.signOut().catch(function () {}) : Promise.resolve();
+    done.then(function () {
+      clearLocal();
+      window.location.replace(sitePath("index.html"));
+    });
+  }
+
   loadConfig().then(function (c) {
     config = c;
+    if (params.get("logout") === "1") {
+      if (c.accounts && window.supabase) client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
+      return logOut();
+    }
     if (!c.accounts || !window.supabase) return accountsOff();
     client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
     if (page === "signup") initSignup();

@@ -42,6 +42,25 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Signed in (Supabase keeps the sign-in in localStorage as
+  // sb-<project>-auth-token): the nav's Log in becomes Log out, which the
+  // account page carries out (js/account.js, ?logout=1).
+  var authLink = document.querySelector("[data-auth-link]");
+  if (authLink) {
+    var signedIn = false;
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) signedIn = true;
+      }
+    } catch (e) {
+      /* storage blocked: treat as signed out */
+    }
+    if (signedIn) {
+      authLink.textContent = authLink.getAttribute("data-logout-label");
+      authLink.setAttribute("href", authLink.getAttribute("href").replace(/account\.html.*$/, "account.html?logout=1"));
+    }
+  }
+
   // Language menu (a <details> in the nav): close it on a click elsewhere or
   // Escape. The chosen language is saved by the page's head script, from the
   // ?lang= its links carry.

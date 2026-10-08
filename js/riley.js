@@ -304,10 +304,12 @@
   function renderMute() {
     if (!els.mute) return;
     els.mute.innerHTML = muted ? MUTE_OFF : MUTE_ON;
+    // A toggle: the name stays put and aria-pressed says whether her voice
+    // is on, so a screen reader never hears "Mute Riley, pressed" while
+    // she's talking. The tooltip says what a click will do.
     els.mute.setAttribute("aria-pressed", muted ? "false" : "true");
-    var label = T ? T(muted ? "riley.unmute" : "riley.mute") : "Riley's voice";
-    els.mute.setAttribute("aria-label", label);
-    els.mute.setAttribute("title", label);
+    els.mute.setAttribute("aria-label", T ? T("riley.voiceOn") : "Riley's voice");
+    els.mute.setAttribute("title", T ? T(muted ? "riley.unmute" : "riley.mute") : "Riley's voice");
   }
 
   var Riley = {

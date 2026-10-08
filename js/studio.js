@@ -235,6 +235,26 @@
   }
 
   // "the vanity" (es "el mueble de lavabo"), for sentences about it.
+  // On a phone the room is too small to share with Riley's card, so she
+  // sits just under it, above the step, instead of over the 3D view.
+  var PHONE = window.matchMedia ? window.matchMedia("(max-width: 640px)") : null;
+  function placeRiley() {
+    var stage = els.body.querySelector(".studio-stage");
+    var under = Boolean(PHONE && PHONE.matches);
+    if (under && els.riley.parentNode !== els.body) els.body.insertBefore(els.riley, els.panel);
+    if (!under && els.riley.parentNode !== stage) stage.insertBefore(els.riley, els.selChip);
+    els.riley.classList.toggle("is-under", under);
+  }
+  if (PHONE && PHONE.addEventListener)
+    PHONE.addEventListener("change", function () {
+      if (els.body) placeRiley();
+    });
+
+  // "the vanity needs..." starts a sentence: "The vanity needs...".
+  function sentence(text) {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
   function theName(id, d) {
     if (id === "wall") return T("studio.the.wall");
     if (id === "ceiling") return T("studio.the.ceiling");
@@ -1510,8 +1530,18 @@
     } else {
       var why = Plan.errorsOf(drag.issues, drag.id)[0];
       refresh();
+      // With a way out: the best spot that does work, when there is one.
+      var fits = Plan.findSpots(design, item, sizes, { step: IN }).length > 0;
       toast(
         why ? T("studio.dropRefused", { reason: issueText(item, why, drag.preview) }) : T("studio.dropRefusedPlain"),
+        fits
+          ? {
+              label: T("studio.bestSpot"),
+              run: function () {
+                bestSpot(findItem(item.id));
+              },
+            }
+          : { label: T("studio.rearrange"), run: arrangeNow },
       );
     }
   }
@@ -2013,6 +2043,15 @@
 
   function goToStep(step) {
     if (STEPS.indexOf(step) === -1) return;
+    // A product being chosen is shown by itself only while on Products;
+    // other steps start with the whole room, as Layout always does.
+    if (step !== "products" && focusedGroup) {
+      focusedGroup = null;
+      if (has3d) room3d.focusProductGroup(null);
+      ui.isolate = false;
+      applyIsolate();
+      renderViewbar();
+    }
     ui.step = step;
     renderBar();
     renderPanel({ top: true });
@@ -3101,7 +3140,7 @@
     );
 
     // What the rules say is still missing.
-    var gaps = Plan.electricalGaps(design);
+    var gaps = Plan.electricalGaps(design, sizes);
     if (gaps.length) {
       body.appendChild(
         section(T("studio.elec.missing"), [
@@ -3113,7 +3152,7 @@
                 h("span", { class: "studio-issue-icon", icon: "info" }),
                 h("span", {
                   class: "studio-issue-text",
-                  text: T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" }),
+                  text: sentence(T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" })),
                 }),
               ]);
             }),
@@ -4199,7 +4238,36 @@
     ]);
   }
 
+  // The priced lines, once, for both the Estimate step and the PDF, so the
+  // two always agree line for line.
+  function estimateLines(est) {
+    var labor = est.labor.lines.map(function (l) {
+      return { label: l.label, detail: l.detail, amount: Pricing.money(l.cost) };
+    });
+    var materials = [];
+    if (est.hasMaterials) {
+      est.materials.forEach(function (m) {
+        materials.push({
+          label: m.label + ": " + shortName(m.product.name),
+          detail: m.quantityLabel + " · " + m.product.best.name,
+          amount: Pricing.money(m.cost),
+          image: m.product.imageUrl,
+        });
+      });
+      est.products.forEach(function (p) {
+        if (p.cost === null) return;
+        materials.push({
+          label: p.label,
+          detail: p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""),
+          amount: Pricing.money(p.cost),
+        });
+      });
+    }
+    return { labor: labor, materials: materials };
+  }
+
   function estimateCard(est) {
+    var lines = estimateLines(est);
     var card = h("article", { class: "studio-estimate", "data-testid": "estimate-card" });
     card.appendChild(
       h("header", { class: "studio-estimate-head" }, [
@@ -4211,30 +4279,18 @@
     var labor = h("div", { class: "studio-lines" }, [
       h("p", { class: "studio-lines-title", text: T("studio.est.labor") }),
     ]);
-    est.labor.lines.forEach(function (l) {
-      labor.appendChild(lineEl(l.label, l.detail, Pricing.money(l.cost)));
+    lines.labor.forEach(function (l) {
+      labor.appendChild(lineEl(l.label, l.detail, l.amount));
     });
-    if (!est.labor.lines.length) labor.appendChild(lineEl(T("card.noWork"), null, Pricing.money(0)));
+    if (!lines.labor.length) labor.appendChild(lineEl(T("card.noWork"), null, Pricing.money(0)));
     card.appendChild(labor);
     if (est.hasMaterials) {
       card.appendChild(lineEl(T("card.laborSubtotal"), null, Pricing.money(est.labor.subtotal), "is-subtotal"));
       var mats = h("div", { class: "studio-lines" }, [
         h("p", { class: "studio-lines-title", text: T("studio.est.materials") }),
       ]);
-      est.materials.forEach(function (m) {
-        mats.appendChild(
-          lineEl(
-            m.label + ": " + shortName(m.product.name),
-            m.quantityLabel + " · " + m.product.best.name,
-            Pricing.money(m.cost),
-            null,
-            m.product.imageUrl,
-          ),
-        );
-      });
-      est.products.forEach(function (p) {
-        if (p.cost === null) return;
-        mats.appendChild(lineEl(p.label, p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""), Pricing.money(p.cost)));
+      lines.materials.forEach(function (l) {
+        mats.appendChild(lineEl(l.label, l.detail, l.amount, null, l.image));
       });
       card.appendChild(mats);
       card.appendChild(lineEl(T("card.materialsSubtotal"), null, Pricing.money(est.materialsTotal), "is-subtotal"));
@@ -4517,7 +4573,8 @@
     button.disabled = true;
     button.textContent = T("pdf.preparing");
     status.hidden = true;
-    var picture = has3d && ui.view !== "plan" ? room3d.snapshot(1500, 950) : null;
+    // The snapshot renders its own overview, so plan view gets a picture too.
+    var picture = has3d ? room3d.snapshot(1500, 950) : null;
     window.EstimatePdf.load()
       .then(function () {
         var est = estimate();
@@ -4525,19 +4582,9 @@
         var lines = [];
         var totals = [];
         if (priced) {
-          lines = est.labor.lines.map(function (r) {
-            return { label: r.label, detail: r.detail, amount: Pricing.money(r.cost) };
-          });
-          est.materials.forEach(function (m) {
-            lines.push({
-              label: m.label + ": " + m.product.name,
-              detail: m.quantityLabel + " · " + m.product.best.name,
-              amount: Pricing.money(m.cost),
-            });
-          });
-          est.products.forEach(function (p) {
-            if (p.cost !== null)
-              lines.push({ label: p.label, detail: p.mmns.join(" + "), amount: Pricing.money(p.cost) });
+          var shared = estimateLines(est);
+          lines = shared.labor.concat(shared.materials).map(function (l) {
+            return { label: l.label, detail: l.detail, amount: l.amount };
           });
           totals = est.hasMaterials
             ? [
@@ -4628,7 +4675,7 @@
     var worst = trouble ? (issues[trouble.id] || []).filter(isError)[0] : null;
     rileyFix = null;
     if (trouble && worst) {
-      rileyFix = rileyFixFor(trouble, worst);
+      rileyFix = rileyFixFor(trouble);
       window.Riley.say({
         tone: "error",
         text:
@@ -4677,7 +4724,7 @@
 
   // What she can do about it: the line that offers it, and the thing it
   // does. Null when she has nothing to offer.
-  function rileyFixFor(thing, x) {
+  function rileyFixFor(thing) {
     if (!thing.type) {
       return {
         offer: "riley.offer",
@@ -4689,10 +4736,10 @@
         },
       };
     }
-    // Somewhere else for it: away from the plumbing, back onto a wall a
-    // drain can reach; otherwise its best free spot.
-    var spots =
-      x.code === "noStack" || x.code === "offStack" ? [1] : Plan.findSpots(design, thing, sizes, { step: 2 * IN });
+    // Somewhere else for it (back onto a wall a drain can reach, or its
+    // best free spot), offered only when there is one, so "Yes" never ends
+    // in "no spot".
+    var spots = Plan.findSpots(design, thing, sizes, { step: 2 * IN });
     if (spots.length) {
       return {
         offer: "riley.offer",
@@ -4932,6 +4979,7 @@
     els.requestHome = els.request.parentNode;
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
+    placeRiley();
     els.planSvg = s("svg", { class: "plan-svg" });
     els.planWrap.appendChild(els.planSvg);
     els.miniSvg = s("svg", { class: "plan-svg is-mini" });

@@ -476,6 +476,17 @@
       "Plano grátis: projete à vontade. Para salvar projetos é preciso um plano pago.",
     ],
     "proj.bar.pickPlan": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+    "proj.bar.down": [
+      "Your plan couldn't be loaded, so saving may not work.",
+      "No se pudo cargar su plan, así que es posible que no pueda guardar.",
+      "Não foi possível carregar o seu plano, então talvez não dê para salvar.",
+    ],
+    "proj.bar.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
+    "proj.bar.left": [
+      "{month} of {monthly} new projects left this month, room for {total} more saved.",
+      "Le quedan {month} de {monthly} proyectos nuevos este mes y espacio para {total} guardados más.",
+      "Restam {month} de {monthly} projetos novos este mês e espaço para mais {total} salvos.",
+    ],
     "proj.bar.unsaved": [
       "This design isn't saved to your projects yet.",
       "Este diseño aún no está guardado en sus proyectos.",
@@ -1366,9 +1377,14 @@
     "studio.elec.beside": ["beside {what}", "al lado de {what}", "ao lado de {what}"],
     "studio.elec.forFan": ["for the exhaust fan", "para el extractor", "para o exaustor"],
     "studio.elec.gap.noOutlet": [
-      "A basin needs a GFCI outlet within 36 in. of it.",
-      "Un lavabo necesita un tomacorriente GFCI a menos de 36 pulg.",
-      "Uma pia precisa de uma tomada GFCI a menos de 36 pol.",
+      "{what} needs a GFCI outlet within 36 in. of it.",
+      "{what} necesita un tomacorriente GFCI a menos de 36 pulg.",
+      "{what} precisa de uma tomada GFCI a menos de 36 pol.",
+    ],
+    "studio.elec.gap.noLightOver": [
+      "{what} has no light over its mirror.",
+      "{what} no tiene luz sobre su espejo.",
+      "{what} não tem luz sobre o espelho.",
     ],
     "studio.elec.gap.noLight": [
       "There's no light in the room yet.",
@@ -1376,9 +1392,9 @@
       "Ainda não há nenhuma luz no banheiro.",
     ],
     "studio.elec.gap.noSwitch": [
-      "There's no switch beside the door.",
-      "No hay ningún interruptor al lado de la puerta.",
-      "Não há nenhum interruptor ao lado da porta.",
+      "{what} has no switch beside it.",
+      "{what} no tiene un interruptor al lado.",
+      "{what} não tem um interruptor ao lado.",
     ],
     "studio.elec.gap.noFan": [
       "A bathroom with a tub or shower needs an exhaust fan.",
@@ -2235,6 +2251,7 @@
     "riley.name": ["Riley", "Riley", "Riley"],
     "riley.mute": ["Mute Riley", "Silenciar a Riley", "Silenciar a Riley"],
     "riley.unmute": ["Let Riley speak", "Dejar hablar a Riley", "Deixar a Riley falar"],
+    "riley.voiceOn": ["Riley's voice", "Voz de Riley", "Voz da Riley"],
     "riley.voices": ["Choose Riley's voice", "Elegir la voz de Riley", "Escolher a voz da Riley"],
     "riley.voicesHelp": [
       "These are the voices on this device. Tap one to hear it and use it. Other phones and computers have their own voices.",

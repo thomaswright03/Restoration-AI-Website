@@ -2500,6 +2500,13 @@ html[data-embed="1"] .studio-stage {
   pointer-events: none;
 }
 
+/* On a phone (js/studio.js placeRiley) she sits under the room. */
+.studio-riley.is-under {
+  position: static;
+  max-width: none;
+  margin: var(--space-2) var(--space-3) 0;
+}
+
 .studio-stage:has(.riley:not([hidden])) .studio-hint {
   display: none;
 }

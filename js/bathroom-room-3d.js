@@ -2353,7 +2353,7 @@ function ensureScene() {
     scene.add(hemi, dir, dir.target);
 
     var controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+    controls.enableDamping = !reducedMotion();
     controls.dampingFactor = 0.08;
     // Straight down for a plan-like look, never under the floor.
     controls.minPolarAngle = 0.02;
@@ -3104,9 +3104,14 @@ function showModelNote(s, placedKeys, sel) {
   s.modelNote.textContent = names.length ? T("room3d.modelFailed", { list: names.join(", ") }) : "";
 }
 
+// Visitors who ask their system for less motion get cuts, not glides.
+function reducedMotion() {
+  return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
 function applyCameraLerp(s) {
   if (!s.cameraLerp) return;
-  var t = clamp((performance.now() - s.cameraLerp.start) / s.cameraLerp.durationMs, 0, 1);
+  var t = reducedMotion() ? 1 : clamp((performance.now() - s.cameraLerp.start) / s.cameraLerp.durationMs, 0, 1);
   var eased = easeOutCubic(t);
   s.camera.position.lerpVectors(s.cameraLerp.from, s.cameraLerp.to, eased);
   // A focus move (focusCameraOn) turns to look at the fixture as it goes.

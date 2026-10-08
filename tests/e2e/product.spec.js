@@ -76,3 +76,16 @@ test("with no account keys set, sign-up and account say accounts aren't on yet",
   await page.goto("/account.html");
   await expect(page.locator("#accounts-off")).toBeVisible();
 });
+
+test("when the server can't be reached, the account pages say so in the page's language", async ({ page }) => {
+  await page.route("**/api/config", (route) => route.abort("internetdisconnected"));
+  for (const [path, text] of [
+    ["/signup.html", "We couldn't reach the server."],
+    ["/es/projects.html", "No pudimos conectar con el servidor."],
+    ["/pt/account.html", "Não conseguimos falar com o servidor."],
+  ]) {
+    await page.goto(path);
+    await expect(page.locator("#server-down")).toContainText(text);
+    await expect(page.locator("#accounts-off")).toBeHidden();
+  }
+});

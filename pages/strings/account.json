@@ -56,6 +56,17 @@
     "El registro abrirá pronto. Mientras tanto, puede probar la demo.",
     "O cadastro abre em breve. Enquanto isso, você pode ver a demonstração."
   ],
+  "account.down.title": [
+    "We couldn't reach the server.",
+    "No pudimos conectar con el servidor.",
+    "Não conseguimos falar com o servidor."
+  ],
+  "account.down.text": [
+    "Check your internet connection, then try again.",
+    "Revise su conexión a internet y vuelva a intentarlo.",
+    "Verifique sua conexão com a internet e tente de novo."
+  ],
+  "account.down.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
   "account.newPassword.title": ["Choose a new password", "Elija una contraseña nueva", "Escolha uma senha nova"],
   "account.newPassword.label": ["New password", "Contraseña nueva", "Senha nova"],
   "account.newPassword.save": ["Save password", "Guardar contraseña", "Salvar senha"],

@@ -56,13 +56,13 @@
         return res.json();
       })
       .catch(function () {
-        return { accounts: false, payments: false };
+        return { accounts: false, payments: false, unreachable: true };
       });
   }
 
   function accountsOff() {
     show($("account-loading"), false);
-    show($("accounts-off"), true);
+    show($(config && config.unreachable ? "server-down" : "accounts-off"), true);
   }
 
   // Supabase Auth error codes worth their own message.

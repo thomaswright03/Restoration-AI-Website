@@ -189,6 +189,8 @@ test.describe("design studio", () => {
 
     await drag(await point("f3"), await point("f1"));
     await expect(studioToast(page)).toContainText("That spot doesn't work, so it went back.");
+    // The toast offers a way out, never just a dead end.
+    await expect(studioToast(page).locator(".studio-toast-action")).toHaveText(/Best spot|Arrange for me/);
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await expect(page.locator("#studio-selchip")).toContainText("Toilet");
 
@@ -223,6 +225,45 @@ test.describe("design studio", () => {
     expect(cam.z).toBeLessThan(5);
     await page.locator('.studio-view-btn[data-view="3d"]').click();
     await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.cameraPosition().y)).toBeGreaterThan(8);
+    expect(errors).toEqual([]);
+  });
+
+  test("the PDF lists exactly the Estimate step's lines, with a picture even from plan view", async ({ page }) => {
+    test.setTimeout(60000);
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "finishes").click();
+    await byKey(page, "fin-walls-tile").click();
+    await page.locator('.studio-view-btn[data-view="plan"]').click();
+    await step(page, "estimate").click();
+    await expect(page.getByTestId("estimate-card")).toBeVisible();
+    const card = await page
+      .locator(".studio-estimate .studio-lines:not(.is-excluded) .studio-line")
+      .evaluateAll((rows) =>
+        rows.map((r) => ({
+          label: r.querySelector(".studio-line-label").firstChild.textContent,
+          detail: (r.querySelector(".studio-line-label small") || {}).textContent || null,
+          amount: r.querySelector(".studio-line-amount").textContent,
+        })),
+      );
+    await page.evaluate(() => {
+      const build = window.EstimatePdf.build;
+      window.EstimatePdf.build = (spec) => {
+        window.__pdfSpec = spec;
+        return build(spec);
+      };
+    });
+    await Promise.all([page.waitForEvent("download"), byKey(page, "pdf").click()]);
+    const pdf = await page.evaluate(() => ({
+      lines: window.__pdfSpec.lines.map((l) => ({ label: l.label, detail: l.detail || null, amount: l.amount })),
+      picture: Boolean(window.__pdfSpec.picture),
+      plan: Boolean(window.__pdfSpec.plan),
+    }));
+    expect(card.length).toBeGreaterThan(2);
+    expect(pdf.lines).toEqual(card);
+    expect(pdf.picture).toBe(true);
+    expect(pdf.plan).toBe(true);
     expect(errors).toEqual([]);
   });
 
@@ -367,7 +408,7 @@ test.describe("design studio", () => {
     // Removing it is noticed by the rules and can be undone.
     const first = await page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design())[0].id);
     await byKey(page, `pt-${first}-remove`).click();
-    await expect(page.locator(".studio-step.is-electrical")).toContainText("A basin needs a GFCI outlet");
+    await expect(page.locator(".studio-step.is-electrical")).toContainText("The vanity needs a GFCI outlet");
     await studioToast(page).getByRole("button", { name: "Undo" }).click();
     await expect(page.locator(".studio-item-btn")).toHaveCount(5);
     expect(errors).toEqual([]);
@@ -411,6 +452,20 @@ test.describe("design studio", () => {
     await expect(iso).toContainText("Showing just this");
     await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).toBeNull();
     await iso.click();
+    await expect(iso).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).not.toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test("leaving Products brings the whole room back, so isolation never follows into Finishes", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "products").click();
+    await byKey(page, "focus-toilet").click();
+    const iso = page.locator(".studio-iso-btn");
+    await expect(iso).toHaveAttribute("aria-pressed", "true");
+    await step(page, "finishes").click();
     await expect(iso).toHaveAttribute("aria-pressed", "false");
     await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f1"))).not.toBeNull();
     expect(errors).toEqual([]);
@@ -711,6 +766,17 @@ test.describe("design studio on a phone", () => {
     expect(stage.y).toBeGreaterThanOrEqual(0);
     expect(heading.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
     expect(heading.y + heading.height).toBeLessThan(844);
+    expect(errors).toEqual([]);
+  });
+
+  test("Riley's card sits under the room, not over the 3D view", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    const riley = page.locator(".riley");
+    await expect(riley).toBeVisible();
+    const stage = await page.locator(".studio-stage").boundingBox();
+    const card = await riley.boundingBox();
+    expect(card.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
     expect(errors).toEqual([]);
   });
 });

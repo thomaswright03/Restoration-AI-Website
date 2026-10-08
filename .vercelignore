@@ -10,3 +10,5 @@
 /test-results/
 /playwright-report/
 /blob-report/
+# Internal notes (audit report, readme): not for the public site.
+/*.md

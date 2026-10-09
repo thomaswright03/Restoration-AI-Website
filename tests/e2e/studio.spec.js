@@ -471,6 +471,43 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Just this turned on in Layout ends with the step, like every other step change", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "layout").click();
+    await byKey(page, "item-f1").click();
+    const iso = page.locator(".studio-iso-btn");
+    await iso.click();
+    await expect(iso).toHaveAttribute("aria-pressed", "true");
+    await step(page, "electrical").click();
+    await expect(iso).toHaveAttribute("aria-pressed", "false");
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.itemScreenPoint("f2"))).not.toBeNull();
+    expect(errors).toEqual([]);
+  });
+
+  test("electrical the rules still ask for is said on the Estimate, by Riley too, with a way to add it", async ({
+    page,
+  }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await step(page, "electrical").click();
+    const first = await page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design())[0].id);
+    await page.locator(".studio-item-btn").first().click();
+    await byKey(page, `pt-${first}-remove`).click();
+    await step(page, "estimate").click();
+    const banner = page.locator(".studio-banner.is-warn");
+    await expect(banner).toContainText("Not in this price yet: The vanity needs a GFCI outlet");
+    const riley = page.locator(".riley");
+    await expect(riley).toHaveAttribute("data-tone", "warn");
+    await expect(riley.locator(".riley-text")).toContainText("One thing first: The vanity needs a GFCI outlet");
+    await riley.getByRole("button", { name: "Yes please" }).click();
+    await expect(banner).toHaveCount(0);
+    await expect(riley.locator(".riley-text")).not.toContainText("One thing first");
+    expect(await page.evaluate(() => window.RoomPlan.electricalGaps(window.RoomStudio.design(), {}))).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+
   test("Show examples opens a product's listing photos as a slideshow", async ({ page }) => {
     // The photos come from Home Depot's image server: stand in a local
     // picture so the test doesn't depend on it.
@@ -768,6 +805,21 @@ test.describe("design studio on a phone", () => {
     expect(heading.y + heading.height).toBeLessThan(844);
     expect(errors).toEqual([]);
   });
+
+  test("Riley's card sits under the room, not over the 3D view", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    const riley = page.locator(".riley");
+    await expect(riley).toBeVisible();
+    const stage = await page.locator(".studio-stage").boundingBox();
+    const card = await riley.boundingBox();
+    expect(card.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
+    expect(errors).toEqual([]);
+  });
+});
+
+test.describe("design studio on a tablet", () => {
+  test.use({ viewport: { width: 768, height: 1024 }, hasTouch: true });
 
   test("Riley's card sits under the room, not over the 3D view", async ({ page }) => {
     const errors = await openStudio(page);

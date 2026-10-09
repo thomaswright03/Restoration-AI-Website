@@ -1663,6 +1663,27 @@
     return { wall: best.wall, offset: offset, height: height, valid: valid };
   }
 
+  // The free spot on `wall` nearest `want` for a point already in the
+  // room, at the height it was dropped or else the height it had; null
+  // when that wall has nowhere it works.
+  function nearestElectrical(design, sizes, pointId, wall, want, height) {
+    var list = electricalOf(design);
+    var point = list.filter(function (p) {
+      return p.id === pointId;
+    })[0];
+    if (!point || !wall || point.kind === "fan") return null;
+    var others = list.filter(function (p) {
+      return p.id !== pointId;
+    });
+    var coverings = wallCoverings(design, sizes);
+    var heights = [height, point.height];
+    for (var i = 0; i < heights.length; i++) {
+      var at = freeOffset(design, sizes, point.kind, wall, want, heights[i], point.for, coverings, others);
+      if (at !== null) return { wall: wall, offset: at, height: heights[i] };
+    }
+    return null;
+  }
+
   function moveElectrical(design, id, change) {
     return withElectrical(
       design,
@@ -2114,6 +2135,7 @@
     suggestElectrical: suggestElectrical,
     snapElectrical: snapElectrical,
     moveElectrical: moveElectrical,
+    nearestElectrical: nearestElectrical,
     addElectrical: addElectrical,
     removeElectrical: removeElectrical,
     toElectricalPlacements: toElectricalPlacements,

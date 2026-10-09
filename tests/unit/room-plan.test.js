@@ -389,6 +389,22 @@ test("dragging a point puts it on the nearest wall and says whether it works the
   assert.equal(bad.valid, false);
 });
 
+test("a point dropped where it can't go is offered the nearest spot on that wall that works", () => {
+  const d = Object.assign({}, P.fromTemplate("full5x8", {}), {
+    electrical: [{ id: "p", kind: "outlet", wall: "N", offset: 4, height: 3.5, for: "room" }],
+  });
+  const tub = d.items.find((it) => it.type === "tub");
+  const g = P.geometry(tub, d.room, {});
+  const bad = P.snapElectrical(d, "p", (g.body.x0 + g.body.x1) / 2, 3.5, 0.1, {});
+  assert.equal(bad.valid, false);
+  const spot = P.nearestElectrical(d, {}, "p", bad.wall, bad.offset, bad.height);
+  assert.equal(spot.wall, bad.wall);
+  const moved = P.moveElectrical(d, "p", spot);
+  assert.deepEqual(elecErrors(moved, "p"), []);
+  // Nothing to offer for a fan, or a point that isn't there.
+  assert.equal(P.nearestElectrical(d, {}, "nope", "N", 1, 3.5), null);
+});
+
 test("electrical points are added, moved, removed and counted", () => {
   let d = P.fromTemplate("blank", {});
   const before = P.electricalPoints(d);

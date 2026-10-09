@@ -86,7 +86,7 @@
           <li><a href="../pt/index.html#pricing">Preços</a></li>
           <li><a href="../pt/index.html#faq">Perguntas</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li><a href="../pt/signup.html" class="nav-cta">Teste grátis</a></li>
+          <li><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -167,15 +167,17 @@
             <h2>Seu plano</h2>
             <p class="plan-status" id="plan-status"></p>
             <div id="plan-buy" hidden>
+              <div class="form-group plan-promo" id="plan-promo-row" hidden>
+                <label for="plan-promo">Código promocional (opcional)</label>
+                <input type="text" id="plan-promo" autocomplete="off" autocapitalize="characters" spellcheck="false" />
+              </div>
               <div class="app-actions">
                 <button type="button" class="btn btn-outline-dark" data-plan="starter">
-                  Começar teste: Starter, US$ 49,99 por mês
+                  Escolher Starter, US$ 49,99 por mês
                 </button>
-                <button type="button" class="btn btn-primary" data-plan="pro">
-                  Começar teste: Pro, US$ 99,99 por mês
-                </button>
+                <button type="button" class="btn btn-primary" data-plan="pro">Escolher Pro, US$ 99,99 por mês</button>
                 <button type="button" class="btn btn-outline-dark" data-plan="max">
-                  Começar teste: Max, US$ 199,99 por mês
+                  Escolher Max, US$ 199,99 por mês
                 </button>
               </div>
               <label class="check-row" id="plan-website-row" hidden>
@@ -184,7 +186,8 @@
               </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
-              O pagamento é feito pela Stripe. Você pode cancelar antes do fim do teste e não pagar nada.
+              O pagamento é feito pela Stripe. Com um código promocional os seus primeiros 7 dias são grátis: se
+              cancelar antes do fim, não paga nada.
             </p>
             <div class="app-actions" id="plan-manage" hidden>
               <button type="button" class="btn btn-outline-dark" id="manage-billing">
@@ -499,7 +502,7 @@
           <a href="../pt/designer.html">Demonstração</a>
           <a href="../pt/index.html#pricing">Preços</a>
           <a href="../pt/index.html#faq">Perguntas</a>
-          <a href="../pt/signup.html">Teste grátis</a>
+          <a href="../pt/signup.html">Começar</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contato</h2>

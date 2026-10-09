@@ -10,7 +10,8 @@
 //   @root      path back to the site root ("", "../", or "/" on 404.html)
 //   @lang      en | es | pt          @htmlLang  en | es | pt-BR
 //   @dir       "" | "es/" | "pt/"    @page      the page's file name
-//   @priceStarter, @pricePro, @priceMax, @priceWebsite, @trialDays, and each
+//   @priceStarter, @pricePro, @priceMax, @priceWebsite, @promoDays (free days a promo code
+//   gives), and each
 //   plan's limits (@starterMonthly, @starterTotal, @proMonthly, ...)
 //                                    from site-config.json "plans"
 // Text values may use the same {{@name}} values.
@@ -107,7 +108,7 @@ export async function buildAll() {
         page: page.file,
         siteUrl: SITE_URL,
         ...planBuiltins(plans, lang.locale),
-        trialDays: String(Number(plans.trialDays) || 0),
+        promoDays: String(Number(plans.promoFreeDays) || 7),
         designerHead: page.designer ? "designer" : "",
         appScript: page.app || "",
         seoHead: page.noindex

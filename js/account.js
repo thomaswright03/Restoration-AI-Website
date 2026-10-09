@@ -113,9 +113,14 @@
     setMode(mode);
     if (params.get("deleted")) status(statusEl, "success", T("acct.delete.done"));
 
+    // Back to the account page, keeping a plan or promo code from the link.
     function next() {
+      var keep = new URLSearchParams();
       var plan = params.get("plan");
-      return sitePath("account.html") + (PLANS.indexOf(plan) >= 0 ? "?plan=" + plan : "");
+      if (PLANS.indexOf(plan) >= 0) keep.set("plan", plan);
+      if (params.get("promo")) keep.set("promo", params.get("promo"));
+      var query = keep.toString();
+      return sitePath("account.html") + (query ? "?" + query : "");
     }
 
     form.addEventListener("submit", function (e) {
@@ -215,7 +220,11 @@
 
     var canBuy = ["none", "canceled", "incomplete_expired"].indexOf(s.status) >= 0;
     show($("plan-buy"), canBuy);
-    show($("plan-trial-note"), canBuy && config.trialDays > 0 && !s.stripe_subscription_id);
+    // Promo codes give free days only on an account's first plan.
+    var promo = canBuy && !!config.promo && !s.stripe_subscription_id;
+    show($("plan-promo-row"), promo);
+    show($("plan-trial-note"), promo);
+    if (promo && params.get("promo") && !$("plan-promo").value) $("plan-promo").value = params.get("promo");
     show($("plan-manage"), !!s.stripe_customer_id);
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
@@ -543,12 +552,15 @@
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
     button.disabled = true;
     var website = plan !== "max" && $("plan-website").checked;
-    api("/api/checkout", { plan: plan, website: website, lang: LANG === "en" ? "" : LANG })
+    var promo = $("plan-promo-row").hidden ? "" : $("plan-promo").value.trim();
+    api("/api/checkout", { plan: plan, website: website, promo: promo, lang: LANG === "en" ? "" : LANG })
       .then(function (data) {
         window.location.href = data.url;
       })
-      .catch(function () {
-        status(out, "error", T("acct.error"));
+      .catch(function (err) {
+        var key = { promo: "acct.promo.invalid", "promo-used": "acct.promo.used" }[err.code] || "acct.error";
+        status(out, "error", T(key));
+        if (key !== "acct.error") $("plan-promo").focus();
         button.disabled = false;
       });
   }

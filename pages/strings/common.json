@@ -8,7 +8,7 @@
   "nav.faq": ["FAQ", "Preguntas", "Perguntas"],
   "nav.login": ["Log in", "Iniciar sesión", "Entrar"],
   "nav.logout": ["Log out", "Cerrar sesión", "Sair"],
-  "nav.cta": ["Start free trial", "Prueba gratis", "Teste grátis"],
+  "nav.cta": ["Get started", "Empezar", "Começar"],
   "nav.language": ["Language", "Idioma", "Idioma"],
   "nav.langCode": ["EN", "ES", "PT"],
   "footer.tagline": [

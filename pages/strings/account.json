@@ -1,20 +1,20 @@
 {
   "signup.title": [
-    "Start your free trial | Room Designer 3D",
-    "Empiece su prueba gratis | Room Designer 3D",
-    "Comece o seu teste grátis | Room Designer 3D"
+    "Create your account | Room Designer 3D",
+    "Cree su cuenta | Room Designer 3D",
+    "Crie a sua conta | Room Designer 3D"
   ],
   "signup.description": [
     "Create your Room Designer 3D account.",
     "Cree su cuenta de Room Designer 3D.",
     "Crie a sua conta do Room Designer 3D."
   ],
-  "signup.h1": ["Start your free trial", "Empiece su prueba gratis", "Comece o seu teste grátis"],
+  "signup.h1": ["Create your account", "Cree su cuenta", "Crie a sua conta"],
   "signup.h1Login": ["Log in", "Iniciar sesión", "Entrar"],
   "signup.lede": [
-    "Create your account, then pick a plan. Your card is only charged after the {{@trialDays}}-day trial.",
-    "Cree su cuenta y luego elija un plan. Solo se cobra a su tarjeta después de los {{@trialDays}} días de prueba.",
-    "Crie a sua conta e depois escolha um plano. O cartão só é cobrado depois dos {{@trialDays}} dias de teste."
+    "Create your account, then pick a plan. Have a promo code? Enter it when you pick your plan and your first {{@promoDays}} days are free.",
+    "Cree su cuenta y luego elija un plan. ¿Tiene un código promocional? Escríbalo al elegir su plan y sus primeros {{@promoDays}} días son gratis.",
+    "Crie a sua conta e depois escolha um plano. Tem um código promocional? Digite-o ao escolher o plano e os seus primeiros {{@promoDays}} dias são grátis."
   ],
   "signup.tabs": ["Create an account or log in", "Crear una cuenta o iniciar sesión", "Criar uma conta ou entrar"],
   "signup.tabSignup": ["Create account", "Crear cuenta", "Criar conta"],
@@ -72,19 +72,19 @@
   "account.newPassword.save": ["Save password", "Guardar contraseña", "Salvar senha"],
   "account.plan.title": ["Your plan", "Su plan", "Seu plano"],
   "account.plan.buyStarter": [
-    "Start trial: Starter, {{@priceStarter}} a month",
-    "Empezar prueba: Starter, {{@priceStarter}} al mes",
-    "Começar teste: Starter, {{@priceStarter}} por mês"
+    "Choose Starter, {{@priceStarter}} a month",
+    "Elegir Starter, {{@priceStarter}} al mes",
+    "Escolher Starter, {{@priceStarter}} por mês"
   ],
   "account.plan.buyPro": [
-    "Start trial: Pro, {{@pricePro}} a month",
-    "Empezar prueba: Pro, {{@pricePro}} al mes",
-    "Começar teste: Pro, {{@pricePro}} por mês"
+    "Choose Pro, {{@pricePro}} a month",
+    "Elegir Pro, {{@pricePro}} al mes",
+    "Escolher Pro, {{@pricePro}} por mês"
   ],
   "account.plan.buyMax": [
-    "Start trial: Max, {{@priceMax}} a month",
-    "Empezar prueba: Max, {{@priceMax}} al mes",
-    "Começar teste: Max, {{@priceMax}} por mês"
+    "Choose Max, {{@priceMax}} a month",
+    "Elegir Max, {{@priceMax}} al mes",
+    "Escolher Max, {{@priceMax}} por mês"
   ],
   "account.plan.website": [
     "Add \"Put it on your website\" (+{{@priceWebsite}} a month; included in Max)",
@@ -92,9 +92,9 @@
     "Adicionar \"Coloque no seu site\" (+{{@priceWebsite}} por mês; incluído no Max)"
   ],
   "account.plan.trialNote": [
-    "Checkout is handled by Stripe. You can cancel before the trial ends and pay nothing.",
-    "El pago lo procesa Stripe. Puede cancelar antes de que termine la prueba y no pagar nada.",
-    "O pagamento é feito pela Stripe. Você pode cancelar antes do fim do teste e não pagar nada."
+    "Checkout is handled by Stripe. With a promo code your first {{@promoDays}} days are free: cancel before they end and you pay nothing.",
+    "El pago lo procesa Stripe. Con un código promocional sus primeros {{@promoDays}} días son gratis: si cancela antes de que terminen, no paga nada.",
+    "O pagamento é feito pela Stripe. Com um código promocional os seus primeiros {{@promoDays}} dias são grátis: se cancelar antes do fim, não paga nada."
   ],
   "account.plan.manage": [
     "Manage billing, change plan or cancel",
@@ -260,5 +260,6 @@
     "Digite o e-mail da sua conta para confirmar"
   ],
   "account.delete.submit": ["Delete everything", "Eliminar todo", "Excluir tudo"],
-  "account.delete.cancel": ["Keep my account", "Conservar mi cuenta", "Manter minha conta"]
+  "account.delete.cancel": ["Keep my account", "Conservar mi cuenta", "Manter minha conta"],
+  "account.plan.promo": ["Promo code (optional)", "Código promocional (opcional)", "Código promocional (opcional)"]
 }

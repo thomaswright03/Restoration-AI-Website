@@ -124,3 +124,53 @@ test("checkout: adding the website add-on puts it on the Stripe subscription and
   setup();
   assert.equal((await post("checkout.js", { addon: "website" })).json().error, "no-plan");
 });
+
+test("checkout: a promo code makes the first week free, once per account; a wrong code is refused", async () => {
+  delete process.env.PROMO_CODES;
+  delete process.env.TRIAL_DAYS;
+  let calls = setup();
+  const res = await post("checkout.js", { plan: "starter", promo: " freeweek " });
+  assert.equal(res.statusCode, 200, res.body);
+  const session = calls.find((c) => c.includes("/v1/checkout/sessions"));
+  assert.match(session, /subscription_data%5Btrial_period_days%5D=7/);
+  assert.match(session, /subscription_data%5Bmetadata%5D%5Bpromo%5D=FREEWEEK/);
+  assert.doesNotMatch(session, /allow_promotion_codes/);
+
+  // No code: no free days.
+  calls = setup();
+  await post("checkout.js", { plan: "starter" });
+  assert.doesNotMatch(
+    calls.find((c) => c.includes("/v1/checkout/sessions")),
+    /trial_period_days/,
+  );
+
+  // A code that isn't on the list never reaches Stripe.
+  calls = setup();
+  const bad = await post("checkout.js", { plan: "starter", promo: "NOPE" });
+  assert.equal(bad.statusCode, 400);
+  assert.equal(bad.json().error, "promo");
+  assert.ok(!calls.some((c) => c.includes("api.stripe.com")));
+
+  // Not again after an earlier subscription.
+  setup({
+    sub: { owner_id: USER, status: "canceled", stripe_subscription_id: "sub_old", stripe_customer_id: "cus_1" },
+  });
+  const used = await post("checkout.js", { plan: "starter", promo: "FREEWEEK" });
+  assert.equal(used.statusCode, 409);
+  assert.equal(used.json().error, "promo-used");
+
+  // PROMO_CODES replaces the list, with optional days per code; "none" turns codes off.
+  process.env.PROMO_CODES = "LAUNCH30:30, spring";
+  calls = setup();
+  await post("checkout.js", { plan: "starter", promo: "launch30" });
+  assert.match(
+    calls.find((c) => c.includes("/v1/checkout/sessions")),
+    /trial_period_days%5D=30/,
+  );
+  assert.equal((await post("checkout.js", { plan: "starter", promo: "FREEWEEK" })).json().error, "promo");
+  const { promoDays } = require("../../api/_plans.js");
+  assert.equal(promoDays("Spring"), 7);
+  process.env.PROMO_CODES = "none";
+  assert.equal(promoDays("FREEWEEK"), 0);
+  delete process.env.PROMO_CODES;
+});

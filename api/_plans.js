@@ -94,4 +94,33 @@ function isWebsitePrice(price) {
   return named.some((value) => /^website(?![a-z])/i.test(String(value || "")));
 }
 
-module.exports = { PLANS, planFromPrice, planOf, limitsOf, websiteOf, isWebsitePrice };
+// Promo codes that make the first days of a new account's first plan free
+// (a Stripe trial; the card is taken at checkout and first charged when it
+// ends). PROMO_CODES lists them, comma-separated, each optionally with its
+// own number of days: "FREEWEEK" or "FREEWEEK,LAUNCH30:30". Without a number
+// a code gives site-config.json plans.promoFreeDays (7). Unset, the one code
+// is FREEWEEK; set it to "none" to turn promo codes off.
+const DEFAULT_PROMO_CODES = "FREEWEEK";
+
+function promoCodes() {
+  const fallback = Number(CONFIG.promoFreeDays) > 0 ? Math.floor(Number(CONFIG.promoFreeDays)) : 7;
+  const raw = String(process.env.PROMO_CODES || "").trim() || DEFAULT_PROMO_CODES;
+  const codes = {};
+  for (const entry of raw.split(",")) {
+    const [code, days] = entry.split(":").map((s) => s.trim());
+    if (!code || code.toLowerCase() === "none") continue;
+    const n = Math.floor(Number(days));
+    codes[code.toUpperCase()] = days ? (n > 0 && n <= 730 ? n : 0) : fallback;
+  }
+  return codes;
+}
+
+// Free days for a code someone typed (any case, spaces ignored), or 0.
+function promoDays(code) {
+  const key = String(code || "")
+    .replace(/\s+/g, "")
+    .toUpperCase();
+  return (key && promoCodes()[key]) || 0;
+}
+
+module.exports = { PLANS, planFromPrice, planOf, limitsOf, websiteOf, isWebsitePrice, promoCodes, promoDays };

@@ -1,7 +1,7 @@
 "use strict";
 
-// api/account.js (Delete account) and api/checkout.js's "add the website
-// add-on" path, against a stand-in fetch for Supabase and Stripe.
+// api/account.js (Delete account) and api/checkout.js (plans, promo codes),
+// against a stand-in fetch for Supabase and Stripe.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -41,6 +41,7 @@ function setup({ sub = null, stripeFails = false } = {}) {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
   process.env.STRIPE_SECRET_KEY = "sk_test_x";
   process.env.STRIPE_PRICE_STARTER = "price_s";
+  // A leftover add-on price must never reach checkout.
   process.env.STRIPE_PRICE_WEBSITE = "price_web";
   const calls = [];
   global.fetch = async (url, opts = {}) => {
@@ -103,26 +104,16 @@ test("delete account: with no Stripe subscription, just the user goes; if Stripe
   assert.ok(!calls.some((c) => c.startsWith("DELETE db.example")));
 });
 
-test("checkout: adding the website add-on puts it on the Stripe subscription and the record", async () => {
-  const calls = setup({ sub: { owner_id: USER, status: "active", plan: "pro", stripe_subscription_id: "sub_1" } });
-  const res = await post("checkout.js", { addon: "website" });
+test("checkout: only the plan is sold; a website add-on is never added", async () => {
+  const calls = setup();
+  const res = await post("checkout.js", { plan: "starter", website: true });
   assert.equal(res.statusCode, 200, res.body);
-  assert.match(
-    calls.find((c) => c.includes("/v1/subscription_items")),
-    /subscription=sub_1&price=price_web/,
-  );
-  assert.match(
-    calls.find((c) => c.startsWith("PATCH db.example/rest/v1/subscriptions")),
-    /"website":true/,
-  );
-
-  // Already included (Max), a plan set by hand, or no plan at all.
-  setup({ sub: { owner_id: USER, status: "active", plan: "max" } });
-  assert.equal((await post("checkout.js", { addon: "website" })).json().already, true);
-  setup({ sub: { owner_id: USER, status: "active", plan: "starter" } });
-  assert.equal((await post("checkout.js", { addon: "website" })).json().error, "no-stripe");
-  setup();
-  assert.equal((await post("checkout.js", { addon: "website" })).json().error, "no-plan");
+  const session = calls.find((c) => c.includes("/v1/checkout/sessions"));
+  assert.doesNotMatch(session, /price_web|line_items%5B1%5D|website/);
+  // The old "add it to my plan" request just starts a plan checkout now.
+  const old = setup();
+  await post("checkout.js", { addon: "website" });
+  assert.ok(!old.some((c) => c.includes("/v1/subscription_items")));
 });
 
 test("checkout: a promo code makes the first week free, once per account; a wrong code is refused", async () => {

@@ -181,8 +181,6 @@
   var session = null;
   var business = null;
   var subscription = null;
-  // What the plan includes, from /api/projects: null until it answers.
-  var entitlements = null;
 
   function api(path, body) {
     return fetch(path, {
@@ -229,13 +227,12 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
     });
-    show($("plan-website-row"), canBuy && !!(config.plans && config.plans.website));
     var wanted = params.get("plan");
     if (canBuy && PLANS.indexOf(wanted) >= 0) {
       var btn = document.querySelector('[data-plan="' + wanted + '"]');
       if (btn) btn.classList.add("is-suggested");
     }
-    if (business) renderShare();
+    if (business) renderBusinessCards();
   }
 
   function loadSubscription() {
@@ -279,33 +276,10 @@
     });
   }
 
-  // The share card: the link and embed code once the plan is live and
-  // includes "Put it on your website"; otherwise why not, and how to add it.
-  function renderShare() {
-    var on = !!business;
-    show($("prices-card"), on);
-    show($("share-card"), on);
-    show($("leads-card"), on);
-    if (!on) return;
-    var live = isLive();
-    // If /api/projects can't say, show the link: the server still decides
-    // who may open it.
-    var website = !entitlements || entitlements.website !== false;
-    show($("share-inactive"), !live);
-    show($("share-locked"), live && !website);
-    show($("share-open"), live && website);
-    show($("share-add-website"), !!(config.payments && config.plans && config.plans.website));
-    if (!website) return;
-    var dir = $("share-lang").value;
-    var url = window.location.origin + "/" + dir + "designer.html?b=" + business.slug;
-    $("share-link").href = url;
-    $("share-link").textContent = url;
-    $("embed-code").value =
-      '<iframe src="' +
-      url +
-      '&embed=1" title="' +
-      T("acct.iframeTitle") +
-      '" style="width:100%;height:900px;border:0" loading="lazy" allow="fullscreen"></iframe>';
+  // The cards that need a business: its labor prices. (Customer requests
+  // show only when there are old ones to read; see loadLeads.)
+  function renderBusinessCards() {
+    show($("prices-card"), !!business);
   }
 
   function loadBusiness() {
@@ -317,7 +291,7 @@
         business = r.data || null;
         fillBusinessForm();
         fillPrices();
-        renderShare();
+        renderBusinessCards();
         if (business) loadLeads();
       });
   }
@@ -350,7 +324,7 @@
       business = r.data;
       status(out, "success", T("acct.saved"));
       fillPrices();
-      renderShare();
+      renderBusinessCards();
       loadLeads();
     });
   }
@@ -438,13 +412,15 @@
         .eq("id", lead.id)
         .then(function (r) {
           if (!r.error) li.remove();
-          show($("leads-empty"), !$("leads-list").children.length);
+          show($("leads-card"), !!$("leads-list").children.length);
         });
     });
     li.appendChild(del);
     return li;
   }
 
+  // Requests homeowners sent before a business's designer became owner-only
+  // (no new ones arrive): the card shows only while there are some to read.
   function loadLeads() {
     if (!business) return;
     client
@@ -459,7 +435,7 @@
         (r.data || []).forEach(function (lead) {
           list.appendChild(leadItem(lead));
         });
-        show($("leads-empty"), !list.children.length);
+        show($("leads-card"), !!list.children.length);
       });
   }
 
@@ -474,8 +450,6 @@
         return null;
       })
       .then(function (data) {
-        entitlements = data ? { plan: data.plan, website: data.website === true } : null;
-        renderShare();
         var text = !data
           ? ""
           : data.plan === "free"
@@ -490,22 +464,6 @@
         $("projects-summary").textContent = text;
         show($("projects-summary"), !!text);
         show($("projects-card"), true);
-      });
-  }
-
-  // Adds "Put it on your website" to the plan they already have.
-  function addWebsite(button) {
-    var out = $("share-message");
-    button.disabled = true;
-    api("/api/checkout", { addon: "website" })
-      .then(function () {
-        entitlements = Object.assign({}, entitlements, { website: true });
-        renderShare();
-        status(out, "success", T("acct.share.added"));
-      })
-      .catch(function (err) {
-        status(out, "error", T(err.code === "no-stripe" ? "acct.share.byHand" : "acct.error"));
-        button.disabled = false;
       });
   }
 
@@ -551,9 +509,8 @@
     var out = $("plan-message");
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
     button.disabled = true;
-    var website = plan !== "max" && $("plan-website").checked;
     var promo = $("plan-promo-row").hidden ? "" : $("plan-promo").value.trim();
-    api("/api/checkout", { plan: plan, website: website, promo: promo, lang: LANG === "en" ? "" : LANG })
+    api("/api/checkout", { plan: plan, promo: promo, lang: LANG === "en" ? "" : LANG })
       .then(function (data) {
         window.location.href = data.url;
       })
@@ -629,23 +586,7 @@
     $("prices-reset").addEventListener("click", function () {
       savePrices(null, true);
     });
-    $("share-lang").addEventListener("change", renderShare);
-    $("share-add-website").addEventListener("click", function () {
-      addWebsite($("share-add-website"));
-    });
     initDelete();
-    $("copy-embed").addEventListener("click", function () {
-      var code = $("embed-code");
-      code.select();
-      var done = function () {
-        status($("copy-status"), "success", T("acct.copied"));
-      };
-      if (navigator.clipboard) navigator.clipboard.writeText(code.value).then(done, done);
-      else {
-        document.execCommand("copy");
-        done();
-      }
-    });
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.addEventListener("click", function () {
         buy(b.getAttribute("data-plan"), b);

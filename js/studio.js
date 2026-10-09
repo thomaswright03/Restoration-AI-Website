@@ -4253,7 +4253,10 @@
     );
     body.appendChild(pdfStatus);
 
-    // The request form, filled in with the design.
+    // The request form, filled in with the design: only in the public demo.
+    // A business's designer is for its signed-in owner, who saves projects
+    // instead of sending requests to themselves.
+    if (!BIZ.demo) return;
     var message = document.getElementById("message");
     if (message && !ui.messageEdited) message.value = requestSummary(est);
     var service = document.getElementById("service");

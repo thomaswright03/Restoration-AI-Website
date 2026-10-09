@@ -49,9 +49,9 @@ create table if not exists public.subscriptions (
 -- starter | pro | max: which plan the subscription is on (api/_plans.js).
 -- Filled by the Stripe webhook; can also be set by hand in Table Editor.
 alter table public.subscriptions add column if not exists plan text;
--- "Put it on your website": the designer link and embed code for homeowners.
--- True when the add-on is on the Stripe subscription (the webhook keeps it
--- up to date); Max includes it whatever this says. Can be set by hand.
+-- Retired: the old "Put it on your website" add-on. Nothing reads or writes
+-- it any more (a business's designer opens only for its owner); kept so
+-- existing databases don't need a destructive change.
 alter table public.subscriptions add column if not exists website boolean not null default false;
 
 create table if not exists public.leads (

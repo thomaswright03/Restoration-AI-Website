@@ -9,16 +9,8 @@
     "Diseñe su baño en 3D y obtenga una estimación aproximada.",
     "Projete o seu banheiro em 3D e receba uma estimativa aproximada."
   ],
-  "designer.demo.eyebrow": [
-    "Live demo",
-    "Demo en vivo",
-    "Demonstração"
-  ],
-  "designer.demo.title": [
-    "Try the designer",
-    "Pruebe el diseñador",
-    "Teste o projetista"
-  ],
+  "designer.demo.eyebrow": ["Live demo", "Demo en vivo", "Demonstração"],
+  "designer.demo.title": ["Try the designer", "Pruebe el diseñador", "Teste o projetista"],
   "designer.demo.text": [
     "Measure the room, move the fixtures, pick products and finishes, and see the estimate. This demo uses a sample business; yours shows your name, phone and prices.",
     "Mida el baño, mueva las piezas, elija productos y acabados y vea la estimación. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
@@ -34,76 +26,32 @@
     "Este diseñador solo se abre para su dueño, con la sesión iniciada en su cuenta. Si es suyo, inicie sesión y ábralo desde Mis proyectos.",
     "Este projetista só abre para o dono, com o login ativo na conta. Se é o seu, entre e abra em Meus projetos."
   ],
-  "designer.studio.title": [
-    "Design your bathroom",
-    "Diseñe su baño",
-    "Projete o seu banheiro"
-  ],
-  "designer.studio.steps": [
-    "Design steps",
-    "Pasos del diseño",
-    "Etapas do projeto"
-  ],
-  "designer.studio.mini": [
-    "Open the floor plan",
-    "Abrir el plano",
-    "Abrir a planta"
-  ],
+  "designer.studio.title": ["Design your bathroom", "Diseñe su baño", "Projete o seu banheiro"],
+  "designer.studio.steps": ["Design steps", "Pasos del diseño", "Etapas do projeto"],
+  "designer.studio.mini": ["Open the floor plan", "Abrir el plano", "Abrir a planta"],
   "designer.studio.disclosure": [
     "A 3D preview built from your measurements and picks, not a picture of your actual bathroom. Prices are a rough, non-binding estimate until the business sends a real quote.",
     "Una vista previa en 3D hecha con sus medidas y elecciones; no es una imagen de su baño real. Los precios son una estimación aproximada y no vinculante hasta que la empresa le envíe una cotización real.",
     "Uma prévia em 3D feita com as suas medidas e escolhas, não uma imagem do seu banheiro real. Os preços são uma estimativa aproximada e sem compromisso até a empresa enviar um orçamento de verdade."
   ],
-  "designer.link.title": [
-    "Link to your design",
-    "Enlace a su diseño",
-    "Link do seu projeto"
-  ],
+  "designer.link.title": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
   "designer.link.text": [
     "Copy this link to come back to your design on another device. The design itself is in the link, not your contact details.",
     "Copie este enlace para volver a su diseño en otro dispositivo. El diseño está en el propio enlace, no sus datos de contacto.",
     "Copie este link para voltar ao seu projeto em outro aparelho. O projeto está no próprio link, não os seus dados de contato."
   ],
-  "designer.link.label": [
-    "Link to your design",
-    "Enlace a su diseño",
-    "Link do seu projeto"
-  ],
-  "designer.link.done": [
-    "Done",
-    "Listo",
-    "Pronto"
-  ],
+  "designer.link.label": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
+  "designer.link.done": ["Done", "Listo", "Pronto"],
   "designer.form.demoNote": [
     "Demo: requests sent from this page aren't delivered to anyone.",
     "Demo: las solicitudes enviadas desde esta página no le llegan a nadie.",
     "Demonstração: os pedidos enviados desta página não chegam a ninguém."
   ],
-  "designer.form.name": [
-    "Full Name",
-    "Nombre completo",
-    "Nome completo"
-  ],
-  "designer.form.phone": [
-    "Phone Number",
-    "Número de teléfono",
-    "Telefone"
-  ],
-  "designer.form.email": [
-    "Email Address",
-    "Correo electrónico",
-    "E-mail"
-  ],
-  "designer.form.service": [
-    "Bathroom Work Needed",
-    "Trabajo que necesita en el baño",
-    "Serviço de banheiro desejado"
-  ],
-  "designer.form.full": [
-    "Full bathroom remodel",
-    "Remodelación completa del baño",
-    "Reforma completa do banheiro"
-  ],
+  "designer.form.name": ["Full Name", "Nombre completo", "Nome completo"],
+  "designer.form.phone": ["Phone Number", "Número de teléfono", "Telefone"],
+  "designer.form.email": ["Email Address", "Correo electrónico", "E-mail"],
+  "designer.form.service": ["Bathroom Work Needed", "Trabajo que necesita en el baño", "Serviço de banheiro desejado"],
+  "designer.form.full": ["Full bathroom remodel", "Remodelación completa del baño", "Reforma completa do banheiro"],
   "designer.form.partial": [
     "Part of a bathroom (e.g. fixtures, tile, or flooring)",
     "Parte de un baño (p. ej., accesorios, azulejo o piso)",
@@ -114,94 +62,42 @@
     "Otro trabajo en el baño / aún no estoy seguro",
     "Outro serviço de banheiro / ainda não sei"
   ],
-  "designer.form.message": [
-    "Tell Us About Your Project",
-    "Cuéntenos sobre su proyecto",
-    "Conte sobre o seu projeto"
-  ],
+  "designer.form.message": ["Tell Us About Your Project", "Cuéntenos sobre su proyecto", "Conte sobre o seu projeto"],
   "designer.form.messageHelp": [
     "Your design and its link are filled in for you. Add anything else they should know, like your timeline.",
     "Su diseño y su enlace ya están incluidos. Agregue cualquier otra cosa que deban saber, como su plazo.",
     "O seu projeto e o link já estão incluídos. Acrescente o que mais eles devem saber, como o seu prazo."
   ],
-  "designer.form.honeypot": [
-    "Leave this empty",
-    "Deje esto en blanco",
-    "Deixe este campo vazio"
-  ],
+  "designer.form.honeypot": ["Leave this empty", "Deje esto en blanco", "Deixe este campo vazio"],
   "designer.form.consent": [
     "<strong>How this form works:</strong> when you press Send Request, what you entered above is sent to <span data-biz=\"name\"></span> through Room Designer 3D, the service that runs this designer, which stores it for them. They use your details to respond to your request and prepare your quote. Nothing is sold.",
     "<strong>Cómo funciona este formulario:</strong> al presionar Enviar solicitud, lo que escribió arriba se envía a <span data-biz=\"name\"></span> a través de Room Designer 3D, el servicio que hace funcionar este diseñador, que lo guarda para la empresa. La empresa usa sus datos para responder a su solicitud y preparar su cotización. No se vende nada.",
     "<strong>Como este formulário funciona:</strong> quando você aperta Enviar solicitação, o que você preencheu acima é enviado para <span data-biz=\"name\"></span> por meio do Room Designer 3D, o serviço que faz este projetista funcionar, que guarda as informações para a empresa. A empresa usa os seus dados para responder ao seu pedido e preparar o seu orçamento. Nada é vendido."
   ],
-  "designer.form.send": [
-    "Send Request",
-    "Enviar solicitud",
-    "Enviar solicitação"
-  ],
-  "designer.form.talk": [
-    "Prefer to talk? Call",
-    "¿Prefiere hablar? Llame al",
-    "Prefere conversar? Ligue para"
-  ],
+  "designer.form.send": ["Send Request", "Enviar solicitud", "Enviar solicitação"],
+  "designer.form.talk": ["Prefer to talk? Call", "¿Prefiere hablar? Llame al", "Prefere conversar? Ligue para"],
   "designer.poweredBy": [
     "Powered by Room Designer 3D",
     "Con la tecnología de Room Designer 3D",
     "Desenvolvido com Room Designer 3D"
   ],
-  "designer.project.label": [
-    "Your project",
-    "Su proyecto",
-    "Seu projeto"
-  ],
-  "designer.project.save": [
-    "Save project",
-    "Guardar proyecto",
-    "Salvar projeto"
-  ],
-  "designer.project.saveNew": [
-    "Save as new project",
-    "Guardar como proyecto nuevo",
-    "Salvar como projeto novo"
-  ],
-  "designer.project.mine": [
-    "My projects",
-    "Mis proyectos",
-    "Meus projetos"
-  ],
-  "designer.preview.title": [
-    "Only you can see this.",
-    "Solo usted puede ver esto.",
-    "Só você pode ver isto."
-  ],
+  "designer.project.label": ["Your project", "Su proyecto", "Seu projeto"],
+  "designer.project.save": ["Save project", "Guardar proyecto", "Salvar projeto"],
+  "designer.project.saveNew": ["Save as new project", "Guardar como proyecto nuevo", "Salvar como projeto novo"],
+  "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"],
+  "designer.preview.title": ["Only you can see this.", "Solo usted puede ver esto.", "Só você pode ver isto."],
   "designer.preview.text": [
     "Your plan isn't active, so you can look around but can't save projects. Pick a plan to turn it on.",
     "Su plan no está activo, así que puede explorar pero no guardar proyectos. Elija un plan para activarlo.",
     "O seu plano não está ativo, então você pode explorar, mas não salvar projetos. Escolha um plano para ativar."
   ],
-  "designer.preview.cta": [
-    "Pick a plan",
-    "Elegir un plan",
-    "Escolher um plano"
-  ],
-  "designer.project.newTitle": [
-    "New project",
-    "Nuevo proyecto",
-    "Novo projeto"
-  ],
+  "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+  "designer.project.newTitle": ["New project", "Nuevo proyecto", "Novo projeto"],
   "designer.project.newText": [
     "Who and where is this job for? Everything is optional, and you can change it later on the project's page.",
     "¿Para quién y dónde es este trabajo? Todo es opcional y puede cambiarlo después en la página del proyecto.",
     "Para quem e onde é este serviço? Tudo é opcional, e você pode mudar depois na página do projeto."
   ],
-  "designer.project.create": [
-    "Save project",
-    "Guardar proyecto",
-    "Salvar projeto"
-  ],
-  "designer.project.cancel": [
-    "Cancel",
-    "Cancelar",
-    "Cancelar"
-  ]
+  "designer.project.create": ["Save project", "Guardar proyecto", "Salvar projeto"],
+  "designer.project.cancel": ["Cancel", "Cancelar", "Cancelar"]
 }

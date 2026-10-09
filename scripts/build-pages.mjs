@@ -10,7 +10,7 @@
 //   @root      path back to the site root ("", "../", or "/" on 404.html)
 //   @lang      en | es | pt          @htmlLang  en | es | pt-BR
 //   @dir       "" | "es/" | "pt/"    @page      the page's file name
-//   @priceStarter, @pricePro, @priceMax, @priceWebsite, @promoDays (free days a promo code
+//   @priceStarter, @pricePro, @priceMax, @promoDays (free days a promo code
 //   gives), and each
 //   plan's limits (@starterMonthly, @starterTotal, @proMonthly, ...)
 //                                    from site-config.json "plans"
@@ -69,7 +69,7 @@ function count(n, locale) {
 
 // Prices and project limits for each plan, as the pricing section shows them.
 function planBuiltins(plans, locale) {
-  const out = { priceWebsite: money(Number(plans.websiteAddOn) || 0, locale) };
+  const out = {};
   for (const name of ["starter", "pro", "max"]) {
     const p = plans[name] || {};
     const cap = name[0].toUpperCase() + name.slice(1);

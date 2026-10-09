@@ -172,10 +172,6 @@
                 <button type="button" class="btn btn-primary" data-plan="pro">Choose Pro, $99.99 a month</button>
                 <button type="button" class="btn btn-outline-dark" data-plan="max">Choose Max, $199.99 a month</button>
               </div>
-              <label class="check-row" id="plan-website-row" hidden>
-                <input type="checkbox" id="plan-website" />
-                <span>Add "Put it on your website" (+$9.99 a month; included in Max)</span>
-              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               Checkout is handled by Stripe. With a promo code your first 7 days are free: cancel before they end and
@@ -395,53 +391,8 @@
             </form>
           </div>
 
-          <div class="app-card" id="share-card" hidden>
-            <h2>Put it on your website</h2>
-            <p class="form-note" id="share-inactive" hidden>Your designer goes live once your plan is active.</p>
-            <div id="share-locked" hidden>
-              <p>
-                Your designer link and the code for your website come with the "Put it on your website" add-on ($9.99 a
-                month; included in Max). Until then, your designer is for your own use: open it from My projects.
-              </p>
-              <div class="app-actions">
-                <button type="button" class="btn btn-primary" id="share-add-website" hidden>
-                  Add it: $9.99 a month
-                </button>
-              </div>
-              <p class="form-note" id="share-locked-help" data-show-if="company.supportEmail" hidden>
-                Questions, or a plan set up for you by hand? Email
-                <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a> and we'll
-                add it.
-              </p>
-              <p class="form-status" id="share-message" role="status" aria-live="polite" hidden></p>
-            </div>
-            <div id="share-open" hidden>
-              <div class="form-group">
-                <label for="share-lang">Language</label>
-                <select id="share-lang">
-                  <option value="">English</option>
-                  <option value="es/">Español</option>
-                  <option value="pt/">Português</option>
-                </select>
-              </div>
-              <p>Your link: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
-              <div class="form-group">
-                <label for="embed-code">Code for your website</label>
-                <textarea id="embed-code" readonly rows="4"></textarea>
-                <p class="form-note">
-                  Paste it where the designer should appear, in an HTML or embed block of your website builder.
-                </p>
-              </div>
-              <button type="button" class="btn btn-outline-dark" id="copy-embed">Copy code</button>
-              <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
-            </div>
-          </div>
-
           <div class="app-card" id="leads-card" hidden>
             <h2>Customer requests</h2>
-            <p class="form-note" id="leads-empty">
-              No requests yet. They appear here when a customer sends their design.
-            </p>
             <ol class="lead-list" id="leads-list"></ol>
           </div>
 

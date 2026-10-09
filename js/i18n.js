@@ -693,17 +693,6 @@
       "Los precios deben ser números de 0 a 100.000.",
       "Os preços devem ser números de 0 a 100.000.",
     ],
-    "acct.copied": ["Copied.", "Copiado.", "Copiado."],
-    "acct.share.added": [
-      "Added. Your link and code are below; the add-on is on your next invoice.",
-      "Agregado. Su enlace y su código están abajo; el complemento aparece en su próxima factura.",
-      "Adicionado. O seu link e o código estão abaixo; o adicional entra na sua próxima fatura.",
-    ],
-    "acct.share.byHand": [
-      "Your plan was set up by hand, so email us and we'll add it.",
-      "Su plan se configuró a mano, así que escríbanos y lo agregamos.",
-      "O seu plano foi configurado à mão, então escreva para nós e nós adicionamos.",
-    ],
     "acct.delete.mismatch": [
       "That doesn't match your sign-in email.",
       "No coincide con el correo de su cuenta.",
@@ -720,7 +709,6 @@
       "No pudimos cancelar su suscripción, así que no se eliminó nada. Cancélela primero en Administrar pagos o escríbanos.",
       "Não conseguimos cancelar a sua assinatura, então nada foi excluído. Cancele-a primeiro em Gerenciar pagamentos ou escreva para nós.",
     ],
-    "acct.iframeTitle": ["Bathroom designer", "Diseñador de baños", "Projetista de banheiros"],
     "acct.lead.work": ["Work", "Trabajo", "Serviço"],
     "acct.lead.language": ["Language", "Idioma", "Idioma"],
     "acct.lead.delete": ["Delete", "Eliminar", "Excluir"],
@@ -974,11 +962,7 @@
     "studio.show": ["Show", "Mostrar", "Mostrar"],
     "studio.newTab": ["(opens in a new tab)", "(se abre en una pestaña nueva)", "(abre em uma nova aba)"],
     "studio.copyLink": ["Copy a link to this design", "Copiar el enlace de este diseño", "Copiar o link deste projeto"],
-    "studio.linkCopied": [
-      "Link copied. Anyone with it can open this design.",
-      "Enlace copiado. Cualquiera que lo tenga puede abrir este diseño.",
-      "Link copiado. Qualquer pessoa com ele pode abrir este projeto.",
-    ],
+    "studio.linkCopied": ["Link copied.", "Enlace copiado.", "Link copiado."],
     "studio.openedLink": [
       "Here's the design from your link.",
       "Aquí está el diseño de su enlace.",

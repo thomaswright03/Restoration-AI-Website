@@ -6,14 +6,13 @@
 // studio's scripts load, so they speak for that business.
 //
 //   - No ?b= (or ?b=demo): the built-in sample business, for the public demo.
-//   - ?b=<slug>: /api/business?b=<slug> is loaded as a script right here, so it
-//     runs before the next <script> on the page. It calls
-//     DesignerBusiness.load({...}) with the business's public profile, or
-//     DesignerBusiness.load(null, reason) when the slug is unknown, the
-//     subscription isn't active or the plan lacks "Put it on your website",
-//     and the studio is replaced by a short notice. The business's own
-//     signed-in owner still gets their designer in those last two cases
-//     (preview / websiteLocked), with a banner saying customers can't.
+//   - ?b=<slug>: /api/business?b=<slug>&t=<sign-in token> is loaded as a
+//     script right here, so it runs before the next <script> on the page. A
+//     business's designer opens only for its own signed-in owner: it calls
+//     DesignerBusiness.load({...}) with the business's profile for them (with
+//     preview: true while the plan isn't active), or
+//     DesignerBusiness.load(null, reason) for anyone else, and the studio is
+//     replaced by a short notice.
 //
 // Must load after js/bathroom-pricing.js (so a business's own labor prices can
 // replace the defaults) and before js/script.js and js/studio.js.
@@ -61,13 +60,6 @@
 
   biz.load = function (data, reason) {
     if (!data) {
-      // Not open to customers: ask again with the sign-in, in case this is
-      // the owner using their own designer. Only then, so a sign-in never
-      // rides along in the address of every business's designer someone opens.
-      if ((reason === "inactive" || reason === "no-website") && !profileScript.withToken) {
-        var token = signInToken();
-        if (token) return profileScript(token);
-      }
       biz.unavailable = reason || "unavailable";
       return;
     }
@@ -81,16 +73,14 @@
     biz.leadEndpoint = "/api/leads";
     biz.demo = false;
     biz.unavailable = "";
-    // The owner looking at their own designer before it's live, or on a plan
-    // without "Put it on your website" (then it's for their own use only).
+    // The owner looking at their own designer before their plan is active.
     biz.preview = data.preview === true;
-    biz.websiteLocked = data.websiteLocked === true;
     applyPrices(data.prices);
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in
-  // localStorage as sb-<project>-auth-token). Sent along, only when the
-  // business isn't live, so its owner can see their designer beforehand.
+  // localStorage as sb-<project>-auth-token). Sent along so the business's
+  // owner, and only they, can open its designer.
   function signInToken() {
     try {
       for (var i = 0; i < localStorage.length; i++) {
@@ -124,13 +114,12 @@
     // Assume unavailable until the profile script says otherwise (it may 404
     // or be blocked), so a broken link never shows the sample business.
     biz.unavailable = "loading";
-    profileScript("");
+    profileScript(signInToken());
   }
 
   // Loads the business's profile as a script, so it runs before the next
   // <script> on the page (also when called from inside that script).
   function profileScript(token) {
-    profileScript.withToken = !!token;
     document.write(
       '<script src="/api/business?b=' +
         encodeURIComponent(biz.slug) +
@@ -155,9 +144,6 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-preview]"), function (el) {
       el.hidden = !biz.preview;
-    });
-    Array.prototype.forEach.call(document.querySelectorAll("[data-biz-website-locked]"), function (el) {
-      el.hidden = !biz.websiteLocked;
     });
     if (biz.unavailable) {
       Array.prototype.forEach.call(document.querySelectorAll("[data-biz-live]"), function (el) {

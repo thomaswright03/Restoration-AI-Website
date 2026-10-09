@@ -176,10 +176,6 @@
                 <button type="button" class="btn btn-primary" data-plan="pro">Elegir Pro, $99.99 al mes</button>
                 <button type="button" class="btn btn-outline-dark" data-plan="max">Elegir Max, $199.99 al mes</button>
               </div>
-              <label class="check-row" id="plan-website-row" hidden>
-                <input type="checkbox" id="plan-website" />
-                <span>Agregar "Póngalo en su sitio web" (+$9.99 al mes; incluido en Max)</span>
-              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               El pago lo procesa Stripe. Con un código promocional sus primeros 7 días son gratis: si cancela antes de
@@ -405,54 +401,8 @@
             </form>
           </div>
 
-          <div class="app-card" id="share-card" hidden>
-            <h2>Póngalo en su sitio web</h2>
-            <p class="form-note" id="share-inactive" hidden>Su diseñador se activa cuando su plan esté activo.</p>
-            <div id="share-locked" hidden>
-              <p>
-                Su enlace del diseñador y el código para su sitio web vienen con el complemento "Póngalo en su sitio
-                web" ($9.99 al mes; incluido en Max). Mientras tanto, su diseñador es solo para su propio uso: ábralo
-                desde Mis proyectos.
-              </p>
-              <div class="app-actions">
-                <button type="button" class="btn btn-primary" id="share-add-website" hidden>
-                  Agregarlo: $9.99 al mes
-                </button>
-              </div>
-              <p class="form-note" id="share-locked-help" data-show-if="company.supportEmail" hidden>
-                ¿Preguntas, o un plan que le configuramos a mano? Escriba a
-                <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a> y lo
-                agregamos.
-              </p>
-              <p class="form-status" id="share-message" role="status" aria-live="polite" hidden></p>
-            </div>
-            <div id="share-open" hidden>
-              <div class="form-group">
-                <label for="share-lang">Idioma</label>
-                <select id="share-lang">
-                  <option value="">English</option>
-                  <option value="es/">Español</option>
-                  <option value="pt/">Português</option>
-                </select>
-              </div>
-              <p>Su enlace: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
-              <div class="form-group">
-                <label for="embed-code">Código para su sitio web</label>
-                <textarea id="embed-code" readonly rows="4"></textarea>
-                <p class="form-note">
-                  Péguelo donde debe aparecer el diseñador, en un bloque HTML o de inserción del editor de su sitio.
-                </p>
-              </div>
-              <button type="button" class="btn btn-outline-dark" id="copy-embed">Copiar código</button>
-              <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
-            </div>
-          </div>
-
           <div class="app-card" id="leads-card" hidden>
             <h2>Solicitudes de clientes</h2>
-            <p class="form-note" id="leads-empty">
-              Aún no hay solicitudes. Aparecen aquí cuando un cliente envía su diseño.
-            </p>
             <ol class="lead-list" id="leads-list"></ol>
           </div>
 

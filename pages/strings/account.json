@@ -9,111 +9,43 @@
     "Cree su cuenta de Room Designer 3D.",
     "Crie a sua conta do Room Designer 3D."
   ],
-  "signup.h1": [
-    "Create your account",
-    "Cree su cuenta",
-    "Crie a sua conta"
-  ],
-  "signup.h1Login": [
-    "Log in",
-    "Iniciar sesión",
-    "Entrar"
-  ],
+  "signup.h1": ["Create your account", "Cree su cuenta", "Crie a sua conta"],
+  "signup.h1Login": ["Log in", "Iniciar sesión", "Entrar"],
   "signup.lede": [
     "Create your account, then pick a plan. Have a promo code? Enter it when you pick your plan and your first {{@promoDays}} days are free.",
     "Cree su cuenta y luego elija un plan. ¿Tiene un código promocional? Escríbalo al elegir su plan y sus primeros {{@promoDays}} días son gratis.",
     "Crie a sua conta e depois escolha um plano. Tem um código promocional? Digite-o ao escolher o plano e os seus primeiros {{@promoDays}} dias são grátis."
   ],
-  "signup.tabs": [
-    "Create an account or log in",
-    "Crear una cuenta o iniciar sesión",
-    "Criar uma conta ou entrar"
-  ],
-  "signup.tabSignup": [
-    "Create account",
-    "Crear cuenta",
-    "Criar conta"
-  ],
-  "signup.tabLogin": [
-    "Log in",
-    "Iniciar sesión",
-    "Entrar"
-  ],
-  "signup.passwordHint": [
-    "At least 8 characters.",
-    "Al menos 8 caracteres.",
-    "Pelo menos 8 caracteres."
-  ],
-  "signup.submit": [
-    "Create account",
-    "Crear cuenta",
-    "Criar conta"
-  ],
-  "signup.submitLogin": [
-    "Log in",
-    "Iniciar sesión",
-    "Entrar"
-  ],
+  "signup.tabs": ["Create an account or log in", "Crear una cuenta o iniciar sesión", "Criar uma conta ou entrar"],
+  "signup.tabSignup": ["Create account", "Crear cuenta", "Criar conta"],
+  "signup.tabLogin": ["Log in", "Iniciar sesión", "Entrar"],
+  "signup.passwordHint": ["At least 8 characters.", "Al menos 8 caracteres.", "Pelo menos 8 caracteres."],
+  "signup.submit": ["Create account", "Crear cuenta", "Criar conta"],
+  "signup.submitLogin": ["Log in", "Iniciar sesión", "Entrar"],
   "signup.submitReset": [
     "Email me a reset link",
     "Enviarme un enlace para restablecerla",
     "Enviar um link para redefinir"
   ],
-  "signup.forgot": [
-    "Forgot your password?",
-    "¿Olvidó su contraseña?",
-    "Esqueceu a senha?"
-  ],
-  "signup.back": [
-    "Back to log in",
-    "Volver a iniciar sesión",
-    "Voltar para entrar"
-  ],
+  "signup.forgot": ["Forgot your password?", "¿Olvidó su contraseña?", "Esqueceu a senha?"],
+  "signup.back": ["Back to log in", "Volver a iniciar sesión", "Voltar para entrar"],
   "signup.consent": [
     "By creating an account you agree to the <a href=\"terms.html\">Terms of Service</a> and the <a href=\"privacy.html\">Privacy Policy</a>.",
     "Al crear una cuenta acepta los <a href=\"terms.html\">Términos del servicio</a> y la <a href=\"privacy.html\">Política de privacidad</a>.",
     "Ao criar uma conta você aceita os <a href=\"terms.html\">Termos de Serviço</a> e a <a href=\"privacy.html\">Política de Privacidade</a>."
   ],
-  "account.title": [
-    "Your account | Room Designer 3D",
-    "Su cuenta | Room Designer 3D",
-    "Sua conta | Room Designer 3D"
-  ],
+  "account.title": ["Your account | Room Designer 3D", "Su cuenta | Room Designer 3D", "Sua conta | Room Designer 3D"],
   "account.description": [
     "Manage your plan, business details, prices and requests.",
     "Administre su plan, los datos de su empresa, sus precios y sus solicitudes.",
     "Gerencie o seu plano, os dados da empresa, os preços e os pedidos."
   ],
-  "account.h1": [
-    "Your account",
-    "Su cuenta",
-    "Sua conta"
-  ],
-  "account.signOut": [
-    "Log out",
-    "Cerrar sesión",
-    "Sair"
-  ],
-  "account.loading": [
-    "Loading…",
-    "Cargando…",
-    "Carregando…"
-  ],
-  "account.email": [
-    "Email",
-    "Correo electrónico",
-    "E-mail"
-  ],
-  "account.password": [
-    "Password",
-    "Contraseña",
-    "Senha"
-  ],
-  "account.save": [
-    "Save",
-    "Guardar",
-    "Salvar"
-  ],
+  "account.h1": ["Your account", "Su cuenta", "Sua conta"],
+  "account.signOut": ["Log out", "Cerrar sesión", "Sair"],
+  "account.loading": ["Loading…", "Cargando…", "Carregando…"],
+  "account.email": ["Email", "Correo electrónico", "E-mail"],
+  "account.password": ["Password", "Contraseña", "Senha"],
+  "account.save": ["Save", "Guardar", "Salvar"],
   "account.off.title": [
     "Accounts aren't switched on yet.",
     "Las cuentas aún no están activadas.",
@@ -134,31 +66,11 @@
     "Revise su conexión a internet y vuelva a intentarlo.",
     "Verifique sua conexão com a internet e tente de novo."
   ],
-  "account.down.retry": [
-    "Try again",
-    "Intentar de nuevo",
-    "Tentar de novo"
-  ],
-  "account.newPassword.title": [
-    "Choose a new password",
-    "Elija una contraseña nueva",
-    "Escolha uma senha nova"
-  ],
-  "account.newPassword.label": [
-    "New password",
-    "Contraseña nueva",
-    "Senha nova"
-  ],
-  "account.newPassword.save": [
-    "Save password",
-    "Guardar contraseña",
-    "Salvar senha"
-  ],
-  "account.plan.title": [
-    "Your plan",
-    "Su plan",
-    "Seu plano"
-  ],
+  "account.down.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
+  "account.newPassword.title": ["Choose a new password", "Elija una contraseña nueva", "Escolha uma senha nova"],
+  "account.newPassword.label": ["New password", "Contraseña nueva", "Senha nova"],
+  "account.newPassword.save": ["Save password", "Guardar contraseña", "Salvar senha"],
+  "account.plan.title": ["Your plan", "Su plan", "Seu plano"],
   "account.plan.buyStarter": [
     "Choose Starter, {{@priceStarter}} a month",
     "Elegir Starter, {{@priceStarter}} al mes",
@@ -184,41 +96,21 @@
     "Administrar pagos, cambiar de plan o cancelar",
     "Gerenciar pagamentos, mudar de plano ou cancelar"
   ],
-  "account.biz.title": [
-    "Your business",
-    "Su empresa",
-    "Sua empresa"
-  ],
+  "account.biz.title": ["Your business", "Su empresa", "Sua empresa"],
   "account.biz.help": [
     "The designer shows these to your customers.",
     "El diseñador se los muestra a sus clientes.",
     "O projetista mostra estes dados aos seus clientes."
   ],
-  "account.biz.name": [
-    "Business name",
-    "Nombre de la empresa",
-    "Nome da empresa"
-  ],
-  "account.biz.slug": [
-    "Your designer's web address",
-    "Dirección web de su diseñador",
-    "Endereço do seu projetista"
-  ],
+  "account.biz.name": ["Business name", "Nombre de la empresa", "Nome da empresa"],
+  "account.biz.slug": ["Your designer's web address", "Dirección web de su diseñador", "Endereço do seu projetista"],
   "account.biz.slugHelp": [
     "Lowercase letters, numbers and dashes, e.g. smith-remodeling.",
     "Letras minúsculas, números y guiones, p. ej., smith-remodeling.",
     "Letras minúsculas, números e hifens, por exemplo smith-remodeling."
   ],
-  "account.biz.phone": [
-    "Phone for customers",
-    "Teléfono para clientes",
-    "Telefone para clientes"
-  ],
-  "account.biz.email": [
-    "Email for customers",
-    "Correo para clientes",
-    "E-mail para clientes"
-  ],
+  "account.biz.phone": ["Phone for customers", "Teléfono para clientes", "Telefone para clientes"],
+  "account.biz.email": ["Email for customers", "Correo para clientes", "E-mail para clientes"],
   "account.biz.legal": [
     "Registered legal name (optional)",
     "Razón social registrada (opcional)",
@@ -229,11 +121,7 @@
     "Aparece en las estimaciones después del nombre de su empresa, p. ej., Smith Remodeling LLC.",
     "Aparece nas estimativas depois do nome da empresa, por exemplo Smith Remodeling LLC."
   ],
-  "account.prices.title": [
-    "Your labor prices",
-    "Sus precios de mano de obra",
-    "Seus preços de mão de obra"
-  ],
+  "account.prices.title": ["Your labor prices", "Sus precios de mano de obra", "Seus preços de mão de obra"],
   "account.prices.help": [
     "Estimates use these. Leave a box empty to use the default shown in it.",
     "Las estimaciones usan estos precios. Deje una casilla vacía para usar el valor predeterminado que muestra.",
@@ -244,11 +132,7 @@
     "La instalación de bañeras se cobra al 70% del precio de la ducha.",
     "A instalação de banheira é cobrada a 70% do preço do box."
   ],
-  "account.prices.reset": [
-    "Use the defaults",
-    "Usar los valores predeterminados",
-    "Usar os valores padrão"
-  ],
+  "account.prices.reset": ["Use the defaults", "Usar los valores predeterminados", "Usar os valores padrão"],
   "account.price.Demo_Price_Per_SqFt": [
     "Demolition, per sq ft of floor ($)",
     "Demolición, por pie² de piso ($)",
@@ -264,11 +148,7 @@
     "Otro piso, por pie² ($)",
     "Outro piso, por pé² ($)"
   ],
-  "account.price.Painting_Price_Per_SqFt": [
-    "Painting, per sq ft ($)",
-    "Pintura, por pie² ($)",
-    "Pintura, por pé² ($)"
-  ],
+  "account.price.Painting_Price_Per_SqFt": ["Painting, per sq ft ($)", "Pintura, por pie² ($)", "Pintura, por pé² ($)"],
   "account.price.Toilet_Price": [
     "Toilet install, each ($)",
     "Instalación de inodoro, c/u ($)",
@@ -319,41 +199,16 @@
     "Instalación de puerta de entrada, c/u ($)",
     "Instalação de porta de entrada, cada ($)"
   ],
-  "account.leads.title": [
-    "Customer requests",
-    "Solicitudes de clientes",
-    "Pedidos de clientes"
-  ],
-  "account.leads.empty": [
-    "No requests yet. They appear here when a customer sends their design.",
-    "Aún no hay solicitudes. Aparecen aquí cuando un cliente envía su diseño.",
-    "Ainda não há pedidos. Eles aparecem aqui quando um cliente envia o projeto."
-  ],
-  "account.projects.title": [
-    "Projects",
-    "Proyectos",
-    "Projetos"
-  ],
-  "account.projects.link": [
-    "Open my projects",
-    "Abrir mis proyectos",
-    "Abrir meus projetos"
-  ],
-  "account.delete.title": [
-    "Delete account",
-    "Eliminar cuenta",
-    "Excluir conta"
-  ],
+  "account.leads.title": ["Customer requests", "Solicitudes de clientes", "Pedidos de clientes"],
+  "account.projects.title": ["Projects", "Proyectos", "Projetos"],
+  "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"],
+  "account.delete.title": ["Delete account", "Eliminar cuenta", "Excluir conta"],
   "account.delete.help": [
     "Closes your account for good: your business profile, prices, saved projects (with their clients' details), homeowner requests and sign-in are deleted, and any subscription is cancelled. Billing records stay with Stripe as the law requires.",
     "Cierra su cuenta definitivamente: se eliminan el perfil de su empresa, los precios, los proyectos guardados (con los datos de sus clientes), las solicitudes de clientes y su inicio de sesión, y se cancela cualquier suscripción. Los registros de facturación se conservan en Stripe como exige la ley.",
     "Encerra a sua conta de vez: o perfil da empresa, os preços, os projetos salvos (com os dados dos clientes), os pedidos de clientes e o seu login são excluídos, e qualquer assinatura é cancelada. Os registros de cobrança ficam na Stripe como a lei exige."
   ],
-  "account.delete.start": [
-    "Delete my account…",
-    "Eliminar mi cuenta…",
-    "Excluir minha conta…"
-  ],
+  "account.delete.start": ["Delete my account…", "Eliminar mi cuenta…", "Excluir minha conta…"],
   "account.delete.warning": [
     "This can't be undone. Download anything you want to keep first.",
     "Esto no se puede deshacer. Descargue antes lo que quiera conservar.",
@@ -364,19 +219,7 @@
     "Escriba el correo de su cuenta para confirmar",
     "Digite o e-mail da sua conta para confirmar"
   ],
-  "account.delete.submit": [
-    "Delete everything",
-    "Eliminar todo",
-    "Excluir tudo"
-  ],
-  "account.delete.cancel": [
-    "Keep my account",
-    "Conservar mi cuenta",
-    "Manter minha conta"
-  ],
-  "account.plan.promo": [
-    "Promo code (optional)",
-    "Código promocional (opcional)",
-    "Código promocional (opcional)"
-  ]
+  "account.delete.submit": ["Delete everything", "Eliminar todo", "Excluir tudo"],
+  "account.delete.cancel": ["Keep my account", "Conservar mi cuenta", "Manter minha conta"],
+  "account.plan.promo": ["Promo code (optional)", "Código promocional (opcional)", "Código promocional (opcional)"]
 }

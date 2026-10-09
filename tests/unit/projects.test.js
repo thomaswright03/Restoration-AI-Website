@@ -2,7 +2,8 @@
 
 // api/projects.js and api/_plans.js against a stand-in Supabase: fetch is
 // replaced by a tiny in-memory version of the auth, REST and create_project()
-// calls the API makes. The SQL function itself mirrors supabase/schema.sql.
+// calls the API makes. The SQL function here is a stand-in; the real one in
+// supabase/schema.sql runs in tests/unit/schema-sql.test.js.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");

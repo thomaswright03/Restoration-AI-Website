@@ -27,12 +27,6 @@
   "materialsEstimator": {
     "enabled": true
   },
-  "bathroomVisualizer": {
-    "enabled": true
-  },
-  "productPricing": {
-    "endpoint": ""
-  },
   "leadForm": {
     "endpoint": "",
     "serviceName": "",

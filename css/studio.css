@@ -1906,36 +1906,6 @@
   height: 15px;
 }
 
-.studio-live {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.studio-zip-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.studio-zip-form label {
-  flex-basis: 100%;
-  font-weight: 600;
-}
-
-.studio-zip-form input {
-  width: 8em;
-  min-height: 40px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-line-strong);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font: inherit;
-}
-
 .studio-details summary {
   min-height: 40px;
   display: flex;
@@ -2421,7 +2391,7 @@
   }
 }
 
-/* Inside a business's own site (designer.html?embed=1): no product header. */
+/* Framed by our own project page (designer.html?embed=1): no product header. */
 html[data-embed="1"] .studio-page {
   --studio-header-h: 0px;
 }

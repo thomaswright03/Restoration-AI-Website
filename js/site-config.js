@@ -18,18 +18,12 @@
 
   var DEFAULTS = {
     priceEstimator: { enabled: false },
-    // Materials picker uses MOCK product/price data (see js/materials-pricing.js)
-    // until a real pricing source is connected — defaults off so a customer
-    // never sees it without the owner deliberately turning it on.
+    // The materials picker on the finishes step, priced from the catalog in
+    // js/materials-pricing.js (Home Depot listing prices copied by hand, so
+    // they can be out of date). Off here so the estimate never shows them
+    // unless the owner turns them on in site-config.json.
     materialsEstimator: { enabled: false },
-    // Bathroom visualizer overlays icon badges on the customer's own uploaded
-    // photo as a mockup (see js/bathroom-visualizer.js) — no AI rendering,
-    // photo never leaves the browser. Defaults off, same rollout as above.
-    bathroomVisualizer: { enabled: false },
     leadForm: { endpoint: "", serviceName: "", servicePrivacyUrl: "" },
-    // Live Home Depot prices for the Kohler products picked in the 3D room
-    // (tools/pricing-service/). Empty: those products show as not priced.
-    productPricing: { endpoint: "" },
     owner: { legalName: "", contactAddress: "" },
     privacy: { responsePeriod: "" },
     company: { supportEmail: "" },
@@ -57,15 +51,12 @@
     raw = raw || {};
     var pe = raw.priceEstimator || {};
     var me = raw.materialsEstimator || {};
-    var bv = raw.bathroomVisualizer || {};
     var lf = raw.leadForm || {};
-    var pp = raw.productPricing || {};
     var owner = raw.owner || {};
     var privacy = raw.privacy || {};
     var company = raw.company || {};
     var rv = (raw.riley && raw.riley.voice) || {};
     var endpoint = clean(lf.endpoint);
-    var pricingEndpoint = clean(pp.endpoint);
     // The business using the designer (js/business.js) decides where its
     // leads go and what legal name its estimates carry.
     var biz = (typeof window !== "undefined" && window.DesignerBusiness) || null;
@@ -78,16 +69,11 @@
       loaded: true,
       priceEstimator: { enabled: pe.enabled === true },
       materialsEstimator: { enabled: me.enabled === true },
-      bathroomVisualizer: { enabled: bv.enabled === true },
       leadForm: {
         // Only an https:// address is used; anything else keeps the email-app form.
         endpoint: /^(https:\/\/[^\s]+|\/api\/[^\s]+)$/.test(endpoint) ? endpoint : "",
         serviceName: clean(lf.serviceName) || T("config.formService"),
         servicePrivacyUrl: /^https:\/\//.test(clean(lf.servicePrivacyUrl)) ? clean(lf.servicePrivacyUrl) : "",
-      },
-      // https://, or http://localhost while testing the service on this machine.
-      productPricing: {
-        endpoint: /^(https:\/\/|http:\/\/localhost[:/])[^\s]+$/.test(pricingEndpoint) ? pricingEndpoint : "",
       },
       owner: { legalName: clean(owner.legalName), contactAddress: clean(owner.contactAddress) },
       privacy: { responsePeriod: localPeriod(clean(privacy.responsePeriod)) },

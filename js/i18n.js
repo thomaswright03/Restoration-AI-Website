@@ -1060,6 +1060,11 @@
       "Tamanho: {w} de largura, {d} de profundidade",
     ],
     "studio.bestSpot": ["Best spot", "Mejor lugar", "Melhor lugar"],
+    "studio.nearestSpot": [
+      "Nearest spot that works",
+      "El lugar más cercano que sirve",
+      "O lugar mais próximo que serve",
+    ],
     "studio.duplicate": ["Duplicate", "Duplicar", "Duplicar"],
     "studio.remove": ["Remove", "Quitar", "Remover"],
     "studio.removeWhat": ["Remove {what}", "Quitar {what}", "Remover {what}"],
@@ -1276,6 +1281,12 @@
       "{n} itens do seu projeto ainda não cabem. Corrija para que o projeto possa ser construído de verdade.",
     ],
     "studio.est.fix": ["Show me", "Mostrarme", "Mostrar"],
+    "studio.est.elecGaps": [
+      "Not in this price yet: {list}",
+      "Todavía no está en este precio: {list}",
+      "Ainda não está neste preço: {list}",
+    ],
+    "studio.est.elecFill": ["Add them", "Agregarlos", "Adicionar"],
     "studio.est.labor": ["Labor", "Mano de obra", "Mão de obra"],
     "studio.est.materials": ["Materials", "Materiales", "Materiais"],
     "studio.est.materialQty": [
@@ -2292,6 +2303,11 @@
     ],
     "riley.need": ["Before we move on, {list}.", "Antes de seguir, {list}.", "Antes de continuar, {list}."],
     "riley.tight": ["One thing about {what}: {why}", "Una cosa sobre {what}: {why}", "Uma coisa sobre {what}: {why}"],
+    "riley.elecGaps": [
+      "One thing first: {list} Want me to add it?",
+      "Una cosa antes: {list} ¿Lo agrego yo?",
+      "Uma coisa antes: {list} Quer que eu adicione?",
+    ],
     "riley.step.room": [
       "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",
       "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué pared está la plomería.",

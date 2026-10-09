@@ -1757,6 +1757,15 @@
   color: var(--studio-error);
 }
 
+.studio-banner.is-warn {
+  background: color-mix(in srgb, var(--studio-warn) 12%, var(--color-surface));
+  color: var(--color-ink);
+}
+
+.studio-banner.is-warn > span {
+  color: var(--studio-warn);
+}
+
 .studio-estimate {
   display: flex;
   flex-direction: column;
@@ -2500,7 +2509,7 @@ html[data-embed="1"] .studio-stage {
   pointer-events: none;
 }
 
-/* On a phone (js/studio.js placeRiley) she sits under the room. */
+/* On a phone or tablet (js/studio.js placeRiley) she sits under the room. */
 .studio-riley.is-under {
   position: static;
   max-width: none;

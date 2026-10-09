@@ -23,7 +23,7 @@ module.exports = [
   {
     // js/bathroom-room-3d.js is the one first-party file using static ES
     // module import/export syntax (for `three` / OrbitControls, self-hosted
-    // under js/vendor/three/ — see README "3D bathroom room preview").
+    // under js/vendor/three-r186/ — see README "3D bathroom room preview").
     files: ["js/bathroom-room-3d.js"],
     languageOptions: {
       ecmaVersion: 2022,

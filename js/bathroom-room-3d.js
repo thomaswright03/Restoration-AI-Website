@@ -4,7 +4,7 @@
 // js/studio.js decides what is in the room and where (js/room-plan.js) and
 // hands it over with setPlan(); this module draws it, with the Kohler
 // products picked, the surfaces' real tiles and paints, and the studio's
-// outlines and floor marks. Self-hosted Three.js (js/vendor/three/), no
+// outlines and floor marks. Self-hosted Three.js (js/vendor/three-r186/), no
 // build step.
 //
 // This module is the only first-party file using ES module import/export

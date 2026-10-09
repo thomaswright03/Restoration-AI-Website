@@ -47,7 +47,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Stripe: customers, subscriptions and invoices. Supabase keeps only the mirror the webhook writes.
 - The browser's localStorage: the designer's working draft (`rd3d_design_<slug>`), the language, the theme and Riley's voice. Nothing there is needed by the server.
 
-**Caching.** `vercel.json` marks `models/**/*.glb`, `js/vendor/**`, `fonts/**` and `images/**` as immutable for a year, because they are never edited in place: a changed 3D model, library or font gets a new file name (or a new folder, e.g. `js/vendor/three-r187/`) and the pages that reference it are updated. Pages, first-party `js/*.js`, `css/*.css` and `site-config.json` keep Vercel's revalidate-every-time default, so a deploy is live for everyone on the next page load. `tests/unit/vercel-config.test.js` pins this.
+**Caching.** `vercel.json` caches by whether a path's name changes with its content. Only the versioned Three.js folder (`js/vendor/three-r186/`, listed file by file so a missing path is never frozen) is `immutable` for a year; upgrading Three.js means a new folder (`js/vendor/three-r187/`), updating the import map in `pages/layout.html`, `npm run pages`, and the new file list in `vercel.json` (the unit test says which). `models/**/*.glb`, `fonts/**`, `images/**` and the unversioned libraries (`js/vendor/jspdf.umd.min.js`, `js/vendor/supabase/`) are edited in place under the same name, so they get `max-age=86400, stale-while-revalidate=604800`: a repeat visit within a day asks for nothing, and a changed file reaches returning browsers within a day. Pages and `site-config.json` keep Vercel's revalidate-every-time default; first-party `js/*.js` and `css/*.css` are `max-age=0, must-revalidate, stale-while-revalidate=86400`, so a deploy is live for everyone on the next page load. `tests/unit/vercel-config.test.js` pins all of this.
 
 ## Settings (`site-config.json`)
 
@@ -117,7 +117,7 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
 - `js/script.js`: menu, language, FAQ and the request form
 - `models/`: GLB fixture and product models; `tools/models/` converts OBJ sources to GLB and `models/products/*/manifest.json` records each model's source and conversion arguments (the OBJ sources themselves are not in the repo)
-- `js/vendor/`: Three.js r186 (the minified `three.module.js`/`three.core.js` build and the addons used), jsPDF and the Supabase client, self-hosted so no page loads a third-party script
+- `js/vendor/`: Three.js r186 in `three-r186/` (the minified `three.module.js`/`three.core.js` build and the addons used), jsPDF and the Supabase client, self-hosted so no page loads a third-party script
 - `js/account.js`: sign-up and account pages
 - `js/projects.js`: the My projects page and the designer's save bar
 

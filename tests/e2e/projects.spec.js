@@ -555,6 +555,8 @@ test("a project's info form asks before leaving with edits, and a stale save off
   const state = await signedIn(page, {
     projects: [{ id: "a1", name: "Garcia bath", design: "", info: { client: "Maria Garcia" }, updated_at: DAY }],
   });
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/project.html?id=a1#info");
   await expect(page.locator("#panel-info")).toBeVisible();
   const leaving = () =>
@@ -566,6 +568,8 @@ test("a project's info form asks before leaving with edits, and a stale save off
   expect(await leaving()).toBe(false);
   await page.locator("#panel-info").getByLabel("Phone").fill("801-555-0100");
   expect(await leaving()).toBe(true);
+  // The warning's text exists in every language (no "unknown key" error).
+  expect(errors).toEqual([]);
 
   // Someone else saved the project meanwhile.
   state.projects[0].updated_at = "2026-10-05T09:00:00Z";
@@ -615,4 +619,122 @@ test("in the owner's own designer the estimate step speaks to the business, not 
   await page.locator(".studio-step-btn[data-step='estimate']").click();
   await expect(page.locator(".studio-step.is-estimate .studio-step-intro")).toContainText("get a real quote");
   await expect(page.locator(".studio-step.is-estimate")).toContainText("Send your design to Sample Remodeling Co.");
+});
+
+test("My projects shows a dash for a missing client or status, and Clear filters puts the list back", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Smith main bath", info: { client: "Pat Smith", status: "progress" }, updated_at: DAY },
+      { id: "a2", name: "Lee guest bath", info: {}, updated_at: "2026-09-30T12:00:00Z" },
+    ],
+  });
+  await page.goto("/projects.html");
+  const rows = page.locator(".project-item");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0).locator(".project-client")).toHaveText("Pat Smith");
+  await expect(rows.nth(0).locator(".project-status")).toHaveText("In progress");
+  await expect(rows.nth(1).locator(".project-client")).toHaveText("—");
+  await expect(rows.nth(1).locator(".project-status.is-none")).toHaveText("—");
+
+  const clear = page.getByRole("button", { name: "Clear filters" });
+  await expect(clear).toBeHidden();
+  await page.getByLabel("Status", { exact: true }).selectOption("progress");
+  await expect(rows).toHaveCount(1);
+  await expect(clear).toBeVisible();
+  await page.getByLabel(/^Search/).fill("zzz");
+  await expect(page.locator("#projects-no-match")).toBeVisible();
+  await clear.click();
+  await expect(rows).toHaveCount(2);
+  await expect(clear).toBeHidden();
+  await expect(page.getByLabel("Status", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel(/^Search/)).toHaveValue("");
+  await expect(page).not.toHaveURL(/status=|q=/);
+
+  // Portuguese says it in its own words.
+  await page.goto("/pt/projects.html?status=lead");
+  await expect(page.getByRole("button", { name: "Limpar filtros" })).toBeVisible();
+
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+});
+
+test("the delete-project dialog closes from its X and from a click on the backdrop, deleting nothing", async ({
+  page,
+}) => {
+  const state = await signedIn(page, { projects: [{ id: "a1", name: "Smith main bath", updated_at: DAY }] });
+  await page.goto("/projects.html");
+  const dialog = page.locator("#projects-delete-dialog");
+  const ask = page.getByRole("button", { name: "Delete Smith main bath" });
+  await ask.click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(ask).toBeFocused();
+  await ask.click();
+  await expect(dialog).toBeVisible();
+  await page.mouse.click(4, 4); // the backdrop
+  await expect(dialog).toBeHidden();
+  // A click inside the dialog's body keeps it open.
+  await ask.click();
+  await dialog.locator("h2").click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  expect(state.calls.filter((c) => c.method === "DELETE")).toEqual([]);
+  await expect(page.locator(".project-item")).toHaveCount(1);
+});
+
+test("saving switched off after the designer loaded: the save says it's paused, with the owner's notice on its own line", async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.route("**/api/projects**", (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    return route.fulfill({
+      status: 503,
+      json: { error: "paused", switch: "saving", notice: "Back Monday 9am." },
+    });
+  });
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await page.locator("#project-save").click();
+  const dialog = page.locator("#project-dialog");
+  await dialog.getByLabel("Client name").fill("Maria Garcia");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  const out = page.locator("#project-dialog-status");
+  await expect(out).toContainText("Saving projects is paused right now");
+  await expect(out).toContainText("Notice: Back Monday 9am.");
+  await expect(out).not.toContainText(/9am Saving|reach the server/);
+  expect(await out.textContent()).toMatch(/while\.\nNotice: Back Monday 9am\.$/);
+  // The design is still here to save later.
+  await expect(dialog.getByLabel("Client name")).toHaveValue("Maria Garcia");
+});
+
+test("when the stored sign-in can't be checked, the save bar says so with Try again instead of hiding", async ({
+  page,
+}) => {
+  await signedIn(page);
+  // The sign-in library never arrives, so the session can't be read.
+  await page.route("**/js/vendor/supabase/supabase.js", (route) => route.abort("failed"));
+  await openStudio(page, "/designer.html?b=smith-bath");
+  const bar = page.locator("#project-bar");
+  // The bar comes after the 3D room has started, which is slow in CI.
+  await expect(bar).toBeVisible({ timeout: 15000 });
+  await expect(bar).toContainText("Your sign-in couldn't be checked, so saving to your projects isn't available");
+  await expect(bar.getByRole("link", { name: "Try again" })).toBeVisible();
+  await expect(page.locator("#project-save")).toBeHidden();
+});
+
+test("My projects sends an ended sign-in to log in with the way back", async ({ page }) => {
+  await page.route("**/api/config", (route) =>
+    route.fulfill({
+      json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
+    }),
+  );
+  await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
+  await page.goto("/es/projects.html?status=lead");
+  await page.waitForURL(/\/es\/signup\.html\?mode=login&next=/);
+  const next = new URL(page.url()).searchParams.get("next");
+  expect(next).toBe("/es/projects.html?status=lead");
 });

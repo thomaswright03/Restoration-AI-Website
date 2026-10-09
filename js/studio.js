@@ -285,11 +285,29 @@
     }).length;
   }
 
-  // How many fit, but tighter than recommended.
-  function tightCount(list) {
+  // What fits, but tighter than recommended.
+  function tightIds(list) {
     return Object.keys(list).filter(function (id) {
       return (list[id] || []).length > 0 && !Plan.errorsOf(list, id).length;
-    }).length;
+    });
+  }
+
+  // The first problem's (or, failing that, the first tight spot's) sentence.
+  function statusWhy(list) {
+    var ids = Object.keys(list).filter(function (id) {
+      return (list[id] || []).length > 0;
+    });
+    ids.sort(function (a, b) {
+      return (Plan.errorsOf(list, b).length ? 1 : 0) - (Plan.errorsOf(list, a).length ? 1 : 0);
+    });
+    var id = ids[0];
+    if (!id) return "";
+    var item = findItem(id);
+    var point = item ? null : findPoint(id);
+    var x = Plan.errorsOf(list, id)[0] || list[id][0];
+    if (item) return itemName(item) + ": " + issueText(item, x);
+    if (point) return pointName(point) + ": " + pointIssueText(point, x);
+    return "";
   }
 
   // How a fixture is doing: "error", "warn" or "ok".
@@ -1286,18 +1304,24 @@
       text = T("studio.status.drag." + kind);
     } else {
       var errors = errorCount(list);
-      var warns = tightCount(list);
-      kind = errors ? "error" : warns ? "warn" : "ok";
+      var tight = tightIds(list);
+      kind = errors ? "error" : tight.length ? "warn" : "ok";
       text = errors
         ? T(errors === 1 ? "studio.status.problem" : "studio.status.problems", { n: errors })
-        : warns
-          ? T(warns === 1 ? "studio.status.tight" : "studio.status.tights", { n: warns })
-          : T("studio.status.ok");
+        : tight.length === 1
+          ? T("studio.status.tightOne", { what: findItem(tight[0]) ? theName(tight[0]) : anyName(tight[0]) })
+          : tight.length
+            ? T("studio.status.tights", { n: tight.length })
+            : T("studio.status.ok");
     }
     chip.className = "studio-status is-" + kind;
     clear(chip);
     chip.insertAdjacentHTML("afterbegin", icon(kind === "ok" ? "check" : "alert"));
     chip.appendChild(h("span", { text: text }));
+    // Why, in a sentence (hover or screen reader); a click shows the thing.
+    var why = kind === "ok" || (previewing && ui.drag) ? "" : statusWhy(list);
+    if (why) chip.setAttribute("title", why);
+    else chip.removeAttribute("title");
     chip.disabled = !!previewing || VIEW_ONLY;
   }
 
@@ -1898,7 +1922,7 @@
   //   room         the plumbing wall picked, the sizes all lengths
   //   layout       at least one fixture, and everything fits
   //   electrical   no outlet, switch or light where it can't go
-  //   products     a product picked for every fixture
+  //   products     nothing: every list starts on the model shown in the room
   //   finishes     a product picked for every surface being done
   // missingFor() is what's left, as phrases for "To go on: ...".
   function answers(d) {
@@ -1913,18 +1937,6 @@
     if (slotId) next.products[slotId] = true;
     else next.stack = true;
     return Object.assign({}, d, { answered: next });
-  }
-
-  // The product slots on show, for the fixtures in the room.
-  function productSlots() {
-    if (!room3d) return [];
-    var out = [];
-    room3d.getProductGroups().forEach(function (group) {
-      group.slots.forEach(function (slot) {
-        out.push(slot);
-      });
-    });
-    return out;
   }
 
   // The surfaces a product is picked for: the ones being done that have
@@ -1985,23 +1997,6 @@
         return Plan.errorsOf(issues, p.id).length > 0;
       });
       if (wrong.length) out.push({ key: "points", text: T("studio.need.points") });
-    } else if (step === "products") {
-      var open = productSlots().filter(function (slot) {
-        return !answers(d).products[slot.id];
-      });
-      // A few are named; a long list is counted instead.
-      if (open.length > 3) out.push({ key: "products", text: T("studio.need.productsMany", { n: open.length }) });
-      else if (open.length)
-        out.push({
-          key: "products",
-          text: T("studio.need.products", {
-            list: open
-              .map(function (slot) {
-                return slot.label;
-              })
-              .join(", "),
-          }),
-        });
     } else if (step === "finishes") {
       var unpicked = surfaceCats(d).filter(function (cat) {
         return !surfacePicked(cat, d);
@@ -3472,23 +3467,20 @@
       ]);
       group.slots.forEach(function (slot) {
         var id = "studio-product-" + slot.id;
-        // Until the person picks, the room shows the first that fits and
-        // the list says to choose.
-        var picked = !!answers().products[slot.id];
+        // The list starts on the model the room shows (the first that
+        // fits), so nothing has to be picked to go on.
         var select = h(
           "select",
           { id: id, class: "studio-select", "data-key": "slot-" + slot.id },
-          (picked ? [] : [h("option", { value: "", disabled: true, text: T("studio.products.choose") })]).concat(
-            slot.options.map(function (opt) {
-              return h("option", {
-                value: opt.id,
-                disabled: opt.reason ? true : null,
-                text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
-              });
-            }),
-          ),
+          slot.options.map(function (opt) {
+            return h("option", {
+              value: opt.id,
+              disabled: opt.reason ? true : null,
+              text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
+            });
+          }),
         );
-        select.value = picked ? slot.value : "";
+        select.value = slot.value;
         select.addEventListener("change", function () {
           if (!select.value) return;
           room3d.setProductPick(slot.id, select.value);
@@ -3502,29 +3494,26 @@
           return it.slotId === slot.id && it.mmns.length;
         })[0];
         card.appendChild(
-          missingMark(
-            h("div", { class: "studio-field" }, [
-              h("label", { for: id, text: slot.label }),
-              select,
-              item
-                ? h(
-                    "button",
-                    {
-                      type: "button",
-                      class: "studio-link-btn studio-examples-btn",
-                      "data-key": "examples-" + slot.id,
-                      "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
-                      icon: "photo",
-                      onclick: function () {
-                        openPhotos(item);
-                      },
+          h("div", { class: "studio-field" }, [
+            h("label", { for: id, text: slot.label }),
+            select,
+            item
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    class: "studio-link-btn studio-examples-btn",
+                    "data-key": "examples-" + slot.id,
+                    "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
+                    icon: "photo",
+                    onclick: function () {
+                      openPhotos(item);
                     },
-                    [T("studio.photos.show")],
-                  )
-                : null,
-            ]),
-            !picked,
-          ),
+                  },
+                  [T("studio.photos.show")],
+                )
+              : null,
+          ]),
         );
       });
       if (standIn) {
@@ -4489,17 +4478,12 @@
       var item = findItem(o.id, d);
       if (item.type === "door") return;
       var tone = toneOf(o.id, list);
+      var fill = tone === "error" ? [254, 226, 226] : [224, 242, 254];
       shapes.rects.push(
-        Object.assign(
-          {
-            fill: tone === "error" ? [254, 226, 226] : [224, 242, 254],
-            stroke: tone === "error" ? [220, 38, 38] : [37, 99, 235],
-          },
-          o.body,
-        ),
+        Object.assign({ fill: fill, stroke: tone === "error" ? [220, 38, 38] : [37, 99, 235] }, o.body),
       );
       var c = centerOf(item, d);
-      shapes.texts.push({ x: c.x, z: c.z, text: itemName(item, d), small: true });
+      shapes.texts.push({ x: c.x, z: c.z, text: itemName(item, d), small: true, halo: fill });
     });
     itemsOf("door", d).forEach(function (door) {
       if ((door.opts || {}).kind === "opening") return;
@@ -4531,8 +4515,8 @@
         stroke: [30, 41, 70],
       });
     });
-    shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w) });
-    shapes.texts.push({ x: -(WALL_T + 1.5), z: room.l / 2, text: len(room.l), vertical: true });
+    shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w), bold: true });
+    shapes.texts.push({ x: -(WALL_T + 1.6), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
     return shapes;
   }
 
@@ -4580,6 +4564,7 @@
           picture: picture,
           plan: pdfPlan(design),
           planTitle: T("studio.pdf.plan"),
+          linesTitle: T(est.hasMaterials ? "studio.pdf.linesMaterials" : "studio.pdf.lines"),
           designTitle: T("studio.pdf.design"),
           design: designLines(design, est),
           lines: lines,

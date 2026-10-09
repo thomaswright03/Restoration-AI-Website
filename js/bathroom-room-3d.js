@@ -2489,19 +2489,23 @@ function skyColors(isDark) {
   return isDark ? { sky: 0x162038, ground: 0x0b1122 } : { sky: 0xf5f7fb, ground: 0xeef2f8 };
 }
 
+// The sky, the light and the surface colours for one theme.
+function setTheme(s, dark) {
+  s.isDark = dark;
+  var sky = skyColors(dark);
+  s.scene.background.setHex(sky.sky);
+  s.hemi.color.setHex(sky.sky);
+  s.hemi.groundColor.setHex(sky.ground);
+  rebuildFinishes(s);
+  rebuildSurround(s);
+  needsRender = true;
+}
+
 // Follows a switch between the light and dark themes while the room is open.
 function watchTheme(s) {
   function update() {
     var dark = isDarkTheme();
-    if (dark === s.isDark) return;
-    s.isDark = dark;
-    var sky = skyColors(dark);
-    s.scene.background.setHex(sky.sky);
-    s.hemi.color.setHex(sky.sky);
-    s.hemi.groundColor.setHex(sky.ground);
-    rebuildFinishes(s);
-    rebuildSurround(s);
-    needsRender = true;
+    if (dark !== s.isDark) setTheme(s, dark);
   }
   if (typeof MutationObserver !== "undefined") {
     new MutationObserver(update).observe(document.documentElement, {
@@ -4162,6 +4166,10 @@ window.BathroomRoom3D = {
     camera.lookAt(pose.target);
     var shown = [s.markGroup.visible, s.selectBox.visible, s.hoverBox.visible];
     s.markGroup.visible = s.selectBox.visible = s.hoverBox.visible = false;
+    // The picture goes on a white page: always the light room, whatever
+    // theme the screen is in.
+    var wasDark = s.isDark;
+    if (wasDark) setTheme(s, false);
     var url = null;
     try {
       s.renderer.setPixelRatio(1);
@@ -4172,6 +4180,7 @@ window.BathroomRoom3D = {
     } catch (err) {
       console.warn("3D preview: couldn't take a picture of the room.", err);
     }
+    if (wasDark) setTheme(s, true);
     s.markGroup.visible = shown[0];
     s.selectBox.visible = shown[1];
     s.hoverBox.visible = shown[2];

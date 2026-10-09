@@ -6,7 +6,7 @@
 
 .studio-page {
   --studio-bar-h: 64px;
-  --studio-header-h: 88px;
+  --studio-header-h: 0px;
   --studio-ok: #0f9f8c;
   --studio-warn: #b45309;
   --studio-error: #d92d42;
@@ -50,6 +50,17 @@
 .studio-page .icon {
   flex: none;
   display: block;
+}
+
+/* The site header scrolls away with the page here instead of floating over
+   it (css/style.css fixes it elsewhere), so it never covers the steps or
+   the view buttons when the designer scrolls. Its menu still drops from it. */
+body:has(main.studio-page) .site-header {
+  position: relative;
+}
+
+main.studio-page.solid-header {
+  padding-top: 0;
 }
 
 /* ---------- The demo ribbon ---------- */
@@ -155,8 +166,10 @@
 .studio-step-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  min-height: 40px;
+  min-width: var(--tap);
+  min-height: var(--tap);
   padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
   border: 0;
   border-radius: var(--radius-pill);
@@ -478,8 +491,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 38px;
-  min-width: 38px;
+  min-height: var(--tap);
+  min-width: var(--tap);
   justify-content: center;
   padding: 0 var(--space-3);
   border: 0;
@@ -684,8 +697,8 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: var(--tap);
+  height: var(--tap);
   border: 0;
   border-radius: 50%;
   background: transparent;
@@ -2287,10 +2300,6 @@
 
 /* Phones and small tablets: the stage on top, the panel under it. */
 @media (max-width: 900px) {
-  .studio-page {
-    --studio-header-h: 72px;
-  }
-
   .studio-page .designer-intro {
     flex-direction: column;
     align-items: flex-start;
@@ -2322,7 +2331,7 @@
 
   .studio-stage {
     position: sticky;
-    top: 64px;
+    top: 0;
     z-index: 5;
     height: 46vh;
     height: 46svh;
@@ -2367,18 +2376,15 @@
   }
 
   .studio-view-btn {
-    min-width: 40px;
     padding: 0 var(--space-2);
   }
 
   .studio-status {
     padding: 0 var(--space-3);
-    min-height: 40px;
   }
 
-  .studio-viewbar > .studio-view-btn {
-    min-height: 40px;
-    min-width: 40px;
+  .studio-action {
+    min-height: var(--tap);
   }
 
   .studio-hint {
@@ -2442,10 +2448,6 @@
 /* Framed by our own project page (designer.html?embed=1): a read-only view
    of the saved design. No product header, no steps or panel, no Riley; the
    stage fills the frame, with the view buttons and "Open in designer". */
-html[data-embed="1"] .studio-page {
-  --studio-header-h: 0px;
-}
-
 html[data-embed="1"] .studio-steps,
 html[data-embed="1"] .studio-panel,
 html[data-embed="1"] .studio-hint,
@@ -2473,6 +2475,18 @@ html[data-embed="1"] .studio-plan {
     top: 0;
     height: 100%;
     max-height: none;
+  }
+}
+
+/* On a touch screen every control is a finger's width. */
+@media (pointer: coarse) {
+  .riley-mute,
+  .riley-tool,
+  .riley-action,
+  .riley-voice-play,
+  .riley-voice-pick {
+    min-width: var(--tap);
+    min-height: var(--tap);
   }
 }
 
@@ -2659,8 +2673,8 @@ html[data-embed="1"] .studio-plan {
   display: grid;
   place-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
   border: 0;
   border-radius: 50%;
   background: transparent;

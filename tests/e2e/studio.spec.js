@@ -23,10 +23,17 @@ test.describe("design studio", () => {
     await wait3d(page);
     await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
     // Everything fits; in a 5 x 8 the toilet only gets code's 15 in. beside
-    // it rather than the recommended 18, which is a note, not a problem.
-    await expect(studioStatus(page)).toHaveText("Fits, 1 is tight");
+    // it rather than the recommended 18, which is a note, not a problem. The
+    // chip names it and says why; a click shows it.
+    await expect(studioStatus(page)).toHaveText("Fits; the toilet is tight");
+    await expect(studioStatus(page)).toHaveAttribute("title", /^Toilet: .*15/);
+    await studioStatus(page).click();
+    await expect(page.locator(".studio-step.is-layout")).toBeVisible();
+    await expect(page.locator(".studio-step.is-layout")).toContainText("15");
     await expect(page.locator(".studio-total-chip strong")).toContainText("$");
     await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");
+    // The site header scrolls with the page here, so it never covers the steps.
+    await expect(page.locator(".site-header")).toHaveCSS("position", "relative");
     await expect(page.locator("#studio-labels .is-wall")).toHaveCount(4);
     await step(page, "layout").click();
     await expect(page.locator(".studio-item-btn")).toHaveCount(3);
@@ -614,14 +621,9 @@ test.describe("design studio", () => {
     await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    await byKey(page, "nav-next").click();
-    await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    await expect(need).toContainText("Choose one…");
-    const unpicked = page.locator('.studio-product-card select:has(option[value=""])');
-    while (await unpicked.count()) {
-      const list = unpicked.first();
-      await list.selectOption(await list.locator("option:not([disabled])").first().getAttribute("value"));
-    }
+    // Every product list starts on the model the room shows: nothing to pick before going on.
+    await expect(page.locator('.studio-product-card select option[value=""]')).toHaveCount(0);
+    await expect(need).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
     await expect(need).toHaveText("To go on: pick a finish for: floor tile, wall paint, ceiling paint.");
@@ -856,6 +858,25 @@ test.describe("design studio on a phone", () => {
     const stage = await page.locator(".studio-stage").boundingBox();
     const card = await riley.boundingBox();
     expect(card.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
+    expect(errors).toEqual([]);
+  });
+
+  test("every designer control is at least 44 px on a touch screen", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await expect(page.locator(".riley")).toBeVisible();
+    const controls = page.locator(
+      ".studio-step-btn, .studio-action, .studio-view-btn, .studio-status, .riley-mute, .riley-tool",
+    );
+    const n = await controls.count();
+    expect(n).toBeGreaterThan(10);
+    for (let i = 0; i < n; i++) {
+      const el = controls.nth(i);
+      if (!(await el.isVisible())) continue;
+      const box = await el.boundingBox();
+      expect(box.width, `control ${i} width`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `control ${i} height`).toBeGreaterThanOrEqual(44);
+    }
     expect(errors).toEqual([]);
   });
 });

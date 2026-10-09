@@ -198,6 +198,16 @@ test("the designer saves a new project with the client's details, then saves cha
   await expect(page.locator("#project-status")).toContainText("Saved “Maria Garcia, 12 Elm St”.");
   const patch = state.calls.find((c) => c.method === "PATCH");
   expect(patch.body.summary.room.l).toBe(5);
+
+  // A second project with no details at all is named by the date and time,
+  // so two saves the same day don't look alike.
+  await page.locator("#project-save-new").click();
+  await dialog.getByLabel("Client name").fill("");
+  await dialog.getByLabel("Street address").fill("");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  await expect(dialog).toBeHidden();
+  const second = state.calls.filter((c) => c.method === "POST")[1];
+  expect(second.body.name).toMatch(/^Bathroom, [A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}/);
 });
 
 test("the designer opens a saved project from its link", async ({ page }) => {

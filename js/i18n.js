@@ -841,9 +841,9 @@
     "studio.step.electrical.short": ["Electrical", "Electricidad", "Elétrica"],
     "studio.step.products.title": ["Products", "Productos", "Produtos"],
     "studio.step.products.intro": [
-      "Pick the Kohler and Sterling models you like. Each one is shown at its real size, and any that's too big for its spot can't be picked.",
-      "Elija los modelos Kohler y Sterling que le gusten. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir.",
-      "Escolha os modelos Kohler e Sterling de que você gosta. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos.",
+      "Each list starts on the Kohler or Sterling model the room shows, so you can go straight on, or pick the ones you like. Each is shown at its real size, and any that's too big for its spot can't be picked. The estimate lists them with their model numbers; their prices aren't added in.",
+      "Cada lista empieza en el modelo Kohler o Sterling que muestra el baño, así que puede seguir directamente o elegir los que le gusten. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir. La estimación los muestra con su número de modelo; sus precios no se suman.",
+      "Cada lista começa no modelo Kohler ou Sterling que o banheiro mostra, então você pode seguir direto ou escolher os que preferir. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos. A estimativa mostra os produtos com o número do modelo; os preços deles não são somados.",
     ],
     "studio.step.products.short": ["Products", "Productos", "Produtos"],
     "studio.step.finishes.title": ["Finishes", "Acabados", "Acabamentos"],
@@ -985,7 +985,7 @@
     "studio.status.ok": ["Everything fits", "Todo cabe", "Tudo cabe"],
     "studio.status.problem": ["{n} doesn't fit", "{n} no cabe", "{n} não cabe"],
     "studio.status.problems": ["{n} don't fit", "{n} no caben", "{n} não cabem"],
-    "studio.status.tight": ["Fits, {n} is tight", "Cabe, {n} queda justo", "Cabe, {n} fica apertado"],
+    "studio.status.tightOne": ["Fits; {what} is tight", "Cabe; {what} queda justo", "Cabe; {what} fica apertado"],
     "studio.status.tights": ["Fits, {n} are tight", "Cabe, {n} quedan justos", "Cabe, {n} ficam apertados"],
     "studio.status.drag.ok": ["Fits here", "Cabe aquí", "Cabe aqui"],
     "studio.status.drag.warn": ["Fits here, but tight", "Cabe aquí, pero justo", "Cabe aqui, mas apertado"],
@@ -1547,16 +1547,6 @@
       "corrija la parte eléctrica marcada en rojo",
       "corrija a parte elétrica marcada em vermelho",
     ],
-    "studio.need.products": [
-      "pick a product for: {list}",
-      "elija un producto para: {list}",
-      "escolha um produto para: {list}",
-    ],
-    "studio.need.productsMany": [
-      "pick a product in each list that still says “Choose one…” ({n} left)",
-      "elija un producto en cada lista que aún dice «Elija uno…» (faltan {n})",
-      "escolha um produto em cada lista que ainda diz “Escolha um…” (faltam {n})",
-    ],
     "studio.need.surfaces": [
       "pick a finish for: {list}",
       "elija un acabado para: {list}",
@@ -1567,7 +1557,6 @@
     "studio.need.surface.wallTile": ["wall tile", "azulejo de pared", "revestimento de parede"],
     "studio.need.surface.wallPaint": ["wall paint", "pintura de paredes", "tinta das paredes"],
     "studio.need.surface.ceilingPaint": ["ceiling paint", "pintura del techo", "tinta do teto"],
-    "studio.products.choose": ["Choose one…", "Elija uno…", "Escolha um…"],
     "studio.room.plumbingNone": [
       "Everything with a drain is on that wall, so there's no new pipe to run.",
       "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
@@ -1616,6 +1605,12 @@
       "Projeto e estimativa do banheiro",
     ],
     "studio.pdf.titleDesign": ["Bathroom design", "Diseño del baño", "Projeto do banheiro"],
+    "studio.pdf.lines": ["Labor estimate", "Estimación de mano de obra", "Estimativa de mão de obra"],
+    "studio.pdf.linesMaterials": [
+      "Labor and materials estimate",
+      "Estimación de mano de obra y materiales",
+      "Estimativa de mão de obra e materiais",
+    ],
     "studio.pdf.plan": ["Floor plan", "Plano", "Planta baixa"],
     "studio.pdf.design": ["Your design", "Su diseño", "Seu projeto"],
     "studio.pdf.link": ["Open this design", "Abrir este diseño", "Abrir este projeto"],
@@ -2369,9 +2364,9 @@
       "Já calculei onde devem ficar as tomadas, os interruptores, as luzes e o exaustor. Dê uma olhada e mova o que quiser pela parede.",
     ],
     "riley.step.products": [
-      "Pick the models you like. I'll show each one on its own so nothing stands in front of it, and anything too big for its spot can't be picked.",
-      "Elija los modelos que le gusten. Muestro cada uno solo, para que nada se le ponga delante, y lo que sea demasiado grande no se puede elegir.",
-      "Escolha os modelos de que você gosta. Mostro cada um sozinho, para nada ficar na frente, e o que for grande demais não pode ser escolhido.",
+      "The room already has a model in every spot, so you can go straight on, or pick the ones you like. I'll show each one on its own so nothing stands in front of it, and anything too big for its spot can't be picked.",
+      "El baño ya tiene un modelo en cada lugar, así que puede seguir directamente o elegir los que le gusten. Muestro cada uno solo, para que nada se le ponga delante, y lo que sea demasiado grande no se puede elegir.",
+      "O banheiro já tem um modelo em cada lugar, então você pode seguir direto ou escolher os que preferir. Mostro cada um sozinho, para nada ficar na frente, e o que for grande demais não pode ser escolhido.",
     ],
     "riley.step.finishes": [
       "Tile, paint and floors. The price follows along as you choose.",

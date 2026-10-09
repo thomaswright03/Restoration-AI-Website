@@ -422,11 +422,20 @@
     return [line, place].filter(Boolean).join(", ");
   }
 
-  // A name from the details when none was typed.
+  // A name from the details when none was typed. With no details either,
+  // the date and time, so two saves the same day don't look alike.
   function nameFrom(info, typed) {
     if (typed) return typed;
     var parts = [info.client, info.street].filter(Boolean);
-    return parts.length ? parts.join(", ") : T("proj.defaultName", { date: formatDate(new Date().toISOString()) });
+    if (parts.length) return parts.join(", ");
+    var when = new Date().toLocaleString(window.I18n.locale(), {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    return T("proj.defaultName", { date: when });
   }
 
   function validEmail(v) {

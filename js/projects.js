@@ -125,6 +125,7 @@
     if (err.code === "signin") return T("proj.err.signin");
     if (err.code === "not-found") return T("proj.err.notFound");
     if (err.code === "info" || err.code === "name") return fieldErrorText(d) || T("proj.err.info");
+    if (err.code === "paused") return (d.notice ? d.notice + " " : "") + T("proj.err.paused");
     if (err.code === "conflict") return T("proj.conflict");
     if (err.kind === "http") return T("acct.error");
     return (actionKey ? T(actionKey) + " " : "") + T(window.Net.errorKey(err));

@@ -43,7 +43,7 @@ test("the landing page shows the plan prices from site-config.json in each langu
   await expect(prices.nth(2)).toContainText("$199.99");
   await expect(page.locator(".plan-limits").first()).toContainText("10 new projects a month");
   await expect(page.locator(".plan-limits").nth(2)).toContainText("1,000");
-  await expect(page.locator(".plan-addon")).toContainText("$9.99");
+  await expect(page.locator("#pricing")).not.toContainText(/website|\$9\.99/i);
   await expect(page.locator('a[href="signup.html?plan=max"]')).toBeVisible();
   await page.goto("/pt/index.html?lang=pt");
   await expect(page.locator(".plan-price").first()).toContainText("US$ 49,99");

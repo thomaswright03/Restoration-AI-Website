@@ -180,10 +180,6 @@
                   Escolher Max, US$ 199,99 por mês
                 </button>
               </div>
-              <label class="check-row" id="plan-website-row" hidden>
-                <input type="checkbox" id="plan-website" />
-                <span>Adicionar "Coloque no seu site" (+US$ 9,99 por mês; incluído no Max)</span>
-              </label>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               O pagamento é feito pela Stripe. Com um código promocional os seus primeiros 7 dias são grátis: se
@@ -407,56 +403,8 @@
             </form>
           </div>
 
-          <div class="app-card" id="share-card" hidden>
-            <h2>Coloque no seu site</h2>
-            <p class="form-note" id="share-inactive" hidden>
-              O seu projetista entra no ar quando o seu plano estiver ativo.
-            </p>
-            <div id="share-locked" hidden>
-              <p>
-                O link do seu projetista e o código para o seu site vêm com o adicional "Coloque no seu site" (US$ 9,99
-                por mês; incluído no Max). Até lá, o seu projetista é só para o seu próprio uso: abra-o em Meus
-                projetos.
-              </p>
-              <div class="app-actions">
-                <button type="button" class="btn btn-primary" id="share-add-website" hidden>
-                  Adicionar: US$ 9,99 por mês
-                </button>
-              </div>
-              <p class="form-note" id="share-locked-help" data-show-if="company.supportEmail" hidden>
-                Dúvidas, ou um plano configurado à mão para você? Escreva para
-                <a data-fill="company.supportEmail" data-fill-href="company.supportEmailHref" href="#"></a> e nós
-                adicionamos.
-              </p>
-              <p class="form-status" id="share-message" role="status" aria-live="polite" hidden></p>
-            </div>
-            <div id="share-open" hidden>
-              <div class="form-group">
-                <label for="share-lang">Idioma</label>
-                <select id="share-lang">
-                  <option value="">English</option>
-                  <option value="es/">Español</option>
-                  <option value="pt/">Português</option>
-                </select>
-              </div>
-              <p>Seu link: <a id="share-link" href="#" target="_blank" rel="noopener"></a></p>
-              <div class="form-group">
-                <label for="embed-code">Código para o seu site</label>
-                <textarea id="embed-code" readonly rows="4"></textarea>
-                <p class="form-note">
-                  Cole onde o projetista deve aparecer, em um bloco de HTML ou de incorporação do editor do seu site.
-                </p>
-              </div>
-              <button type="button" class="btn btn-outline-dark" id="copy-embed">Copiar código</button>
-              <p class="form-status" id="copy-status" role="status" aria-live="polite" hidden></p>
-            </div>
-          </div>
-
           <div class="app-card" id="leads-card" hidden>
             <h2>Pedidos de clientes</h2>
-            <p class="form-note" id="leads-empty">
-              Ainda não há pedidos. Eles aparecem aqui quando um cliente envia o projeto.
-            </p>
             <ol class="lead-list" id="leads-list"></ol>
           </div>
 

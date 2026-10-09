@@ -10,15 +10,11 @@
     "Projete o seu banheiro em 3D e receba uma estimativa aproximada."
   ],
   "designer.demo.eyebrow": ["Live demo", "Demo en vivo", "Demonstração"],
-  "designer.demo.title": [
-    "This is what your customers see",
-    "Esto es lo que ven sus clientes",
-    "É isto que os seus clientes veem"
-  ],
+  "designer.demo.title": ["Try the designer", "Pruebe el diseñador", "Teste o projetista"],
   "designer.demo.text": [
-    "Try it as a homeowner would: measure the room, move the fixtures, pick products and finishes, and see the estimate. This demo uses a sample business; yours shows your name, phone and prices.",
-    "Pruébelo como lo haría un cliente: mida el baño, mueva los accesorios, elija productos y acabados y vea la estimación. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
-    "Teste como um cliente faria: meça o banheiro, mova as peças, escolha produtos e acabamentos e veja a estimativa. Esta demonstração usa uma empresa de exemplo; a sua mostra o seu nome, telefone e preços."
+    "Measure the room, move the fixtures, pick products and finishes, and see the estimate. This demo uses a sample business; yours shows your name, phone and prices.",
+    "Mida el baño, mueva las piezas, elija productos y acabados y vea la estimación. Esta demo usa una empresa de ejemplo; la suya muestra su nombre, teléfono y precios.",
+    "Meça o banheiro, mova as peças, escolha produtos e acabamentos e veja a estimativa. Esta demonstração usa uma empresa de exemplo; a sua mostra o seu nome, telefone e preços."
   ],
   "designer.unavailable.title": [
     "This designer isn't available right now",
@@ -26,9 +22,9 @@
     "Este projetista não está disponível no momento"
   ],
   "designer.unavailable.text": [
-    "Please contact the business directly. If this is your designer, check your plan on your account page.",
-    "Comuníquese directamente con la empresa. Si este es su diseñador, revise su plan en la página de su cuenta.",
-    "Entre em contato diretamente com a empresa. Se este é o seu projetista, confira o seu plano na página da sua conta."
+    "This designer opens only for its owner, signed in to their account. If it's yours, log in and open it from My projects.",
+    "Este diseñador solo se abre para su dueño, con la sesión iniciada en su cuenta. Si es suyo, inicie sesión y ábralo desde Mis proyectos.",
+    "Este projetista só abre para o dono, com o login ativo na conta. Se é o seu, entre e abra em Meus projetos."
   ],
   "designer.studio.title": ["Design your bathroom", "Diseñe su baño", "Projete o seu banheiro"],
   "designer.studio.steps": ["Design steps", "Pasos del diseño", "Etapas do projeto"],
@@ -40,9 +36,9 @@
   ],
   "designer.link.title": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
   "designer.link.text": [
-    "Copy this link to come back to your design on another device or to send it to someone. Anyone with the link sees the design, not your contact details.",
-    "Copie este enlace para volver a su diseño en otro dispositivo o para enviárselo a alguien. Quien tenga el enlace ve el diseño, no sus datos de contacto.",
-    "Copie este link para voltar ao seu projeto em outro aparelho ou para enviá-lo a alguém. Quem tiver o link vê o projeto, não os seus dados de contato."
+    "Copy this link to come back to your design on another device. The design itself is in the link, not your contact details.",
+    "Copie este enlace para volver a su diseño en otro dispositivo. El diseño está en el propio enlace, no sus datos de contacto.",
+    "Copie este link para voltar ao seu projeto em outro aparelho. O projeto está no próprio link, não os seus dados de contato."
   ],
   "designer.link.label": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
   "designer.link.done": ["Done", "Listo", "Pronto"],
@@ -91,17 +87,11 @@
   "designer.project.mine": ["My projects", "Mis proyectos", "Meus projetos"],
   "designer.preview.title": ["Only you can see this.", "Solo usted puede ver esto.", "Só você pode ver isto."],
   "designer.preview.text": [
-    "Your designer isn't live for customers yet, and requests can't be sent from it, until you pick a plan.",
-    "Su diseñador aún no está activo para sus clientes, y no se pueden enviar solicitudes desde él, hasta que elija un plan.",
-    "O seu projetista ainda não está no ar para os clientes, e não dá para enviar pedidos por ele, até você escolher um plano."
+    "Your plan isn't active, so you can look around but can't save projects. Pick a plan to turn it on.",
+    "Su plan no está activo, así que puede explorar pero no guardar proyectos. Elija un plan para activarlo.",
+    "O seu plano não está ativo, então você pode explorar, mas não salvar projetos. Escolha um plano para ativar."
   ],
   "designer.preview.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
-  "designer.websiteLocked.text": [
-    "Your designer is for your own use: customers can't open this link or send requests from it until your plan includes \"Put it on your website\".",
-    "Su diseñador es solo para su propio uso: sus clientes no pueden abrir este enlace ni enviar solicitudes desde él hasta que su plan incluya \"Póngalo en su sitio web\".",
-    "O seu projetista é só para o seu próprio uso: os clientes não podem abrir este link nem enviar pedidos por ele até o seu plano incluir \"Coloque no seu site\"."
-  ],
-  "designer.websiteLocked.cta": ["See your plan", "Ver su plan", "Ver seu plano"],
   "designer.project.newTitle": ["New project", "Nuevo proyecto", "Novo projeto"],
   "designer.project.newText": [
     "Who and where is this job for? Everything is optional, and you can change it later on the project's page.",

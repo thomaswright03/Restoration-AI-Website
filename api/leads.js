@@ -1,51 +1,19 @@
-// POST /api/leads: the designer's request form. Saves the homeowner's request
-// for the business it came from (shown on that business's account page), and
-// emails it to the business when RESEND_API_KEY and LEADS_FROM_EMAIL are set.
-// Requests from the public demo (business=demo) are accepted but not kept.
+// POST /api/leads: the request form of the public demo designer. Requests
+// from the demo (business=demo) are checked and answered but not kept. A
+// business's own designer opens only for its signed-in owner and has no
+// request form, so requests for any other business are refused. Requests
+// saved before that change stay on the business's account page.
 "use strict";
 
-const { env, supabaseReady, sendJson, db, readForm, activeBusiness } = require("./_lib.js");
+const { sendJson, readForm } = require("./_lib.js");
 
 const LIMITS = { name: 120, phone: 40, email: 160, service: 120, message: 6000, language: 40 };
-
-// At most this many requests per business in an hour, so a script can't
-// flood a business's inbox (and its email) with junk.
-const HOURLY_LIMIT = 30;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function field(form, key) {
   return String(form[key] || "")
     .trim()
     .slice(0, LIMITS[key]);
-}
-
-async function emailBusiness(biz, lead) {
-  if (!env("RESEND_API_KEY") || !env("LEADS_FROM_EMAIL") || !biz.email) return;
-  const text = [
-    "New request from your 3D bathroom designer",
-    "",
-    "Name: " + lead.name,
-    "Phone: " + lead.phone,
-    "Email: " + lead.email,
-    "Work: " + lead.service,
-    lead.language ? "Language: " + lead.language : "",
-    "",
-    lead.message,
-  ]
-    .filter((line, i, all) => line || all[i - 1] !== "")
-    .join("\n");
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: "Bearer " + env("RESEND_API_KEY"), "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: env("LEADS_FROM_EMAIL"),
-      to: [biz.email],
-      reply_to: lead.email || undefined,
-      subject: "New bathroom request from " + (lead.name || "a homeowner"),
-      text,
-    }),
-  });
-  if (!res.ok) console.error("Resend " + res.status + ": " + (await res.text()).slice(0, 300));
 }
 
 module.exports = async function handler(req, res) {
@@ -70,31 +38,5 @@ module.exports = async function handler(req, res) {
 
   const slug = String(form.business || "").toLowerCase();
   if (!slug || slug === "demo") return sendJson(res, 200, { ok: true, demo: true });
-  if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
-
-  try {
-    const biz = await activeBusiness(slug);
-    // Only a designer that's open to homeowners takes requests.
-    if (!biz || biz.inactive || biz.noWebsite) return sendJson(res, 404, { error: "unavailable" });
-    const since = new Date(Date.now() - 3600 * 1000).toISOString();
-    const recent = await db(
-      "leads?business_id=eq." +
-        encodeURIComponent(biz.id) +
-        "&created_at=gte." +
-        encodeURIComponent(since) +
-        "&select=id&limit=" +
-        HOURLY_LIMIT,
-    );
-    if ((recent || []).length >= HOURLY_LIMIT) return sendJson(res, 429, { error: "busy" });
-    await db("leads", {
-      method: "POST",
-      headers: { Prefer: "return=minimal" },
-      body: Object.assign({ business_id: biz.id }, lead),
-    });
-    await emailBusiness(biz, lead).catch((e) => console.error(e));
-    return sendJson(res, 200, { ok: true });
-  } catch (e) {
-    console.error(e);
-    return sendJson(res, 500, { error: "server" });
-  }
+  return sendJson(res, 404, { error: "unavailable" });
 };

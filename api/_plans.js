@@ -16,11 +16,7 @@
 // STRIPE_PRICE_PRO / STRIPE_PRICE_MAX (comma-separated lists allowed), else
 // Starter.
 //
-// "Put it on your website" (the designer link and embed code for homeowners)
-// is an add-on: STRIPE_PRICE_WEBSITE, added at checkout, recorded as
-// subscriptions.website by the webhook (or set by hand); Max includes it
-// (site-config.json plans.max.websiteIncluded). Without it, a business's
-// designer opens only for its signed-in owner.
+// A business's designer opens only for its signed-in owner, on every plan.
 "use strict";
 
 const CONFIG = require("../site-config.json").plans || {};
@@ -76,24 +72,6 @@ function limitsOf(plan) {
   return PLANS[plan] || PLANS.free;
 }
 
-// Whether a subscriptions row lets its owner share their designer with
-// homeowners (the link and the embed code).
-function websiteOf(sub) {
-  const plan = planOf(sub);
-  if (plan === "free") return false;
-  if (plan === "max" && (CONFIG.max || {}).websiteIncluded !== false) return true;
-  return sub.website === true;
-}
-
-// Is this Stripe price the website add-on? By id (STRIPE_PRICE_WEBSITE,
-// comma-separated list allowed), lookup key or "addon" metadata.
-function isWebsitePrice(price) {
-  if (!price || typeof price !== "object") return false;
-  if (price.id && priceList("STRIPE_PRICE_WEBSITE").includes(price.id)) return true;
-  const named = [price.metadata && price.metadata.addon, price.lookup_key];
-  return named.some((value) => /^website(?![a-z])/i.test(String(value || "")));
-}
-
 // Promo codes that make the first days of a new account's first plan free
 // (a Stripe trial; the card is taken at checkout and first charged when it
 // ends). PROMO_CODES lists them, comma-separated, each optionally with its
@@ -123,4 +101,4 @@ function promoDays(code) {
   return (key && promoCodes()[key]) || 0;
 }
 
-module.exports = { PLANS, planFromPrice, planOf, limitsOf, websiteOf, isWebsitePrice, promoCodes, promoDays };
+module.exports = { PLANS, planFromPrice, planOf, limitsOf, promoCodes, promoDays };

@@ -86,11 +86,6 @@
     "Elegir Max, {{@priceMax}} al mes",
     "Escolher Max, {{@priceMax}} por mês"
   ],
-  "account.plan.website": [
-    "Add \"Put it on your website\" (+{{@priceWebsite}} a month; included in Max)",
-    "Agregar \"Póngalo en su sitio web\" (+{{@priceWebsite}} al mes; incluido en Max)",
-    "Adicionar \"Coloque no seu site\" (+{{@priceWebsite}} por mês; incluído no Max)"
-  ],
   "account.plan.trialNote": [
     "Checkout is handled by Stripe. With a promo code your first {{@promoDays}} days are free: cancel before they end and you pay nothing.",
     "El pago lo procesa Stripe. Con un código promocional sus primeros {{@promoDays}} días son gratis: si cancela antes de que terminen, no paga nada.",
@@ -204,42 +199,7 @@
     "Instalación de puerta de entrada, c/u ($)",
     "Instalação de porta de entrada, cada ($)"
   ],
-  "account.share.title": ["Put it on your website", "Póngalo en su sitio web", "Coloque no seu site"],
-  "account.share.inactive": [
-    "Your designer goes live once your plan is active.",
-    "Su diseñador se activa cuando su plan esté activo.",
-    "O seu projetista entra no ar quando o seu plano estiver ativo."
-  ],
-  "account.share.locked": [
-    "Your designer link and the code for your website come with the \"Put it on your website\" add-on ({{@priceWebsite}} a month; included in Max). Until then, your designer is for your own use: open it from My projects.",
-    "Su enlace del diseñador y el código para su sitio web vienen con el complemento \"Póngalo en su sitio web\" ({{@priceWebsite}} al mes; incluido en Max). Mientras tanto, su diseñador es solo para su propio uso: ábralo desde Mis proyectos.",
-    "O link do seu projetista e o código para o seu site vêm com o adicional \"Coloque no seu site\" ({{@priceWebsite}} por mês; incluído no Max). Até lá, o seu projetista é só para o seu próprio uso: abra-o em Meus projetos."
-  ],
-  "account.share.addWebsite": [
-    "Add it: {{@priceWebsite}} a month",
-    "Agregarlo: {{@priceWebsite}} al mes",
-    "Adicionar: {{@priceWebsite}} por mês"
-  ],
-  "account.share.lockedHelp": [
-    "Questions, or a plan set up for you by hand? Email <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> and we'll add it.",
-    "¿Preguntas, o un plan que le configuramos a mano? Escriba a <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> y lo agregamos.",
-    "Dúvidas, ou um plano configurado à mão para você? Escreva para <a data-fill=\"company.supportEmail\" data-fill-href=\"company.supportEmailHref\" href=\"#\"></a> e nós adicionamos."
-  ],
-  "account.share.lang": ["Language", "Idioma", "Idioma"],
-  "account.share.link": ["Your link:", "Su enlace:", "Seu link:"],
-  "account.share.embed": ["Code for your website", "Código para su sitio web", "Código para o seu site"],
-  "account.share.embedHelp": [
-    "Paste it where the designer should appear, in an HTML or embed block of your website builder.",
-    "Péguelo donde debe aparecer el diseñador, en un bloque HTML o de inserción del editor de su sitio.",
-    "Cole onde o projetista deve aparecer, em um bloco de HTML ou de incorporação do editor do seu site."
-  ],
-  "account.share.copy": ["Copy code", "Copiar código", "Copiar código"],
   "account.leads.title": ["Customer requests", "Solicitudes de clientes", "Pedidos de clientes"],
-  "account.leads.empty": [
-    "No requests yet. They appear here when a customer sends their design.",
-    "Aún no hay solicitudes. Aparecen aquí cuando un cliente envía su diseño.",
-    "Ainda não há pedidos. Eles aparecem aqui quando um cliente envia o projeto."
-  ],
   "account.projects.title": ["Projects", "Proyectos", "Projetos"],
   "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"],
   "account.delete.title": ["Delete account", "Eliminar cuenta", "Excluir conta"],

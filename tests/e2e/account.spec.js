@@ -1,16 +1,16 @@
 "use strict";
 
 // The account page, signed in, with Supabase and the api/ functions stood
-// in for by page.route: the "Put it on your website" card shows the link
-// and code only when the plan includes the add-on, and Delete account
-// asks for the sign-in email, calls /api/account and signs out.
+// in for by page.route: no designer link, embed code or website add-on
+// anywhere, old customer requests show only when there are some, and Delete
+// account asks for the sign-in email, calls /api/account and signs out.
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", website = false, payments = false, status = "active" } = {}) {
+async function signedIn(page, { plan = "starter", payments = false, status = "active", leads = [] } = {}) {
   const calls = [];
   await page.route("**/api/config", (route) =>
     route.fulfill({
@@ -19,7 +19,7 @@ async function signedIn(page, { plan = "starter", website = false, payments = fa
         payments,
         supabaseUrl: SUPABASE,
         supabaseAnonKey: "anon",
-        plans: { starter: payments, pro: payments, max: payments, website: payments },
+        plans: { starter: payments, pro: payments, max: payments },
         trialDays: 0,
         promo: payments,
       },
@@ -28,7 +28,7 @@ async function signedIn(page, { plan = "starter", website = false, payments = fa
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
   await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
     route.fulfill({
-      json: { owner_id: "u1", status, plan, website, current_period_end: "2026-11-01T00:00:00Z" },
+      json: { owner_id: "u1", status, plan, current_period_end: "2026-11-01T00:00:00Z" },
     }),
   );
   await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
@@ -36,10 +36,10 @@ async function signedIn(page, { plan = "starter", website = false, payments = fa
       json: { id: "b1", owner_id: "u1", slug: "smith-bath", name: "Smith Bath", phone: "", email: "", prices: {} },
     }),
   );
-  await page.route(SUPABASE + "/rest/v1/leads**", (route) => route.fulfill({ json: [] }));
+  await page.route(SUPABASE + "/rest/v1/leads**", (route) => route.fulfill({ json: leads }));
   await page.route("**/api/projects**", (route) =>
     route.fulfill({
-      json: { plan, website, limits: { monthly: 10, total: 50 }, used: { month: 0, total: 0 }, projects: [] },
+      json: { plan, limits: { monthly: 10, total: 50 }, used: { month: 0, total: 0 }, projects: [] },
     }),
   );
   await page.route("**/api/checkout", async (route) => {
@@ -67,32 +67,41 @@ async function signedIn(page, { plan = "starter", website = false, payments = fa
   return calls;
 }
 
-test("without the add-on the share card explains and offers it; with it, the link and code appear", async ({
-  page,
-}) => {
-  const calls = await signedIn(page, { plan: "pro", website: false, payments: true });
+test("no designer link, embed code or website add-on; the plan checkout sends only the plan", async ({ page }) => {
+  const calls = await signedIn(page, { plan: "pro", status: "none", payments: true });
   await page.goto("/account.html");
-  await expect(page.locator("#share-locked")).toBeVisible();
-  await expect(page.locator("#share-locked")).toContainText("$9.99 a month");
-  await expect(page.locator("#share-open")).toBeHidden();
-  await expect(page.locator("#share-inactive")).toBeHidden();
+  await expect(page.locator("#prices-card")).toBeVisible();
+  await expect(page.locator("#plan-buy")).toBeVisible();
+  await expect(page.locator("#share-card, #embed-code, #plan-website")).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(/Put it on your website|embed/i);
+  // No old requests: the card stays out of the way.
+  await expect(page.locator("#leads-card")).toBeHidden();
 
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(axe.violations.map((v) => v.id)).toEqual([]);
 
-  await page.getByRole("button", { name: /Add it/ }).click();
-  await expect(page.locator("#share-open")).toBeVisible();
-  await expect(page.locator("#share-message")).toContainText("Added");
-  expect(calls).toEqual([{ addon: "website" }]);
-  await expect(page.locator("#share-link")).toHaveText(/designer\.html\?b=smith-bath$/);
-  await expect(page.locator("#embed-code")).toHaveValue(/designer\.html\?b=smith-bath&embed=1/);
+  await page.locator('[data-plan="pro"]').click();
+  await expect.poll(() => calls.length).toBe(1);
+  expect(calls[0]).toEqual({ plan: "pro", promo: "", lang: "" });
 });
 
-test("Max includes the add-on: the link and code are there from the start", async ({ page }) => {
-  await signedIn(page, { plan: "max", website: true });
+test("requests homeowners sent earlier can still be read", async ({ page }) => {
+  await signedIn(page, {
+    leads: [
+      {
+        id: "l1",
+        name: "Ana",
+        phone: "555",
+        email: "",
+        service: "",
+        message: "Hi",
+        created_at: "2026-10-01T00:00:00Z",
+      },
+    ],
+  });
   await page.goto("/account.html");
-  await expect(page.locator("#share-open")).toBeVisible();
-  await expect(page.locator("#share-locked")).toBeHidden();
+  await expect(page.locator("#leads-card")).toBeVisible();
+  await expect(page.locator("#leads-list")).toContainText("Ana");
 });
 
 test("Delete account asks for the sign-in email, then deletes and signs out", async ({ page }) => {

@@ -1,6 +1,6 @@
 # Room Designer 3D
 
-A 3D bathroom designer and estimator that remodeling and restoration businesses sign up for, pay for, and put on their own website. Homeowners design their bathroom in 3D, get a rough estimate at the business's own labor prices, and send the request to the business.
+A 3D bathroom designer and estimator that remodeling and restoration businesses sign up for and pay for. The business designs a customer's bathroom in 3D, gets a rough estimate at its own labor prices, and saves it as a project.
 
 A product of Wright AI Solutions, LLC. The designer itself started as the one built for a client site and was made multi-business here: every business name, phone, email and price comes from the subscriber's account.
 
@@ -8,11 +8,11 @@ A product of Wright AI Solutions, LLC. The designer itself started as the one bu
 
 - **Landing page** (`index.html`): what it is, pricing, FAQ, sign-up.
 - **Live demo** (`designer.html`): the full designer, speaking for a sample business.
-- **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout; a promo code makes the first week free), set the business details and labor prices, copy the designer link or embed code, read the requests homeowners send, and delete the account.
-- **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details (homeowners are never signed in, so they don't see it).
+- **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout; a promo code makes the first week free), set the business details and labor prices, read requests homeowners sent before the designer became owner-only, and delete the account.
+- **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details .
 - **A project's page** (`project.html?id=`): the 3D model, the info (client, phone, email, address with unit/apt, job type, status, start date, notes) and the materials list worked out when the design was last saved, printable.
 - **Plans and limits** (`api/_plans.js`): Free can use the designer but can't save projects. Starter 10 new projects a month and 50 kept at once, Pro 25 and 100, Max 100 and 1000. Deleting a project frees a slot under the total but not the month's allowance (calendar month, UTC). The server enforces both (`api/projects.js` and the `create_project()` database function).
-- **A business's designer**: `designer.html?b=<their-slug>`, or `...&embed=1` inside an iframe on their own site (no product header/footer). It opens for homeowners only while the subscription is active or trialing **and** includes "Put it on your website" (the add-on on Starter and Pro, `subscriptions.website`; included in Max). Without the add-on, only the business's own signed-in owner can open it (from My projects), with a banner saying so, and it takes no requests.
+- **A business's designer**: `designer.html?b=<their-slug>`. It opens only for the business's own signed-in owner (from My projects), on every plan; while the plan isn't active it's a preview with a banner. Anyone else gets a "not available" notice. It has no request form (only the public demo does) and can't be framed by other sites. (The old "Put it on your website" add-on is retired; `subscriptions.website` is left in the schema, unused.)
 - **Delete account** (`api/account.js`): on the account page, confirmed by typing the sign-in email. Cancels the Stripe subscription, then deletes the auth user; the database cascades that to the business, its requests, the subscription row and every project. Stripe keeps the customer and invoices.
 
 Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
@@ -23,18 +23,18 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Vercel functions in `api/` (Node 20, no npm packages; they call Stripe and Supabase over REST):
   - `config.js`: tells the browser whether accounts and payments are on, and the public Supabase keys
   - `business.js`: a business's public profile, loaded by the designer page as a script
-  - `leads.js`: saves a homeowner request for that business (and emails it, if Resend is set up)
-  - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with or without the website add-on; or adding the add-on to an existing subscription) and the Stripe billing portal
+  - `leads.js`: answers the public demo's request form (nothing is kept); refuses requests for any business
+  - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with an optional promo code) and the Stripe billing portal
   - `account.js`: deletes the signed-in user's account
   - `projects.js`: a subscriber's projects (list, open, save, rename, delete), within their plan's limits
-  - `stripe-webhook.js`: records subscription status, which plan, and whether the website add-on is on it, in Supabase
+  - `stripe-webhook.js`: records subscription status and which plan, in Supabase
 - Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, projects, with row-level security).
 - With no keys set, the site runs in demo mode: the demo designer works, and sign-up says accounts aren't switched on yet.
 
 ## Going live (one-time setup)
 
 1. **Supabase**: create a project. In SQL Editor, run `supabase/schema.sql` (and run it again whenever it changes; it's safe to re-run). In Authentication > URL Configuration, set the Site URL to your domain and add `https://<domain>/account.html`, `/es/account.html` and `/pt/account.html` as redirect URLs.
-2. **Stripe**: create three monthly recurring prices, one per plan (Starter, Pro, Max), with lookup keys `starter`, `pro` and `max`, plus one monthly price for the "Put it on your website" add-on. Put their IDs in `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_MAX` and `STRIPE_PRICE_WEBSITE`. Add a webhook to `https://<domain>/api/stripe-webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Turn on the customer portal (Settings > Billing > Customer portal).
+2. **Stripe**: create three monthly recurring prices, one per plan (Starter, Pro, Max), with lookup keys `starter`, `pro` and `max`. Put their IDs in `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO` and `STRIPE_PRICE_MAX`. Add a webhook to `https://<domain>/api/stripe-webhook` for `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`. Turn on the customer portal (Settings > Billing > Customer portal).
    Promo codes: `PROMO_CODES` (default `FREEWEEK`) lists the codes people type on the account page; a valid one makes the first `plans.promoFreeDays` days (7) of an account's first plan free, as a Stripe trial (card taken at checkout, first charge when it ends). Add a code with its own length as `CODE:days`, e.g. `FREEWEEK,LAUNCH30:30`, or set `none` to turn codes off. Changing the variable needs a redeploy in Vercel.
 3. **Vercel**: import this repo as a project (no build settings needed) and set the environment variables in `.env.example`.
 4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json` (prices, and the project limits the server enforces), run `npm run pages`, commit.
@@ -80,4 +80,4 @@ npm run serve      # local server at http://localhost:8000, runs api/ like Verce
 npm test           # all of the above in one go
 ```
 
-`vercel.json` sets the security headers (only `designer.html` may be framed by other sites, for the embed). `robots.txt` and `sitemap.xml` are built by `npm run pages`. The last full audit and what's still open: `AUDIT_REPORT.md`.
+`vercel.json` sets the security headers (no page may be framed by other sites). `robots.txt` and `sitemap.xml` are built by `npm run pages`. The last full audit and what's still open: `AUDIT_REPORT.md`.

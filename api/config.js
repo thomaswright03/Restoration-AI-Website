@@ -22,7 +22,6 @@ module.exports = function handler(req, res) {
       starter: !!env("STRIPE_PRICE_STARTER"),
       pro: !!firstPrice("STRIPE_PRICE_PRO"),
       max: !!firstPrice("STRIPE_PRICE_MAX"),
-      website: !!env("STRIPE_PRICE_WEBSITE"),
     },
     trialDays: Number(env("TRIAL_DAYS")) || 0,
     // Whether checkout takes promo codes (the codes themselves stay private).

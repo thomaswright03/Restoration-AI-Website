@@ -14,10 +14,8 @@
     "max": {
       "price": 199.99,
       "newPerMonth": 100,
-      "maxProjects": 1000,
-      "websiteIncluded": true
+      "maxProjects": 1000
     },
-    "websiteAddOn": 9.99,
     "promoFreeDays": 7
   },
   "company": {

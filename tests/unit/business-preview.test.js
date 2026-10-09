@@ -1,9 +1,8 @@
 "use strict";
 
-// api/business.js: a business without an active plan is "inactive" to
-// everyone except its own signed-in owner, who gets an uncached preview.
-// One whose plan lacks "Put it on your website" is "no-website" to everyone
-// except its owner, who gets it for their own use (websiteLocked).
+// api/business.js: a business's designer opens only for its own signed-in
+// owner, on every plan (as an uncached preview while the plan isn't active).
+// Everyone else is told "owner-only".
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -23,7 +22,7 @@ function fakeRes() {
   };
 }
 
-// sub: the subscriptions row (status alone, or a row with plan/website).
+// sub: the subscriptions row (status alone, or a full row).
 function setup(sub) {
   if (typeof sub === "string") sub = { status: sub };
   process.env.SUPABASE_URL = "https://db.example";
@@ -71,10 +70,10 @@ async function load(query) {
 test("an inactive business is unavailable to the public and to other accounts", async () => {
   setup(null);
   const anon = await load({ b: "smith" });
-  assert.match(anon.body, /load\(null, "inactive"\)/);
+  assert.match(anon.body, /load\(null, "owner-only"\)/);
   assert.match(anon.headers["cache-control"], /s-maxage=60/);
   const other = await load({ b: "smith", t: "other-token" });
-  assert.match(other.body, /load\(null, "inactive"\)/);
+  assert.match(other.body, /load\(null, "owner-only"\)/);
   assert.equal(other.headers["cache-control"], "private, no-store");
 });
 
@@ -86,27 +85,30 @@ test("its owner gets a preview of their own designer, never cached", async () =>
   assert.equal(res.headers["cache-control"], "private, no-store");
 });
 
-test("an active business with the website add-on loads for everyone, with no preview flag", async () => {
-  setup({ status: "active", plan: "starter", website: true });
-  const res = await load({ b: "smith" });
-  assert.match(res.body, /"name":"Smith Bath"/);
-  assert.doesNotMatch(res.body, /preview|websiteLocked/);
-  assert.match(res.headers["cache-control"], /s-maxage=60/);
-  // Max includes the add-on.
-  setup({ status: "trialing", plan: "max", website: false });
-  assert.match((await load({ b: "smith" })).body, /"name":"Smith Bath"/);
+test("an active business opens only for its owner, on every plan, even with the old website flag", async () => {
+  for (const sub of [
+    { status: "active", plan: "starter", website: true },
+    { status: "trialing", plan: "max", website: true },
+    { status: "active", plan: "pro", website: false },
+  ]) {
+    setup(sub);
+    const anon = await load({ b: "smith" });
+    assert.match(anon.body, /load\(null, "owner-only"\)/);
+    assert.doesNotMatch(anon.body, /Smith Bath/);
+    const other = await load({ b: "smith", t: "other-token" });
+    assert.match(other.body, /load\(null, "owner-only"\)/);
+    const owner = await load({ b: "smith", t: "owner-token" });
+    assert.match(owner.body, /"name":"Smith Bath"/);
+    assert.doesNotMatch(owner.body, /preview|websiteLocked/);
+    assert.equal(owner.headers["cache-control"], "private, no-store");
+  }
 });
 
-test("without the add-on, the public and other accounts get no-website; the owner gets it for their own use", async () => {
-  setup({ status: "active", plan: "pro", website: false });
-  const anon = await load({ b: "smith" });
-  assert.match(anon.body, /load\(null, "no-website"\)/);
-  assert.match(anon.headers["cache-control"], /s-maxage=60/);
-  const other = await load({ b: "smith", t: "other-token" });
-  assert.match(other.body, /load\(null, "no-website"\)/);
-  const owner = await load({ b: "smith", t: "owner-token" });
-  assert.match(owner.body, /"name":"Smith Bath"/);
-  assert.match(owner.body, /"websiteLocked":true/);
-  assert.doesNotMatch(owner.body, /"preview"/);
-  assert.equal(owner.headers["cache-control"], "private, no-store");
+test("an unknown business is not found", async () => {
+  setup("active");
+  global.fetch = ((orig) => async (url, opts) =>
+    new URL(url).pathname === "/rest/v1/businesses"
+      ? { ok: true, status: 200, json: async () => [], text: async () => "[]" }
+      : orig(url, opts))(global.fetch);
+  assert.match((await load({ b: "nobody" })).body, /load\(null, "not-found"\)/);
 });

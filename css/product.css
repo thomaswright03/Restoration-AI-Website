@@ -413,7 +413,6 @@ html[data-embed="1"] main.solid-header {
   transform: rotate(45deg);
 }
 
-.plan-addon,
 .plan-free {
   max-width: 720px;
   margin: var(--space-6) auto 0;
@@ -422,7 +421,6 @@ html[data-embed="1"] main.solid-header {
 }
 
 .plan-free {
-  margin-top: var(--space-3);
   color: var(--color-muted);
   font-size: var(--fs-sm);
 }
@@ -619,18 +617,6 @@ html[data-embed="1"] main.solid-header {
   text-decoration: underline;
   cursor: pointer;
   min-height: var(--tap);
-}
-
-#embed-code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: var(--fs-sm);
-  border: 1px solid var(--color-line-strong);
-  padding: var(--space-3);
-  min-height: 0;
-}
-
-#share-link {
-  overflow-wrap: anywhere;
 }
 
 .lead-list {
@@ -1228,20 +1214,4 @@ body:has(.project-page, .studio-page) .nav {
 
 .btn-danger:hover:not(:disabled) {
   filter: brightness(0.9);
-}
-
-/* Account: the "Put it on your website" add-on next to the plan buttons */
-.check-row {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-  color: var(--color-ink-soft);
-  font-size: var(--fs-sm);
-  cursor: pointer;
-}
-
-.check-row input {
-  margin-top: 0.2em;
-  accent-color: var(--color-accent);
 }

@@ -38,9 +38,9 @@
   ],
   "privacy.s1": ["Who we are", "Quiénes somos", "Quem somos"],
   "privacy.s1p1": [
-    "Room Designer 3D is run by Wright AI Solutions, LLC, an Arizona limited liability company (\"we\", \"us\"). This policy explains what we collect when businesses use Room Designer 3D and when homeowners use a business's designer.",
-    "Room Designer 3D es operado por Wright AI Solutions, LLC, compañía de responsabilidad limitada de Arizona (\"nosotros\"). Esta política explica qué datos recopilamos cuando las empresas usan Room Designer 3D y cuando los clientes usan el diseñador de una empresa.",
-    "O Room Designer 3D é operado pela Wright AI Solutions, LLC, sociedade de responsabilidade limitada do Arizona (\"nós\"). Esta política explica quais dados coletamos quando empresas usam o Room Designer 3D e quando clientes usam o projetista de uma empresa."
+    "Room Designer 3D is run by Wright AI Solutions, LLC, an Arizona limited liability company (\"we\", \"us\"). This policy explains what we collect when businesses use Room Designer 3D.",
+    "Room Designer 3D es operado por Wright AI Solutions, LLC, compañía de responsabilidad limitada de Arizona (\"nosotros\"). Esta política explica qué datos recopilamos cuando las empresas usan Room Designer 3D.",
+    "O Room Designer 3D é operado pela Wright AI Solutions, LLC, sociedade de responsabilidade limitada do Arizona (\"nós\"). Esta política explica quais dados coletamos quando empresas usam o Room Designer 3D."
   ],
   "privacy.s2": ["Businesses that sign up", "Empresas que se registran", "Empresas que se cadastram"],
   "privacy.s2p1": [
@@ -54,11 +54,15 @@
     "Cuando guarda un diseño como proyecto, guardamos lo que usted escribe sobre el trabajo: el nombre, teléfono y correo de su cliente, la dirección de la obra, el tipo de trabajo, su estado, la fecha de inicio y las notas, junto con el diseño y su estimación. Esa es información personal de sus clientes, recogida por usted bajo sus propios compromisos de privacidad con ellos, y usted es responsable de tener su permiso para guardarla con nosotros. Se almacena en nuestra base de datos (Supabase), solo usted puede verla, con la sesión iniciada en su cuenta, y se elimina cuando usted elimina el proyecto o su cuenta.",
     "Quando você salva um projeto, guardamos o que você escreve sobre o serviço: o nome, telefone e e-mail do seu cliente, o endereço da obra, o tipo de serviço, a situação, a data de início e as anotações, junto com o projeto e o orçamento. Essas são informações pessoais dos seus clientes, coletadas por você sob os seus próprios compromissos de privacidade com eles, e você é responsável por ter a permissão deles para guardá-las conosco. Elas ficam no nosso banco de dados (Supabase), só você pode vê-las, conectado à sua conta, e são excluídas quando você exclui o projeto ou a sua conta."
   ],
-  "privacy.s3": ["Homeowners using a designer", "Clientes que usan un diseñador", "Clientes que usam um projetista"],
+  "privacy.s3": [
+    "Customers of a business and the demo",
+    "Clientes de una empresa y la demo",
+    "Clientes de uma empresa e a demonstração"
+  ],
   "privacy.s3p1": [
-    "Your 3D design stays in your browser, where it's saved so you can pick up where you left off. A link to your design carries the design itself; we don't store it. Only when you press Send Request do we receive your name, phone, email and project details (which include your design), which we store for the business whose designer you used. That business decides how to use them and you should contact it about your request. A business can also save a design as a project in its own account and enter your name, contact details and address there; that is its record of your job, and you should ask that business about it.",
-    "Su diseño en 3D se queda en su navegador, donde se guarda para que pueda continuar más tarde. Un enlace a su diseño lleva el diseño mismo; no lo guardamos. Solo cuando presiona Enviar solicitud recibimos su nombre, teléfono, correo y los detalles del proyecto (que incluyen su diseño), que guardamos para la empresa cuyo diseñador usó. Esa empresa decide cómo usarlos y debe comunicarse con ella sobre su solicitud. Una empresa también puede guardar un diseño como proyecto en su propia cuenta y anotar allí su nombre, sus datos de contacto y su dirección; ese es su registro de la obra, y debe consultarlo con esa empresa.",
-    "O seu projeto em 3D fica no seu navegador, onde é salvo para você continuar depois. Um link do seu projeto leva o próprio projeto; nós não o guardamos. Só quando você aperta Enviar solicitação recebemos o seu nome, telefone, e-mail e os detalhes do projeto (que incluem o seu projeto), que guardamos para a empresa cujo projetista você usou. Essa empresa decide como usá-los, e é com ela que você deve falar sobre o seu pedido. Uma empresa também pode salvar um projeto na própria conta e anotar ali o seu nome, os seus contatos e o seu endereço; esse é o registro dela sobre o serviço, e é com essa empresa que você deve falar a respeito."
+    "The designer opens only for the business that owns it, signed in to its account. A business can save a design as a project in its own account and enter its customer's name, contact details and address there; that is its record of the job, and if you are its customer you should ask that business about it. On the public demo, your 3D design stays in your browser, where it's saved so you can pick up where you left off, and a link to your design carries the design itself; we don't store it. The demo's request form doesn't send or store anything.",
+    "El diseñador solo se abre para la empresa dueña, con la sesión iniciada en su cuenta. Una empresa puede guardar un diseño como proyecto en su propia cuenta y anotar allí el nombre, los datos de contacto y la dirección de su cliente; ese es su registro de la obra, y si usted es su cliente debe consultarlo con esa empresa. En la demo pública, su diseño en 3D se queda en su navegador, donde se guarda para que pueda continuar más tarde, y un enlace a su diseño lleva el diseño mismo; no lo guardamos. El formulario de la demo no envía ni guarda nada.",
+    "O projetista só abre para a empresa dona, com o login ativo na sua conta. Uma empresa pode salvar um projeto na própria conta e anotar ali o nome, os contatos e o endereço do seu cliente; esse é o registro dela sobre o serviço, e se você é cliente dela deve falar com essa empresa a respeito. Na demonstração pública, o seu projeto em 3D fica no navegador, onde é salvo para você continuar depois, e um link do projeto leva o próprio projeto; nós não o guardamos. O formulário da demonstração não envia nem guarda nada."
   ],
   "privacy.s4": [
     "Who helps us run the service",
@@ -66,9 +70,9 @@
     "Quem nos ajuda a operar o serviço"
   ],
   "privacy.s4p1": [
-    "Vercel hosts the website, Supabase stores accounts and requests, Stripe handles payments, and an email provider may send new requests to the business. They only process data to provide those services to us. We don't sell personal information.",
-    "Vercel aloja el sitio web, Supabase guarda las cuentas y las solicitudes, Stripe procesa los pagos y un proveedor de correo puede enviar las nuevas solicitudes a la empresa. Solo tratan los datos para prestarnos esos servicios. No vendemos información personal.",
-    "A Vercel hospeda o site, o Supabase guarda as contas e os pedidos, a Stripe processa os pagamentos e um provedor de e-mail pode enviar os novos pedidos à empresa. Eles só tratam os dados para nos prestar esses serviços. Não vendemos informações pessoais."
+    "Vercel hosts the website, Supabase stores accounts and projects, and Stripe handles payments. They only process data to provide those services to us. We don't sell personal information.",
+    "Vercel aloja el sitio web, Supabase guarda las cuentas y los proyectos, y Stripe procesa los pagos. Solo tratan los datos para prestarnos esos servicios. No vendemos información personal.",
+    "A Vercel hospeda o site, o Supabase guarda as contas e os projetos, e a Stripe processa os pagamentos. Eles só tratam os dados para nos prestar esses serviços. Não vendemos informações pessoais."
   ],
   "privacy.s5": ["How long we keep it", "Cuánto tiempo lo guardamos", "Por quanto tempo guardamos"],
   "privacy.s5p1": [
@@ -90,9 +94,9 @@
   ],
   "terms.s1": ["The service", "El servicio", "O serviço"],
   "terms.s1p1": [
-    "Room Designer 3D, run by Wright AI Solutions, LLC, lets a business offer homeowners a 3D bathroom designer and rough estimate under the business's name. By creating an account you agree to these terms on behalf of your business.",
-    "Room Designer 3D, operado por Wright AI Solutions, LLC, permite que una empresa ofrezca a sus clientes un diseñador de baños en 3D y una estimación aproximada con el nombre de la empresa. Al crear una cuenta, acepta estos términos en nombre de su empresa.",
-    "O Room Designer 3D, operado pela Wright AI Solutions, LLC, permite que uma empresa ofereça aos clientes um projetista de banheiros em 3D e uma estimativa aproximada com o nome da empresa. Ao criar uma conta, você aceita estes termos em nome da sua empresa."
+    "Room Designer 3D, run by Wright AI Solutions, LLC, gives a business a 3D bathroom designer and rough estimate to use with its customers under the business's name. By creating an account you agree to these terms on behalf of your business.",
+    "Room Designer 3D, operado por Wright AI Solutions, LLC, ofrece a una empresa un diseñador de baños en 3D y una estimación aproximada para usar con sus clientes bajo el nombre de la empresa. Al crear una cuenta, acepta estos términos en nombre de su empresa.",
+    "O Room Designer 3D, operado pela Wright AI Solutions, LLC, oferece a uma empresa um projetista de banheiros em 3D e uma estimativa aproximada para usar com os clientes sob o nome da empresa. Ao criar uma conta, você aceita estes termos em nome da sua empresa."
   ],
   "terms.s2": [
     "Plans, promo codes and billing",
@@ -106,9 +110,9 @@
   ],
   "terms.s3": ["Your business and your customers", "Su empresa y sus clientes", "A sua empresa e os seus clientes"],
   "terms.s3p1": [
-    "You are responsible for the details and prices you enter, for the quotes and work you give your customers, and for handling the requests they send you lawfully, including any privacy notice your customers are owed. Estimates are labelled to homeowners as rough and non-binding.",
-    "Usted es responsable de los datos y precios que ingresa, de las cotizaciones y trabajos que ofrece a sus clientes y de tratar legalmente las solicitudes que le envían, incluido cualquier aviso de privacidad que les corresponda. Las estimaciones se presentan a los clientes como aproximadas y no vinculantes.",
-    "Você é responsável pelos dados e preços que informa, pelos orçamentos e serviços que oferece aos clientes e por tratar de forma legal os pedidos que eles enviam, incluindo qualquer aviso de privacidade devido a eles. As estimativas são apresentadas aos clientes como aproximadas e sem compromisso."
+    "You are responsible for the details and prices you enter, for the quotes and work you give your customers, and for handling your customers' details lawfully, including any privacy notice they are owed. Estimates are labelled as rough and non-binding.",
+    "Usted es responsable de los datos y precios que ingresa, de las cotizaciones y trabajos que ofrece a sus clientes y de tratar legalmente los datos de sus clientes, incluido cualquier aviso de privacidad que les corresponda. Las estimaciones se presentan como aproximadas y no vinculantes.",
+    "Você é responsável pelos dados e preços que informa, pelos orçamentos e serviços que oferece aos clientes e por tratar de forma legal os dados dos seus clientes, incluindo qualquer aviso de privacidade devido a eles. As estimativas são apresentadas como aproximadas e sem compromisso."
   ],
   "terms.s4": ["Products and prices shown", "Productos y precios que se muestran", "Produtos e preços exibidos"],
   "terms.s4p1": [

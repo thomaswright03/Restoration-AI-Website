@@ -21,13 +21,15 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 
 - Static pages (plain HTML/CSS/JS, Three.js for the 3D room), hosted on Vercel. No framework, no build step at deploy time.
 - Vercel functions in `api/` (Node 20, no npm packages; they call Stripe and Supabase over REST):
-  - `config.js`: tells the browser whether accounts and payments are on, and the public Supabase keys
+  - `config.js`: tells the browser whether accounts and payments are on, the public Supabase keys, and which switches are off (see "Pausing the product")
   - `business.js`: a business's public profile, loaded by the designer page as a script
   - `leads.js`: answers the public demo's request form (nothing is kept); refuses requests for any business
   - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with an optional promo code) and the Stripe billing portal
   - `account.js`: deletes the signed-in user's account
   - `projects.js`: a subscriber's projects (list, open, save, rename, delete), within their plan's limits
-  - `stripe-webhook.js`: records subscription status and which plan, in Supabase
+  - `stripe-webhook.js`: records subscription status and which plan, in Supabase (an event for an account that was deleted is acknowledged and logged, not retried)
+  - `_switches.js`: the kill switch (below); `_subscriptions.js`: recording a subscription; `_plans.js`: plans and limits; `_lib.js`: shared helpers
+  - Every call to Supabase or Stripe has an 8-second timeout, and every answer is JSON: `401 {error:"signin"}` (no sign-in), `503 {error:"unavailable"}` (Supabase Auth didn't answer), `503 {error:"paused"}` (switched off), `502 {error:"server"}` or `{error:"stripe"}` (an upstream failed). Stripe calls are pinned to one API version (`STRIPE_API_VERSION` in `api/_lib.js`, overridable by the env var of the same name) and session creation carries idempotency keys. Before starting a checkout, the server asks Stripe whether the account already has a subscription that's running (by customer, or by email when the first webhook hasn't landed yet) and refuses a second one with `409 {error:"already-subscribed"}`.
 - Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, projects, with row-level security).
 - With no keys set, the site runs in demo mode: the demo designer works, and sign-up says accounts aren't switched on yet.
 
@@ -76,6 +78,19 @@ Start with Stripe test keys; switch to live keys once a test sign-up, checkout a
 
 The retired `subscriptions.website` column and the `leads` table are kept this way: nothing writes them, and dropping them is a one-line reverse step once the old requests have been dealt with.
 
+## Pausing the product (kill switch)
+
+Sign-ups, buying a plan and saving projects can each be stopped without a deploy, from the Supabase dashboard:
+
+1. Table Editor > `site_switches`. It has one row (`id` 1).
+2. Set `signups`, `checkout` or `saving` to **false** to stop that part; set it back to **true** to resume. Optionally type a short message in `notice`; it's shown as written at the top of the account and sign-up pages while it isn't empty.
+3. Save the row. Within 15 seconds (the API caches it that long) every function refuses the switched-off action with `503 {"error":"paused"}`, and the pages explain it in the visitor's language:
+   - `signups` off: the sign-up page shows "New sign-ups are paused" and offers only Log in; a trigger on `auth.users` refuses a new account even for a request made outside the page. Existing users can still log in.
+   - `checkout` off: the account page's plan card says buying a plan is paused and shows no buy buttons; `/api/checkout` refuses. Existing subscriptions keep running, and Manage billing still works.
+   - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work.
+
+If the table doesn't exist yet (re-run `supabase/schema.sql`), or the database can't be reached, every switch counts as on: the switch is for stopping the product on purpose, not for an outage. Unit tests: `tests/unit/switches-robustness.test.js`.
+
 ## Editing pages and text
 
 Pages are built from templates so the three languages can't drift apart:
@@ -96,7 +111,7 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/room-plan.js`: the room engine, with no drawing (walls, fixture sizes, clearance rules, the plumbing stack and how far a drain can run from it, suggesting the electrical, finding spots, arranging the room, snapping a dragged fixture, share links). Also runs in Node for the unit tests.
 - `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
 - `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
-- `js/bathroom-pricing.js`: the estimate math and default labor prices
+- `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The flat surcharges (no stack, bad valve) and tax exist in the model but aren't charged by the studio.
 - `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings (October 2026) and go stale; the file's header says how to refresh or add one (there is no generator script)
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)

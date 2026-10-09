@@ -3956,7 +3956,13 @@
   function estimate(d) {
     d = d || design;
     var inputs = estimateInputs(d);
-    var labor = Pricing.computePublicEstimate(inputs.values, inputs.scope);
+    // The business's own prices (js/business.js puts them in DEFAULT_PRICES),
+    // every trade included: the plumbing points for each fixture, the wiring
+    // and any drain line, so the total is the business's whole labor quote.
+    var labor = Pricing.computeEstimate(inputs.values, inputs.scope, {
+      prices: Pricing.DEFAULT_PRICES,
+      includeTrade: true,
+    });
     var materials = [];
     if (materialsOn()) {
       labor.lines.forEach(function (line) {
@@ -4060,13 +4066,19 @@
     };
   }
 
+  // Plumbing for the fixtures is left out only in an estimate that doesn't
+  // price it (the labor's plumbingIncluded says).
+  function plumbingLeftOut(est) {
+    return est.labor.plumbingFixtureCount > 0 && !est.labor.plumbingIncluded;
+  }
+
   function totalLabel(est) {
     var key = est.hasMaterials ? "card.totalMaterials" : "card.total";
-    return T(est.labor.plumbingFixtureCount > 0 ? key + "BeforePlumbing" : key);
+    return T(plumbingLeftOut(est) ? key + "BeforePlumbing" : key);
   }
 
   function excludedLines(est) {
-    var n = est.labor.plumbingFixtureCount;
+    var n = plumbingLeftOut(est) ? est.labor.plumbingFixtureCount : 0;
     var list = [];
     if (n > 0)
       list.push({
@@ -4074,7 +4086,13 @@
         value: T("card.excluded.extra"),
       });
     list.push({
-      label: T(n > 0 ? "card.excluded.otherTrades" : "card.excluded.trades"),
+      label: T(
+        n > 0
+          ? "card.excluded.otherTrades"
+          : est.labor.plumbingIncluded
+            ? "card.excluded.tradesPriced"
+            : "card.excluded.trades",
+      ),
       value: T("card.excluded.extra"),
     });
     list.push({
@@ -4333,7 +4351,7 @@
         h("strong", { "data-testid": "estimate-total", text: Pricing.money(est.grandTotal) }),
       ]),
     );
-    if (est.labor.plumbingFixtureCount > 0) {
+    if (plumbingLeftOut(est)) {
       card.appendChild(
         h("p", {
           class: "studio-note",
@@ -4558,7 +4576,7 @@
           afterTotal: priced
             ? est.notes
                 .concat(
-                  est.labor.plumbingFixtureCount > 0
+                  plumbingLeftOut(est)
                     ? [T("card.plumbingTotalNote", { n: Pricing.formatQty(est.labor.plumbingFixtureCount) })]
                     : [],
                 )

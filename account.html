@@ -144,6 +144,10 @@
           <p><a href="designer.html">Try the live demo</a></p>
         </div>
 
+        <div class="app-notice" id="site-notice" role="status" hidden>
+          <p></p>
+        </div>
+
         <div class="app-card" id="password-card" hidden>
           <h2>Choose a new password</h2>
           <form id="password-form" novalidate>
@@ -193,7 +197,9 @@
 
           <div class="app-card">
             <h2>Your business</h2>
-            <p class="form-note">The designer shows these to your customers.</p>
+            <p class="form-note">
+              Shown on your estimates and PDFs. Only you can open your designer; your customers never see this page.
+            </p>
             <form id="business-form" novalidate>
               <div class="form-group">
                 <label for="biz-name">Business name</label>
@@ -205,11 +211,11 @@
                 <p class="form-note">Lowercase letters, numbers and dashes, e.g. smith-remodeling.</p>
               </div>
               <div class="form-group">
-                <label for="biz-phone">Phone for customers</label>
+                <label for="biz-phone">Phone shown on estimates</label>
                 <input type="tel" id="biz-phone" maxlength="40" autocomplete="tel" />
               </div>
               <div class="form-group">
-                <label for="biz-email">Email for customers</label>
+                <label for="biz-email">Email shown on estimates</label>
                 <input type="email" id="biz-email" maxlength="160" autocomplete="email" />
               </div>
               <div class="form-group">
@@ -224,7 +230,10 @@
 
           <div class="app-card" id="prices-card" hidden>
             <h2>Your labor prices</h2>
-            <p class="form-note">Estimates use these. Leave a box empty to use the default shown in it.</p>
+            <p class="form-note">
+              Every line of your estimates uses these prices, labor only. Leave a box empty to use the default shown in
+              it.
+            </p>
             <form id="prices-form" novalidate>
               <div class="price-grid">
                 <div class="form-group">
@@ -327,6 +336,17 @@
                   />
                 </div>
                 <div class="form-group">
+                  <label for="price-Bathtub_Price">Bathtub install, each ($)</label>
+                  <input
+                    type="number"
+                    id="price-Bathtub_Price"
+                    data-price-key="Bathtub_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
                   <label for="price-Vanity_Price">Vanity install, each ($)</label>
                   <input
                     type="number"
@@ -381,8 +401,47 @@
                     inputmode="decimal"
                   />
                 </div>
+                <div class="form-group">
+                  <label for="price-Plumbing_Price_Per_Point">Plumbing, per point ($)</label>
+                  <input
+                    type="number"
+                    id="price-Plumbing_Price_Per_Point"
+                    data-price-key="Plumbing_Price_Per_Point"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Electrical_Price_Per_Point"
+                    >Electrical, per point: outlet, switch, light, fan ($)</label
+                  >
+                  <input
+                    type="number"
+                    id="price-Electrical_Price_Per_Point"
+                    data-price-key="Electrical_Price_Per_Point"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Drain_Run_Price_Per_Ft">New drain line, per ft ($)</label>
+                  <input
+                    type="number"
+                    id="price-Drain_Run_Price_Per_Ft"
+                    data-price-key="Drain_Run_Price_Per_Ft"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
               </div>
-              <p class="form-note">Bathtub installs are priced at 70% of the shower price.</p>
+              <p class="form-note">
+                Bathtub: leave it empty to charge 70% of your shower price. Plumbing is charged per point: one for each
+                toilet, sink, vanity, shower and bathtub. Flat surcharges (no plumbing stack, a bad valve) aren't in the
+                estimate.
+              </p>
               <div class="app-actions">
                 <button type="submit" class="btn btn-primary">Save</button>
                 <button type="button" class="btn btn-outline-dark" id="prices-reset">Use the defaults</button>

@@ -98,9 +98,9 @@
   ],
   "account.biz.title": ["Your business", "Su empresa", "Sua empresa"],
   "account.biz.help": [
-    "The designer shows these to your customers.",
-    "El diseñador se los muestra a sus clientes.",
-    "O projetista mostra estes dados aos seus clientes."
+    "Shown on your estimates and PDFs. Only you can open your designer; your customers never see this page.",
+    "Aparecen en sus estimaciones y PDF. Solo usted puede abrir su diseñador; sus clientes nunca ven esta página.",
+    "Aparecem nas suas estimativas e PDFs. Só você pode abrir o seu projetista; os seus clientes nunca veem esta página."
   ],
   "account.biz.name": ["Business name", "Nombre de la empresa", "Nome da empresa"],
   "account.biz.slug": ["Your designer's web address", "Dirección web de su diseñador", "Endereço do seu projetista"],
@@ -109,8 +109,16 @@
     "Letras minúsculas, números y guiones, p. ej., smith-remodeling.",
     "Letras minúsculas, números e hifens, por exemplo smith-remodeling."
   ],
-  "account.biz.phone": ["Phone for customers", "Teléfono para clientes", "Telefone para clientes"],
-  "account.biz.email": ["Email for customers", "Correo para clientes", "E-mail para clientes"],
+  "account.biz.phone": [
+    "Phone shown on estimates",
+    "Teléfono que aparece en las estimaciones",
+    "Telefone mostrado nas estimativas"
+  ],
+  "account.biz.email": [
+    "Email shown on estimates",
+    "Correo que aparece en las estimaciones",
+    "E-mail mostrado nas estimativas"
+  ],
   "account.biz.legal": [
     "Registered legal name (optional)",
     "Razón social registrada (opcional)",
@@ -123,14 +131,9 @@
   ],
   "account.prices.title": ["Your labor prices", "Sus precios de mano de obra", "Seus preços de mão de obra"],
   "account.prices.help": [
-    "Estimates use these. Leave a box empty to use the default shown in it.",
-    "Las estimaciones usan estos precios. Deje una casilla vacía para usar el valor predeterminado que muestra.",
-    "As estimativas usam estes preços. Deixe um campo vazio para usar o valor padrão mostrado nele."
-  ],
-  "account.prices.bathtub": [
-    "Bathtub installs are priced at 70% of the shower price.",
-    "La instalación de bañeras se cobra al 70% del precio de la ducha.",
-    "A instalação de banheira é cobrada a 70% do preço do box."
+    "Every line of your estimates uses these prices, labor only. Leave a box empty to use the default shown in it.",
+    "Cada línea de sus estimaciones usa estos precios, solo mano de obra. Deje una casilla vacía para usar el valor predeterminado que muestra.",
+    "Cada linha das suas estimativas usa estes preços, só mão de obra. Deixe um campo vazio para usar o valor padrão mostrado nele."
   ],
   "account.prices.reset": ["Use the defaults", "Usar los valores predeterminados", "Usar os valores padrão"],
   "account.price.Demo_Price_Per_SqFt": [
@@ -221,5 +224,40 @@
   ],
   "account.delete.submit": ["Delete everything", "Eliminar todo", "Excluir tudo"],
   "account.delete.cancel": ["Keep my account", "Conservar mi cuenta", "Manter minha conta"],
-  "account.plan.promo": ["Promo code (optional)", "Código promocional (opcional)", "Código promocional (opcional)"]
+  "account.plan.promo": ["Promo code (optional)", "Código promocional (opcional)", "Código promocional (opcional)"],
+  "signup.paused.title": [
+    "New sign-ups are paused right now.",
+    "El registro de cuentas nuevas está pausado por ahora.",
+    "O cadastro de novas contas está pausado no momento."
+  ],
+  "signup.paused.text": [
+    "Please check back soon. If you already have an account, you can log in below.",
+    "Vuelva pronto. Si ya tiene una cuenta, puede iniciar sesión abajo.",
+    "Volte em breve. Se você já tem uma conta, pode entrar abaixo."
+  ],
+  "account.prices.note": [
+    "Bathtub: leave it empty to charge 70% of your shower price. Plumbing is charged per point: one for each toilet, sink, vanity, shower and bathtub. Flat surcharges (no plumbing stack, a bad valve) aren't in the estimate.",
+    "Bañera: déjela vacía para cobrar el 70% del precio de la ducha. La plomería se cobra por punto: uno por cada inodoro, lavabo, mueble de lavabo, ducha y bañera. Los recargos fijos (sin bajante, válvula dañada) no están en la estimación.",
+    "Banheira: deixe vazio para cobrar 70% do preço do box. O encanamento é cobrado por ponto: um para cada vaso, pia, gabinete, box e banheira. Sobretaxas fixas (sem prumada, registro com defeito) não entram na estimativa."
+  ],
+  "account.price.Bathtub_Price": [
+    "Bathtub install, each ($)",
+    "Instalación de bañera, c/u ($)",
+    "Instalação de banheira, cada ($)"
+  ],
+  "account.price.Plumbing_Price_Per_Point": [
+    "Plumbing, per point ($)",
+    "Plomería, por punto ($)",
+    "Encanamento, por ponto ($)"
+  ],
+  "account.price.Electrical_Price_Per_Point": [
+    "Electrical, per point: outlet, switch, light, fan ($)",
+    "Electricidad, por punto: tomacorriente, interruptor, luz, extractor ($)",
+    "Elétrica, por ponto: tomada, interruptor, luz, exaustor ($)"
+  ],
+  "account.price.Drain_Run_Price_Per_Ft": [
+    "New drain line, per ft ($)",
+    "Línea de drenaje nueva, por pie ($)",
+    "Linha de esgoto nova, por pé ($)"
+  ]
 }

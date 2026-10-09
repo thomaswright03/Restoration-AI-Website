@@ -23,6 +23,10 @@
   var PLANS = ["starter", "pro", "max"];
   var client = null;
   var config = null;
+  // After coming back from a successful checkout: "pending" while the plan
+  // is being confirmed, "slow" when confirmation hasn't come in 30 s. The
+  // buy buttons stay away in both, so nobody buys twice.
+  var checkoutWait = "";
 
   function $(id) {
     return document.getElementById(id);
@@ -60,6 +64,33 @@
       });
   }
 
+  // The kill switches (api/_switches.js): off only when the server says so.
+  function switchedOff(name) {
+    return !!(config && config.switches && config.switches[name] === false);
+  }
+
+  // A notice the owner set in site_switches.notice, shown as written.
+  function showSiteNotice() {
+    var el = $("site-notice");
+    var text = String((config && config.notice) || "").trim();
+    if (!el || !text) return;
+    el.querySelector("p").textContent = text;
+    show(el, true);
+  }
+
+  // The message for a failed call to api/: what happened, in plain words.
+  function errorKey(err) {
+    var code = err && err.code;
+    if (code === "unavailable" || code === "server" || code === "stripe" || (err && err.network)) {
+      return "acct.unavailable";
+    }
+    if (code === "paused") return "acct.paused.checkout";
+    if (code === "already-subscribed") return "acct.alreadySubscribed";
+    if (code === "promo") return "acct.promo.invalid";
+    if (code === "promo-used") return "acct.promo.used";
+    return "acct.error";
+  }
+
   function accountsOff() {
     show($("account-loading"), false);
     show($(config && config.unreachable ? "server-down" : "accounts-off"), true);
@@ -82,7 +113,12 @@
     var form = $("auth-form");
     var statusEl = $("auth-status");
     var submit = $("auth-submit");
-    var mode = params.get("mode") === "login" ? "login" : "signup";
+    var signupsOff = switchedOff("signups");
+    var mode = params.get("mode") === "login" || signupsOff ? "login" : "signup";
+    if (signupsOff) {
+      show($("signups-paused"), true);
+      show(document.querySelector('[data-mode="signup"]'), false);
+    }
 
     function setMode(next) {
       mode = next;
@@ -129,6 +165,7 @@
       var password = $("auth-password").value;
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return status(statusEl, "error", T("auth.emailInvalid"));
       if (mode !== "reset" && password.length < 8) return status(statusEl, "error", T("auth.passwordShort"));
+      if (mode === "signup" && signupsOff) return status(statusEl, "error", T("acct.paused.signups"));
       submit.disabled = true;
 
       var request;
@@ -187,36 +224,69 @@
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify(body || {}),
-    }).then(function (res) {
-      return res.json().then(function (data) {
-        if (!res.ok) {
-          var err = new Error(data.error || "HTTP " + res.status);
-          err.code = data.error;
-          throw err;
-        }
-        return data;
+    })
+      .catch(function () {
+        var err = new Error("network");
+        err.network = true;
+        throw err;
+      })
+      .then(function (res) {
+        return res
+          .json()
+          .catch(function () {
+            return {};
+          })
+          .then(function (data) {
+            if (!res.ok) {
+              var err = new Error(data.error || "HTTP " + res.status);
+              err.code = data.error || "server";
+              throw err;
+            }
+            return data;
+          });
       });
-    });
   }
 
   function isLive() {
     return !!subscription && (subscription.status === "active" || subscription.status === "trialing");
   }
 
+  // The plan card's one sentence for a subscription state (and whether a
+  // plan can be bought from here). Stripe statuses: none (no row yet),
+  // trialing, active, past_due, unpaid, paused, incomplete,
+  // incomplete_expired, canceled.
+  function planText(s) {
+    var date = formatDate(s.current_period_end);
+    if (s.status === "trialing") {
+      return date ? T("acct.status.trialing", { date: date }) : T("acct.status.trialingNoDate");
+    }
+    if (s.status === "active" && s.cancel_at_period_end) {
+      return date ? T("acct.status.ending", { date: date }) : T("acct.status.endingNoDate");
+    }
+    if (s.status === "active") return date ? T("acct.status.active", { date: date }) : T("acct.status.activeNoDate");
+    if (s.status === "none") {
+      if (!config.payments) return T("acct.status.nonePaymentsOff");
+      if (switchedOff("checkout")) return T("acct.status.nonePaused");
+      return T("acct.status.none");
+    }
+    var known = ["past_due", "unpaid", "paused", "incomplete", "incomplete_expired", "canceled"];
+    return T(known.indexOf(s.status) >= 0 ? "acct.status." + s.status : "acct.status.other");
+  }
+
   function renderPlan() {
     var s = subscription || { status: "none" };
-    var text;
-    if (s.status === "trialing") text = T("acct.status.trialing", { date: formatDate(s.current_period_end) });
-    else if (s.status === "active" && s.cancel_at_period_end) {
-      text = T("acct.status.ending", { date: formatDate(s.current_period_end) });
-    } else if (s.status === "active") text = T("acct.status.active", { date: formatDate(s.current_period_end) });
-    else if (s.status === "past_due") text = T("acct.status.past_due");
-    else if (s.status === "canceled") text = T("acct.status.canceled");
-    else if (s.status === "none") text = T("acct.status.none");
-    else text = T("acct.status.other", { status: s.status });
+    var out = $("plan-message");
+    var text = planText(s);
+    var canBuy =
+      ["none", "canceled", "incomplete_expired"].indexOf(s.status) >= 0 &&
+      !!config.payments &&
+      !switchedOff("checkout") &&
+      !checkoutWait;
+    if (checkoutWait && !isLive()) {
+      status(out, checkoutWait === "slow" ? "error" : "info", T("acct.checkout." + checkoutWait));
+    }
     $("plan-status").textContent = text;
 
-    var canBuy = ["none", "canceled", "incomplete_expired"].indexOf(s.status) >= 0;
     show($("plan-buy"), canBuy);
     // Promo codes give free days only on an account's first plan.
     var promo = canBuy && !!config.promo && !s.stripe_subscription_id;
@@ -269,10 +339,13 @@
 
   function fillPrices() {
     var saved = (business && business.prices) || {};
+    // The bathtub's default follows this business's own shower price.
+    var effective = Object.assign({}, Pricing.DEFAULT_PRICES, saved, { Bathtub_Price: null });
     Array.prototype.forEach.call(document.querySelectorAll("[data-price-key]"), function (input) {
       var key = input.getAttribute("data-price-key");
-      input.placeholder = String(Pricing.DEFAULT_PRICES[key]);
-      input.value = saved[key] !== undefined ? saved[key] : "";
+      var fallback = key === "Bathtub_Price" ? Pricing.bathtubPrice(effective) : Pricing.DEFAULT_PRICES[key];
+      input.placeholder = String(fallback);
+      input.value = saved[key] !== undefined && saved[key] !== null ? saved[key] : "";
     });
   }
 
@@ -499,7 +572,7 @@
           window.location.href = sitePath("signup.html") + "?deleted=1";
         })
         .catch(function (err) {
-          status(out, "error", T(err.code === "stripe" ? "acct.delete.stripe" : "acct.error"));
+          status(out, "error", T(err.code === "stripe" ? "acct.delete.stripe" : errorKey(err)));
           $("delete-submit").disabled = false;
         });
     });
@@ -508,6 +581,7 @@
   function buy(plan, button) {
     var out = $("plan-message");
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
+    if (switchedOff("checkout")) return status(out, "error", T("acct.paused.checkout"));
     button.disabled = true;
     var promo = $("plan-promo-row").hidden ? "" : $("plan-promo").value.trim();
     api("/api/checkout", { plan: plan, promo: promo, lang: LANG === "en" ? "" : LANG })
@@ -515,10 +589,17 @@
         window.location.href = data.url;
       })
       .catch(function (err) {
-        var key = { promo: "acct.promo.invalid", "promo-used": "acct.promo.used" }[err.code] || "acct.error";
+        var key = errorKey(err);
         status(out, "error", T(key));
-        if (key !== "acct.error") $("plan-promo").focus();
+        if (key === "acct.promo.invalid" || key === "acct.promo.used") $("plan-promo").focus();
         button.disabled = false;
+        // The server found a plan already running (a webhook still on its
+        // way, or another tab): it recorded it, so show it instead of the buttons.
+        if (err.code === "already-subscribed") loadSubscription();
+        if (err.code === "paused") {
+          config.switches = Object.assign({}, config.switches, { checkout: false });
+          renderPlan();
+        }
       });
   }
 
@@ -553,17 +634,34 @@
       show($("account-email"), true);
 
       var checkout = params.get("checkout");
-      if (checkout === "success") status($("plan-message"), "success", T("acct.checkout.success"));
+      if (checkout === "success") checkoutWait = "pending";
       if (checkout === "cancelled") status($("plan-message"), "info", T("acct.checkout.cancelled"));
 
       loadSubscription().then(function () {
         // The Stripe webhook can land a few seconds after the redirect back.
-        if (checkout !== "success" || isLive()) return;
+        // Until it does, the page says so and offers no buy buttons; if it
+        // takes more than 30 s it still doesn't (api/checkout.js would
+        // refuse a second plan anyway), and says what to do.
+        if (checkout !== "success") return;
+        if (isLive()) {
+          checkoutWait = "";
+          status($("plan-message"), "success", T("acct.checkout.success"));
+          return;
+        }
         var tries = 0;
         var timer = setInterval(function () {
           tries++;
           loadSubscription().then(function () {
-            if (isLive() || tries >= 10) clearInterval(timer);
+            if (isLive()) {
+              clearInterval(timer);
+              checkoutWait = "";
+              status($("plan-message"), "success", T("acct.checkout.success"));
+              renderPlan();
+            } else if (tries >= 10) {
+              clearInterval(timer);
+              checkoutWait = "slow";
+              renderPlan();
+            }
           });
         }, 3000);
       });
@@ -599,8 +697,8 @@
         .then(function (data) {
           window.location.href = data.url;
         })
-        .catch(function () {
-          status($("plan-message"), "error", T("acct.error"));
+        .catch(function (err) {
+          status($("plan-message"), "error", T(errorKey(err)));
           btn.disabled = false;
         });
     });
@@ -632,6 +730,7 @@
       return logOut();
     }
     if (!c.accounts || !window.supabase) return accountsOff();
+    showSiteNotice();
     client = window.supabase.createClient(c.supabaseUrl, c.supabaseAnonKey);
     if (page === "signup") initSignup();
     else initAccount();

@@ -14,6 +14,15 @@
           <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>
         </div>
 
+        <div class="app-notice" id="site-notice" role="status" hidden>
+          <p></p>
+        </div>
+
+        <div class="app-notice" id="signups-paused" role="status" hidden>
+          <p><strong>{{signup.paused.title}}</strong> {{signup.paused.text}}</p>
+          <p><a href="{{@root}}{{@dir}}designer.html">{{index.tryDemo}}</a></p>
+        </div>
+
         <div class="app-card" id="auth-card" hidden>
           <div class="auth-tabs" role="group" aria-label="{{signup.tabs}}">
             <button type="button" class="auth-tab" data-mode="signup" aria-pressed="true">{{signup.tabSignup}}</button>

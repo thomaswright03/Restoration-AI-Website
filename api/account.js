@@ -5,9 +5,11 @@
 // is deleted with the service role key; supabase/schema.sql cascades that
 // to the business, its leads, the subscription row and every project.
 // Stripe keeps the customer and invoices, as billing records must be kept.
+// (The cancellation's webhook arrives after the user is gone; the webhook
+// acknowledges it, see api/stripe-webhook.js.)
 "use strict";
 
-const { env, supabaseReady, sendJson, db, currentUser, stripe, readForm } = require("./_lib.js");
+const { env, supabaseReady, sendJson, db, requireUser, stripe, readForm, fetchWithTimeout } = require("./_lib.js");
 
 async function cancelStripe(sub) {
   if (!sub || !sub.stripe_subscription_id || !env("STRIPE_SECRET_KEY")) return;
@@ -22,7 +24,7 @@ async function cancelStripe(sub) {
 
 async function deleteAuthUser(id) {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
-  const res = await fetch(env("SUPABASE_URL") + "/auth/v1/admin/users/" + encodeURIComponent(id), {
+  const res = await fetchWithTimeout(env("SUPABASE_URL") + "/auth/v1/admin/users/" + encodeURIComponent(id), {
     method: "DELETE",
     headers: { apikey: key, Authorization: "Bearer " + key },
   });
@@ -36,29 +38,44 @@ module.exports = async function handler(req, res) {
     return sendJson(res, 405, { error: "method" });
   }
   if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
-  const user = await currentUser(req);
-  if (!user) return sendJson(res, 401, { error: "signin" });
-
-  const body = await readForm(req);
-  if (body.action !== "delete") return sendJson(res, 400, { error: "action" });
-  // The page asks them to type their email; the server checks it too.
-  const confirm = String(body.confirm || "")
-    .trim()
-    .toLowerCase();
-  if (!confirm || confirm !== String(user.email || "").toLowerCase()) return sendJson(res, 400, { error: "confirm" });
 
   try {
-    const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
-    await cancelStripe(subs && subs[0]);
+    const user = await requireUser(req, res);
+    if (!user) return;
+
+    const body = await readForm(req);
+    if (body.action !== "delete") return sendJson(res, 400, { error: "action" });
+    // The page asks them to type their email; the server checks it too.
+    const confirm = String(body.confirm || "")
+      .trim()
+      .toLowerCase();
+    if (!confirm || confirm !== String(user.email || "").toLowerCase()) {
+      return sendJson(res, 400, { error: "confirm" });
+    }
+
+    let sub;
+    try {
+      const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
+      sub = subs && subs[0];
+    } catch (e) {
+      console.error(e);
+      return sendJson(res, 502, { error: "server" });
+    }
+    try {
+      await cancelStripe(sub);
+    } catch (e) {
+      console.error(e);
+      return sendJson(res, 502, { error: "stripe" });
+    }
+    try {
+      await deleteAuthUser(user.id);
+      return sendJson(res, 200, { deleted: true });
+    } catch (e) {
+      console.error(e);
+      return sendJson(res, 502, { error: "server" });
+    }
   } catch (e) {
     console.error(e);
-    return sendJson(res, 502, { error: "stripe" });
-  }
-  try {
-    await deleteAuthUser(user.id);
-    return sendJson(res, 200, { deleted: true });
-  } catch (e) {
-    console.error(e);
-    return sendJson(res, 500, { error: "server" });
+    return sendJson(res, 502, { error: "server" });
   }
 };

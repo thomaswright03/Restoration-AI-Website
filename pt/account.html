@@ -150,6 +150,10 @@
           <p><a href="../pt/designer.html">Ver a demonstração</a></p>
         </div>
 
+        <div class="app-notice" id="site-notice" role="status" hidden>
+          <p></p>
+        </div>
+
         <div class="app-card" id="password-card" hidden>
           <h2>Escolha uma senha nova</h2>
           <form id="password-form" novalidate>
@@ -201,7 +205,10 @@
 
           <div class="app-card">
             <h2>Sua empresa</h2>
-            <p class="form-note">O projetista mostra estes dados aos seus clientes.</p>
+            <p class="form-note">
+              Aparecem nas suas estimativas e PDFs. Só você pode abrir o seu projetista; os seus clientes nunca veem
+              esta página.
+            </p>
             <form id="business-form" novalidate>
               <div class="form-group">
                 <label for="biz-name">Nome da empresa</label>
@@ -213,11 +220,11 @@
                 <p class="form-note">Letras minúsculas, números e hifens, por exemplo smith-remodeling.</p>
               </div>
               <div class="form-group">
-                <label for="biz-phone">Telefone para clientes</label>
+                <label for="biz-phone">Telefone mostrado nas estimativas</label>
                 <input type="tel" id="biz-phone" maxlength="40" autocomplete="tel" />
               </div>
               <div class="form-group">
-                <label for="biz-email">E-mail para clientes</label>
+                <label for="biz-email">E-mail mostrado nas estimativas</label>
                 <input type="email" id="biz-email" maxlength="160" autocomplete="email" />
               </div>
               <div class="form-group">
@@ -235,7 +242,8 @@
           <div class="app-card" id="prices-card" hidden>
             <h2>Seus preços de mão de obra</h2>
             <p class="form-note">
-              As estimativas usam estes preços. Deixe um campo vazio para usar o valor padrão mostrado nele.
+              Cada linha das suas estimativas usa estes preços, só mão de obra. Deixe um campo vazio para usar o valor
+              padrão mostrado nele.
             </p>
             <form id="prices-form" novalidate>
               <div class="price-grid">
@@ -339,6 +347,17 @@
                   />
                 </div>
                 <div class="form-group">
+                  <label for="price-Bathtub_Price">Instalação de banheira, cada ($)</label>
+                  <input
+                    type="number"
+                    id="price-Bathtub_Price"
+                    data-price-key="Bathtub_Price"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
                   <label for="price-Vanity_Price">Instalação de gabinete, cada ($)</label>
                   <input
                     type="number"
@@ -393,8 +412,47 @@
                     inputmode="decimal"
                   />
                 </div>
+                <div class="form-group">
+                  <label for="price-Plumbing_Price_Per_Point">Encanamento, por ponto ($)</label>
+                  <input
+                    type="number"
+                    id="price-Plumbing_Price_Per_Point"
+                    data-price-key="Plumbing_Price_Per_Point"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Electrical_Price_Per_Point"
+                    >Elétrica, por ponto: tomada, interruptor, luz, exaustor ($)</label
+                  >
+                  <input
+                    type="number"
+                    id="price-Electrical_Price_Per_Point"
+                    data-price-key="Electrical_Price_Per_Point"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="price-Drain_Run_Price_Per_Ft">Linha de esgoto nova, por pé ($)</label>
+                  <input
+                    type="number"
+                    id="price-Drain_Run_Price_Per_Ft"
+                    data-price-key="Drain_Run_Price_Per_Ft"
+                    min="0"
+                    step="0.01"
+                    inputmode="decimal"
+                  />
+                </div>
               </div>
-              <p class="form-note">A instalação de banheira é cobrada a 70% do preço do box.</p>
+              <p class="form-note">
+                Banheira: deixe vazio para cobrar 70% do preço do box. O encanamento é cobrado por ponto: um para cada
+                vaso, pia, gabinete, box e banheira. Sobretaxas fixas (sem prumada, registro com defeito) não entram na
+                estimativa.
+              </p>
               <div class="app-actions">
                 <button type="submit" class="btn btn-primary">Salvar</button>
                 <button type="button" class="btn btn-outline-dark" id="prices-reset">Usar os valores padrão</button>

@@ -7,12 +7,12 @@ const {
   stripeReady,
   sendJson,
   siteUrl,
-  db,
   requireUser,
   stripe,
   idempotencyKey,
   readForm,
 } = require("./_lib.js");
+const { subscriptionOf } = require("./_subscriptions.js");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") {
@@ -29,8 +29,8 @@ module.exports = async function handler(req, res) {
 
     let customer;
     try {
-      const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=stripe_customer_id");
-      customer = subs && subs[0] && subs[0].stripe_customer_id;
+      const sub = await subscriptionOf(user.id, "stripe_customer_id");
+      customer = sub && sub.stripe_customer_id;
     } catch (e) {
       console.error(e);
       return sendJson(res, 502, { error: "server" });

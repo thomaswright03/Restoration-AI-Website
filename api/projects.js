@@ -31,6 +31,7 @@
 
 const { supabaseReady, sendJson, db, requireUser, readForm } = require("./_lib.js");
 const { planOf, limitsOf } = require("./_plans.js");
+const { subscriptionOf } = require("./_subscriptions.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
 const Plan = require("../js/room-plan.js");
 
@@ -130,9 +131,7 @@ function monthStart(now = new Date()) {
 }
 
 async function planFor(userId) {
-  const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(userId) + "&select=*");
-  const sub = subs && subs[0];
-  const plan = planOf(sub);
+  const plan = planOf(await subscriptionOf(userId));
   return { plan, limits: limitsOf(plan) };
 }
 

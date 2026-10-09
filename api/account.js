@@ -9,7 +9,8 @@
 // acknowledges it, see api/stripe-webhook.js.)
 "use strict";
 
-const { env, supabaseReady, sendJson, db, requireUser, stripe, readForm, fetchWithTimeout } = require("./_lib.js");
+const { env, supabaseReady, sendJson, requireUser, stripe, readForm, fetchWithTimeout } = require("./_lib.js");
+const { subscriptionOf } = require("./_subscriptions.js");
 
 async function cancelStripe(sub) {
   if (!sub || !sub.stripe_subscription_id || !env("STRIPE_SECRET_KEY")) return;
@@ -55,8 +56,7 @@ module.exports = async function handler(req, res) {
 
     let sub;
     try {
-      const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
-      sub = subs && subs[0];
+      sub = await subscriptionOf(user.id);
     } catch (e) {
       console.error(e);
       return sendJson(res, 502, { error: "server" });

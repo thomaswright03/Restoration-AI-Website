@@ -98,9 +98,11 @@
     return T("proj.plan." + (plan || "free"));
   }
 
-  // Calls api/projects.js. Rejects with err.code set to the API's error.
+  // Calls api/projects.js (js/net.js: a time limit, and err.kind tells
+  // offline, timeout and server failure apart). Rejects with err.code set to
+  // the API's error word.
   function api(method, query, body) {
-    return fetch("/api/projects" + (query || ""), {
+    return window.Net.fetchJson("/api/projects" + (query || ""), {
       method: method,
       headers: Object.assign(
         { Authorization: "Bearer " + session.access_token },
@@ -108,26 +110,12 @@
       ),
       body: body ? JSON.stringify(body) : undefined,
       cache: "no-store",
-    }).then(function (res) {
-      return res
-        .json()
-        .catch(function () {
-          return {};
-        })
-        .then(function (data) {
-          if (!res.ok) {
-            var err = new Error(data.error || "HTTP " + res.status);
-            err.code = data.error || "server";
-            err.data = data;
-            throw err;
-          }
-          return data;
-        });
     });
   }
 
-  // The message for a failed save, in plain words.
-  function errorText(err) {
+  // The message for a failure, in plain words: the API's own reasons first,
+  // else what the connection did, after what was being done (actionKey).
+  function errorText(err, actionKey) {
     var d = (err && err.data) || {};
     var limits = d.limits || {};
     if (err.code === "plan") return T("proj.err.plan");
@@ -136,8 +124,90 @@
     if (err.code === "setup") return T("proj.err.setup");
     if (err.code === "signin") return T("proj.err.signin");
     if (err.code === "not-found") return T("proj.err.notFound");
-    if (err.code === "info") return T("proj.err.info");
-    return T("acct.error");
+    if (err.code === "info" || err.code === "name") return fieldErrorText(d) || T("proj.err.info");
+    if (err.code === "conflict") return T("proj.conflict");
+    if (err.kind === "http") return T("acct.error");
+    return (actionKey ? T(actionKey) + " " : "") + T(window.Net.errorKey(err));
+  }
+
+  // What's wrong with one field, from the API's {field, reason}.
+  function fieldErrorText(d) {
+    if (!d || !d.field) return "";
+    if (d.reason === "long") return T("proj.err.field.long");
+    if (d.reason === "date") return T("proj.err.field.date");
+    if (d.reason === "email") return T("auth.emailInvalid");
+    if (d.reason === "empty") return T("proj.err.name");
+    return T("proj.err.field.value");
+  }
+
+  // Marks a field (prefix + name) as wrong, with the message under it, and
+  // moves focus there. Returns true when the field exists in container.
+  function showFieldError(container, prefix, field, text) {
+    var input = container.querySelector("#" + prefix + field);
+    if (!input) return false;
+    input.setAttribute("aria-invalid", "true");
+    var note = $(prefix + field + "-error");
+    if (note) {
+      note.textContent = text;
+      note.hidden = false;
+    }
+    input.focus();
+    return true;
+  }
+
+  function clearFieldErrors(container) {
+    Array.prototype.forEach.call(container.querySelectorAll("[aria-invalid]"), function (input) {
+      input.removeAttribute("aria-invalid");
+    });
+    Array.prototype.forEach.call(container.querySelectorAll(".field-error"), function (note) {
+      note.textContent = "";
+      note.hidden = true;
+    });
+  }
+
+  // A failed save of details: the field's own message when the API named
+  // one, else the form-level message.
+  function showSaveError(err, container, prefix, out, actionKey) {
+    var d = (err && err.data) || {};
+    if (
+      (err.code === "info" || err.code === "name") &&
+      d.field &&
+      showFieldError(container, prefix, d.field, fieldErrorText(d))
+    ) {
+      return status(out, "error", T("proj.err.info"));
+    }
+    status(out, "error", errorText(err, actionKey));
+  }
+
+  // The details a person typed, checked before they're sent: the first
+  // problem is shown at its field. True when everything fits.
+  function checkInfo(container, prefix, info) {
+    clearFieldErrors(container);
+    if (!validEmail(info.email)) return !showFieldError(container, prefix, "email", T("auth.emailInvalid"));
+    if (info.start && !realDay(info.start))
+      return !showFieldError(container, prefix, "start", T("proj.err.field.date"));
+    return true;
+  }
+
+  // "YYYY-MM-DD" naming a day that exists.
+  function realDay(text) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || "");
+    if (!m) return false;
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return +m[1] >= 1900 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
+  }
+
+  // Two tabs: the project changed since this one loaded it. Says so, with
+  // the choice to take the newer version or save over it.
+  function conflictNotice(out, onReload, onOverwrite) {
+    status(out, "error", T("proj.conflict") + " ");
+    out.appendChild(
+      el("button", { type: "button", class: "link-button", text: T("proj.conflict.reload"), onclick: onReload }),
+    );
+    out.appendChild(document.createTextNode(" · "));
+    out.appendChild(
+      el("button", { type: "button", class: "link-button", text: T("proj.conflict.overwrite"), onclick: onOverwrite }),
+    );
   }
 
   function loadConfig() {
@@ -292,9 +362,10 @@
           id: prefix + "name",
           maxlength: 120,
           value: name || "",
-          "aria-describedby": prefix + "name-help",
+          "aria-describedby": prefix + "name-help " + prefix + "name-error",
         }),
         el("p", { class: "form-note", id: prefix + "name-help", text: T("proj.f.nameHelp") }),
+        el("p", { class: "field-error", id: prefix + "name-error", hidden: true }),
       ]),
     );
     INFO_GROUPS.forEach(function (group) {
@@ -319,8 +390,13 @@
         }
         input.value = info[key] || "";
         input.setAttribute("data-info", key);
+        input.setAttribute("aria-describedby", id + "-error");
         grid.appendChild(
-          el("div", { class: "form-group info-" + key }, [el("label", { for: id, text: T("proj.f." + key) }), input]),
+          el("div", { class: "form-group info-" + key }, [
+            el("label", { for: id, text: T("proj.f." + key) }),
+            input,
+            el("p", { class: "field-error", id: id + "-error", hidden: true }),
+          ]),
         );
       });
       set.appendChild(grid);
@@ -359,7 +435,13 @@
   // ===================================================================
   // My projects page
   // ===================================================================
-  var state = { plan: "free", limits: { monthly: 0, total: 0 }, used: { month: 0, total: 0 }, projects: [] };
+  var state = {
+    plan: "free",
+    limits: { monthly: 0, total: 0 },
+    used: { month: 0, total: 0 },
+    projects: [],
+    loaded: false,
+  };
 
   function renderUsage() {
     var paid = state.plan !== "free";
@@ -385,25 +467,86 @@
     bar.textContent = used + " / " + limit;
   }
 
+  var STATUSES = ["lead", "estimate", "approved", "progress", "done"];
+
   function searchText(p) {
     var i = p.info || {};
-    return [p.name, i.client, i.phone, i.email, addressOf(i)].join(" ").toLowerCase();
+    var statusWord = i.status ? T("proj.status." + i.status) : "";
+    return [p.name, i.client, i.phone, i.email, addressOf(i), statusWord].join(" ").toLowerCase();
+  }
+
+  // Search, sort and status filter, as the controls have them.
+  function listView() {
+    return {
+      q: ($("projects-search").value || "").trim(),
+      sort: $("projects-sort").value === "name" ? "name" : "updated",
+      status: $("projects-filter").value || "",
+    };
+  }
+
+  // The view lives in the address (?q=&sort=&status=), so a reload or a
+  // shared link keeps it; the defaults stay out of it.
+  function readViewFromUrl() {
+    var q = params.get("q") || "";
+    var sort = params.get("sort") === "name" ? "name" : "updated";
+    var status = STATUSES.indexOf(params.get("status")) >= 0 ? params.get("status") : "";
+    $("projects-search").value = q;
+    $("projects-sort").value = sort;
+    $("projects-filter").value = status;
+  }
+
+  function writeViewToUrl(view) {
+    try {
+      var url = new URL(window.location.href);
+      ["q", "sort", "status"].forEach(function (k) {
+        var v = view[k];
+        if (v && !(k === "sort" && v === "updated")) url.searchParams.set(k, v);
+        else url.searchParams.delete(k);
+      });
+      history.replaceState(null, "", url.pathname + url.search + url.hash);
+    } catch (e) {
+      /* fine */
+    }
+  }
+
+  function fillFilter() {
+    var select = $("projects-filter");
+    if (select.options.length) return;
+    select.appendChild(el("option", { value: "", text: T("proj.filter.all") }));
+    STATUSES.forEach(function (st) {
+      select.appendChild(el("option", { value: st, text: T("proj.status." + st) }));
+    });
+  }
+
+  function sortProjects(list, sort) {
+    var collator = new Intl.Collator(window.I18n.locale(), { sensitivity: "base", numeric: true });
+    return list.slice().sort(function (a, b) {
+      if (sort === "name") return collator.compare(a.name || "", b.name || "");
+      return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+    });
   }
 
   function renderList() {
     var list = $("projects-list");
-    var q = ($("projects-search").value || "").trim().toLowerCase();
-    var shown = state.projects.filter(function (p) {
-      return !q || searchText(p).indexOf(q) >= 0;
-    });
+    var view = listView();
+    var q = view.q.toLowerCase();
+    var shown = sortProjects(
+      state.projects.filter(function (p) {
+        if (view.status && (p.info || {}).status !== view.status) return false;
+        return !q || searchText(p).indexOf(q) >= 0;
+      }),
+      view.sort,
+    );
     list.innerHTML = "";
     shown.forEach(function (p) {
       list.appendChild(projectItem(p));
     });
-    show($("projects-empty"), !state.projects.length);
+    // The empty state is only for a list that loaded with nothing in it.
+    show($("projects-empty"), state.loaded && !state.projects.length);
     show($("projects-search-wrap"), state.projects.length > 1);
     show($("projects-no-match"), !!state.projects.length && !shown.length);
     $("projects-count").textContent = state.projects.length ? "(" + state.projects.length + ")" : "";
+    writeViewToUrl(view);
   }
 
   function projectItem(p) {
@@ -460,26 +603,46 @@
 
   function startRename(li, p) {
     var id = "rename-" + p.id;
-    var input = el("input", { type: "text", id: id, maxlength: 120, required: true });
+    var input = el("input", {
+      type: "text",
+      id: id,
+      maxlength: 120,
+      required: true,
+      "aria-describedby": id + "-error",
+    });
     input.value = p.name;
+    var note = el("p", { class: "field-error", id: id + "-error", hidden: true });
     var save = el("button", { type: "submit", class: "btn btn-primary btn-sm", text: T("proj.saveName") });
+    var cancel = function () {
+      var fresh = projectItem(p);
+      li.replaceWith(fresh);
+      fresh.querySelector(".project-actions button").focus();
+    };
     var form = el("form", { class: "project-rename" }, [
       el("label", { for: id, class: "visually-hidden", text: T("proj.nameLabel") }),
       input,
       save,
-      el("button", {
-        type: "button",
-        class: "link-button",
-        text: T("proj.cancel"),
-        onclick: function () {
-          li.replaceWith(projectItem(p));
-        },
-      }),
+      el("button", { type: "button", class: "link-button", text: T("proj.cancel"), onclick: cancel }),
+      note,
     ]);
+    // Escape leaves the name as it was.
+    form.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      cancel();
+    });
+    var fail = function (text) {
+      input.setAttribute("aria-invalid", "true");
+      note.textContent = text;
+      note.hidden = false;
+      input.focus();
+    };
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var name = input.value.trim();
-      if (!name) return status($("projects-status"), "error", T("proj.err.name"));
+      input.removeAttribute("aria-invalid");
+      note.hidden = true;
+      if (!name) return fail(T("proj.err.name"));
       save.disabled = true;
       api("PATCH", "", { id: p.id, name: name })
         .then(function (data) {
@@ -491,7 +654,7 @@
         })
         .catch(function (err) {
           save.disabled = false;
-          status($("projects-status"), "error", errorText(err));
+          fail(errorText(err, "proj.err.renameFailed"));
         });
     });
     li.querySelector(".project-main").replaceWith(form);
@@ -501,9 +664,32 @@
     input.select();
   }
 
+  // "Delete project" asks first, in a dialog that names the project; Cancel
+  // has the focus, so Enter alone deletes nothing.
+  var deleting = null; // { p, btn } while the dialog is up
+
   function remove(p, btn) {
     var paid = state.plan !== "free";
-    if (!window.confirm(T(paid ? "proj.deleteConfirm" : "proj.deleteConfirmFree", { name: p.name }))) return;
+    var dialog = $("projects-delete-dialog");
+    deleting = { p: p, btn: btn };
+    $("projects-delete-text").textContent = T(paid ? "proj.deleteConfirm" : "proj.deleteConfirmFree", { name: p.name });
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    $("projects-delete-cancel").focus();
+  }
+
+  function closeDeleteDialog() {
+    var dialog = $("projects-delete-dialog");
+    if (typeof dialog.close === "function" && dialog.open) dialog.close();
+    else dialog.removeAttribute("open");
+  }
+
+  function confirmRemove() {
+    if (!deleting) return;
+    var p = deleting.p;
+    var btn = deleting.btn;
+    deleting = null;
+    closeDeleteDialog();
     btn.disabled = true;
     api("DELETE", "?id=" + encodeURIComponent(p.id))
       .then(function () {
@@ -518,7 +704,44 @@
       })
       .catch(function (err) {
         btn.disabled = false;
-        status($("projects-status"), "error", errorText(err));
+        status($("projects-status"), "error", errorText(err, "proj.err.deleteFailed"));
+        btn.focus();
+      });
+  }
+
+  // Loads the plan and the list. On failure the page says what happened
+  // with a Try again button, and never shows "No projects yet": that's only
+  // for a list that loaded empty. An ended sign-in shows only the way to
+  // log in again.
+  function loadList() {
+    show($("projects-failed"), false);
+    show($("projects-signin"), false);
+    show($("projects-app"), false);
+    show($("projects-loading"), true);
+    Promise.all([api("GET"), loadBusiness()])
+      .then(function (results) {
+        var data = results[0];
+        state.plan = data.plan;
+        state.limits = data.limits;
+        state.used = data.used;
+        state.projects = data.projects || [];
+        state.loaded = true;
+        $("project-new").href = designerBase(results[1]);
+        show($("projects-loading"), false);
+        show($("projects-app"), true);
+        renderUsage();
+        renderList();
+      })
+      .catch(function (err) {
+        show($("projects-loading"), false);
+        if (err.code === "signin") {
+          $("projects-signin-text").textContent = T("proj.err.signinList");
+          show($("projects-signin"), true);
+          return;
+        }
+        $("projects-failed-text").textContent = errorText(err, "proj.err.loadFailed");
+        show($("projects-failed"), true);
+        $("projects-retry").focus();
       });
   }
 
@@ -527,27 +750,20 @@
       if (!s) return;
       $("projects-email").textContent = T("auth.signedInAs", { email: s.user.email });
       show($("projects-email"), true);
+      fillFilter();
+      readViewFromUrl();
       $("projects-search").addEventListener("input", renderList);
-      Promise.all([api("GET"), loadBusiness()])
-        .then(function (results) {
-          var data = results[0];
-          state.plan = data.plan;
-          state.limits = data.limits;
-          state.used = data.used;
-          state.projects = data.projects || [];
-          $("project-new").href = designerBase(results[1]);
-          show($("projects-loading"), false);
-          show($("projects-app"), true);
-          renderUsage();
-          renderList();
-        })
-        .catch(function (err) {
-          show($("projects-loading"), false);
-          show($("projects-app"), true);
-          $("project-new").href = designerBase(null);
-          renderList();
-          status($("projects-status"), "error", errorText(err));
-        });
+      $("projects-sort").addEventListener("change", renderList);
+      $("projects-filter").addEventListener("change", renderList);
+      $("projects-retry").addEventListener("click", loadList);
+      $("projects-delete-cancel").addEventListener("click", closeDeleteDialog);
+      $("projects-delete-confirm").addEventListener("click", confirmRemove);
+      $("projects-delete-dialog").addEventListener("close", function () {
+        var was = deleting;
+        deleting = null;
+        if (was && was.btn && document.contains(was.btn)) was.btn.focus();
+      });
+      loadList();
     });
   }
 
@@ -593,30 +809,62 @@
     $("project-updated").textContent = T("proj.updated", { date: formatDate(project.updated_at) });
   }
 
+  var infoDirty = false; // the info form has edits that aren't saved
+
   function renderInfo() {
     var box = $("project-info-fields");
     box.innerHTML = "";
     box.appendChild(infoFields("info-", project.name, project.info));
+    infoDirty = false;
   }
 
-  function saveInfo(e) {
-    e.preventDefault();
+  // Takes the version from the server (what another tab saved) into the
+  // page, letting go of this form's edits.
+  function reloadProject() {
+    var out = $("project-info-status");
+    status(out, "info", T("proj.loading"));
+    return api("GET", "?id=" + encodeURIComponent(project.id))
+      .then(function (data) {
+        project = data.project;
+        renderHead();
+        renderInfo();
+        renderMaterials();
+        status(out, "info", "");
+      })
+      .catch(function (err) {
+        status(out, "error", errorText(err, "proj.err.openFailed"));
+      });
+  }
+
+  function saveInfo(e, overwrite) {
+    if (e) e.preventDefault();
     var out = $("project-info-status");
     var form = $("project-info-form");
     var info = readInfo(form);
-    if (!validEmail(info.email)) return status(out, "error", T("auth.emailInvalid"));
+    if (!checkInfo(form, "info-", info)) return;
     var name = nameFrom(info, $("info-name").value.trim());
     var btn = form.querySelector("[type=submit]");
     btn.disabled = true;
-    api("PATCH", "", { id: project.id, name: name, info: info })
+    status(out, "info", T("proj.saving"));
+    var body = { id: project.id, name: name, info: info };
+    // The version this page loaded: the server refuses to write over a
+    // newer one (409) unless this is the "save anyway" that follows.
+    if (!overwrite && project.updated_at) body.updated_at = project.updated_at;
+    api("PATCH", "", body)
       .then(function (data) {
         Object.assign(project, data.project);
         $("info-name").value = project.name;
+        infoDirty = false;
         renderHead();
         status(out, "success", T("proj.infoSaved"));
       })
       .catch(function (err) {
-        status(out, "error", errorText(err));
+        if (err.code === "conflict") {
+          return conflictNotice(out, reloadProject, function () {
+            saveInfo(null, true);
+          });
+        }
+        showSaveError(err, form, "info-", out, "proj.err.saveFailed");
       })
       .then(function () {
         btn.disabled = false;
@@ -776,6 +1024,15 @@
           renderInfo();
           renderMaterials();
           $("project-info-form").addEventListener("submit", saveInfo);
+          $("project-info-form").addEventListener("input", function () {
+            infoDirty = true;
+          });
+          // Leaving with edits that aren't saved asks first.
+          window.addEventListener("beforeunload", function (e) {
+            if (!infoDirty) return;
+            e.preventDefault();
+            e.returnValue = T("project.info.unsaved");
+          });
           $("project-print").addEventListener("click", function () {
             window.print();
           });
@@ -797,7 +1054,7 @@
         })
         .catch(function (err) {
           show($("project-loading"), false);
-          status($("project-error"), "error", errorText(err));
+          status($("project-error"), "error", errorText(err, "proj.err.openFailed"));
         });
     });
   }
@@ -805,10 +1062,13 @@
   // ===================================================================
   // The bar above the design studio
   // ===================================================================
-  var current = null; // the open project: { id, name, info }
+  var current = null; // the open project: { id, name, info, updated_at }
   var barPlan = "free"; // or "unknown" when the plan couldn't be loaded
   var barLimits = null; // { monthly, total }
   var barUsed = null; // { month, total }
+  var savedCode = null; // the design as last saved to (or opened from) the project
+  var baselinePending = false; // the opened project's design is on its way into the studio
+  var dirty = false; // the design differs from savedCode
 
   // The limit a new project would run into, from what the bar last heard.
   function barLimitHit() {
@@ -861,8 +1121,30 @@
     $("project-save").textContent = current ? T("proj.save") : T("proj.saveFirst");
   }
 
+  // The bar says when the open project has changes that aren't saved, and
+  // the page asks before they'd be lost (closing the tab, following a link).
+  function setDirty(on) {
+    if (on === dirty) return;
+    dirty = on;
+    var out = $("project-status");
+    if (on) status(out, "info", T("proj.unsavedChanges"));
+    else if (out.textContent === T("proj.unsavedChanges")) status(out, "info", "");
+  }
+
+  function markSaved() {
+    savedCode = studio("encoded");
+    baselinePending = false;
+    setDirty(false);
+  }
+
+  function onStudioChange() {
+    if (!current) return;
+    if (baselinePending) return markSaved();
+    setDirty(studio("encoded") !== savedCode);
+  }
+
   function setCurrent(p) {
-    current = p ? { id: p.id, name: p.name, info: p.info || {} } : null;
+    current = p ? { id: p.id, name: p.name, info: p.info || {}, updated_at: p.updated_at || "" } : null;
     try {
       var url = new URL(window.location.href);
       if (current) url.searchParams.set("project", current.id);
@@ -885,6 +1167,7 @@
     if (data.used) barUsed = data.used;
     if (data.limits) barLimits = data.limits;
     setCurrent(data.project);
+    markSaved();
     var used = data.used;
     var msg =
       used && data.limits
@@ -904,34 +1187,57 @@
     }, 8000);
   }
 
-  // Saves changes to the open project's design.
-  function saveChanges() {
+  // Saves changes to the open project's design. The version the bar holds
+  // goes along, so a save over work done in another tab is refused (409) and
+  // the person chooses: take the newer version, or save over it.
+  function saveChanges(overwrite) {
     var out = $("project-status");
     var code = studio("encoded");
     if (!code) return status(out, "error", T("acct.error"));
     busy(true);
     status(out, "info", T("proj.saving"));
-    api("PATCH", "", { id: current.id, design: code, summary: studio("summary") })
+    var body = { id: current.id, design: code, summary: studio("summary") };
+    if (!overwrite && current.updated_at) body.updated_at = current.updated_at;
+    api("PATCH", "", body)
       .then(function (data) {
         saved(out, data);
       })
       .catch(function (err) {
-        status(out, "error", errorText(err));
+        if (err.code === "conflict") {
+          return conflictNotice(
+            out,
+            function () {
+              openProject(current.id);
+            },
+            function () {
+              saveChanges(true);
+            },
+          );
+        }
+        status(out, "error", errorText(err, "proj.err.saveFailed"));
       })
       .then(function () {
         busy(false);
       });
   }
 
-  // A new project: the client's details first, in a dialog.
+  // A new project: the client's details first, in a dialog. Details typed
+  // and then closed away are still there when it's opened again; they go
+  // once the project is saved.
+  var dialogMode = null; // "new" | "copy" while the fields are built
+
   function openNewDialog(asCopy) {
     // Say so now rather than after the client's details are typed in.
     var hit = barLimitHit();
     if (hit) return status($("project-status"), "error", errorText({ code: hit, data: { limits: barLimits } }));
     var dialog = $("project-dialog");
     var box = $("project-dialog-fields");
-    box.innerHTML = "";
-    box.appendChild(infoFields("new-", "", asCopy && current ? current.info : {}));
+    var mode = asCopy ? "copy" : "new";
+    if (dialogMode !== mode) {
+      box.innerHTML = "";
+      box.appendChild(infoFields("new-", "", asCopy && current ? current.info : {}));
+      dialogMode = mode;
+    }
     status($("project-dialog-status"), "info", "");
     if (typeof dialog.showModal === "function") dialog.showModal();
     else dialog.setAttribute("open", "");
@@ -949,7 +1255,7 @@
     var out = $("project-dialog-status");
     var form = $("project-dialog-form");
     var info = readInfo(form);
-    if (!validEmail(info.email)) return status(out, "error", T("auth.emailInvalid"));
+    if (!checkInfo(form, "new-", info)) return;
     var code = studio("encoded");
     if (!code) return status(out, "error", T("acct.error"));
     busy(true);
@@ -962,10 +1268,12 @@
     })
       .then(function (data) {
         closeDialog();
+        $("project-dialog-fields").innerHTML = "";
+        dialogMode = null;
         saved($("project-status"), data);
       })
       .catch(function (err) {
-        status(out, "error", errorText(err));
+        showSaveError(err, form, "new-", out, "proj.err.saveFailed");
       })
       .then(function () {
         busy(false);
@@ -975,14 +1283,24 @@
   // Opens ?project=<id>: its design goes into the address as #design=...,
   // which the studio picks up (on load, or as a link opened in place).
   function openProject(id) {
+    var out = $("project-status");
+    status(out, "info", T("proj.loading"));
     return api("GET", "?id=" + encodeURIComponent(id))
       .then(function (data) {
         setCurrent(data.project);
-        if (data.project.design) window.location.hash = "design=" + data.project.design;
+        status(out, "info", "");
+        if (data.project.design) {
+          // The studio takes the design from the hash; its first change
+          // event after that is the saved state to measure edits against.
+          baselinePending = true;
+          window.location.hash = "design=" + data.project.design;
+        } else {
+          markSaved();
+        }
       })
       .catch(function (err) {
         setCurrent(null);
-        status($("project-status"), "error", errorText(err));
+        status(out, "error", errorText(err, "proj.err.openFailed"));
       });
   }
 
@@ -1007,6 +1325,13 @@
         });
         $("project-dialog-form").addEventListener("submit", createProject);
         $("project-dialog-cancel").addEventListener("click", closeDialog);
+        $("project-dialog-close").addEventListener("click", closeDialog);
+        document.addEventListener("studio:change", onStudioChange);
+        window.addEventListener("beforeunload", function (e) {
+          if (!current || !dirty) return;
+          e.preventDefault();
+          e.returnValue = T("proj.unsavedChanges");
+        });
         api("GET")
           .then(function (data) {
             barPlan = data.plan;

@@ -192,7 +192,7 @@
           <div class="studio-stage">
             <div class="studio-viewbar" id="studio-viewbar"></div>
             <div class="studio-room" id="room-3d">
-              <div class="studio-canvas" id="room-3d-canvas"></div>
+              <div class="studio-canvas" id="room-3d-canvas" data-loading="Cargando el diseñador…"></div>
               <div class="studio-labels" id="studio-labels" aria-hidden="true"></div>
               <button type="button" class="studio-mini" id="studio-mini" title="Abrir el plano">
                 <span class="visually-hidden">Abrir el plano</span>
@@ -204,7 +204,15 @@
             <div class="studio-toast" id="studio-toast" role="status" hidden></div>
             <p class="studio-hint" id="studio-hint"></p>
           </div>
-          <div class="studio-panel" id="studio-panel"></div>
+          <div class="studio-panel" id="studio-panel">
+            <div class="studio-loading" id="studio-loading" role="status">
+              <p class="studio-loading-text">Cargando el diseñador…</p>
+              <p class="studio-loading-slow">
+                Está tardando más de lo normal. La primera vez el diseñador es una descarga grande; con una conexión
+                lenta puede tardar un minuto.
+              </p>
+            </div>
+          </div>
         </div>
         <p class="visually-hidden" id="studio-live" aria-live="polite"></p>
         <p class="studio-disclosure">
@@ -284,6 +292,9 @@
 
       <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">
         <form id="project-dialog-form" novalidate>
+          <button type="button" class="project-dialog-close" id="project-dialog-close" aria-label="Cerrar">
+            <span aria-hidden="true">×</span>
+          </button>
           <h2 id="project-dialog-title">Nuevo proyecto</h2>
           <p class="form-note">
             ¿Para quién y dónde es este trabajo? Todo es opcional y puede cambiarlo después en la página del proyecto.
@@ -350,6 +361,7 @@
     </footer>
 
     <script src="../js/i18n.js"></script>
+    <script src="../js/net.js"></script>
 
     <script src="../js/bathroom-pricing.js"></script>
     <script src="../js/business.js"></script>

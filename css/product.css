@@ -934,6 +934,34 @@ html[data-embed="1"] main.solid-header {
   box-shadow: var(--shadow);
 }
 
+/* The dialog's X, in its top corner; Cancel is still there for everyone else. */
+.project-dialog form {
+  position: relative;
+}
+
+.project-dialog-close {
+  position: absolute;
+  top: calc(-1 * var(--space-3));
+  right: calc(-1 * var(--space-3));
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-ink-soft);
+  font: inherit;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-dialog-close:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+}
+
 .project-dialog::backdrop {
   background: rgba(10, 16, 36, 0.55);
 }
@@ -949,6 +977,33 @@ html[data-embed="1"] main.solid-header {
 }
 
 /* ---------- My projects list extras ---------- */
+/* Search, sort and status filter in one row where there's room. */
+.projects-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.projects-tools[hidden] {
+  display: none;
+}
+
+.projects-tools .form-group {
+  margin: 0;
+}
+
+.projects-tools select {
+  width: 100%;
+  min-height: var(--tap);
+}
+
+@media (max-width: 720px) {
+  .projects-tools {
+    grid-template-columns: 1fr;
+  }
+}
+
 .projects-search input {
   width: 100%;
   min-height: var(--tap);

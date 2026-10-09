@@ -99,5 +99,12 @@
     "Para quem e onde é este serviço? Tudo é opcional, e você pode mudar depois na página do projeto."
   ],
   "designer.project.create": ["Save project", "Guardar proyecto", "Salvar projeto"],
-  "designer.project.cancel": ["Cancel", "Cancelar", "Cancelar"]
+  "designer.project.cancel": ["Cancel", "Cancelar", "Cancelar"],
+  "designer.project.close": ["Close", "Cerrar", "Fechar"],
+  "designer.studio.loading": ["Loading the designer…", "Cargando el diseñador…", "Carregando o projetista…"],
+  "designer.studio.loadingSlow": [
+    "This is taking longer than usual. The designer is a big download the first time; on a slow connection it can take a minute.",
+    "Está tardando más de lo normal. La primera vez el diseñador es una descarga grande; con una conexión lenta puede tardar un minuto.",
+    "Está demorando mais que o normal. Na primeira vez o projetista é um download grande; em uma conexão lenta pode levar um minuto."
+  ]
 }

@@ -29,14 +29,14 @@
   ],
   "projects.list.title": ["Your projects", "Sus proyectos", "Seus projetos"],
   "projects.search": [
-    "Search by name, client or address",
-    "Buscar por nombre, cliente o dirección",
-    "Buscar por nome, cliente ou endereço"
+    "Search by name, client, address or status",
+    "Buscar por nombre, cliente, dirección o estado",
+    "Buscar por nome, cliente, endereço ou situação"
   ],
   "projects.noMatch": [
-    "No projects match that search.",
-    "Ningún proyecto coincide con esa búsqueda.",
-    "Nenhum projeto corresponde a essa busca."
+    "No projects match that search or filter.",
+    "Ningún proyecto coincide con esa búsqueda o filtro.",
+    "Nenhum projeto corresponde a essa busca ou filtro."
   ],
   "project.title": ["Project | Room Designer 3D", "Proyecto | Room Designer 3D", "Projeto | Room Designer 3D"],
   "project.description": [
@@ -68,5 +68,19 @@
     "No projects yet. Open the designer and use Save project at the top to keep a design here.",
     "Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.",
     "Ainda não há projetos. Abra o projetista e use Salvar projeto no topo para guardar um projeto aqui."
+  ],
+  "projects.sort": ["Sort by", "Ordenar por", "Ordenar por"],
+  "projects.sort.updated": ["Last updated", "Última actualización", "Última atualização"],
+  "projects.sort.name": ["Name (A to Z)", "Nombre (A a Z)", "Nome (A a Z)"],
+  "projects.filter": ["Status", "Estado del proyecto", "Situação"],
+  "projects.failed.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
+  "projects.signin.login": ["Log in", "Iniciar sesión", "Entrar"],
+  "projects.delete.title": ["Delete project", "Eliminar proyecto", "Excluir projeto"],
+  "projects.delete.cancel": ["Cancel", "Cancelar", "Cancelar"],
+  "projects.delete.confirm": ["Delete project", "Eliminar proyecto", "Excluir projeto"],
+  "project.info.unsaved": [
+    "You have unsaved changes to this info.",
+    "Tiene cambios sin guardar en esta información.",
+    "Você tem alterações não salvas nestas informações."
   ]
 }

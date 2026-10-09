@@ -148,6 +148,16 @@
           <p><a href="designer.html">Try the live demo</a></p>
         </div>
 
+        <div class="app-notice" id="projects-signin" role="alert" hidden>
+          <p id="projects-signin-text"></p>
+          <p><a class="btn btn-primary" href="signup.html?mode=login">Log in</a></p>
+        </div>
+
+        <div class="app-notice" id="projects-failed" role="alert" hidden>
+          <p id="projects-failed-text"></p>
+          <p><button type="button" class="btn btn-outline-dark" id="projects-retry">Try again</button></p>
+        </div>
+
         <div id="projects-app" hidden>
           <div class="app-notice" id="projects-free" hidden>
             <p>
@@ -178,19 +188,41 @@
           <div class="app-card">
             <h2 id="projects-heading" tabindex="-1">Your projects <span id="projects-count"></span></h2>
             <p class="form-status" id="projects-status" role="status" aria-live="polite" hidden></p>
-            <div class="form-group projects-search" id="projects-search-wrap" hidden>
-              <label for="projects-search">Search by name, client or address</label>
-              <input type="search" id="projects-search" autocomplete="off" />
+            <div class="projects-tools" id="projects-search-wrap" hidden>
+              <div class="form-group projects-search">
+                <label for="projects-search">Search by name, client, address or status</label>
+                <input type="search" id="projects-search" autocomplete="off" />
+              </div>
+              <div class="form-group">
+                <label for="projects-sort">Sort by</label>
+                <select id="projects-sort">
+                  <option value="updated">Last updated</option>
+                  <option value="name">Name (A to Z)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="projects-filter">Status</label>
+                <select id="projects-filter"></select>
+              </div>
             </div>
             <div class="app-empty" id="projects-empty" hidden>
               <p>No projects yet. Open the designer and use Save project at the top to keep a design here.</p>
               <a class="btn btn-primary" href="designer.html">Open the designer</a>
             </div>
-            <p class="form-note" id="projects-no-match" hidden>No projects match that search.</p>
+            <p class="form-note" id="projects-no-match" hidden>No projects match that search or filter.</p>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>
       </section>
+
+      <dialog class="project-dialog" id="projects-delete-dialog" aria-labelledby="projects-delete-title">
+        <h2 id="projects-delete-title">Delete project</h2>
+        <p id="projects-delete-text"></p>
+        <div class="app-actions">
+          <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancel</button>
+          <button type="button" class="btn btn-danger" id="projects-delete-confirm">Delete project</button>
+        </div>
+      </dialog>
     </main>
 
     <footer class="site-footer product-chrome">
@@ -231,6 +263,7 @@
     </footer>
 
     <script src="js/i18n.js"></script>
+    <script src="js/net.js"></script>
 
     <script src="js/bathroom-pricing.js"></script>
     <script src="js/site-config.js"></script>

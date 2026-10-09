@@ -81,7 +81,16 @@
   // The message for a failed call to api/: what happened, in plain words.
   function errorKey(err) {
     var code = err && err.code;
-    if (code === "unavailable" || code === "server" || code === "stripe" || (err && err.network)) {
+    var kind = err && err.kind;
+    if (
+      code === "unavailable" ||
+      code === "server" ||
+      code === "stripe" ||
+      kind === "offline" ||
+      kind === "timeout" ||
+      kind === "network" ||
+      kind === "server"
+    ) {
       return "acct.unavailable";
     }
     if (code === "paused") return "acct.paused.checkout";
@@ -219,32 +228,14 @@
   var business = null;
   var subscription = null;
 
+  // js/net.js: a time limit, and err.kind tells offline, timeout and server
+  // failure apart. Rejects with err.code set to the API's error word.
   function api(path, body) {
-    return fetch(path, {
+    return window.Net.fetchJson(path, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify(body || {}),
-    })
-      .catch(function () {
-        var err = new Error("network");
-        err.network = true;
-        throw err;
-      })
-      .then(function (res) {
-        return res
-          .json()
-          .catch(function () {
-            return {};
-          })
-          .then(function (data) {
-            if (!res.ok) {
-              var err = new Error(data.error || "HTTP " + res.status);
-              err.code = data.error || "server";
-              throw err;
-            }
-            return data;
-          });
-      });
+    });
   }
 
   function isLive() {

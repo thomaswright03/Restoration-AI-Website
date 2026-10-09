@@ -360,6 +360,14 @@
         ]),
         el("div", { class: "riley-tools" }, [els.mute, els.voiceBtn]),
       ]);
+      // Escape closes her voice list and puts focus back on its button.
+      els.root.addEventListener("keydown", function (e) {
+        if (e.key !== "Escape" || els.voices.hidden) return;
+        e.preventDefault();
+        e.stopPropagation();
+        Riley.showVoices(false);
+        els.voiceBtn.focus();
+      });
       els.root.setAttribute("role", "status");
       els.root.setAttribute("aria-live", "polite");
       mount.appendChild(els.root);

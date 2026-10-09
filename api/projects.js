@@ -5,8 +5,16 @@
 //   GET    ?id=<id>           one project, with its design
 //   POST   {name, design, info?, summary?}   save a new project (needs a paid
 //                             plan, within its limits)
-//   PATCH  {id, name?, info?, design?, summary?}   rename or edit the details
-//                             (any plan), or save the design again (paid plan)
+//   PATCH  {id, name?, info?, design?, summary?, updated_at?}   rename or edit
+//                             the details (any plan), or save the design again
+//                             (paid plan). With updated_at (the value the
+//                             project was loaded with), the save is refused
+//                             with 409 {error:"conflict", project} when the
+//                             project changed since, so work done in another
+//                             tab or on another device isn't silently undone.
+//
+// A field that doesn't fit answers 400 {error:"info"|"name", field, reason},
+// reason being "long", "date", "email", "value" or "empty".
 //
 // info is the client and the job (INFO below); summary is the estimate and
 // materials list the designer worked out when the design was saved.
@@ -46,22 +54,48 @@ const INFO = {
   notes: 2000,
 };
 
-// Only known fields, trimmed; null when something doesn't fit.
-function cleanInfo(value) {
-  if (value === undefined || value === null) return {};
-  if (typeof value !== "object" || Array.isArray(value)) return null;
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// "YYYY-MM-DD" naming a day that exists (no February 30th), in a plausible year.
+function realDay(text) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const d = new Date(Date.UTC(y, Number(m[2]) - 1, Number(m[3])));
+  return y >= 1900 && y <= 2100 && d.toISOString().slice(0, 10) === text;
+}
+
+// Only known fields, trimmed: { info } or, for the first field that doesn't
+// fit, { field, reason }.
+function parseInfo(value) {
+  if (value === undefined || value === null) return { info: {} };
+  if (typeof value !== "object" || Array.isArray(value)) return { field: "info", reason: "value" };
   const out = {};
   for (const [key, rule] of Object.entries(INFO)) {
     const raw = value[key];
     if (raw === undefined || raw === null) continue;
-    if (typeof raw !== "string") return null;
+    if (typeof raw !== "string") return { field: key, reason: "value" };
     const text = key === "notes" ? raw.trim() : raw.replace(/\s+/g, " ").trim();
-    if (typeof rule === "number" ? text.length > rule : Array.isArray(rule) ? !rule.includes(text) : !rule.test(text)) {
-      return null;
+    if (typeof rule === "number") {
+      if (text.length > rule) return { field: key, reason: "long" };
+      if (key === "email" && text && !EMAIL.test(text)) return { field: key, reason: "email" };
+    } else if (Array.isArray(rule)) {
+      if (!rule.includes(text)) return { field: key, reason: "value" };
+    } else if (text && !realDay(text)) {
+      return { field: key, reason: "date" };
     }
     if (text) out[key] = text;
   }
-  return out;
+  return { info: out };
+}
+
+// The details as parseInfo reads them, or null when something doesn't fit.
+function cleanInfo(value) {
+  return parseInfo(value).info || null;
+}
+
+function infoError(res, problem) {
+  return sendJson(res, 400, { error: "info", field: problem.field, reason: problem.reason });
 }
 
 // The designer's estimate snapshot: any plain object, within a size limit.
@@ -71,11 +105,19 @@ function cleanSummary(value) {
   return JSON.stringify(value).length <= 90000 ? value : false;
 }
 
-function cleanName(value) {
-  return String(value || "")
+// A project's name: text, at most 120 characters. { name } or { reason }.
+function parseName(value) {
+  if (value !== undefined && value !== null && typeof value !== "string") return { reason: "value" };
+  const name = String(value || "")
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 120);
+    .trim();
+  if (!name) return { reason: "empty" };
+  if (name.length > 120) return { reason: "long" };
+  return { name };
+}
+
+function nameError(res, problem) {
+  return sendJson(res, 400, { error: "name", field: "name", reason: problem.reason });
 }
 
 // A design as js/room-plan.js encode() writes it, and one that decodes.
@@ -136,11 +178,13 @@ module.exports = async function handler(req, res) {
     const body = req.method === "DELETE" ? {} : await readForm(req);
 
     if (req.method === "POST") {
-      const name = cleanName(body.name);
-      if (!name) return sendJson(res, 400, { error: "name" });
+      const named = parseName(body.name);
+      if (!named.name) return nameError(res, named);
+      const name = named.name;
       if (!validDesign(body.design)) return sendJson(res, 400, { error: "design" });
-      const info = cleanInfo(body.info);
-      if (!info) return sendJson(res, 400, { error: "info" });
+      const parsed = parseInfo(body.info);
+      if (!parsed.info) return infoError(res, parsed);
+      const info = parsed.info;
       const summary = cleanSummary(body.summary);
       if (summary === false) return sendJson(res, 400, { error: "summary" });
       if (await isOff("saving")) return sendJson(res, 503, pausedBody("saving", await switches()));
@@ -168,12 +212,14 @@ module.exports = async function handler(req, res) {
       if (!ID.test(id)) return sendJson(res, 404, { error: "not-found" });
       const patch = {};
       if (body.name !== undefined) {
-        patch.name = cleanName(body.name);
-        if (!patch.name) return sendJson(res, 400, { error: "name" });
+        const named = parseName(body.name);
+        if (!named.name) return nameError(res, named);
+        patch.name = named.name;
       }
       if (body.info !== undefined) {
-        patch.info = cleanInfo(body.info);
-        if (!patch.info) return sendJson(res, 400, { error: "info" });
+        const parsed = parseInfo(body.info);
+        if (!parsed.info) return infoError(res, parsed);
+        patch.info = parsed.info;
       }
       if (body.design !== undefined) {
         if (!validDesign(body.design)) return sendJson(res, 400, { error: "design" });
@@ -187,14 +233,26 @@ module.exports = async function handler(req, res) {
         patch.design = body.design;
       }
       if (!Object.keys(patch).length) return sendJson(res, 400, { error: "nothing" });
+      // The version the client loaded: the save only lands on that version.
+      const loaded = typeof body.updated_at === "string" && body.updated_at ? body.updated_at : "";
+      if (loaded && Number.isNaN(Date.parse(loaded))) return sendJson(res, 400, { error: "updated_at" });
+      const where = "projects?id=eq." + id + "&" + owner;
       patch.updated_at = new Date().toISOString();
-      const rows = await db("projects?id=eq." + id + "&" + owner + "&select=" + LIST_FIELDS, {
-        method: "PATCH",
-        headers: { Prefer: "return=representation" },
-        body: patch,
-      });
-      if (!rows || !rows[0]) return sendJson(res, 404, { error: "not-found" });
-      return sendJson(res, 200, { project: rows[0] });
+      const rows = await db(
+        where + (loaded ? "&updated_at=eq." + encodeURIComponent(loaded) : "") + "&select=" + LIST_FIELDS,
+        {
+          method: "PATCH",
+          headers: { Prefer: "return=representation" },
+          body: patch,
+        },
+      );
+      if (rows && rows[0]) return sendJson(res, 200, { project: rows[0] });
+      if (loaded) {
+        // Nothing matched: the project is gone, or it changed since it was loaded.
+        const now = await db(where + "&select=" + LIST_FIELDS);
+        if (now && now[0]) return sendJson(res, 409, { error: "conflict", project: now[0] });
+      }
+      return sendJson(res, 404, { error: "not-found" });
     }
 
     if (req.method === "DELETE") {
@@ -218,3 +276,5 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.cleanInfo = cleanInfo;
+module.exports.parseInfo = parseInfo;
+module.exports.parseName = parseName;

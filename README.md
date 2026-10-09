@@ -9,7 +9,7 @@ A product of Wright AI Solutions, LLC. The designer itself started as the one bu
 - **Landing page** (`index.html`): what it is, pricing, FAQ, sign-up.
 - **Live demo** (`designer.html`): the full designer, speaking for a sample business.
 - **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout; a promo code makes the first week free), set the business details and labor prices, read requests homeowners sent before the designer became owner-only, and delete the account.
-- **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details .
+- **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details.
 - **A project's page** (`project.html?id=`): the 3D model, the info (client, phone, email, address with unit/apt, job type, status, start date, notes) and the materials list worked out when the design was last saved, printable.
 - **Plans and limits** (`api/_plans.js`): Free can use the designer but can't save projects. Starter 10 new projects a month and 50 kept at once, Pro 25 and 100, Max 100 and 1000. Deleting a project frees a slot under the total but not the month's allowance (calendar month, UTC). The server enforces both (`api/projects.js` and the `create_project()` database function).
 - **A business's designer**: `designer.html?b=<their-slug>`. It opens only for the business's own signed-in owner (from My projects), on every plan; while the plan isn't active it's a preview with a banner. Anyone else gets a "not available" notice. It has no request form (only the public demo does) and can't be framed by other sites. (The old "Put it on your website" add-on is retired; `subscriptions.website` is left in the schema, unused.)
@@ -31,6 +31,26 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, projects, with row-level security).
 - With no keys set, the site runs in demo mode: the demo designer works, and sign-up says accounts aren't switched on yet.
 
+## Architecture
+
+**Request flow.** Every page is a static file Vercel serves from the repo as committed (`npm run pages` is run by hand and the result committed; nothing is built at deploy). The browser then talks to two kinds of things:
+
+1. `api/*` Vercel functions, same origin. `GET /api/config` says whether accounts and payments are on and hands out the public Supabase URL and anon key; the pages sign in with Supabase Auth directly from the browser (`js/vendor/supabase/supabase.js`, loaded only on signed-in pages) and send the access token as a bearer to `/api/projects`, `/api/account`, `/api/checkout` and `/api/portal`, which check it with Supabase (`api/_lib.js currentUser()`) and then read or write with the service-role key. `GET /api/business?b=<slug>` is public and is what `designer.html?b=` loads. `POST /api/leads` answers the public demo's request form. `POST /api/stripe-webhook` is called by Stripe, verified by signature, and is the only writer of `subscriptions`.
+2. Static data the designer fetches itself: `site-config.json` (settings, below), `models/**/*.glb` (3D fixtures and products) and the vendored libraries in `js/vendor/`. No third-party request is made from a page except Stripe Checkout and the billing portal, which are redirects.
+
+**Data stores.**
+
+- Supabase Postgres (`supabase/schema.sql`): `businesses` (one per account: slug, name, phone, email, legal name, labor prices), `subscriptions` (one per account, written by the Stripe webhook: status, plan, price id, period end), `leads` (requests from before the designer became owner-only), `projects` (a saved design: the design string, the client info and the estimate summary as JSON) and `project_creations` (one row per save, for the monthly allowance). Row-level security lets the anon key read nothing; the functions use the service-role key and check ownership themselves.
+- Supabase Auth: the users. Deleting a user cascades through every table above.
+- Stripe: customers, subscriptions and invoices. Supabase keeps only the mirror the webhook writes.
+- The browser's localStorage: the designer's working draft (`rd3d_design_<slug>`), the language, the theme and Riley's voice. Nothing there is needed by the server.
+
+**Caching.** `vercel.json` marks `models/**/*.glb`, `js/vendor/**`, `fonts/**` and `images/**` as immutable for a year, because they are never edited in place: a changed 3D model, library or font gets a new file name (or a new folder, e.g. `js/vendor/three-r187/`) and the pages that reference it are updated. Pages, first-party `js/*.js`, `css/*.css` and `site-config.json` keep Vercel's revalidate-every-time default, so a deploy is live for everyone on the next page load. `tests/unit/vercel-config.test.js` pins this.
+
+## Settings (`site-config.json`)
+
+The one place for the owner's settings; edit, commit and push. `plans` (the prices the pages show and the project limits the server enforces; run `npm run pages` after changing them), `company.supportEmail` (the footer and the legal pages), `priceEstimator.enabled` (the estimate step prices the work at the business's labor rates; off shows the design only), `materialsEstimator.enabled` (the finishes step offers materials from the catalog in `js/materials-pricing.js`, added to the estimate), `leadForm` (an https endpoint for the public demo's request form; empty keeps `/api/leads`), `owner` and `privacy` (the legal pages), and `riley.voice` (a default voice name per language). `js/site-config.js` reads it and applies the defaults when it can't be loaded.
+
 ## Going live (one-time setup)
 
 1. **Supabase**: create a project. In SQL Editor, run `supabase/schema.sql` (and run it again whenever it changes; it's safe to re-run). In Authentication > URL Configuration, set the Site URL to your domain and add `https://<domain>/account.html`, `/es/account.html` and `/pt/account.html` as redirect URLs.
@@ -40,6 +60,21 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json` (prices, and the project limits the server enforces), run `npm run pages`, commit.
 
 Start with Stripe test keys; switch to live keys once a test sign-up, checkout and request all work.
+
+## Deploying, rolling back and changing the schema
+
+**Deploy.** Every push to `main` deploys (Vercel's Git integration); pull requests get a preview URL. CI (`.github/workflows/ci.yml`) runs lint, formatting, the pages check, unit and browser tests on every push and PR, so merge only green branches. There is no build, so a deploy is exactly the committed files plus the functions in `api/`.
+
+**Roll back.** Vercel keeps every deployment. In the Vercel project, open **Deployments**, find the last good one, and choose **Promote to Production** (or **Instant Rollback** on the current production deployment, which promotes the previous one). That takes effect within seconds and needs no commit; the environment variables stay as they are. Then fix `main` (revert the merge commit with `git revert -m 1 <merge sha>`, or push a fix) so the next deploy doesn't bring the problem back. A rollback does not touch Supabase or Stripe: if the bad release also changed the schema, see below.
+
+**Schema changes.** The whole schema lives in `supabase/schema.sql` and is applied by hand: paste it into the Supabase SQL Editor and run it. There are no migration files, so every statement in it must be safe to run on a database that already has the previous version (`create table if not exists`, `alter table ... add column if not exists`, `create or replace function`, `drop policy if exists` before `create policy`). To change the schema:
+
+1. Edit `supabase/schema.sql` additively (new columns with defaults, new tables, replaced functions). Never rename or drop in the same change that the code starts relying on something new.
+2. Run the file in the SQL Editor **before** merging code that needs the change, so the old code and the new both work against the database (the functions answer `{ "error": "setup" }` with a 503 when a table they need is missing).
+3. Merge the code. If it has to be rolled back, the schema can stay as it is: additive changes are harmless to older code.
+4. To undo a schema change, write the reverse as its own statements (`alter table ... drop column if exists ...`), run them once in the SQL Editor, and remove the forward statements from `schema.sql` in the same commit, so a fresh database and an existing one end up the same. Take a backup first (Supabase > Database > Backups) when a drop loses data.
+
+The retired `subscriptions.website` column and the `leads` table are kept this way: nothing writes them, and dropping them is a one-line reverse step once the old requests have been dealt with.
 
 ## Editing pages and text
 
@@ -53,7 +88,7 @@ After editing, run `npm run pages` and commit the rebuilt `*.html`, `es/*.html` 
 
 ## The designer code
 
-The designer is a six-step studio: **Room** (a common bathroom to start from, measurements in feet and inches, the wall the plumbing stack is in, doors), **Layout** (add fixtures and move them in 3D or on the floor plan), **Electrical** (outlets, switches, lights and the fan, suggested from the layout and movable along their walls), **Products** (Kohler models, shown at their real size), **Finishes** (demolition, floor, walls, ceiling) and **Estimate** (the price, a PDF with a picture and the floor plan, a link to the design, and the request form). Every move is checked as it happens: a fixture that overlaps, blocks the door, lacks the clearance it needs or sits too far from the plumbing to drain turns red and says why in plain words, and "Show me layouts that fit" rearranges the whole room.
+The designer is a six-step studio: **Room** (a common bathroom to start from, measurements in feet and inches, the wall the plumbing stack is in, doors), **Layout** (add fixtures and move them in 3D or on the floor plan), **Electrical** (outlets, switches, lights and the fan, suggested from the layout and movable along their walls), **Products** (Kohler models, shown at their real size), **Finishes** (demolition, floor, walls, ceiling) and **Estimate** (the price at the business's labor rates, a PDF with a picture and the floor plan, a link to the design, and, in the public demo only, the request form). The Kohler and Sterling products in the room are listed with their model numbers but not priced: there is no store price feed. Every move is checked as it happens: a fixture that overlaps, blocks the door, lacks the clearance it needs or sits too far from the plumbing to drain turns red and says why in plain words, and "Show me layouts that fit" rearranges the whole room.
 
 Riley (`js/riley.js`) talks the person through it: what each step is for, and, when something won't work, what she can do instead, with a button that does it. She speaks out loud with the browser's own speech in the page's language, and can be muted. The wave button on her bubble (or `designer.html?voices`) lists the voices this device has for the language, plays a sample in each, and remembers the pick in this browser; `riley.voice` in `site-config.json` sets a default voice name per language. The voices come from each visitor's device and browser, so she sounds different on a Mac, Windows, Android or iPhone.
 
@@ -62,11 +97,12 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
 - `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
 - `js/bathroom-pricing.js`: the estimate math and default labor prices
-- `js/materials-pricing.js`: the materials catalog (catalog prices, may be out of date)
+- `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings (October 2026) and go stale; the file's header says how to refresh or add one (there is no generator script)
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
 - `js/script.js`: menu, language, FAQ and the request form
-- `models/`: GLB fixture and product models
+- `models/`: GLB fixture and product models; `tools/models/` converts OBJ sources to GLB and `models/products/*/manifest.json` records each model's source and conversion arguments (the OBJ sources themselves are not in the repo)
+- `js/vendor/`: Three.js r186 (the minified `three.module.js`/`three.core.js` build and the addons used), jsPDF and the Supabase client, self-hosted so no page loads a third-party script
 - `js/account.js`: sign-up and account pages
 - `js/projects.js`: the My projects page and the designer's save bar
 
@@ -80,4 +116,4 @@ npm run serve      # local server at http://localhost:8000, runs api/ like Verce
 npm test           # all of the above in one go
 ```
 
-`vercel.json` sets the security headers (no page may be framed by other sites). `robots.txt` and `sitemap.xml` are built by `npm run pages`. The last full audit and what's still open: `AUDIT_REPORT.md`.
+`vercel.json` sets the security headers (no page may be framed by other sites) and the caching rules above. `robots.txt` and `sitemap.xml` are built by `npm run pages`. Review findings and what's still open live with the reviews in the project files, not in the repo.

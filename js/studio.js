@@ -169,7 +169,6 @@
     arrange: null, // { options: [...] } while "Arrange it for me" shows its choices
     isolate: false, // show the fixture being worked on by itself
     messageEdited: false,
-    livePrices: null, // { zip, store, results } from the pricing service
   };
   var els = {};
 
@@ -3518,7 +3517,7 @@
     body.appendChild(
       h("p", {
         class: "studio-note",
-        text: T(productPricingOn() ? "studio.products.priceLive" : "studio.products.priceNote"),
+        text: T("studio.products.priceNote"),
       }),
     );
   }
@@ -3762,7 +3761,7 @@
 
   // ---------- Step 4: finishes ----------
   function surfaceOptions(cat) {
-    return Materials ? Materials.getOptionsForCategory(cat, "") : [];
+    return Materials ? Materials.getOptionsForCategory(cat) : [];
   }
 
   // The product shown and priced for a surface: the one picked, or the
@@ -3931,10 +3930,6 @@
     return !!(config && config.materialsEstimator && config.materialsEstimator.enabled);
   }
 
-  function productPricingOn() {
-    return !!(config && config.productPricing && config.productPricing.endpoint);
-  }
-
   // What the pricing module needs from the design.
   function estimateInputs(d) {
     var areas = Plan.wallAreas(d, sizes);
@@ -3980,22 +3975,12 @@
         });
       });
     }
+    // The Kohler and Sterling products are listed with their model numbers,
+    // never priced: there's no store price feed, and prices vary by store.
     var products = [];
-    var live = ui.livePrices;
     var items = room3d && d === design ? room3d.getProductPricingItems() : [];
     items.forEach(function (item) {
       if (!item.mmns.length) return;
-      var cost = null;
-      if (live && live.results) {
-        var each = 0;
-        var all = item.mmns.every(function (m) {
-          var r = live.results[m];
-          if (!r || typeof r.price !== "number") return false;
-          each += r.price;
-          return true;
-        });
-        if (all) cost = Pricing.roundCents(each * item.qty);
-      }
       products.push({
         groupId: item.groupId,
         slotId: item.slotId,
@@ -4003,7 +3988,7 @@
         mmns: item.mmns,
         qty: item.qty,
         url: "https://www.homedepot.com/s/" + encodeURIComponent(item.mmns[0]),
-        cost: cost,
+        cost: null,
         needsValve: item.needsValve,
         needsWiring: item.needsWiring,
       });
@@ -4072,7 +4057,6 @@
       grandTotal: Pricing.roundCents(labor.subtotal + materialsTotal),
       hasMaterials: hasMaterials,
       notes: notes,
-      signature: JSON.stringify(items),
     };
   }
 
@@ -4384,12 +4368,12 @@
   }
 
   // The Kohler products in the room, with their model numbers and where to
-  // look them up, and (with a pricing service) live prices by ZIP code.
+  // look them up.
   function productsList(est) {
     var unpriced = est.products.filter(function (p) {
       return p.cost === null;
     });
-    if (!unpriced.length && !productPricingOn()) return null;
+    if (!unpriced.length) return null;
     var wrap = h("div", { class: "studio-products" }, [
       h("p", { class: "studio-lines-title", text: T("studio.est.products") }),
     ]);
@@ -4408,99 +4392,8 @@
         ]),
       );
     });
-    if (unpriced.length) wrap.appendChild(list);
-    if (productPricingOn() && est.products.length) wrap.appendChild(livePriceForm(est));
+    wrap.appendChild(list);
     return wrap;
-  }
-
-  function livePriceForm(est) {
-    var live = ui.livePrices;
-    var stale = live && live.signature !== est.signature;
-    var zip = h("input", {
-      type: "text",
-      id: "studio-zip",
-      inputmode: "numeric",
-      autocomplete: "postal-code",
-      maxlength: "10",
-      "data-key": "zip",
-      value: live ? live.zip : "",
-    });
-    var status = h("p", { class: "studio-note", role: "status" });
-    if (live && live.loading) status.textContent = T("products.checking", { zip: live.zip });
-    else if (stale) status.textContent = T("products.roomChanged");
-    else if (live && live.failed) status.textContent = T("studio.est.priceFailed");
-    else if (live && live.store) status.textContent = T("products.retailer", { store: live.store });
-    var form = h(
-      "form",
-      {
-        class: "studio-zip-form",
-        novalidate: true,
-        onsubmit: function (e) {
-          e.preventDefault();
-          var digits = zip.value.replace(/\D/g, "").slice(0, 5);
-          if (digits.length !== 5) {
-            status.textContent = T("materials.zipError");
-            zip.setAttribute("aria-invalid", "true");
-            zip.focus();
-            return;
-          }
-          fetchLivePrices(digits);
-        },
-      },
-      [
-        h("label", { for: "studio-zip", text: T("studio.est.zip") }),
-        zip,
-        h("button", {
-          type: "submit",
-          class: "btn btn-secondary btn-sm",
-          "data-key": "zip-go",
-          disabled: live && live.loading ? true : null,
-          text: T(stale ? "products.reprice" : "studio.est.getPrices"),
-        }),
-      ],
-    );
-    return h("div", { class: "studio-live" }, [form, status]);
-  }
-
-  // Asks the pricing service (site-config.json productPricing.endpoint, see
-  // tools/pricing-service/) for each model's price at the Home Depot store
-  // nearest the ZIP code.
-  function fetchLivePrices(zip) {
-    var items = room3d.getProductPricingItems();
-    var mmns = [];
-    items.forEach(function (item) {
-      item.mmns.forEach(function (m) {
-        if (mmns.indexOf(m) === -1) mmns.push(m);
-      });
-    });
-    var signature = JSON.stringify(items);
-    ui.livePrices = { zip: zip, loading: true, signature: signature };
-    renderPanel();
-    var controller = window.AbortController ? new AbortController() : null;
-    var timer = setTimeout(function () {
-      if (controller) controller.abort();
-    }, 150000);
-    fetch(config.productPricing.endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ zip: zip, mmns: mmns }),
-      signal: controller ? controller.signal : undefined,
-    })
-      .then(function (res) {
-        return res.ok ? res.json() : null;
-      })
-      .catch(function () {
-        return null;
-      })
-      .then(function (data) {
-        clearTimeout(timer);
-        ui.livePrices =
-          data && data.results
-            ? { zip: zip, results: data.results, store: data.store || "", signature: signature }
-            : { zip: zip, failed: true, signature: signature };
-        renderPanel();
-        renderBar();
-      });
   }
 
   // Without the price estimator: the design itself, to send.
@@ -5000,7 +4893,6 @@
     fresh.products = copy(DEFAULT_PICKS);
     ui.selected = null;
     ui.step = "room";
-    ui.livePrices = null;
     commit(fresh, { announce: T("studio.startedOver") });
     renderPanel({ top: true });
     toast(T("studio.startedOver"), { label: T("studio.undo"), run: undo });

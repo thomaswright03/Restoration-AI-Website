@@ -1,39 +1,37 @@
 // Room Designer 3D — materials picker data layer.
 //
-// CATALOG (between the catalog:generated markers below) holds real Home
-// Depot prices, generated — not hand-written — by a two-step offline
-// pipeline, since this site has no live retailer API access:
-//   1. tools/scrapers/build_catalog.py scrapes Home Depot search results
-//      and curates/normalizes them into tools/scrapers/materials-catalog.json
-//      (committed). See that script's own docstring for why this is a
-//      manual/offline tool, not something run live from the site, and for
-//      the real unit-normalization issues it corrects for (tile/flooring
-//      priced per box vs. per sq ft, paint priced per pail vs. per gallon).
-//   2. `node scripts/generate-materials-catalog.mjs` reads that JSON and
-//      rewrites the CATALOG block below, in place — the same
-//      generate-and-commit pattern npm run pages already uses for the
-//      HTML partials and published prices.
-// Nothing else in this file is generated. Re-run step 1 then step 2
-// whenever prices should be refreshed; nothing does this automatically.
+// CATALOG below is the list of materials the finishes step offers (toilets,
+// vanities, tile, flooring, paint...) with a retail price for each. The
+// entries were copied by hand from homedepot.com product listings in
+// October 2026 (id = "hd-" + the listing's item number, the listing's title,
+// its photo, and its price with the link). The site has no live retailer
+// feed, so these prices go stale; the estimate calls them "catalog prices"
+// for that reason. There is no generator script: to refresh a price, open
+// the listing at `url`, change `price`, and run `npm run test:unit`. To add
+// a product, copy an entry under the right category key (the same `key` the
+// labor estimate produces: js/bathroom-pricing.js FIXTURES keys, or
+// "floorTile" / "flooring" / "wallTile" / "wallPaint" / "ceilingPaint").
+// Prices must be per unit sold by the quantity the estimate counts: each
+// for fixtures, per sq ft for tile and flooring (not per box), per gallon
+// for paint (not per pail); a multi-pack is divided out, as the "(per
+// gallon)" entries show. Tile and flooring that the 3D room should draw
+// at its real size also get a spec in js/surface-finishes.js.
 //
-// IS_MOCK_DATA still exists for the ZIP-based regional adjustment below
-// (mockRegionalFactor is NOT real market data — see its own comment) and
-// as a fallback this file can be flipped back to by hand if the live
-// catalog is ever pulled. It no longer drives a "sample prices" UI notice:
-// once CATALOG holds real prices, showing that notice would be wrong.
-//
-// Loads as a plain browser script (window.MaterialsPricing) and as a Node
-// module (for the unit tests).
+// Loads as a plain browser script (window.MaterialsPricing, after
+// js/bathroom-pricing.js) and as a Node module (for the unit tests).
 
 (function (root, factory) {
   "use strict";
-  var api = factory(root.I18n || (typeof require === "function" ? require("./i18n.js") : null));
+  var api = factory(
+    root.I18n || (typeof require === "function" ? require("./i18n.js") : null),
+    root.BathroomPricing || (typeof require === "function" ? require("./bathroom-pricing.js") : null),
+  );
   if (typeof module === "object" && module.exports) {
     module.exports = api;
   } else {
     root.MaterialsPricing = api;
   }
-})(typeof globalThis !== "undefined" ? globalThis : this, function (I18n) {
+})(typeof globalThis !== "undefined" ? globalThis : this, function (I18n, Pricing) {
   "use strict";
 
   // Categories priced by the gallon (coverage in sq ft per gallon) instead
@@ -44,18 +42,8 @@
     ceilingPaint: { coverageSqFtPerGallon: 400 },
   };
 
-  // Real data below (IS_MOCK_DATA and CATALOG), rewritten by
-  // `node scripts/generate-materials-catalog.mjs` from
-  // tools/scrapers/materials-catalog.json. Do not hand-edit anything
-  // between the catalog:generated-start/-end markers — edit the generator
-  // or re-run the upstream scrape/curation instead
-  // (tools/scrapers/build_catalog.py), then re-run the generator. Keyed by
-  // the same line `key` the labor estimate already produces
-  // (js/bathroom-pricing.js FIXTURES keys, or "floorTile" / "flooring" /
-  // "wallTile" / "wallPaint" / "ceilingPaint").
-  // catalog:generated-start
-  var IS_MOCK_DATA = false;
-
+  // The catalog (see the top of the file for where it came from and how to
+  // update it). Keyed by the same line `key` the labor estimate produces.
   var CATALOG = {
     Toilet_Quantity: [
       {
@@ -714,25 +702,12 @@
       },
     ],
   };
-  // catalog:generated-end
 
-  function round2(n) {
-    return Math.round((Number(n) || 0) * 100) / 100;
-  }
-
-  // Same formats as js/bathroom-pricing.js: US dollars, written the way the
-  // page's language writes numbers.
-  function money(value) {
-    var n = Number(value) || 0;
-    var locale = I18n.locale();
-    var opts = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-    if (locale === "en-US") return "$" + n.toLocaleString("en-US", opts);
-    return n.toLocaleString(locale, Object.assign({ style: "currency", currency: "USD" }, opts));
-  }
-
-  function formatQty(n) {
-    return (Number(n) || 0).toLocaleString(I18n.locale(), { maximumFractionDigits: 2 });
-  }
+  // Money and quantities are written exactly as the labor estimate writes
+  // them (js/bathroom-pricing.js): US dollars in the page's number format.
+  var round2 = Pricing.roundCents;
+  var money = Pricing.money;
+  var formatQty = Pricing.formatQty;
 
   // Best-effort guess at a product's real finish color, parsed from its
   // retail title (e.g. "... in White", "... Matte Black ..."). This is NOT
@@ -767,19 +742,7 @@
     return null;
   }
 
-  // Deterministic placeholder "regional adjustment" so different ZIP codes
-  // visibly change the price shown, demonstrating the mechanic without a
-  // real location-pricing source connected yet. NOT real market data.
-  function mockRegionalFactor(zip) {
-    var digits = String(zip || "").replace(/\D/g, "");
-    if (!digits) return 1;
-    var sum = 0;
-    for (var i = 0; i < digits.length; i++) sum += Number(digits[i]);
-    // Spreads to roughly 0.92-1.08 based on the ZIP's digits.
-    return round2(0.92 + (sum % 17) / 100);
-  }
-
-  // Given one option's retailers (already regionally adjusted), returns the
+  // Given one option's retailers, returns the
   // cheapest with a note when there was more than one to compare.
   function bestRetailer(retailers) {
     if (!retailers || !retailers.length) return null;
@@ -819,20 +782,19 @@
       });
   }
 
-  // Options for one category, regionally adjusted, with the cheapest
-  // retailer already resolved per option. A malformed catalog entry (no
-  // retailers, so nothing to price) is dropped here rather than handed on
-  // with best: null — every caller can then trust opt.best is always a real
-  // object, instead of each one needing its own null guard.
-  function getOptionsForCategory(categoryKey, zip) {
+  // Options for one category, with the cheapest retailer already resolved
+  // per option. A malformed catalog entry (no retailers, so nothing to
+  // price) is dropped here rather than handed on with best: null — every
+  // caller can then trust opt.best is always a real object, instead of each
+  // one needing its own null guard.
+  function getOptionsForCategory(categoryKey) {
     var options = CATALOG[categoryKey] || [];
-    var factor = mockRegionalFactor(zip);
     return options
       .map(function (opt) {
-        var adjusted = (opt.retailers || []).map(function (r) {
-          return { name: r.name, price: round2(r.price * factor), url: r.url };
+        var retailers = (opt.retailers || []).map(function (r) {
+          return { name: r.name, price: round2(r.price), url: r.url };
         });
-        return { id: opt.id, name: opt.name, imageUrl: opt.imageUrl || null, best: bestRetailer(adjusted) };
+        return { id: opt.id, name: opt.name, imageUrl: opt.imageUrl || null, best: bestRetailer(retailers) };
       })
       .filter(function (opt) {
         return opt.best !== null;
@@ -856,11 +818,9 @@
   }
 
   return {
-    IS_MOCK_DATA: IS_MOCK_DATA,
     CATALOG: CATALOG,
     money: money,
     formatQty: formatQty,
-    mockRegionalFactor: mockRegionalFactor,
     bestRetailer: bestRetailer,
     categoriesFromLines: categoriesFromLines,
     getOptionsForCategory: getOptionsForCategory,

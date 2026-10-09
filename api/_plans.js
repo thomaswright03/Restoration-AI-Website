@@ -101,4 +101,4 @@ function promoDays(code) {
   return (key && promoCodes()[key]) || 0;
 }
 
-module.exports = { PLANS, planFromPrice, planOf, limitsOf, promoCodes, promoDays };
+module.exports = { planFromPrice, planOf, limitsOf, promoCodes, promoDays };

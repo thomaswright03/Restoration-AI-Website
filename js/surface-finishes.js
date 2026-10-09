@@ -43,7 +43,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  // Keyed by catalog product id (tools/scrapers/materials-catalog.json).
+  // Keyed by catalog product id (CATALOG in js/materials-pricing.js).
   var SPECS = {
     // --- floorTile --------------------------------------------------------
     "hd-300126888": {

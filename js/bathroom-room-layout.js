@@ -969,8 +969,8 @@
   // Finish color/texture lookups. Colors are exact hex values from the
   // site's brand palette (css/style.css :root custom properties), resolved
   // separately for light/dark since Three.js materials need literal values.
-  // demolition never influences any of these — same convention the
-  // materials picker and the old bathroom-visualizer.js both already used.
+  // demolition never influences any of these — the same convention the
+  // materials picker uses.
   var FINISH_COLORS = {
     tile: { light: 0xffffff, dark: 0x1a2236 },
     flooring: { light: 0x9db3dd, dark: 0x6b82b5 },

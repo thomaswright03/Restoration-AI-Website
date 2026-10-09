@@ -175,5 +175,4 @@ module.exports = {
   readRawBody,
   readForm,
   activeBusiness,
-  ACTIVE_STATUSES,
 };

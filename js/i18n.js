@@ -332,17 +332,6 @@
     ],
 
     // ---------- materials picks ----------
-    "materials.zipError": [
-      "Enter a 5-digit ZIP code.",
-      "Escriba un código postal de 5 dígitos.",
-      "Informe um ZIP code de 5 dígitos.",
-    ],
-    "products.checking": [
-      "Checking live Home Depot prices near {zip}. This can take up to a minute.",
-      "Consultando los precios actuales de Home Depot cerca de {zip}. Puede tardar hasta un minuto.",
-      "Consultando os preços atuais da Home Depot perto de {zip}. Pode levar até um minuto.",
-    ],
-    "products.retailer": ["Home Depot, {store} store", "Home Depot, tienda {store}", "Home Depot, loja {store}"],
     "products.unpriced": [
       "No live Home Depot price was found for these, so they aren't in the total: {items}.",
       "No se encontró un precio actual de Home Depot para estos productos, así que no están en el total: {items}.",
@@ -363,12 +352,6 @@
       "Los precios de las válvulas de la ducha y la bañera son solo del acabado visible; la válvula dentro de la pared es aparte.",
       "Os preços dos registros do chuveiro e da banheira são só do acabamento visível; a válvula dentro da parede é à parte.",
     ],
-    "products.roomChanged": [
-      "You've changed the products in the room since this estimate, so it no longer matches.",
-      "Cambió los productos de la habitación después de esta estimación, así que ya no coincide.",
-      "Você mudou os produtos do banheiro depois desta estimativa, então ela não corresponde mais.",
-    ],
-    "products.reprice": ["Update my estimate →", "Actualizar mi estimación →", "Atualizar minha estimativa →"],
     "materials.cheaperThan": [
       "Cheaper than {others} for the same product.",
       "Más barato que {others} por el mismo producto.",
@@ -1216,11 +1199,6 @@
       "Cada producto es un modelo Kohler o Sterling real en su tamaño real. Los precios varían según la tienda, así que la estimación los muestra con su número de modelo en lugar de sumarlos.",
       "Cada produto é um modelo Kohler ou Sterling real no tamanho real. Os preços variam conforme a loja, então a estimativa mostra os produtos com o número do modelo em vez de somá-los.",
     ],
-    "studio.products.priceLive": [
-      "Every product is a real Kohler or Sterling model at its real size. Enter your ZIP code on the estimate to add their prices from the nearest Home Depot.",
-      "Cada producto es un modelo Kohler o Sterling real en su tamaño real. Escriba su código postal (ZIP) en la estimación para sumar sus precios en el Home Depot más cercano.",
-      "Cada produto é um modelo Kohler ou Sterling real no tamanho real. Informe o seu ZIP code na estimativa para somar os preços da Home Depot mais próxima.",
-    ],
 
     "studio.finish.demo": ["Demolition", "Demolición", "Demolição"],
     "studio.finish.demoLabel": [
@@ -1299,17 +1277,6 @@
       "Os produtos Kohler e Sterling não estão no total porque o preço varia conforme a loja. Cada um aparece com o número do modelo.",
     ],
     "studio.est.findAt": ["Find it at Home Depot", "Buscar en Home Depot", "Procurar na Home Depot"],
-    "studio.est.zip": [
-      "ZIP code for live prices",
-      "Código postal (ZIP) para precios actuales",
-      "ZIP code para preços atuais",
-    ],
-    "studio.est.getPrices": ["Get prices", "Ver precios", "Ver preços"],
-    "studio.est.priceFailed": [
-      "The prices couldn't be checked right now. Try again in a minute.",
-      "No se pudieron consultar los precios en este momento. Inténtelo de nuevo en un minuto.",
-      "Não foi possível consultar os preços agora. Tente de novo em um minuto.",
-    ],
     "studio.est.pdf": ["Download PDF", "Descargar PDF", "Baixar PDF"],
     "studio.est.yourDesign": ["Your design", "Su diseño", "Seu projeto"],
     "studio.est.send": [

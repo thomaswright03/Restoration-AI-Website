@@ -209,6 +209,4 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports.monthStart = monthStart;
-module.exports.validDesign = validDesign;
 module.exports.cleanInfo = cleanInfo;

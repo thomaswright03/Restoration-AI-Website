@@ -29,8 +29,9 @@ const UPSTREAM_TIMEOUT_MS = 8000;
 // periodEnd() in api/stripe-webhook.js reads this version's shape.
 const STRIPE_API_VERSION = "2025-08-27.basil";
 
-// fetch with a bounded wait. A timeout or network failure rejects with an
-// Error whose .upstream is true, so handlers can tell it from a bug.
+// fetch with a bounded wait that covers the whole exchange: the headers and
+// the body (res.text() / res.json()). A timeout or network failure rejects
+// with an Error whose .upstream is true, so handlers can tell it from a bug.
 async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
   const controller = new AbortController();
   let timedOut = false;
@@ -38,16 +39,76 @@ async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
     timedOut = true;
     controller.abort();
   }, ms);
-  try {
-    return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
-  } catch (e) {
+  const upstreamError = (e) => {
     const err = new Error("Upstream " + (timedOut ? "timeout" : "unreachable") + ": " + url);
     err.upstream = true;
     err.cause = e;
-    throw err;
-  } finally {
+    return err;
+  };
+  let res;
+  try {
+    res = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+  } catch (e) {
+    clearTimeout(timer);
+    throw upstreamError(e);
+  }
+  // Reading the body is bounded by the same timer; it stops once the body is in.
+  const bounded = (read) => async () => {
+    try {
+      return await read();
+    } catch (e) {
+      if (timedOut || (e && e.name === "AbortError")) throw upstreamError(e);
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const text = res.text.bind(res);
+  const json = res.json.bind(res);
+  try {
+    res.text = bounded(text);
+    res.json = bounded(json);
+  } catch {
+    /* a response object that can't be written to: the headers were bounded */
     clearTimeout(timer);
   }
+  return res;
+}
+
+// A short id for one request, from Vercel's own (x-vercel-id) when there is
+// one, so a log line can be found again from what a person reports.
+function requestId(req) {
+  const given = String((req && req.headers && req.headers["x-vercel-id"]) || "").trim();
+  if (given) return given.slice(0, 80);
+  if (!req || typeof req !== "object") return crypto.randomUUID();
+  if (!req.__requestId) req.__requestId = crypto.randomUUID();
+  return req.__requestId;
+}
+
+// One structured log line per failed request: the route, the request id, the
+// signed-in user (when known), the error word the client got and the cause.
+function logError(req, e, info = {}) {
+  const line = Object.assign(
+    {
+      level: "error",
+      route: String((req && req.url) || "").split("?")[0] || info.route || "",
+      method: (req && req.method) || "",
+      requestId: requestId(req),
+      userId: info.userId || null,
+      error: info.error || "server",
+      message: e && e.message ? String(e.message).slice(0, 500) : String(e),
+    },
+    info.extra || {},
+  );
+  console.error(JSON.stringify(line));
+  if (e && e.stack && !e.upstream) console.error(e.stack);
+}
+
+// Answers a failed request: logs it (logError) and sends the JSON error with
+// the request id, so the person can quote it.
+function sendError(req, res, status, body, e, user) {
+  logError(req, e, { error: body.error, userId: user && user.id });
+  return sendJson(res, status, Object.assign({ requestId: requestId(req) }, body));
 }
 
 function env(name) {
@@ -84,14 +145,18 @@ function siteUrl(req) {
 // so only ever used server-side, with filters built from validated input).
 async function db(path, options = {}) {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
-  const res = await fetchWithTimeout(env("SUPABASE_URL") + "/rest/v1/" + path, {
-    method: options.method || "GET",
-    headers: Object.assign(
-      { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" },
-      options.headers || {},
-    ),
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
+  const res = await fetchWithTimeout(
+    env("SUPABASE_URL") + "/rest/v1/" + path,
+    {
+      method: options.method || "GET",
+      headers: Object.assign(
+        { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" },
+        options.headers || {},
+      ),
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    },
+    options.timeoutMs || UPSTREAM_TIMEOUT_MS,
+  );
   const text = await res.text();
   if (!res.ok) throw new Error("Supabase " + res.status + ": " + text.slice(0, 300));
   return text ? JSON.parse(text) : null;
@@ -130,8 +195,7 @@ async function requireUser(req, res) {
   try {
     user = await currentUser(req);
   } catch (e) {
-    console.error(e);
-    sendJson(res, 503, { error: "unavailable" });
+    sendError(req, res, 503, { error: "unavailable" }, e);
     return null;
   }
   if (!user) {
@@ -262,6 +326,9 @@ module.exports = {
   supabaseReady,
   stripeReady,
   sendJson,
+  sendError,
+  logError,
+  requestId,
   siteUrl,
   db,
   currentUser,

@@ -175,7 +175,9 @@ test("a Supabase Auth outage answers 503 unavailable (JSON), never 'sign in' or 
     ]) {
       const res = await call(file, method, body);
       assert.equal(res.statusCode, 503, file + " " + JSON.stringify(opts));
-      assert.deepEqual(res.json(), { error: "unavailable" }, file);
+      assert.equal(res.json().error, "unavailable", file);
+      // The request id the log line carries, so the person can quote it.
+      assert.match(res.json().requestId, /^[0-9a-f-]{36}$/, file);
       assert.match(res.headers["content-type"], /json/);
     }
   }
@@ -303,4 +305,153 @@ test("webhook: an event for a deleted account is acknowledged with 200 and ignor
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.json(), { received: true, ignored: "owner-gone" });
   assert.ok(warnings.some((w) => w.includes("deleted account")));
+});
+
+test("the upstream time limit covers the body too: headers that arrive and a body that never does give 502", async () => {
+  setup();
+  const lib = require("../../api/_lib.js");
+  // Headers at once, then a body that only ends when the request is aborted.
+  global.fetch = async (url, o) => ({
+    ok: true,
+    status: 200,
+    text: () =>
+      new Promise((_, reject) => {
+        o.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+      }),
+    json: () => new Promise(() => {}),
+  });
+  const started = Date.now();
+  const res = await lib.fetchWithTimeout("https://db.example/rest/v1/x", {}, 40);
+  await assert.rejects(res.text(), (e) => e.upstream === true && /timeout/.test(e.message));
+  assert.ok(Date.now() - started < 2000);
+});
+
+test("kill switch: the row is read with a short time limit, and a hung database keeps the last reading", async () => {
+  setup({ switches: { signups: true, checkout: false, saving: true, notice: "Checkout back tonight" } });
+  assert.equal((await Switches.switches()).checkout, false);
+  // Now the database hangs: fetch only ends when the (short) timer aborts it.
+  const timeouts = [];
+  global.fetch = (url, o) =>
+    new Promise((_, reject) => {
+      o.signal.addEventListener("abort", () => {
+        timeouts.push(Date.now());
+        reject(o.signal.reason);
+      });
+    });
+  const errors = [];
+  const error = console.error;
+  console.error = (m) => errors.push(String(m));
+  const started = Date.now();
+  let s;
+  try {
+    s = await Switches.switches(Date.now() + Switches.SWITCH_CACHE_MS + 1);
+  } finally {
+    console.error = error;
+  }
+  const took = Date.now() - started;
+  assert.ok(took >= Switches.SWITCH_READ_MS - 50 && took < Switches.SWITCH_READ_MS + 1000, "took " + took + " ms");
+  assert.ok(Switches.SWITCH_READ_MS <= 2000, "well under the 8 s general limit");
+  // The owner's pause survives the outage; nothing fails open.
+  assert.equal(s.checkout, false);
+  assert.equal(s.notice, "Checkout back tonight");
+  assert.ok(
+    errors.some((m) => /"error":"switches"/.test(m) && /requestId/.test(m)),
+    "the failure is logged",
+  );
+  // /api/config answers from the same reading, right away.
+  const cfg = fakeRes();
+  const t0 = Date.now();
+  await require("../../api/config.js")({ headers: {} }, cfg);
+  assert.ok(Date.now() - t0 < 500);
+  assert.equal(cfg.json().switches.checkout, false);
+});
+
+test("checkout: the idempotency key changes with the language and the promo code, not just the plan", async () => {
+  const key = (calls) => calls.find((c) => c.url.includes("/v1/checkout/sessions")).headers["Idempotency-Key"];
+  let calls = setup();
+  await call("checkout.js", "POST", { plan: "starter" });
+  const en = key(calls);
+  calls = setup();
+  await call("checkout.js", "POST", { plan: "starter", lang: "es" });
+  const es = key(calls);
+  calls = setup();
+  await call("checkout.js", "POST", { plan: "starter", promo: "FREEWEEK" });
+  const promo = key(calls);
+  calls = setup();
+  await call("checkout.js", "POST", { plan: "starter" });
+  assert.equal(key(calls), en, "the same request reuses the key");
+  assert.notEqual(es, en, "a Spanish return address is a different session");
+  assert.notEqual(promo, en, "a promo code is a different session");
+});
+
+test("API failures are logged as one JSON line with the route, request id, user id and error word", async () => {
+  setup();
+  global.fetch = async (url) => {
+    const u = new URL(url);
+    if (u.pathname === "/auth/v1/user") return reply(200, { id: USER, email: "o@example.com" });
+    if (u.pathname === "/rest/v1/site_switches") return reply(200, []);
+    return reply(500, { message: "boom" });
+  };
+  const lines = [];
+  const error = console.error;
+  console.error = (m) => lines.push(String(m));
+  let res;
+  try {
+    const fake = fakeRes();
+    await require("../../api/projects.js")(
+      {
+        method: "GET",
+        query: {},
+        url: "/api/projects?x=1",
+        headers: { authorization: "Bearer good", "x-vercel-id": "iad1::abc" },
+      },
+      fake,
+    );
+    res = fake;
+  } finally {
+    console.error = error;
+  }
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.json().error, "server");
+  assert.equal(res.json().requestId, "iad1::abc", "the body carries the request id");
+  const line = lines
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .find(Boolean);
+  assert.ok(line, "a JSON log line");
+  assert.equal(line.route, "/api/projects");
+  assert.equal(line.requestId, "iad1::abc");
+  assert.equal(line.userId, USER);
+  assert.equal(line.error, "server");
+  assert.match(line.message, /Supabase 500/);
+});
+
+test("a subscription on a price that maps to no plan gets Starter and is logged, never silently", async () => {
+  setEnv();
+  const { planOf } = require("../../api/_plans.js");
+  const warnings = [];
+  const warn = console.warn;
+  console.warn = (m) => warnings.push(String(m));
+  try {
+    assert.equal(planOf({ status: "active", price_id: "price_s", owner_id: USER }), "starter");
+    assert.equal(warnings.length, 0, "a Starter price is mapped, nothing to say");
+    assert.equal(
+      planOf({ status: "active", price_id: "price_mystery", owner_id: USER, stripe_subscription_id: "sub_9" }),
+      "starter",
+    );
+    assert.equal(warnings.length, 1);
+    const line = JSON.parse(warnings[0]);
+    assert.equal(line.error, "unmapped-plan");
+    assert.equal(line.priceId, "price_mystery");
+    assert.equal(line.ownerId, USER);
+    assert.equal(planOf({ status: "active", price_id: "price_mystery", plan: "max" }), "max");
+    assert.equal(warnings.length, 1, "a hand-set plan needs no warning");
+  } finally {
+    console.warn = warn;
+  }
 });

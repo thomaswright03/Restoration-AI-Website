@@ -12,15 +12,19 @@
 //   saving    saving a project's design, new or again (api/projects.js)
 //
 // With no Supabase keys, or when the table hasn't been created yet, every
-// switch is on, so re-running schema.sql is the only setup it needs. A
-// database failure also leaves them on (the API that needs the database
-// then fails on its own, with its own error): the switch is for stopping
-// the product on purpose, not for an outage.
+// switch is on, so re-running schema.sql is the only setup it needs. The row
+// is read with a short time limit (SWITCH_READ_MS): /api/config is on every
+// page's path, and the switches must never make a slow database slower. When
+// the read fails or runs out of time, the switches stay as they were last
+// read (all on if they never were), and the API that needs the database
+// fails on its own, with its own error: the switch is for stopping the
+// product on purpose, not for an outage.
 "use strict";
 
-const { supabaseReady, db } = require("./_lib.js");
+const { supabaseReady, db, logError } = require("./_lib.js");
 
 const SWITCH_CACHE_MS = 15000;
+const SWITCH_READ_MS = 1500;
 const NAMES = ["signups", "checkout", "saving"];
 
 const ALL_ON = Object.freeze({ signups: true, checkout: true, saving: true, notice: "" });
@@ -37,14 +41,20 @@ function normalize(row) {
 async function switches(now = Date.now()) {
   if (!supabaseReady()) return ALL_ON;
   if (now - cache.at < SWITCH_CACHE_MS) return cache.value;
-  let value = ALL_ON;
+  // Until the row is read again: what it said last time (all on at first).
+  let value = cache.value;
   try {
-    const rows = await db("site_switches?id=eq.1&select=signups,checkout,saving,notice");
+    const rows = await db("site_switches?id=eq.1&select=signups,checkout,saving,notice", {
+      timeoutMs: SWITCH_READ_MS,
+    });
     value = normalize(rows && rows[0]);
   } catch (e) {
-    // No table yet (schema.sql not re-run) is expected; anything else is logged.
-    if (!/Supabase 404|PGRST20[25]|42P01|does not exist|Could not find/i.test(String(e && e.message))) {
-      console.error(e);
+    // No table yet (schema.sql not re-run) is expected and means all on;
+    // anything else is logged and keeps the last reading.
+    if (/Supabase 404|PGRST20[25]|42P01|does not exist|Could not find/i.test(String(e && e.message))) {
+      value = ALL_ON;
+    } else {
+      logError(null, e, { route: "site_switches", error: "switches" });
     }
   }
   cache = { at: now, value };
@@ -66,4 +76,4 @@ function resetCache() {
   cache = { at: 0, value: ALL_ON };
 }
 
-module.exports = { NAMES, SWITCH_CACHE_MS, switches, isOff, pausedBody, resetCache };
+module.exports = { NAMES, SWITCH_CACHE_MS, SWITCH_READ_MS, switches, isOff, pausedBody, resetCache };

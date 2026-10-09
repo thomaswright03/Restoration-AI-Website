@@ -6,7 +6,7 @@
 // answer is never cached.
 "use strict";
 
-const { supabaseReady, activeBusiness, currentUser } = require("./_lib.js");
+const { supabaseReady, activeBusiness, currentUser, logError } = require("./_lib.js");
 
 function script(res, payload, reason, maxAge) {
   res.statusCode = 200;
@@ -41,7 +41,7 @@ module.exports = async function handler(req, res) {
     const flag = found.inactive ? { preview: true } : {};
     return script(res, Object.assign(profile(biz), flag), "", -1);
   } catch (e) {
-    console.error(e);
+    logError(req, e, { error: "business" });
     return script(res, null, "error", 0);
   }
 };

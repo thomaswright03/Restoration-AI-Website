@@ -9,7 +9,17 @@
 // acknowledges it, see api/stripe-webhook.js.)
 "use strict";
 
-const { env, supabaseReady, sendJson, db, requireUser, stripe, readForm, fetchWithTimeout } = require("./_lib.js");
+const {
+  env,
+  supabaseReady,
+  sendJson,
+  sendError,
+  db,
+  requireUser,
+  stripe,
+  readForm,
+  fetchWithTimeout,
+} = require("./_lib.js");
 
 async function cancelStripe(sub) {
   if (!sub || !sub.stripe_subscription_id || !env("STRIPE_SECRET_KEY")) return;
@@ -39,8 +49,9 @@ module.exports = async function handler(req, res) {
   }
   if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
 
+  let user;
   try {
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
     if (!user) return;
 
     const body = await readForm(req);
@@ -58,24 +69,20 @@ module.exports = async function handler(req, res) {
       const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
       sub = subs && subs[0];
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "server" });
+      return sendError(req, res, 502, { error: "server" }, e, user);
     }
     try {
       await cancelStripe(sub);
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "stripe" });
+      return sendError(req, res, 502, { error: "stripe" }, e, user);
     }
     try {
       await deleteAuthUser(user.id);
       return sendJson(res, 200, { deleted: true });
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "server" });
+      return sendError(req, res, 502, { error: "server" }, e, user);
     }
   } catch (e) {
-    console.error(e);
-    return sendJson(res, 502, { error: "server" });
+    return sendError(req, res, 502, { error: "server" }, e, user);
   }
 };

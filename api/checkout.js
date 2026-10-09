@@ -19,12 +19,14 @@ const {
   supabaseReady,
   stripeReady,
   sendJson,
+  sendError,
   siteUrl,
   db,
   requireUser,
   stripe,
   idempotencyKey,
   readForm,
+  logError,
 } = require("./_lib.js");
 const { promoDays } = require("./_plans.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
@@ -72,9 +74,10 @@ module.exports = async function handler(req, res) {
   }
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
 
+  let user;
   try {
     if (await isOff("checkout")) return sendJson(res, 503, pausedBody("checkout", await switches()));
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
     if (!user) return;
 
     const body = await readForm(req);
@@ -92,8 +95,7 @@ module.exports = async function handler(req, res) {
     try {
       subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "server" });
+      return sendError(req, res, 502, { error: "server" }, e, user);
     }
     const existing = subs && subs[0];
     if (existing && LIVE_STATUSES.includes(existing.status)) {
@@ -103,7 +105,7 @@ module.exports = async function handler(req, res) {
       const live = await liveStripeSubscription(user, existing);
       if (live) {
         // The webhook hasn't recorded it yet: do it now so the account page sees it.
-        await saveSubscription(user.id, live).catch((e) => console.error(e));
+        await saveSubscription(user.id, live).catch((e) => logError(req, e, { error: "record", userId: user.id }));
         return sendJson(res, 409, { error: "already-subscribed" });
       }
       // One free trial per account: not again after an earlier subscription.
@@ -132,15 +134,28 @@ module.exports = async function handler(req, res) {
           metadata: { owner_id: user.id, promo: promoFree ? promo.toUpperCase() : undefined },
         },
         "POST",
-        { idempotencyKey: idempotencyKey(["checkout", user.id, plan, promoFree, trialDays, customer || ""]) },
+        {
+          // Everything the session is made from is in the key: Stripe refuses
+          // a reused key with different parameters, so a retry in another
+          // language or with another code must be a new key, not an error.
+          idempotencyKey: idempotencyKey([
+            "checkout",
+            user.id,
+            plan,
+            price,
+            promoFree ? promo.toUpperCase() : "",
+            promoFree,
+            trialDays,
+            customer || "",
+            base,
+          ]),
+        },
       );
       return sendJson(res, 200, { url: session.url });
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "stripe" });
+      return sendError(req, res, 502, { error: "stripe" }, e, user);
     }
   } catch (e) {
-    console.error(e);
-    return sendJson(res, 502, { error: "server" });
+    return sendError(req, res, 502, { error: "server" }, e, user);
   }
 };

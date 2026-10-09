@@ -89,7 +89,7 @@ Sign-ups, buying a plan and saving projects can each be stopped without a deploy
    - `checkout` off: the account page's plan card says buying a plan is paused and shows no buy buttons; `/api/checkout` refuses. Existing subscriptions keep running, and Manage billing still works.
    - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work.
 
-If the table doesn't exist yet (re-run `supabase/schema.sql`), or the database can't be reached, every switch counts as on: the switch is for stopping the product on purpose, not for an outage. Unit tests: `tests/unit/switches-robustness.test.js`.
+If the table doesn't exist yet (re-run `supabase/schema.sql`), every switch counts as on. The row is read with a 1.5 s limit so `/api/config` stays fast when the database is slow; if the read fails, the switches stay as they were last read (all on if they never were): the switch is for stopping the product on purpose, not for an outage. Every API error is logged as one JSON line with the route, a request id (also returned to the browser as `requestId`), the user id and the error word. Unit tests: `tests/unit/switches-robustness.test.js`.
 
 ## Editing pages and text
 

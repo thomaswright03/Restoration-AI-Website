@@ -239,6 +239,8 @@ test("projects: client and job details are checked field by field", async () => 
   assert.deepEqual(parseInfo({ status: "maybe" }), { field: "status", reason: "value" });
   assert.deepEqual(parseInfo({ start: "2026-02-30" }), { field: "start", reason: "date" });
   assert.deepEqual(parseInfo({ start: "0999-01-01" }), { field: "start", reason: "date" });
+  assert.deepEqual(parseInfo({ start: "1949-12-31" }), { field: "start", reason: "date" });
+  assert.deepEqual(parseInfo({ start: "1950-01-01" }), { info: { start: "1950-01-01" } });
   assert.deepEqual(parseInfo({ start: "2026-02-28" }), { info: { start: "2026-02-28" } });
   assert.deepEqual(parseInfo({ email: "not-an-email" }), { field: "email", reason: "email" });
   assert.deepEqual(parseInfo({ notes: "x".repeat(2001) }), { field: "notes", reason: "long" });

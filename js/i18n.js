@@ -552,6 +552,7 @@
     "proj.type.full": ["Full bathroom remodel", "Remodelación completa del baño", "Reforma completa do banheiro"],
     "proj.type.partial": ["Partial remodel", "Remodelación parcial", "Reforma parcial"],
     "proj.type.other": ["Other", "Otro", "Outro"],
+    "proj.status.none": ["No status yet", "Sin estado todavía", "Sem situação ainda"],
     "proj.status.lead": ["New lead", "Cliente nuevo", "Novo contato"],
     "proj.status.estimate": ["Estimate sent", "Estimación enviada", "Orçamento enviado"],
     "proj.status.approved": ["Approved", "Aprobado", "Aprovado"],
@@ -893,12 +894,22 @@
       "¿Eliminar la solicitud de {name}? No se puede deshacer.",
       "Excluir o pedido de {name}? Não dá para desfazer.",
     ],
+    "acct.lead.deleteNamed": [
+      "Delete the request from {name}",
+      "Eliminar la solicitud de {name}",
+      "Excluir o pedido de {name}",
+    ],
     "acct.lead.deleteFailed": [
       "Couldn't delete the request.",
       "No se pudo eliminar la solicitud.",
       "Não foi possível excluir o pedido.",
     ],
     "acct.lead.deleted": ["Request deleted.", "Solicitud eliminada.", "Pedido excluído."],
+    "auth.serviceDown": [
+      "The sign-in service had a problem just now. Please try again in a moment; if it keeps happening, let us know.",
+      "El servicio de acceso tuvo un problema en este momento. Inténtelo de nuevo en un momento; si sigue pasando, avísenos.",
+      "O serviço de login teve um problema agora. Tente de novo em instantes; se continuar, avise a gente.",
+    ],
     "auth.checkEmail": [
       "Check your email to confirm your account, then log in.",
       "Revise su correo para confirmar su cuenta y luego inicie sesión.",

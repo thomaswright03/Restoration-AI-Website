@@ -173,7 +173,6 @@
     drag: null,
     arrange: null, // { options: [...] } while "Arrange it for me" shows its choices
     isolate: false, // show the fixture being worked on by itself
-    messageEdited: false,
   };
   var els = {};
 
@@ -2202,12 +2201,7 @@
     var panel = els.panel;
     var active = document.activeElement;
     var key = active && panel.contains(active) ? active.getAttribute("data-key") : null;
-    var inForm = active && els.request.contains(active) ? active : null;
     var scroll = panel.scrollTop;
-    // The request form is kept, not rebuilt (what's typed in it stays): it
-    // waits, hidden, in its place on the page until the last step shows it.
-    els.request.hidden = true;
-    els.requestHome.appendChild(els.request);
     clear(panel);
     var body = h("div", { class: "studio-step is-" + ui.step });
     ({
@@ -2225,13 +2219,12 @@
       var again = panel.querySelector('[data-key="' + key + '"]');
       if (again && !again.disabled) again.focus({ preventScroll: true });
     }
-    if (inForm && document.body.contains(inForm)) inForm.focus({ preventScroll: true });
     renderSelChip();
   }
 
-  // Without the price estimator the last step only sends the design.
+  // Without the price estimator the last step only shows the design.
   function stepShort(step) {
-    return T("studio.step." + (step === "estimate" && !estimatorOn() ? "send" : step) + ".short");
+    return T("studio.step." + (step === "estimate" && !estimatorOn() ? "design" : step) + ".short");
   }
 
   function stepHead(step) {
@@ -4112,7 +4105,7 @@
     return list;
   }
 
-  // The design in words, for the request form and the PDF.
+  // The design in words, for the PDF.
   function designLines(d, est) {
     var out = [];
     out.push(T("studio.sum.room", { w: len(d.room.w), l: len(d.room.l), h: len(d.room.h) }));
@@ -4169,30 +4162,10 @@
     return parts.length ? " (" + parts.join(", ") + ")" : "";
   }
 
-  // What goes in the request form's "Project details".
-  function requestSummary(est) {
-    var out = [T("studio.sum.title")];
-    designLines(design, est).forEach(function (line) {
-      out.push("- " + line);
-    });
-    if (estimatorOn()) {
-      out.push("");
-      out.push(T("studio.sum.labor", { total: Pricing.money(est.labor.subtotal) }));
-      if (est.hasMaterials) out.push(T("studio.sum.materials", { total: Pricing.money(est.materialsTotal) }));
-      out.push(totalLabel(est) + ": " + Pricing.money(est.grandTotal));
-    }
-    var problems = errorCount(issues);
-    if (problems) out.push(T("studio.sum.problems", { n: problems }));
-    out.push("");
-    out.push(T("studio.sum.link"));
-    out.push(shareUrl());
-    return out.join("\n");
-  }
-
-  // ---------- Step 5: the estimate and the request ----------
+  // ---------- Step 6: the estimate ----------
   function estimateStep(body) {
     var priced = estimatorOn();
-    body.appendChild(stepHead(priced ? "estimate" : "send"));
+    body.appendChild(stepHead(priced ? "estimate" : "design"));
     var est = estimate();
     var problems = errorCount(issues);
     if (problems) {
@@ -4245,33 +4218,83 @@
       },
       [h("span", { icon: "download" }), T("studio.est.pdf")],
     );
-    body.appendChild(
-      h("div", { class: "studio-est-actions" }, [
-        pdfBtn,
-        h("button", { type: "button", class: "btn btn-secondary", "data-key": "share", onclick: copyLink }, [
-          h("span", { icon: "link" }),
-          T("studio.copyLink"),
-        ]),
+    var actions = [
+      pdfBtn,
+      h("button", { type: "button", class: "btn btn-secondary", "data-key": "share", onclick: copyLink }, [
+        h("span", { icon: "link" }),
+        T("studio.copyLink"),
       ]),
-    );
+    ];
+    // The owner's own designer: Save project sits with the other
+    // end-of-design actions. It presses the save bar's button (js/projects.js
+    // owns saving), and shows once that bar is up for a plan that saves.
+    var saveBtn = saveBarButton();
+    if (saveBtn) {
+      actions.unshift(
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-primary",
+            "data-key": "save",
+            onclick: function () {
+              saveBtn.click();
+            },
+          },
+          [h("span", { icon: "check" }), saveBtn.textContent.trim()],
+        ),
+      );
+    }
+    body.appendChild(h("div", { class: "studio-est-actions" }, actions));
     body.appendChild(pdfStatus);
 
-    // The request form, filled in with the design: only in the public demo.
-    // A business's designer is for its signed-in owner, who saves projects
-    // instead of sending requests to themselves.
+    // The public demo ends by saying what a business gets, and how to get
+    // it: there is no one to send a homeowner's request to.
     if (!BIZ.demo) return;
-    var message = document.getElementById("message");
-    if (message && !ui.messageEdited) message.value = requestSummary(est);
-    var service = document.getElementById("service");
-    if (service && !ui.serviceEdited) service.value = design.finishes.demolition ? "full-bathroom" : "partial-bathroom";
     body.appendChild(
       section(
-        T("studio.est.send", { business: BIZ.name }),
-        [h("p", { class: "studio-note", text: T("studio.est.sendHelp") }), els.request],
-        "studio-request-section",
+        T("studio.demo.title"),
+        [
+          h("p", { class: "studio-note", text: T("studio.demo.text") }),
+          h("a", {
+            class: "btn btn-primary",
+            href: pagePath("signup.html"),
+            "data-key": "signup",
+            text: T("studio.demo.signup"),
+          }),
+        ],
+        "studio-demo-end",
       ),
     );
-    els.request.hidden = false;
+  }
+
+  // The save bar's button (js/projects.js shows the bar for a signed-in
+  // owner whose plan saves), or null while there isn't one.
+  function saveBarButton() {
+    if (BIZ.demo) return null;
+    var form = document.getElementById("project-save-form");
+    var btn = document.getElementById("project-save");
+    return form && btn && !form.hidden && !form.closest("[hidden]") ? btn : null;
+  }
+
+  // The estimate step shows Save project as soon as the save bar appears
+  // (it loads after the studio), and follows its label (Save project / Save
+  // changes).
+  function watchSaveBar() {
+    var form = document.getElementById("project-save-form");
+    var bar = document.getElementById("project-bar");
+    if (!form || !bar || typeof MutationObserver === "undefined") return;
+    var again = function () {
+      if (ui.step === "estimate") renderPanel();
+    };
+    new MutationObserver(again).observe(form, {
+      attributes: true,
+      attributeFilter: ["hidden"],
+      subtree: true,
+      childList: true,
+      characterData: true,
+    });
+    new MutationObserver(again).observe(bar, { attributes: true, attributeFilter: ["hidden"] });
   }
 
   function lineEl(label, detail, amount, cls, image) {
@@ -4917,8 +4940,6 @@
     els.live = document.getElementById("studio-live");
     els.selChip = document.getElementById("studio-selchip");
     els.riley = document.getElementById("studio-riley");
-    els.request = document.getElementById("studio-request");
-    els.requestHome = els.request.parentNode;
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
     placeRiley();
@@ -4971,25 +4992,7 @@
         /* fine */
       }
     });
-    var message = document.getElementById("message");
-    if (message) {
-      message.addEventListener("input", function () {
-        ui.messageEdited = true;
-      });
-    }
-    var service = document.getElementById("service");
-    if (service) {
-      service.addEventListener("change", function () {
-        ui.serviceEdited = true;
-      });
-    }
-    var form = document.getElementById("lead-form");
-    if (form) {
-      form.addEventListener("reset", function () {
-        ui.messageEdited = false;
-        ui.serviceEdited = false;
-      });
-    }
+    watchSaveBar();
     els.linkDialog.addEventListener("click", function (e) {
       if (e.target.closest("[data-close]")) els.linkDialog.close();
     });

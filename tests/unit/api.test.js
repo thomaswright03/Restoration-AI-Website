@@ -57,13 +57,3 @@ test("with no keys set, config reports demo mode and the business script says no
   await require("../../api/business.js")({ query: { b: "smith" }, headers: {} }, biz);
   assert.match(biz.body, /^window\.DesignerBusiness\.load\(null, "not-configured"\);/);
 });
-
-test("demo leads are accepted but not stored; incomplete ones are refused", async () => {
-  const handler = require("../../api/leads.js");
-  const ok = fakeRes();
-  await handler({ method: "POST", headers: {}, body: { name: "A", phone: "555", business: "demo" } }, ok);
-  assert.deepEqual(JSON.parse(ok.body), { ok: true, demo: true });
-  const bad = fakeRes();
-  await handler({ method: "POST", headers: {}, body: { business: "demo" } }, bad);
-  assert.equal(bad.statusCode, 400);
-});

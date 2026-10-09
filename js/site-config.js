@@ -57,13 +57,9 @@
     var company = raw.company || {};
     var rv = (raw.riley && raw.riley.voice) || {};
     var endpoint = clean(lf.endpoint);
-    // The business using the designer (js/business.js) decides where its
-    // leads go and what legal name its estimates carry.
+    // The business using the designer (js/business.js) decides what legal
+    // name its estimates carry.
     var biz = (typeof window !== "undefined" && window.DesignerBusiness) || null;
-    if (biz && biz.leadEndpoint) {
-      endpoint = biz.leadEndpoint;
-      lf = { serviceName: biz.serviceName || "", servicePrivacyUrl: "" };
-    }
     if (biz && biz.legalName) owner = { legalName: biz.legalName, contactAddress: owner.contactAddress };
     return {
       loaded: true,

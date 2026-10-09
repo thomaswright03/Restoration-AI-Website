@@ -855,9 +855,9 @@
     "studio.step.finishes.short": ["Finishes", "Acabados", "Acabamentos"],
     "studio.step.estimate.title": ["Your estimate", "Su estimación", "Sua estimativa"],
     "studio.step.estimate.intro": [
-      "A rough, non-binding estimate for this design. Send it with your design to get a real quote.",
-      "Una estimación aproximada y no vinculante para este diseño. Envíela con su diseño para recibir una cotización real.",
-      "Uma estimativa aproximada e sem compromisso para este projeto. Envie junto com o projeto para receber um orçamento de verdade.",
+      "A rough, non-binding estimate for this design, at a sample business's prices. Download the PDF, or sign up and your own designer saves designs like this as projects.",
+      "Una estimación aproximada y no vinculante para este diseño, con los precios de una empresa de ejemplo. Descargue el PDF, o regístrese y su propio diseñador guardará diseños como este como proyectos.",
+      "Uma estimativa aproximada e sem compromisso para este projeto, com os preços de uma empresa de exemplo. Baixe o PDF, ou cadastre-se e o seu próprio projetista salva projetos como este.",
     ],
     "studio.step.estimate.short": ["Estimate", "Estimación", "Estimativa"],
     // A business owner in their own designer: the estimate is at their prices,
@@ -877,13 +877,13 @@
       "Defina sus precios en la página de la cuenta.",
       "Defina os seus preços na página da conta.",
     ],
-    "studio.step.send.title": ["Send your design", "Envíe su diseño", "Envie o seu projeto"],
-    "studio.step.send.intro": [
-      "Check your design, then send it to the business for a quote.",
-      "Revise su diseño y luego envíelo a la empresa para recibir una cotización.",
-      "Confira o seu projeto e depois envie para a empresa e receba um orçamento.",
+    "studio.step.design.title": ["Your design", "Su diseño", "O seu projeto"],
+    "studio.step.design.intro": [
+      "Check the design, then download the PDF.",
+      "Revise el diseño y luego descargue el PDF.",
+      "Confira o projeto e depois baixe o PDF.",
     ],
-    "studio.step.send.short": ["Send", "Enviar", "Enviar"],
+    "studio.step.design.short": ["Design", "Diseño", "Projeto"],
     "studio.stepOf": ["Step {n} of {total}", "Paso {n} de {total}", "Etapa {n} de {total}"],
     "studio.stepNav": ["Steps", "Pasos", "Etapas"],
     "studio.back": ["Back to {step}", "Volver a {step}", "Voltar para {step}"],
@@ -1372,20 +1372,20 @@
       "Os produtos Kohler e Sterling não estão no total porque o preço varia conforme a loja. Cada um aparece com o número do modelo.",
     ],
     "studio.est.findAt": ["Find it at Home Depot", "Buscar en Home Depot", "Procurar na Home Depot"],
+    "studio.demo.title": ["What your business gets", "Lo que recibe su empresa", "O que a sua empresa recebe"],
+    "studio.demo.text": [
+      "This demo prices the design at a sample business's rates. Your own designer carries your name and phone, prices every line at your labor rates, and saves each design as a project you can reopen, update and hand to your client as a PDF.",
+      "Esta demo calcula el diseño con las tarifas de una empresa de ejemplo. Su propio diseñador lleva su nombre y teléfono, cobra cada línea con sus tarifas de mano de obra y guarda cada diseño como un proyecto que puede reabrir, actualizar y entregar a su cliente en PDF.",
+      "Esta demonstração calcula o projeto com os valores de uma empresa de exemplo. O seu próprio projetista leva o seu nome e telefone, cobra cada linha com os seus valores de mão de obra e salva cada projeto para você reabrir, atualizar e entregar ao cliente em PDF.",
+    ],
+    "studio.demo.signup": [
+      "Sign up to save this as a project",
+      "Regístrese para guardar esto como proyecto",
+      "Cadastre-se para salvar isto como projeto",
+    ],
     "studio.est.pdf": ["Download PDF", "Descargar PDF", "Baixar PDF"],
     "studio.est.yourDesign": ["Your design", "Su diseño", "Seu projeto"],
-    "studio.est.send": [
-      "Send your design to {business}",
-      "Envíe su diseño a {business}",
-      "Envie o seu projeto para {business}",
-    ],
-    "studio.est.sendHelp": [
-      "They get your design, its estimate and a link that opens it just as you left it.",
-      "Recibirán su diseño, su estimación y un enlace que lo abre tal como lo dejó.",
-      "Eles recebem o seu projeto, a estimativa e um link que abre o projeto do jeito que você deixou.",
-    ],
 
-    "studio.sum.title": ["My bathroom design:", "Mi diseño de baño:", "Meu projeto de banheiro:"],
     "studio.sum.room": [
       "Room: {w} × {l}, ceiling {h}",
       "Baño: {w} × {l}, techo de {h}",
@@ -1609,18 +1609,6 @@
       "{name}: parede {wall}, centro a {at} do canto esquerdo",
     ],
     "studio.sum.work": ["Work: {scope}", "Trabajo: {scope}", "Serviço: {scope}"],
-    "studio.sum.labor": [
-      "Labor estimate: {total}",
-      "Estimación de mano de obra: {total}",
-      "Estimativa de mão de obra: {total}",
-    ],
-    "studio.sum.materials": ["Materials: {total}", "Materiales: {total}", "Materiais: {total}"],
-    "studio.sum.problems": [
-      "Note: {n} item(s) in the layout don't fit yet.",
-      "Nota: {n} elemento(s) del diseño todavía no caben.",
-      "Obs.: {n} item(ns) do projeto ainda não cabem.",
-    ],
-    "studio.sum.link": ["Open the design in 3D:", "Abrir el diseño en 3D:", "Abrir o projeto em 3D:"],
     "studio.pdf.title": [
       "Bathroom design and estimate",
       "Diseño y estimación del baño",
@@ -2390,9 +2378,9 @@
       "Azulejo, pintura e pisos. O preço acompanha enquanto você escolhe.",
     ],
     "riley.step.estimate": [
-      "Here's what it adds up to. Send it over when you're ready and someone will come back to you.",
-      "Esto es lo que suma. Envíelo cuando quiera y alguien le responderá.",
-      "Isto é o total. Envie quando quiser e alguém vai responder.",
+      "Here's what it adds up to, at the sample business's prices. Download the PDF, or sign up and your own designer saves this as a project.",
+      "Esto es lo que suma, con los precios de la empresa de ejemplo. Descargue el PDF, o regístrese y su propio diseñador guardará esto como proyecto.",
+      "Isto é o total, com os preços da empresa de exemplo. Baixe o PDF, ou cadastre-se e o seu próprio projetista salva isto como projeto.",
     ],
     "riley.step.estimateOwner": [
       "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",

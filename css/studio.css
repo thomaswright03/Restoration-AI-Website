@@ -2027,37 +2027,8 @@
 }
 
 /* The request form, inside the last step. */
-.studio-request-section {
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--color-line);
-}
-
-.studio-request[hidden] {
-  display: none;
-}
-
-.studio-request .designer-form {
-  max-width: none;
-}
-
-.studio-request .form-group {
-  margin-bottom: var(--space-4);
-}
-
-.studio-request textarea {
-  min-height: 180px;
-  font-size: var(--fs-sm);
-  line-height: 1.5;
-}
-
-.studio-request .powered-by {
-  margin-top: var(--space-5);
-}
-
-.form-help {
-  margin: 6px 0 0;
-  font-size: var(--fs-sm);
-  color: var(--color-muted);
+.studio-demo-end .btn {
+  margin-top: var(--space-2);
 }
 
 .studio-disclosure {

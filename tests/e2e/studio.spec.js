@@ -283,7 +283,7 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("the estimate lists the work, fills in the request, downloads a PDF and shares a link", async ({
+  test("the demo's estimate ends with the PDF and a sign-up, never a homeowner's request form", async ({
     browser,
     page,
   }) => {
@@ -296,11 +296,14 @@ test.describe("design studio", () => {
     expect(total).toMatch(/^\$[\d,]+\.\d\d$/);
     await expect(page.locator(".studio-total-chip strong")).toHaveText(total);
 
-    const message = await page.locator("#message").inputValue();
-    expect(message).toContain("Room: 8′ × 5′");
-    expect(message).toContain("Toilet: wall A");
-    expect(message).toContain("#design=");
-    await expect(page.locator("#lead-form")).toBeVisible();
+    // The demo speaks to the business trying it, not to a homeowner.
+    const estimateStep = page.locator(".studio-step.is-estimate");
+    await expect(estimateStep.locator(".studio-step-intro")).toContainText("at a sample business's prices");
+    await expect(estimateStep).not.toContainText("Send");
+    await expect(page.locator("#lead-form, #studio-request")).toHaveCount(0);
+    await expect(estimateStep.locator(".studio-demo-end")).toContainText("What your business gets");
+    await expect(byKey(page, "signup")).toHaveAttribute("href", /signup\.html$/);
+    await expect(byKey(page, "save")).toHaveCount(0);
 
     const [download] = await Promise.all([page.waitForEvent("download"), byKey(page, "pdf").click()]);
     expect(download.suggestedFilename()).toMatch(/\.pdf$/);
@@ -336,15 +339,16 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("without the price estimator, the last step sends the design without prices", async ({ page }) => {
+  test("without the price estimator, the last step shows the design without prices", async ({ page }) => {
     await useConfig(page, { priceEstimator: { enabled: false } });
     const errors = await openStudio(page);
     await answerAll(page);
-    await expect(step(page, "estimate")).toContainText("Send");
+    await expect(step(page, "estimate")).toContainText("Design");
     await expect(page.locator(".studio-total-chip")).toBeHidden();
     await step(page, "estimate").click();
     await expect(page.getByTestId("estimate-total")).toHaveCount(0);
-    await expect(page.locator("#lead-form")).toBeVisible();
+    await expect(page.locator(".studio-step.is-estimate h2")).toHaveText("Your design");
+    await expect(byKey(page, "pdf")).toBeVisible();
     expect(errors).toEqual([]);
   });
 

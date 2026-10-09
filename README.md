@@ -23,7 +23,6 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Vercel functions in `api/` (Node 20, no npm packages; they call Stripe and Supabase over REST):
   - `config.js`: tells the browser whether accounts and payments are on, the public Supabase keys, and which switches are off (see "Pausing the product")
   - `business.js`: a business's public profile, loaded by the designer page as a script
-  - `leads.js`: answers the public demo's request form (nothing is kept); refuses requests for any business
   - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with an optional promo code) and the Stripe billing portal
   - `account.js`: deletes the signed-in user's account
   - `projects.js`: a subscriber's projects (list, open, save, rename, delete), within their plan's limits

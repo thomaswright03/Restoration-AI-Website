@@ -40,7 +40,7 @@ test("the owner's designer is asked for once, with their sign-in, and has no req
   await answerAll(page);
   await step(page, "estimate").click();
   await expect(page.getByTestId("estimate-card")).toBeVisible();
-  await expect(page.locator("#lead-form")).toBeHidden();
+  await expect(page.locator(".studio-demo-end")).toHaveCount(0);
 });
 
 test("an owner whose plan isn't active gets the preview banner", async ({ page }) => {

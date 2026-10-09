@@ -2,7 +2,7 @@
 //
 // The designer page is shared by every subscriber. Its address says whose it
 // is: designer.html?b=<business-slug>. This script sets window.DesignerBusiness
-// (name, initials, phone, email, labor prices, where leads go) before the
+// (name, initials, phone, email, labor prices) before the
 // studio's scripts load, so they speak for that business.
 //
 //   - No ?b= (or ?b=demo): the built-in sample business, for the public demo.
@@ -27,7 +27,6 @@
     phone: "(555) 010-0199",
     email: "hello@example.com",
     legalName: "",
-    leadEndpoint: "/api/leads",
     serviceName: "Room Designer 3D",
     demo: true,
     ownPrices: false,
@@ -76,7 +75,6 @@
     biz.phone = clean(data.phone, 40);
     biz.email = clean(data.email, 120);
     biz.legalName = clean(data.legalName);
-    biz.leadEndpoint = "/api/leads";
     biz.demo = false;
     biz.unavailable = "";
     // The owner looking at their own designer before their plan is active.

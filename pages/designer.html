@@ -67,59 +67,6 @@
         </div>
         <p class="visually-hidden" id="studio-live" aria-live="polite"></p>
         <p class="studio-disclosure">{{designer.studio.disclosure}}</p>
-
-        <div class="studio-request" id="studio-request" hidden>
-          <p class="form-prefill-note" data-biz-demo hidden>{{designer.form.demoNote}}</p>
-          <div id="form-status" class="form-status" role="status" aria-live="polite" tabindex="-1" hidden></div>
-          <form id="lead-form" class="designer-form" novalidate>
-            <div class="form-group">
-              <label for="name">{{designer.form.name}}</label>
-              <input type="text" id="name" name="name" autocomplete="name" required aria-describedby="name-error" />
-              <p class="field-error" id="name-error" hidden></p>
-            </div>
-            <div class="form-group">
-              <label for="phone">{{designer.form.phone}}</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                autocomplete="tel"
-                inputmode="tel"
-                required
-                aria-describedby="phone-error"
-              />
-              <p class="field-error" id="phone-error" hidden></p>
-            </div>
-            <div class="form-group">
-              <label for="email">{{designer.form.email}}</label>
-              <input type="email" id="email" name="email" autocomplete="email" required aria-describedby="email-error" />
-              <p class="field-error" id="email-error" hidden></p>
-            </div>
-            <div class="form-group">
-              <label for="service">{{designer.form.service}}</label>
-              <select id="service" name="service">
-                <option value="full-bathroom">{{designer.form.full}}</option>
-                <option value="partial-bathroom">{{designer.form.partial}}</option>
-                <option value="other-bathroom">{{designer.form.other}}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="message">{{designer.form.message}}</label>
-              <textarea id="message" name="message" rows="8" aria-describedby="message-help"></textarea>
-              <p class="form-help" id="message-help">{{designer.form.messageHelp}}</p>
-            </div>
-            <div class="form-honeypot" aria-hidden="true">
-              <label for="company-website">{{designer.form.honeypot}}</label>
-              <input type="text" id="company-website" name="_gotcha" tabindex="-1" autocomplete="off" />
-            </div>
-            <p class="form-consent">{{designer.form.consent}}</p>
-            <button type="submit" class="btn btn-primary btn-block" id="lead-submit">{{designer.form.send}}</button>
-            <p class="form-note" data-biz-if="phone" hidden>
-              {{designer.form.talk}} <a href="#" data-biz-tel><span data-biz="phone"></span></a>
-            </p>
-          </form>
-          <p class="powered-by">{{designer.poweredBy}}</p>
-        </div>
       </section>
 
       <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">

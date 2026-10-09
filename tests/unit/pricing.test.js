@@ -301,3 +301,41 @@ test("a vanity's sink counts toward the plumbing the estimate leaves out", () =>
   const pub = P.computePublicEstimate({ Toilet_Quantity: 1, Vanity_Quantity: 1, Bathtub_Quantity: 1 }, NOTHING);
   assert.equal(pub.plumbingFixtureCount, 3);
 });
+
+test("a business's own bathtub price replaces the 70%-of-shower rule; empty keeps the rule", () => {
+  assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: 450 }), 450);
+  assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: 0 }), 0);
+  assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: null }), 700);
+  assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: "" }), 700);
+  assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: "abc" }), 700);
+  const own = P.computeEstimate({ Bathtub_Quantity: 1 }, NOTHING, { prices: { Bathtub_Price: 450 } });
+  assert.equal(line(own, "Bathtub_Quantity").cost, 450);
+  // The account page lists Bathtub_Price with the other prices (js/business.js applies the same keys).
+  assert.ok(Object.prototype.hasOwnProperty.call(P.DEFAULT_PRICES, "Bathtub_Price"));
+  assert.equal(P.DEFAULT_PRICES.Bathtub_Price, null);
+});
+
+test("the designer's estimate (includeTrade) prices every line at the business's own rates", () => {
+  // Every price the account page offers set to $1: nothing is left at a platform rate.
+  const ones = {};
+  for (const key of Object.keys(P.DEFAULT_PRICES)) ones[key] = 1;
+  ones.Labor_Tax_Rate_Percent = 0;
+  const values = Object.assign({}, ROOM_5x8x8, {
+    Toilet_Quantity: 1,
+    Bathtub_Quantity: 1,
+    Vanity_Quantity: 1,
+    Electrical_Points: 6,
+    Drain_Run_Ft: 4,
+  });
+  const scope = { demolition: true, floorFinish: "tile", walls: "paint", paintCeiling: true };
+  const r = P.computeEstimate(values, scope, { prices: ones, includeTrade: true });
+  for (const l of r.lines) assert.equal(l.rate, 1, l.key + " is charged at the business's rate");
+  assert.equal(line(r, "plumbing").qty, 3, "one plumbing point per toilet, tub and vanity");
+  assert.equal(line(r, "electrical").qty, 6);
+  assert.equal(line(r, "drainRun").qty, 4);
+  assert.equal(r.plumbingIncluded, true);
+  assert.equal(P.computePublicEstimate(values, scope).plumbingIncluded, false);
+  // The summary no longer says "before plumbing" when plumbing is in the lines.
+  assert.doesNotMatch(P.buildEstimateSummary(values, scope, r), /before plumbing/);
+  assert.match(P.buildEstimateSummary(values, scope, P.computePublicEstimate(values, scope)), /before plumbing/);
+});

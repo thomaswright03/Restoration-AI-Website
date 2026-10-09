@@ -2,11 +2,12 @@
 //
 // The single source of truth for bathroom labor prices AND for the
 // calculation itself. The design studio's estimate (js/studio.js) calls
-// computeEstimate() below, with the business's own prices (js/business.js).
-// includeTrade: true adds the per-fixture plumbing points and the
-// surcharges for a contractor's own quote. The estimate people see prices
-// the wiring and any drain line the layout needs, because the design
-// studio knows exactly how many points and how many feet those are.
+// computeEstimate() below with includeTrade: true and the business's own
+// prices (js/business.js replaces DEFAULT_PRICES with what the owner set on
+// the account page): every line, including the per-fixture plumbing points,
+// the wiring and any drain line the layout needs, is at a rate the business
+// can see and change. computePublicEstimate() (no plumbing points, no
+// surcharges, no tax) remains for a homeowner-facing estimate.
 //
 // Only the work that is explicitly chosen is priced: nothing is assumed
 // from the room's dimensions alone. The line items are exactly the charges
@@ -65,6 +66,9 @@
     Mirror_Price: 100,
     Mirror_Huge_Price: 300,
     Shower_Shelf_Price: 125,
+    // A business's own bathtub install price. Empty (null) means 70% of its
+    // shower price, the rule the first client priced by (bathtubPrice()).
+    Bathtub_Price: null,
 
     Tile_Price_Per_SqFt: 4,
     // Owner-confirmed: $5 per sq ft of bathroom floor.
@@ -99,6 +103,7 @@
     Mirror_Price: "Mirror install (each, standard size)",
     Mirror_Huge_Price: "Mirror install (each, huge/oversized)",
     Shower_Shelf_Price: "Built-in shower shelf (each)",
+    Bathtub_Price: "Bathtub install (each; empty = 70% of the shower price)",
 
     Tile_Price_Per_SqFt: "Tile (per sq ft of floor or wall tiled)",
     Floor_Price_Per_SqFt: "Flooring other than tile (per sq ft of floor)",
@@ -123,9 +128,13 @@
     "Labor_Tax_Rate_Percent",
   ];
 
-  // Bathtub price isn't set directly — it's always 30% less than the
-  // current shower price, per the business owner.
+  // The bathtub install price: the business's own Bathtub_Price when set,
+  // else 30% less than its shower price (the first client's rule).
   function bathtubPrice(prices) {
+    var own = prices.Bathtub_Price;
+    if (own !== undefined && own !== null && own !== "" && isFinite(Number(own)) && Number(own) >= 0) {
+      return roundCents(Number(own));
+    }
     return roundCents((Number(prices.Shower_Price) || 0) * 0.7);
   }
 
@@ -516,6 +525,9 @@
       openingsSqFt: a.openingsSqFt,
       wetWallSqFt: scope.walls === "tileWet" ? a.wetWallSqFt : 0,
       plumbingFixtureCount: fixtureCount,
+      // Whether the per-fixture plumbing is in the lines (includeTrade) or
+      // left for a separate quote, so notes about it can say which.
+      plumbingIncluded: !!options.includeTrade,
       subtotal: subtotal,
       taxRatePercent: taxRatePercent,
       taxAmount: taxAmount,
@@ -603,11 +615,8 @@
       return f.plural + " " + formatQty(parseNumber(values[f.key]));
     });
     out.push(T("summary.fixtures", { list: counts.length ? counts.join(", ") : T("summary.none") }));
-    out.push(
-      T(result.plumbingFixtureCount > 0 ? "summary.totalBeforePlumbing" : "summary.total", {
-        total: money(result.subtotal),
-      }),
-    );
+    var beforePlumbing = result.plumbingFixtureCount > 0 && !result.plumbingIncluded;
+    out.push(T(beforePlumbing ? "summary.totalBeforePlumbing" : "summary.total", { total: money(result.subtotal) }));
     return out.join("\n");
   }
 

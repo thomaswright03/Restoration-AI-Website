@@ -4,6 +4,7 @@
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson } = require("./_lib.js");
+const { promoCodes } = require("./_plans.js");
 
 // STRIPE_PRICE_PRO / _MAX may list several price ids; checkout uses the first.
 function firstPrice(name) {
@@ -24,5 +25,7 @@ module.exports = function handler(req, res) {
       website: !!env("STRIPE_PRICE_WEBSITE"),
     },
     trialDays: Number(env("TRIAL_DAYS")) || 0,
+    // Whether checkout takes promo codes (the codes themselves stay private).
+    promo: Object.keys(promoCodes()).length > 0,
   });
 };

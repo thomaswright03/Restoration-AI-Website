@@ -7,7 +7,8 @@
 //   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
 //   STRIPE_PRICE_STARTER, STRIPE_PRICE_PRO, STRIPE_PRICE_MAX (monthly prices)
 //   STRIPE_PRICE_WEBSITE (the "Put it on your website" add-on, monthly)
-//   TRIAL_DAYS (optional, e.g. 14), SITE_URL (optional, e.g. https://example.com)
+//   PROMO_CODES (optional, free-week codes; see api/_plans.js)
+//   TRIAL_DAYS (optional: a trial for everyone, e.g. 14), SITE_URL (optional, e.g. https://example.com)
 //   RESEND_API_KEY, LEADS_FROM_EMAIL (optional: email each new lead to the business)
 "use strict";
 

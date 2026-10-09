@@ -26,17 +26,17 @@
   ],
   "index.tryDemo": ["Try the live demo", "Probar la demo", "Ver a demonstração"],
   "index.heroNote": [
-    "{{@trialDays}}-day free trial. Cancel any time.",
-    "{{@trialDays}} días de prueba gratis. Cancele cuando quiera.",
-    "{{@trialDays}} dias de teste grátis. Cancele quando quiser."
+    "Have a promo code? Your first {{@promoDays}} days are free. Cancel any time.",
+    "¿Tiene un código promocional? Sus primeros {{@promoDays}} días son gratis. Cancele cuando quiera.",
+    "Tem um código promocional? Os seus primeiros {{@promoDays}} dias são grátis. Cancele quando quiser."
   ],
   "index.how.eyebrow": ["How it works", "Cómo funciona", "Como funciona"],
   "index.how.title": ["Live on your site in three steps", "En su sitio en tres pasos", "No seu site em três passos"],
   "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],
   "index.how.1.text": [
-    "Create an account and start your free trial on the Starter, Pro or Max plan.",
-    "Cree una cuenta y empiece su prueba gratis con el plan Starter, Pro o Max.",
-    "Crie uma conta e comece o teste grátis no plano Starter, Pro ou Max."
+    "Create an account and pick the Starter, Pro or Max plan. A promo code makes your first {{@promoDays}} days free.",
+    "Cree una cuenta y elija el plan Starter, Pro o Max. Con un código promocional, sus primeros {{@promoDays}} días son gratis.",
+    "Crie uma conta e escolha o plano Starter, Pro ou Max. Com um código promocional, os seus primeiros {{@promoDays}} dias são grátis."
   ],
   "index.how.2.title": ["Make it yours", "Hágalo suyo", "Deixe com a sua cara"],
   "index.how.2.text": [
@@ -102,9 +102,9 @@
     "Escolha o plano que combina com o seu volume de trabalho"
   ],
   "index.pricing.subtitle": [
-    "Every plan starts with a {{@trialDays}}-day free trial. Billed monthly, cancel any time. Prices in US dollars.",
-    "Todos los planes empiezan con {{@trialDays}} días de prueba gratis. Se cobran cada mes y puede cancelar cuando quiera. Precios en dólares estadounidenses.",
-    "Todos os planos começam com {{@trialDays}} dias de teste grátis. Cobrança mensal, cancele quando quiser. Preços em dólares americanos."
+    "Billed monthly, cancel any time. Have a promo code? Your first {{@promoDays}} days are free. Prices in US dollars.",
+    "Se cobran cada mes y puede cancelar cuando quiera. ¿Tiene un código promocional? Sus primeros {{@promoDays}} días son gratis. Precios en dólares estadounidenses.",
+    "Cobrança mensal, cancele quando quiser. Tem um código promocional? Os seus primeiros {{@promoDays}} dias são grátis. Preços em dólares americanos."
   ],
   "index.plan.starter": ["Starter", "Starter", "Starter"],
   "index.plan.starter.monthly": [
@@ -221,9 +221,9 @@
   ],
   "index.q5": ["Can I cancel?", "¿Puedo cancelar?", "Posso cancelar?"],
   "index.a5": [
-    "Yes, any time from your account. Your designer stays on until the end of the period you've paid for. If you cancel during the free trial, you aren't charged.",
-    "Sí, cuando quiera desde su cuenta. Su diseñador sigue activo hasta el final del período pagado. Si cancela durante la prueba gratis, no se le cobra.",
-    "Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. Se cancelar durante o teste grátis, você não é cobrado."
+    "Yes, any time from your account. Your designer stays on until the end of the period you've paid for. If a promo code gave you free days and you cancel before they end, you aren't charged.",
+    "Sí, cuando quiera desde su cuenta. Su diseñador sigue activo hasta el final del período pagado. Si un código promocional le dio días gratis y cancela antes de que terminen, no se le cobra.",
+    "Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. Se um código promocional lhe deu dias grátis e você cancelar antes de eles acabarem, não é cobrado."
   ],
   "index.q6": ["Is it only for bathrooms?", "¿Es solo para baños?", "É só para banheiros?"],
   "index.a6": [
@@ -238,8 +238,8 @@
     "Dê aos seus clientes um jeito melhor de começar"
   ],
   "index.cta.text": [
-    "Try it free for {{@trialDays}} days, then plans start at {{@priceStarter}} a month.",
-    "Pruébelo gratis {{@trialDays}} días; después, planes desde {{@priceStarter}} al mes.",
-    "Teste grátis por {{@trialDays}} dias; depois, planos a partir de {{@priceStarter}} por mês."
+    "Plans start at {{@priceStarter}} a month, and a promo code makes your first {{@promoDays}} days free.",
+    "Planes desde {{@priceStarter}} al mes, y con un código promocional sus primeros {{@promoDays}} días son gratis.",
+    "Planos a partir de {{@priceStarter}} por mês, e com um código promocional os seus primeiros {{@promoDays}} dias são grátis."
   ]
 }

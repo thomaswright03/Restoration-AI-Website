@@ -1,6 +1,9 @@
-// POST /api/checkout {plan: "starter"|"pro"|"max", website: true|false, lang: ""|"es"|"pt"}
+// POST /api/checkout {plan: "starter"|"pro"|"max", website: true|false, promo: "", lang: ""|"es"|"pt"}
 // with the signed-in user's Supabase access token as a Bearer token.
 // Starts a Stripe Checkout subscription and answers {url} to send them to.
+// A valid promo code (PROMO_CODES, see api/_plans.js) makes the first days
+// free as a Stripe trial, once per account: {error: "promo"} for a code that
+// isn't valid, {error: "promo-used"} when the account has had a plan before.
 //
 // POST /api/checkout {addon: "website"}: adds "Put it on your website" to the
 // subscription they already have (Stripe prorates it on the next invoice)
@@ -8,7 +11,7 @@
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson, siteUrl, db, currentUser, stripe, readForm } = require("./_lib.js");
-const { planOf, websiteOf } = require("./_plans.js");
+const { planOf, websiteOf, promoDays } = require("./_plans.js");
 
 const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", max: "STRIPE_PRICE_MAX" };
 
@@ -37,6 +40,9 @@ module.exports = async function handler(req, res) {
     plan !== "max" && (body.website === true || body.website === "true") ? env("STRIPE_PRICE_WEBSITE") : "";
   const lineItems = { 0: { price, quantity: 1 } };
   if (website) lineItems[1] = { price: website, quantity: 1 };
+  const promo = String(body.promo || "").trim();
+  const promoFree = promo ? promoDays(promo) : 0;
+  if (promo && !promoFree) return sendJson(res, 400, { error: "promo" });
   const dir = body.lang === "es" || body.lang === "pt" ? body.lang + "/" : "";
   const base = siteUrl(req) + "/" + dir + "account.html";
 
@@ -46,7 +52,10 @@ module.exports = async function handler(req, res) {
     if (existing && ["active", "trialing", "past_due"].includes(existing.status)) {
       return sendJson(res, 409, { error: "already-subscribed" });
     }
-    const trialDays = Number(env("TRIAL_DAYS")) || 0;
+    // One free trial per account: not again after an earlier subscription.
+    const firstPlan = !(existing && existing.stripe_subscription_id);
+    if (promoFree && !firstPlan) return sendJson(res, 409, { error: "promo-used" });
+    const trialDays = promoFree || Number(env("TRIAL_DAYS")) || 0;
     const session = await stripe("checkout/sessions", {
       mode: "subscription",
       line_items: lineItems,
@@ -55,13 +64,16 @@ module.exports = async function handler(req, res) {
       client_reference_id: user.id,
       customer: existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined,
       customer_email: existing && existing.stripe_customer_id ? undefined : user.email,
-      allow_promotion_codes: "true",
       subscription_data: {
-        metadata: { owner_id: user.id, plan, website: plan === "max" || website ? "yes" : "no" },
-        // One free trial per account: not again after an earlier subscription.
-        trial_period_days: trialDays > 0 && !(existing && existing.stripe_subscription_id) ? trialDays : undefined,
+        metadata: {
+          owner_id: user.id,
+          plan,
+          website: plan === "max" || website ? "yes" : "no",
+          promo: promoFree ? promo.toUpperCase() : undefined,
+        },
+        trial_period_days: trialDays > 0 && firstPlan ? trialDays : undefined,
       },
-      metadata: { owner_id: user.id },
+      metadata: { owner_id: user.id, promo: promoFree ? promo.toUpperCase() : undefined },
     });
     return sendJson(res, 200, { url: session.url });
   } catch (e) {

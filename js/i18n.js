@@ -603,14 +603,14 @@
 
     // ---------- account and sign-up pages (js/account.js) ----------
     "acct.status.none": [
-      "You're on the free plan: you can use the designer, but can't save projects or put the designer on your website. Pick a plan to start your free trial.",
-      "Tiene el plan gratis: puede usar el diseñador, pero no puede guardar proyectos ni poner el diseñador en su sitio web. Elija un plan para empezar su prueba gratis.",
-      "Você está no plano grátis: pode usar o projetista, mas não pode salvar projetos nem colocar o projetista no seu site. Escolha um plano para começar o teste grátis.",
+      "You're on the free plan: you can use the designer, but can't save projects or put the designer on your website. Pick a plan below to unlock both.",
+      "Tiene el plan gratis: puede usar el diseñador, pero no puede guardar proyectos ni poner el diseñador en su sitio web. Elija un plan abajo para desbloquear ambas cosas.",
+      "Você está no plano grátis: pode usar o projetista, mas não pode salvar projetos nem colocar o projetista no seu site. Escolha um plano abaixo para liberar as duas coisas.",
     ],
     "acct.status.trialing": [
-      "Free trial until {date}. Your designer is live.",
-      "Prueba gratis hasta el {date}. Su diseñador está activo.",
-      "Teste grátis até {date}. O seu projetista está no ar.",
+      "Free until {date}, then your plan's monthly price. Your designer is live.",
+      "Gratis hasta el {date}; después, el precio mensual de su plan. Su diseñador está activo.",
+      "Grátis até {date}; depois, o preço mensal do seu plano. O seu projetista está no ar.",
     ],
     "acct.status.active": [
       "Active. Renews on {date}. Your designer is live.",
@@ -646,6 +646,16 @@
       "Checkout was cancelled. Nothing was charged.",
       "Se canceló el pago. No se cobró nada.",
       "O pagamento foi cancelado. Nada foi cobrado.",
+    ],
+    "acct.promo.invalid": [
+      "That promo code isn't valid. Check it, or leave the box empty to continue without one.",
+      "Ese código promocional no es válido. Revíselo o deje la casilla vacía para seguir sin código.",
+      "Esse código promocional não é válido. Confira ou deixe o campo vazio para continuar sem código.",
+    ],
+    "acct.promo.used": [
+      "Promo codes are for an account's first plan, and this account has had one before. Leave the box empty to continue.",
+      "Los códigos promocionales son para el primer plan de una cuenta, y esta cuenta ya tuvo uno. Deje la casilla vacía para seguir.",
+      "Os códigos promocionais são para o primeiro plano de uma conta, e esta conta já teve um. Deixe o campo vazio para continuar.",
     ],
     "acct.paymentsOff": [
       "Payments aren't switched on yet. Please check back soon.",

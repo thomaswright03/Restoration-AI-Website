@@ -10,7 +10,7 @@ const AxeBuilder = require("@axe-core/playwright").default;
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", website = false, payments = false } = {}) {
+async function signedIn(page, { plan = "starter", website = false, payments = false, status = "active" } = {}) {
   const calls = [];
   await page.route("**/api/config", (route) =>
     route.fulfill({
@@ -21,13 +21,14 @@ async function signedIn(page, { plan = "starter", website = false, payments = fa
         supabaseAnonKey: "anon",
         plans: { starter: payments, pro: payments, max: payments, website: payments },
         trialDays: 0,
+        promo: payments,
       },
     }),
   );
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
   await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
     route.fulfill({
-      json: { owner_id: "u1", status: "active", plan, website, current_period_end: "2026-11-01T00:00:00Z" },
+      json: { owner_id: "u1", status, plan, website, current_period_end: "2026-11-01T00:00:00Z" },
     }),
   );
   await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
@@ -135,4 +136,33 @@ test("signed in, the nav's Log in reads Log out in each language and signs out",
   await page.waitForURL(/\/index\.html$/);
   expect(await page.evaluate(() => localStorage.getItem("sb-fakeproject-auth-token"))).toBeNull();
   await expect(page.locator("[data-auth-link]")).toHaveText("Log in");
+});
+
+test("a promo code from the link fills the plan card's box and goes to checkout; a wrong one says so", async ({
+  page,
+}) => {
+  const calls = await signedIn(page, { status: "canceled", payments: true });
+  await page.route("**/api/checkout", async (route) => {
+    calls.push(route.request().postDataJSON());
+    return route.fulfill({ status: 400, json: { error: "promo" } });
+  });
+  await page.goto("/account.html?promo=FREEWEEK");
+  await expect(page.locator("#plan-promo")).toHaveValue("FREEWEEK");
+  await expect(page.locator("#plan-trial-note")).toBeVisible();
+  await page.locator('[data-plan="pro"]').click();
+  await expect(page.locator("#plan-message")).toContainText("promo code isn't valid");
+  expect(calls).toContainEqual(expect.objectContaining({ plan: "pro", promo: "FREEWEEK" }));
+
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+});
+
+test("Spanish account page: the promo box and its error are in Spanish", async ({ page }) => {
+  await signedIn(page, { status: "canceled", payments: true });
+  await page.route("**/api/checkout", (route) => route.fulfill({ status: 409, json: { error: "promo-used" } }));
+  await page.goto("/es/account.html");
+  await expect(page.locator('label[for="plan-promo"]')).toHaveText("Código promocional (opcional)");
+  await page.locator("#plan-promo").fill("freeweek");
+  await page.locator('[data-plan="starter"]').click();
+  await expect(page.locator("#plan-message")).toContainText("primer plan de una cuenta");
 });

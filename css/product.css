@@ -296,7 +296,7 @@ main.app-page {
   min-height: 100vh;
 }
 
-/* designer.html?embed=1 sits inside a business's own site. */
+/* designer.html?embed=1: the designer framed by our own project page (project.html). */
 html[data-embed="1"] .product-chrome,
 html[data-embed="1"] .skip-link {
   display: none !important;

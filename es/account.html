@@ -29,7 +29,7 @@
           var t = localStorage.getItem("pr_theme");
           if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
         } catch (e) {}
-        // designer.html?embed=1 runs inside a business's own website: no product header or footer.
+        // designer.html?embed=1 is the designer framed by our own project page (project.html): no product header or footer.
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();
     </script>

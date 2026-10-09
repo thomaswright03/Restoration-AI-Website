@@ -62,7 +62,10 @@ function fakeSupabase(sub) {
       );
     }
     if (u.pathname === "/rest/v1/projects") {
-      const match = (p) => p.owner_id === eq("owner_id") && (!q.get("id") || p.id === eq("id"));
+      const match = (p) =>
+        p.owner_id === eq("owner_id") &&
+        (!q.get("id") || p.id === eq("id")) &&
+        (!q.get("updated_at") || Date.parse(p.updated_at) === Date.parse(eq("updated_at")));
       const rows = data.projects.filter(match);
       if (method === "GET") return reply(200, rows);
       if (method === "PATCH") {
@@ -231,6 +234,17 @@ test("projects: client and job details are checked field by field", async () => 
   assert.equal(cleanInfo({ client: "x".repeat(121) }), null);
   assert.equal(cleanInfo({ client: 5 }), null);
   assert.equal(cleanInfo("text"), null);
+  // Each refusal names the field and what's wrong with it.
+  const { parseInfo, parseName } = require("../../api/projects.js");
+  assert.deepEqual(parseInfo({ status: "maybe" }), { field: "status", reason: "value" });
+  assert.deepEqual(parseInfo({ start: "2026-02-30" }), { field: "start", reason: "date" });
+  assert.deepEqual(parseInfo({ start: "0999-01-01" }), { field: "start", reason: "date" });
+  assert.deepEqual(parseInfo({ start: "2026-02-28" }), { info: { start: "2026-02-28" } });
+  assert.deepEqual(parseInfo({ email: "not-an-email" }), { field: "email", reason: "email" });
+  assert.deepEqual(parseInfo({ notes: "x".repeat(2001) }), { field: "notes", reason: "long" });
+  assert.deepEqual(parseName("x".repeat(121)), { reason: "long" });
+  assert.deepEqual(parseName("  "), { reason: "empty" });
+  assert.deepEqual(parseName(" Smith  bath "), { name: "Smith bath" });
 
   const data = fakeSupabase({ status: "active" });
   const summary = { v: 1, grandTotal: 1234 };
@@ -240,9 +254,44 @@ test("projects: client and job details are checked field by field", async () => 
   assert.equal(sent.name, "Job");
   assert.deepEqual(sent.info, { client: "Lee" });
   assert.deepEqual(sent.summary, summary);
+  const bad = await call("POST", { body: { name: "Job", design: DESIGN, info: { status: "nope" } } });
+  assert.equal(bad.statusCode, 400);
+  assert.deepEqual(bad.json(), { error: "info", field: "status", reason: "value" });
+  const badDate = await call("PATCH", { body: { id: data.projects[0].id, info: { start: "2026-13-01" } } });
+  assert.deepEqual(badDate.json(), { error: "info", field: "start", reason: "date" });
+  const longName = await call("PATCH", { body: { id: data.projects[0].id, name: "n".repeat(121) } });
+  assert.equal(longName.statusCode, 400);
+  assert.deepEqual(longName.json(), { error: "name", field: "name", reason: "long" });
+  assert.equal((await call("POST", { body: { name: "Job", design: DESIGN, summary: [1] } })).statusCode, 400);
+});
+
+test("projects: a save that names the version it loaded is refused once the project changed", async () => {
+  const data = fakeSupabase({ status: "active" });
+  const created = (await call("POST", { body: { name: "Job", design: DESIGN } })).json().project;
+  const loaded = (await call("GET", { query: { id: created.id } })).json().project.updated_at;
+
+  // The same tab saves: fine, and the version moves on.
+  const first = await call("PATCH", { body: { id: created.id, name: "Job A", updated_at: loaded } });
+  assert.equal(first.statusCode, 200);
+  assert.notEqual(first.json().project.updated_at, loaded);
+
+  // A second tab that still holds the old version: told, with what's there now.
+  const stale = await call("PATCH", { body: { id: created.id, name: "Job B", updated_at: loaded } });
+  assert.equal(stale.statusCode, 409);
+  assert.equal(stale.json().error, "conflict");
+  assert.equal(stale.json().project.name, "Job A");
+  assert.equal(data.projects[0].name, "Job A");
+
+  // Saving anyway (no version) or with the current version goes through.
+  const current = stale.json().project.updated_at;
+  assert.equal((await call("PATCH", { body: { id: created.id, name: "Job B", updated_at: current } })).statusCode, 200);
+  assert.equal((await call("PATCH", { body: { id: created.id, name: "Job C" } })).statusCode, 200);
   assert.equal(
-    (await call("POST", { body: { name: "Job", design: DESIGN, info: { status: "nope" } } })).statusCode,
+    (await call("PATCH", { body: { id: created.id, name: "Job D", updated_at: "garbage" } })).statusCode,
     400,
   );
-  assert.equal((await call("POST", { body: { name: "Job", design: DESIGN, summary: [1] } })).statusCode, 400);
+
+  // A project that's gone is still "not found", version or not.
+  data.projects = [];
+  assert.equal((await call("PATCH", { body: { id: created.id, name: "X", updated_at: current } })).statusCode, 404);
 });

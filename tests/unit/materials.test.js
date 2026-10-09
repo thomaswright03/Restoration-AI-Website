@@ -5,8 +5,26 @@ const assert = require("node:assert/strict");
 const P = require("../../js/bathroom-pricing.js");
 const M = require("../../js/materials-pricing.js");
 
-test("materials picker holds real generated data, not mock data", () => {
-  assert.equal(M.IS_MOCK_DATA, false);
+test("every catalog entry is a priced product with a listing to check the price against", () => {
+  const categories = Object.keys(M.CATALOG);
+  assert.ok(categories.length > 0);
+  for (const key of categories) {
+    assert.ok(M.CATALOG[key].length > 0, key + " has no products");
+    for (const opt of M.CATALOG[key]) {
+      assert.match(opt.id, /^hd-\d+$/, key + ": id is the Home Depot item number");
+      assert.ok(opt.name.trim(), key + ": " + opt.id + " has no name");
+      assert.ok(opt.retailers.length > 0, key + ": " + opt.id + " has no retailer");
+      for (const r of opt.retailers) {
+        assert.ok(r.price > 0, opt.id + " has no price");
+        assert.match(r.url, /^https:\/\//, opt.id + " has no listing to refresh the price from");
+      }
+    }
+  }
+});
+
+test("money and quantities are written exactly as the labor estimate writes them", () => {
+  assert.equal(M.money(1234.5), P.money(1234.5));
+  assert.equal(M.formatQty(7.5), P.formatQty(7.5));
 });
 
 test("categoriesFromLines only offers materials for work actually priced, never demolition", () => {
@@ -50,19 +68,18 @@ test("bestRetailer picks the cheapest and only adds a comparison note when there
   assert.match(two.compareNote, /\$60\.00/);
 });
 
-test("getOptionsForCategory resolves the cheapest retailer per option and applies the ZIP factor consistently", () => {
-  const options = M.getOptionsForCategory("Toilet_Quantity", "84101");
+test("getOptionsForCategory resolves the cheapest retailer per option at the catalog price", () => {
+  const options = M.getOptionsForCategory("Toilet_Quantity");
   assert.ok(options.length > 0);
-  options.forEach((opt) => {
+  options.forEach((opt, i) => {
     assert.ok(opt.best.price > 0);
+    const listed = M.CATALOG.Toilet_Quantity[i].retailers.map((r) => r.price);
+    assert.equal(opt.best.price, Math.min(...listed), "the price shown is the catalog's, unadjusted");
   });
-  // Same ZIP always gives the same adjusted price (deterministic mock).
-  const again = M.getOptionsForCategory("Toilet_Quantity", "84101");
-  assert.deepEqual(options[0].best.price, again[0].best.price);
 });
 
 test("getOptionsForCategory carries each option's real product photo through, or null if it has none", () => {
-  const options = M.getOptionsForCategory("Toilet_Quantity", "84101");
+  const options = M.getOptionsForCategory("Toilet_Quantity");
   assert.ok(options.length > 0);
   options.forEach((opt) => {
     assert.ok(opt.imageUrl === null || typeof opt.imageUrl === "string");
@@ -74,15 +91,14 @@ test("getOptionsForCategory carries each option's real product photo through, or
 });
 
 test("getOptionsForCategory drops a malformed catalog entry (no retailers) instead of crashing or returning best: null", () => {
-  // A future re-scrape could in principle commit an entry with an empty or
-  // missing retailers array (nothing priced for it at all) — every caller
-  // downstream (js/script.js's appendMaterialCategoryForm) assumes
+  // A hand edit could leave an entry with an empty or missing retailers
+  // array (nothing priced for it at all) — every caller downstream assumes
   // opt.best is always a real object, so getOptionsForCategory must never
   // hand one back with best: null.
   const malformed = { id: "test-malformed", name: "Malformed Test Option", imageUrl: null, retailers: [] };
   M.CATALOG.Toilet_Quantity.push(malformed);
   try {
-    const options = M.getOptionsForCategory("Toilet_Quantity", "84101");
+    const options = M.getOptionsForCategory("Toilet_Quantity");
     assert.ok(
       !options.some((o) => o.id === "test-malformed"),
       "the malformed entry should be filtered out, not passed through",
@@ -113,13 +129,6 @@ test("guessFinishColor matches common retail finish words and falls back to null
   assert.equal(M.guessFinishColor("Some Vanity With No Finish Word"), null);
   assert.equal(M.guessFinishColor(""), null);
   assert.equal(M.guessFinishColor(null), null);
-});
-
-test("mockRegionalFactor is deterministic and stays in a plausible +/-10% range", () => {
-  assert.equal(M.mockRegionalFactor("84101"), M.mockRegionalFactor("84101"));
-  const factor = M.mockRegionalFactor("84101");
-  assert.ok(factor >= 0.9 && factor <= 1.1, "factor " + factor + " should be a modest adjustment");
-  assert.equal(M.mockRegionalFactor(""), 1, "no ZIP means no adjustment");
 });
 
 test("computeMaterialCost is qty x unit price for fixtures and surfaces priced per unit or per sq ft", () => {

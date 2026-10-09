@@ -194,12 +194,13 @@
     return true;
   }
 
-  // "YYYY-MM-DD" naming a day that exists.
+  // "YYYY-MM-DD" naming a day that exists, in a plausible year for a job's
+  // start (1950 to 2100, the same bounds as api/projects.js).
   function realDay(text) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || "");
     if (!m) return false;
     var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-    return +m[1] >= 1900 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
+    return +m[1] >= 1950 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
   }
 
   // Two tabs: the project changed since this one loaded it. Says so, with

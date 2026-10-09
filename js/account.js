@@ -182,20 +182,13 @@
   var business = null;
   var subscription = null;
 
+  // js/net.js: a time limit, and err.kind tells offline, timeout and server
+  // failure apart. Rejects with err.code set to the API's error word.
   function api(path, body) {
-    return fetch(path, {
+    return window.Net.fetchJson(path, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + session.access_token },
       body: JSON.stringify(body || {}),
-    }).then(function (res) {
-      return res.json().then(function (data) {
-        if (!res.ok) {
-          var err = new Error(data.error || "HTTP " + res.status);
-          err.code = data.error;
-          throw err;
-        }
-        return data;
-      });
     });
   }
 

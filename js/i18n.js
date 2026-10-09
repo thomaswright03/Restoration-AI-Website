@@ -668,6 +668,87 @@
       "Algo deu errado. Tente de novo.",
     ],
     "acct.saved": ["Saved.", "Guardado.", "Salvo."],
+
+    // ---------- Server calls (js/net.js): what happened and what to do ----------
+    "net.offline": [
+      "You're offline. Check your connection, then try again.",
+      "Está sin conexión. Revise su conexión e inténtelo de nuevo.",
+      "Você está off-line. Verifique a sua conexão e tente de novo.",
+    ],
+    "net.network": [
+      "The server couldn't be reached. Check your connection, then try again.",
+      "No se pudo conectar con el servidor. Revise su conexión e inténtelo de nuevo.",
+      "Não foi possível conectar ao servidor. Verifique a sua conexão e tente de novo.",
+    ],
+    "net.timeout": [
+      "The server is taking too long to answer. Try again in a moment.",
+      "El servidor está tardando demasiado en responder. Inténtelo de nuevo en un momento.",
+      "O servidor está demorando demais para responder. Tente de novo em instantes.",
+    ],
+    "net.server": [
+      "Something went wrong on our side. Try again in a minute; if it keeps happening, let us know.",
+      "Algo salió mal de nuestro lado. Inténtelo de nuevo en un minuto; si sigue pasando, avísenos.",
+      "Algo deu errado do nosso lado. Tente de novo em um minuto; se continuar, avise a gente.",
+    ],
+    "proj.loading": ["Loading…", "Cargando…", "Carregando…"],
+    "proj.err.loadFailed": [
+      "Couldn't load your projects.",
+      "No se pudieron cargar sus proyectos.",
+      "Não foi possível carregar os seus projetos.",
+    ],
+    "proj.err.openFailed": [
+      "Couldn't open the project.",
+      "No se pudo abrir el proyecto.",
+      "Não foi possível abrir o projeto.",
+    ],
+    "proj.err.saveFailed": [
+      "Couldn't save the project.",
+      "No se pudo guardar el proyecto.",
+      "Não foi possível salvar o projeto.",
+    ],
+    "proj.err.renameFailed": [
+      "Couldn't save the name.",
+      "No se pudo guardar el nombre.",
+      "Não foi possível salvar o nome.",
+    ],
+    "proj.err.deleteFailed": [
+      "Couldn't delete the project.",
+      "No se pudo eliminar el proyecto.",
+      "Não foi possível excluir o projeto.",
+    ],
+    "proj.err.signinList": [
+      "Your sign-in has ended. Log in again to see your projects.",
+      "Su sesión terminó. Inicie sesión de nuevo para ver sus proyectos.",
+      "A sua sessão terminou. Entre de novo para ver os seus projetos.",
+    ],
+    "proj.err.field.long": [
+      "This is too long. Shorten it.",
+      "Es demasiado largo. Acórtelo.",
+      "Está longo demais. Encurte.",
+    ],
+    "proj.err.field.date": [
+      "That isn't a real date. Pick one from the calendar.",
+      "Esa fecha no existe. Elija una del calendario.",
+      "Essa data não existe. Escolha uma no calendário.",
+    ],
+    "proj.err.field.value": ["Pick one of the choices.", "Elija una de las opciones.", "Escolha uma das opções."],
+    "proj.conflict": [
+      "This project was changed in another tab or on another device after you opened it. Saving now would replace that newer work.",
+      "Este proyecto se cambió en otra pestaña o en otro dispositivo después de que lo abrió. Guardar ahora reemplazaría ese trabajo más reciente.",
+      "Este projeto foi alterado em outra aba ou em outro aparelho depois que você o abriu. Salvar agora substituiria esse trabalho mais recente.",
+    ],
+    "proj.conflict.reload": [
+      "Load the newer version",
+      "Cargar la versión más reciente",
+      "Carregar a versão mais recente",
+    ],
+    "proj.conflict.overwrite": ["Save mine anyway", "Guardar la mía de todos modos", "Salvar a minha mesmo assim"],
+    "proj.unsavedChanges": [
+      "Unsaved changes: this design has changed since it was last saved to the project.",
+      "Cambios sin guardar: este diseño cambió desde la última vez que se guardó en el proyecto.",
+      "Alterações não salvas: este projeto mudou desde a última vez que foi salvo.",
+    ],
+    "proj.filter.all": ["All statuses", "Todos los estados", "Todas as situações"],
     "acct.slugTaken": [
       "That web address is taken. Try another.",
       "Esa dirección web ya está en uso. Pruebe otra.",
@@ -799,6 +880,13 @@
       "Uma estimativa aproximada e sem compromisso para este projeto. Envie junto com o projeto para receber um orçamento de verdade.",
     ],
     "studio.step.estimate.short": ["Estimate", "Estimación", "Estimativa"],
+    // A business owner in their own designer: the estimate is at their prices,
+    // and it's theirs to keep or hand to the client.
+    "studio.step.estimate.introOwner": [
+      "A rough, non-binding estimate at your prices. Save it as a project, or download the PDF for your client.",
+      "Una estimación aproximada y no vinculante con sus precios. Guárdela como proyecto o descargue el PDF para su cliente.",
+      "Uma estimativa aproximada e sem compromisso com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
     "studio.step.send.title": ["Send your design", "Envíe su diseño", "Envie o seu projeto"],
     "studio.step.send.intro": [
       "Check your design, then send it to the business for a quote.",
@@ -2331,6 +2419,11 @@
       "Here's what it adds up to. Send it over when you're ready and someone will come back to you.",
       "Esto es lo que suma. Envíelo cuando quiera y alguien le responderá.",
       "Isto é o total. Envie quando quiser e alguém vai responder.",
+    ],
+    "riley.step.estimateOwner": [
+      "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",
+      "Esto es lo que suma con sus precios. Guárdelo como proyecto o descargue el PDF para su cliente.",
+      "Isto é o total com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
     ],
 
     // ---------- PDF (js/estimate-pdf.js) ----------

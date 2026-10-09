@@ -2239,15 +2239,30 @@
     return h("header", { class: "studio-step-head" }, [
       h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
-      h("p", {
-        class: "studio-step-intro",
-        // The owner's own designer: the estimate is theirs to save or hand
-        // to the client, not something to "send" to themselves.
-        text: T(
-          step === "estimate" && !BIZ.demo ? "studio.step.estimate.introOwner" : "studio.step." + step + ".intro",
-        ),
-      }),
+      stepIntro(step),
     ]);
+  }
+
+  // The owner's own designer: the estimate is theirs to save or hand to
+  // the client, not something to "send" to themselves; and while they
+  // haven't set their prices, it says so and points to where they're set.
+  function stepIntro(step) {
+    if (step !== "estimate" || BIZ.demo) {
+      return h("p", { class: "studio-step-intro", text: T("studio.step." + step + ".intro") });
+    }
+    if (!onDefaultRates()) {
+      return h("p", { class: "studio-step-intro", text: T("studio.step.estimate.introOwner") });
+    }
+    return h("p", { class: "studio-step-intro" }, [
+      T("studio.step.estimate.introOwnerDefaults") + " ",
+      h("a", { href: pagePath("account.html"), text: T("studio.step.estimate.setPrices") }),
+    ]);
+  }
+
+  // Another page of the site in this language (the pages sit side by side:
+  // designer.html, es/designer.html, pt/designer.html).
+  function pagePath(file) {
+    return window.location.pathname.replace(/[^/]*$/, file);
   }
 
   function section(title, kids, cls) {
@@ -3968,7 +3983,9 @@
 
   // Labor, the surface materials and the Kohler products for the design:
   // { labor, materials: [{ cat, label, product, quantityLabel, cost }],
-  //   products: [{ label, mmns, qty, url, cost (or null) }], ... totals }.
+  //   products: [{ label, mmns, qty, url, cost: null }], ... totals }.
+  // The products are listed, never priced (cost stays null, which the
+  // saved summary and the project page read as "not priced").
   function estimate(d) {
     d = d || design;
     var inputs = estimateInputs(d);
@@ -4018,27 +4035,10 @@
     var materialsTotal = Pricing.roundCents(
       materials.reduce(function (sum, m) {
         return sum + m.cost;
-      }, 0) +
-        products.reduce(function (sum, p) {
-          return sum + (p.cost || 0);
-        }, 0),
+      }, 0),
     );
     var notes = [];
-    var unpriced = products.filter(function (p) {
-      return p.cost === null;
-    });
-    if (products.length && unpriced.length === products.length) notes.push(T("studio.est.productsNotPriced"));
-    else if (unpriced.length) {
-      notes.push(
-        T("products.unpriced", {
-          items: unpriced
-            .map(function (p) {
-              return p.label;
-            })
-            .join("; "),
-        }),
-      );
-    }
+    if (products.length) notes.push(T("studio.est.productsNotPriced"));
     if (
       products.some(function (p) {
         return p.groupId === "vanity";
@@ -4065,11 +4065,7 @@
         }),
       );
     }
-    var hasMaterials =
-      materials.length > 0 ||
-      products.some(function (p) {
-        return p.cost !== null;
-      });
+    var hasMaterials = materials.length > 0;
     return {
       inputs: inputs,
       labor: labor,
@@ -4082,40 +4078,28 @@
     };
   }
 
-  // Plumbing for the fixtures is left out only in an estimate that doesn't
-  // price it (the labor's plumbingIncluded says).
-  function plumbingLeftOut(est) {
-    return est.labor.plumbingFixtureCount > 0 && !est.labor.plumbingIncluded;
-  }
-
   function totalLabel(est) {
-    var key = est.hasMaterials ? "card.totalMaterials" : "card.total";
-    return T(plumbingLeftOut(est) ? key + "BeforePlumbing" : key);
+    return T(est.hasMaterials ? "card.totalMaterials" : "card.total");
   }
 
+  // What the total leaves out, under the priced lines. The plumbing and
+  // electrical points are in the lines (estimate() prices every trade), so
+  // only the work beyond them is extra.
   function excludedLines(est) {
-    var n = plumbingLeftOut(est) ? est.labor.plumbingFixtureCount : 0;
-    var list = [];
-    if (n > 0)
-      list.push({
-        label: T("card.excluded.listedPlumbing", { n: Pricing.formatQty(n) }),
-        value: T("card.excluded.extra"),
-      });
-    list.push({
-      label: T(
-        n > 0
-          ? "card.excluded.otherTrades"
-          : est.labor.plumbingIncluded
-            ? "card.excluded.tradesPriced"
-            : "card.excluded.trades",
-      ),
-      value: T("card.excluded.extra"),
-    });
-    list.push({
-      label: T(est.hasMaterials ? "card.excluded.permits" : "card.excluded.materialsPermits"),
-      value: T("card.excluded.notIncluded"),
-    });
-    return list;
+    return [
+      { label: T("card.excluded.tradesPriced"), value: T("card.excluded.extra") },
+      {
+        label: T(est.hasMaterials ? "card.excluded.permits" : "card.excluded.materialsPermits"),
+        value: T("card.excluded.notIncluded"),
+      },
+    ];
+  }
+
+  // The business's own labor prices are in the estimate once it has set
+  // any on the account page (js/business.js); until then every line is at
+  // the platform's sample rates, and the estimate says so.
+  function onDefaultRates() {
+    return !BIZ.demo && !BIZ.ownPrices;
   }
 
   function assumptions(est) {
@@ -4124,6 +4108,7 @@
       list.push(T("studio.est.materialQty", { waste: Math.round((TILE_WASTE - 1) * 100), coats: PAINT_COATS }));
     list.push(T("card.plumbingNote"));
     list.push(T(est.hasMaterials ? "card.materialsNote" : "card.alsoNotIncluded"));
+    if (onDefaultRates()) list.push(T("card.defaultRates"));
     return list;
   }
 
@@ -4315,14 +4300,6 @@
           image: m.product.imageUrl,
         });
       });
-      est.products.forEach(function (p) {
-        if (p.cost === null) return;
-        materials.push({
-          label: p.label,
-          detail: p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""),
-          amount: Pricing.money(p.cost),
-        });
-      });
     }
     return { labor: labor, materials: materials };
   }
@@ -4367,14 +4344,6 @@
         h("strong", { "data-testid": "estimate-total", text: Pricing.money(est.grandTotal) }),
       ]),
     );
-    if (plumbingLeftOut(est)) {
-      card.appendChild(
-        h("p", {
-          class: "studio-note",
-          text: T("card.plumbingTotalNote", { n: Pricing.formatQty(est.labor.plumbingFixtureCount) }),
-        }),
-      );
-    }
     est.notes.forEach(function (n) {
       card.appendChild(h("p", { class: "studio-note", text: n }));
     });
@@ -4404,15 +4373,12 @@
   // The Kohler products in the room, with their model numbers and where to
   // look them up.
   function productsList(est) {
-    var unpriced = est.products.filter(function (p) {
-      return p.cost === null;
-    });
-    if (!unpriced.length) return null;
+    if (!est.products.length) return null;
     var wrap = h("div", { class: "studio-products" }, [
       h("p", { class: "studio-lines-title", text: T("studio.est.products") }),
     ]);
     var list = h("ul");
-    unpriced.forEach(function (p) {
+    est.products.forEach(function (p) {
       list.appendChild(
         h("li", {}, [
           h("span", { text: p.label + (p.qty > 1 ? " × " + p.qty : "") + " " }),
@@ -4565,13 +4531,10 @@
             : [{ label: totalLabel(est), value: Pricing.money(est.grandTotal), strong: true }];
         }
         var sections = [];
-        var unpriced = est.products.filter(function (p) {
-          return p.cost === null;
-        });
-        if (unpriced.length) {
+        if (est.products.length) {
           sections.push({
             title: T("studio.est.products"),
-            items: unpriced.map(function (p) {
+            items: est.products.map(function (p) {
               return p.label + (p.qty > 1 ? " × " + p.qty : "") + " — " + p.mmns.join(" + ") + " — " + p.url;
             }),
           });
@@ -4590,13 +4553,7 @@
           excluded: priced ? excludedLines(est) : [],
           totals: totals,
           afterTotal: priced
-            ? est.notes
-                .concat(
-                  plumbingLeftOut(est)
-                    ? [T("card.plumbingTotalNote", { n: Pricing.formatQty(est.labor.plumbingFixtureCount) })]
-                    : [],
-                )
-                .concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer")])
+            ? est.notes.concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer")])
             : [],
           sections: sections,
           footer: {
@@ -4671,7 +4628,12 @@
       });
       return;
     }
-    var stepKey = ui.step === "estimate" && !BIZ.demo ? "riley.step.estimateOwner" : "riley.step." + ui.step;
+    var stepKey =
+      ui.step === "estimate" && !BIZ.demo
+        ? onDefaultRates()
+          ? "riley.step.estimateOwnerDefaults"
+          : "riley.step.estimateOwner"
+        : "riley.step." + ui.step;
     var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.

@@ -50,28 +50,32 @@ test("prices stay in US dollars, written the way each language writes numbers", 
   });
 });
 
-test("the estimate's questions, lines and summary follow the page's language", () => {
+// The estimate the studio computes: every trade priced at the given prices.
+function studioEstimate(values, scope) {
+  return P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
+}
+
+test("the estimate's work description, lines and assumptions follow the page's language", () => {
   const scope = { demolition: true, floorFinish: "tile", walls: "paint", paintCeiling: false };
   const values = { Bathroom_Width_Ft: 5, Bathroom_Length_Ft: 8, Bathroom_Height_Ft: 8, Toilet_Quantity: 1 };
   inLang("es", () => {
-    assert.equal(P.SCOPE_QUESTIONS[0].label, "¿Quitar primero el baño actual (demolición)?");
-    assert.equal(P.FIXTURES[0].plural, "Inodoros");
-    const r = P.computePublicEstimate(values, scope);
-    assert.equal(r.total, P.computePublicEstimate(values, scope).total);
+    const r = studioEstimate(values, scope);
+    assert.equal(P.describeScope(scope), "Demolición: Sí; piso nuevo: Azulejo; paredes: Pintura; pintar el techo: No");
     assert.equal(r.lines.find((l) => l.key === "floorTile").label, "Azulejo de piso");
+    assert.equal(r.lines.find((l) => l.key === "Toilet_Quantity").label, "Inodoros");
     assert.equal(r.lines.find((l) => l.key === "Toilet_Quantity").detail, "1 unidad × $200.00");
-    assert.match(P.buildEstimateSummary(values, scope, r), /^Mi estimación del baño/);
+    assert.equal(r.lines.find((l) => l.key === "plumbing").detail, "1 punto × $300.00");
     assert.match(P.estimateAssumptions(values, scope, r)[1], /^Área del piso: 5 × 8 pies = 40 pies²/);
-    assert.match(P.validateJob({}, scope).errors.Bathroom_Width_Ft, /^Escriba el ancho en pies/);
   });
   inLang("pt", () => {
-    const r = P.computePublicEstimate(values, scope);
+    const r = studioEstimate(values, scope);
     assert.equal(r.lines.find((l) => l.key === "wallPaint").label, "Pintura (paredes)");
     assert.match(r.lines.find((l) => l.key === "wallPaint").detail, /^208 pés² × US\$\s1,79$/);
-    assert.equal(P.validateJob({}, {}).errors.demolition, "Escolha uma resposta.");
+    assert.match(r.lines.find((l) => l.key === "plumbing").detail, /^1 ponto × US\$\s300,00$/);
+    assert.match(P.describeScope({}), /Sem resposta/);
   });
   // Same prices in every language.
-  const en = P.computePublicEstimate(values, scope).total;
-  inLang("es", () => assert.equal(P.computePublicEstimate(values, scope).total, en));
-  inLang("pt", () => assert.equal(P.computePublicEstimate(values, scope).total, en));
+  const en = studioEstimate(values, scope).total;
+  inLang("es", () => assert.equal(studioEstimate(values, scope).total, en));
+  inLang("pt", () => assert.equal(studioEstimate(values, scope).total, en));
 });

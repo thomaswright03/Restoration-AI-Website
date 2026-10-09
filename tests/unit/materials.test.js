@@ -30,7 +30,7 @@ test("money and quantities are written exactly as the labor estimate writes them
 test("categoriesFromLines only offers materials for work actually priced, never demolition", () => {
   const scope = { demolition: true, floorFinish: "tile", walls: "paint", paintCeiling: true };
   const values = { Bathroom_Width_Ft: 5, Bathroom_Length_Ft: 8, Bathroom_Height_Ft: 8, Toilet_Quantity: 1 };
-  const result = P.computePublicEstimate(values, scope);
+  const result = P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
   const categories = M.categoriesFromLines(result.lines);
   const keys = categories.map((c) => c.key);
 
@@ -45,7 +45,7 @@ test("categoriesFromLines only offers materials for work actually priced, never 
 test("categoriesFromLines carries the label, quantity and unit straight from the labor line", () => {
   const scope = { demolition: false, floorFinish: "none", walls: "none", paintCeiling: false };
   const values = { Toilet_Quantity: 2 };
-  const result = P.computePublicEstimate(values, scope);
+  const result = P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
   const toilet = M.categoriesFromLines(result.lines).find((c) => c.key === "Toilet_Quantity");
 
   assert.equal(toilet.label, "Toilets");

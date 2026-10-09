@@ -30,6 +30,7 @@
     leadEndpoint: "/api/leads",
     serviceName: "Room Designer 3D",
     demo: true,
+    ownPrices: false,
     unavailable: "",
   };
 
@@ -47,15 +48,20 @@
   }
 
   // Only known price keys with sensible numbers replace the defaults.
+  // Returns whether any did: until the owner sets a price, the estimate
+  // runs on the platform's sample rates and says so (js/studio.js).
   function applyPrices(prices) {
     var Pricing = window.BathroomPricing;
-    if (!Pricing || !prices || typeof prices !== "object") return;
+    if (!Pricing || !prices || typeof prices !== "object") return false;
+    var any = false;
     Object.keys(Pricing.DEFAULT_PRICES).forEach(function (key) {
       var n = Number(prices[key]);
       if (prices[key] !== undefined && prices[key] !== "" && isFinite(n) && n >= 0 && n <= 100000) {
         Pricing.DEFAULT_PRICES[key] = n;
+        any = true;
       }
     });
+    return any;
   }
 
   biz.load = function (data, reason) {
@@ -75,7 +81,7 @@
     biz.unavailable = "";
     // The owner looking at their own designer before their plan is active.
     biz.preview = data.preview === true;
-    applyPrices(data.prices);
+    biz.ownPrices = applyPrices(data.prices);
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in

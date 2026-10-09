@@ -8,8 +8,8 @@
 // with {name} placeholders filled in by t(). Keep the three in step: the
 // unit tests fail when one is missing or its placeholders differ.
 //
-// The language is the page's own <html lang>, so the English pages (and the
-// admin tool, which is English only) always get English.
+// The language is the page's own <html lang>, so the English pages always
+// get English.
 //
 // Loads as a plain browser script (window.I18n) and as a Node module.
 
@@ -94,37 +94,8 @@
     "choice.none": ["None", "Ninguno", "Nenhum"],
     "choice.neither": ["Neither", "Ninguno", "Nenhum"],
     "choice.notAnswered": ["Not answered", "Sin respuesta", "Sem resposta"],
-    "dimension.Bathroom_Width_Ft": ["Width", "Ancho", "Largura"],
-    "dimension.Bathroom_Length_Ft": ["Length", "Largo", "Comprimento"],
-    "dimension.Bathroom_Height_Ft": ["Ceiling height", "Altura del techo", "Altura do teto"],
 
     // ---------- estimate: validation ----------
-    "error.chooseAnswer": ["Choose an answer.", "Elija una respuesta.", "Escolha uma resposta."],
-    "error.dimension.missing.Bathroom_Width_Ft": [
-      "Enter the width in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
-      "Escriba el ancho en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
-      "Informe a largura em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
-    ],
-    "error.dimension.missing.Bathroom_Length_Ft": [
-      "Enter the length in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
-      "Escriba el largo en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
-      "Informe o comprimento em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
-    ],
-    "error.dimension.missing.Bathroom_Height_Ft": [
-      "Enter the ceiling height in feet (more than 0 and no more than {max} ft) — the work you chose is priced by area.",
-      "Escriba la altura del techo en pies (más de 0 y no más de {max} pies): el trabajo que eligió se cobra por área.",
-      "Informe a altura do teto em pés (mais de 0 e no máximo {max} pés): o serviço escolhido é cobrado por área.",
-    ],
-    "error.dimension.range": [
-      "{label} must be more than 0 and no more than {max} ft.",
-      "{label}: debe ser más de 0 y no más de {max} pies.",
-      "{label}: deve ser mais de 0 e no máximo {max} pés.",
-    ],
-    "error.wholeNumber": [
-      "Enter a whole number from 0 to {max}.",
-      "Escriba un número entero del 0 al {max}.",
-      "Informe um número inteiro de 0 a {max}.",
-    ],
 
     // ---------- estimate: priced lines ----------
     "line.detail": ["{qty} {unit} × {rate}", "{qty} {unit} × {rate}", "{qty} {unit} × {rate}"],
@@ -199,35 +170,6 @@
       "Las instalaciones se cobran por pieza según nuestras tarifas de mano de obra actuales, que pueden cambiar.",
       "As instalações são cobradas por item conforme nossos valores atuais de mão de obra, que podem mudar.",
     ],
-    "summary.title": [
-      "My bathroom estimate from your website:",
-      "Mi estimación del baño hecha en su sitio web:",
-      "Minha estimativa do banheiro feita no seu site:",
-    ],
-    "summary.room": ["- Room: {size}", "- Baño: {size}", "- Banheiro: {size}"],
-    "summary.size2": [
-      "{w} ft wide × {l} ft long",
-      "{w} pies de ancho × {l} pies de largo",
-      "{w} pés de largura × {l} pés de comprimento",
-    ],
-    "summary.size3": [
-      "{w} ft wide × {l} ft long × {h} ft high",
-      "{w} pies de ancho × {l} pies de largo × {h} pies de alto",
-      "{w} pés de largura × {l} pés de comprimento × {h} pés de altura",
-    ],
-    "summary.work": ["- Work: {scope}", "- Trabajo: {scope}", "- Serviço: {scope}"],
-    "summary.fixtures": ["- Fixtures: {list}", "- Instalaciones: {list}", "- Instalações: {list}"],
-    "summary.none": ["none", "ninguna", "nenhuma"],
-    "summary.total": [
-      "- Estimated labor total: {total} — rough and non-binding; excludes plumbing, electrical, materials, permits and taxes.",
-      "- Total estimado de mano de obra: {total}. Aproximado y no vinculante; no incluye plomería, electricidad, materiales, permisos ni impuestos.",
-      "- Total estimado de mão de obra: {total}. Aproximado e sem compromisso; não inclui encanamento, elétrica, materiais, alvarás nem impostos.",
-    ],
-    "summary.totalBeforePlumbing": [
-      "- Estimated labor total: {total} (before plumbing) — rough and non-binding; excludes plumbing, electrical, materials, permits and taxes.",
-      "- Total estimado de mano de obra: {total} (sin la plomería). Aproximado y no vinculante; no incluye plomería, electricidad, materiales, permisos ni impuestos.",
-      "- Total estimado de mão de obra: {total} (sem o encanamento). Aproximado e sem compromisso; não inclui encanamento, elétrica, materiais, alvarás nem impostos.",
-    ],
 
     // ---------- estimate card ----------
     "card.title": ["Bathroom Remodel", "Remodelación de baño", "Reforma de banheiro"],
@@ -237,9 +179,9 @@
       "Estimativa aproximada e sem compromisso da mão de obra. Detalhes abaixo.",
     ],
     "card.ledeMaterials": [
-      "Rough, non-binding estimate — labor plus real current prices for the exact products you picked.",
-      "Estimación aproximada y no vinculante: mano de obra más los precios reales actuales de los productos exactos que eligió.",
-      "Estimativa aproximada e sem compromisso: mão de obra mais os preços reais atuais dos produtos exatos que você escolheu.",
+      "Rough, non-binding estimate — labor plus current Home Depot prices for the materials you picked.",
+      "Estimación aproximada y no vinculante: mano de obra más los precios actuales de Home Depot de los materiales que eligió.",
+      "Estimativa aproximada e sem compromisso: mão de obra mais os preços atuais da Home Depot dos materiais que você escolheu.",
     ],
     "card.noWork": [
       "No priced work selected",
@@ -249,40 +191,10 @@
     "card.laborSubtotal": ["Labor Subtotal", "Subtotal de mano de obra", "Subtotal de mão de obra"],
     "card.materialsSubtotal": ["Materials Subtotal", "Subtotal de materiales", "Subtotal de materiais"],
     "card.total": ["Estimated Labor Total", "Total estimado de mano de obra", "Total estimado de mão de obra"],
-    "card.totalBeforePlumbing": [
-      "Estimated Labor Total, before plumbing",
-      "Total estimado de mano de obra, sin la plomería",
-      "Total estimado de mão de obra, sem o encanamento",
-    ],
     "card.totalMaterials": [
       "Estimated Total (Labor + Materials)",
       "Total estimado (mano de obra + materiales)",
       "Total estimado (mão de obra + materiais)",
-    ],
-    "card.totalMaterialsBeforePlumbing": [
-      "Estimated Total (Labor + Materials), before plumbing",
-      "Total estimado (mano de obra + materiales), sin la plomería",
-      "Total estimado (mão de obra + materiais), sem o encanamento",
-    ],
-    "card.plumbingTotalNote": [
-      "This is not the full cost of your job: plumbing work for the {n} toilet, sink, shower or bathtub item(s) you listed will be added on top of this total.",
-      "Este no es el costo total de su trabajo: la plomería de las {n} pieza(s) que indicó (inodoro, lavabo, ducha o bañera) se sumará a este total.",
-      "Este não é o custo total do seu serviço: o encanamento das {n} peça(s) que você informou (vaso, pia, chuveiro ou banheira) será somado a este total.",
-    ],
-    "card.excluded.listedPlumbing": [
-      "Plumbing for the {n} toilet, sink, shower or bathtub item(s) you listed",
-      "Plomería de las {n} pieza(s) indicadas (inodoro, lavabo, ducha o bañera)",
-      "Encanamento das {n} peça(s) informadas (vaso, pia, chuveiro ou banheira)",
-    ],
-    "card.excluded.trades": [
-      "Plumbing & electrical work",
-      "Trabajo de plomería y electricidad",
-      "Serviço de encanamento e elétrica",
-    ],
-    "card.excluded.otherTrades": [
-      "Any other plumbing & electrical work",
-      "Cualquier otro trabajo de plomería y electricidad",
-      "Qualquer outro serviço de encanamento e elétrica",
     ],
     "card.excluded.tradesPriced": [
       "Plumbing & electrical beyond the points listed (e.g. no plumbing stack, a bad valve)",
@@ -302,9 +214,9 @@
     "card.excluded.extra": ["Extra — not included", "Aparte, no incluido", "À parte, não incluído"],
     "card.excluded.notIncluded": ["Not included", "No incluido", "Não incluído"],
     "card.plumbingNote": [
-      "Plumbing and electrical work is not included. Toilets, sinks, showers, and bathtubs also need plumbing work, so if you listed any, or your job needs other plumbing or electrical work, expect it to add to the cost. We'll tell you how it will be handled and priced before any work is agreed.",
-      "No incluye trabajo de plomería ni electricidad. Los inodoros, lavabos, duchas y bañeras también requieren plomería, así que si indicó alguno, o su trabajo necesita otra plomería o electricidad, cuente con que aumentará el costo. Le diremos cómo se hará y cómo se cobrará antes de acordar cualquier trabajo.",
-      "Não inclui serviço de encanamento nem de elétrica. Vasos, pias, chuveiros e banheiras também precisam de encanamento, então se você informou algum, ou se o seu serviço precisa de outro encanamento ou elétrica, conte com um custo maior. Diremos como será feito e cobrado antes de combinar qualquer serviço.",
+      "Plumbing and electrical are priced per point: one plumbing point for each toilet, sink, vanity, shower and bathtub, and one electrical point for each outlet, switch, light and fan in the design, plus any new drain line by the foot. Plumbing or electrical work beyond those points (for example a new plumbing stack or a bad valve) isn't included and would add to the cost.",
+      "La plomería y la electricidad se cobran por punto: un punto de plomería por cada inodoro, lavabo, mueble de lavabo, ducha y bañera, y un punto eléctrico por cada tomacorriente, interruptor, luz y extractor del diseño, más cualquier línea de desagüe nueva por pie. El trabajo de plomería o electricidad más allá de esos puntos (por ejemplo, una bajante nueva o una válvula dañada) no está incluido y aumentaría el costo.",
+      "Encanamento e elétrica são cobrados por ponto: um ponto hidráulico para cada vaso, pia, gabinete, chuveiro e banheira, e um ponto elétrico para cada tomada, interruptor, luz e exaustor do projeto, mais qualquer linha de esgoto nova por pé. Serviço de encanamento ou elétrica além desses pontos (por exemplo, uma prumada nova ou um registro com defeito) não está incluído e aumentaria o custo.",
     ],
     "card.materialsNote": [
       "Materials shown are priced at current Home Depot rates as of when they were last refreshed — confirm before buying. Also not included: permits and any applicable taxes.",
@@ -316,15 +228,20 @@
       "Tampoco incluye materiales, permisos ni impuestos aplicables.",
       "Também não inclui materiais, alvarás nem impostos aplicáveis.",
     ],
+    "card.defaultRates": [
+      "Labor is at Room Designer 3D's default sample rates: this business hasn't set its own labor prices yet.",
+      "La mano de obra está a las tarifas de ejemplo predeterminadas de Room Designer 3D: esta empresa aún no ha definido sus propios precios de mano de obra.",
+      "A mão de obra está nos valores de exemplo padrão do Room Designer 3D: esta empresa ainda não definiu os seus próprios preços de mão de obra.",
+    ],
     "card.disclaimer": [
-      "This is an automated, non-binding estimate of labor only, based only on the measurements, counts, and choices you entered and the assumptions listed with it. It is not a quote, offer, or contract. It excludes plumbing and electrical work (including the plumbing any toilets, sinks, showers, or bathtubs need), materials, permits, and any applicable taxes, which will add to the cost where your job needs them. Prices are current as of the date generated and may change. Your actual price is set only in a written agreement after we review your project in person.",
-      "Esta es una estimación automática y no vinculante solo de la mano de obra, basada únicamente en las medidas, cantidades y opciones que usted indicó y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. No incluye trabajo de plomería ni electricidad (incluida la plomería que necesiten inodoros, lavabos, duchas o bañeras), materiales, permisos ni impuestos aplicables, que aumentarán el costo si su trabajo los necesita. Los precios son los vigentes en la fecha en que se generó y pueden cambiar. Su precio real se fija solo en un acuerdo por escrito, después de revisar su proyecto en persona.",
-      "Esta é uma estimativa automática e sem compromisso somente da mão de obra, baseada apenas nas medidas, quantidades e escolhas que você informou e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Não inclui serviço de encanamento nem de elétrica (incluindo o encanamento de vasos, pias, chuveiros ou banheiras), materiais, alvarás nem impostos aplicáveis, que aumentarão o custo se o seu serviço precisar deles. Os preços são os vigentes na data em que foi gerada e podem mudar. Seu preço real só é definido em um acordo por escrito, depois que avaliarmos o seu projeto pessoalmente.",
+      "This is an automated, non-binding estimate of labor only, based only on the measurements, counts and choices entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, materials, permits and any applicable taxes are not included and will add to the cost where the job needs them. Prices are current as of the date generated and may change. The actual price is set only in a written agreement after the project is reviewed in person.",
+      "Esta es una estimación automática y no vinculante solo de la mano de obra, basada únicamente en las medidas, cantidades y opciones indicadas y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los materiales, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios son los vigentes en la fecha en que se generó y pueden cambiar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
+      "Esta é uma estimativa automática e sem compromisso somente da mão de obra, baseada apenas nas medidas, quantidades e escolhas informadas e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Inclui a mão de obra dos pontos hidráulicos e elétricos listados; outro serviço de encanamento ou elétrica, materiais, alvarás e impostos aplicáveis não estão incluídos e aumentarão o custo se o serviço precisar deles. Os preços são os vigentes na data em que foi gerada e podem mudar. O preço real só é definido em um acordo por escrito, depois que o projeto for avaliado pessoalmente.",
     ],
     "card.disclaimerMaterials": [
-      "This is an automated, non-binding estimate combining labor at our current rates with current Home Depot prices for the exact products you picked, based only on what you entered and the assumptions listed with it. It is not a quote, offer, or contract. It excludes plumbing and electrical installation work (the labor to hook up any toilets, sinks, showers, or bathtubs listed), permits, and any applicable taxes, which will add to the cost where your job needs them. Product prices were current as of when they were last refreshed and may have changed since — confirm before buying. Your actual price is set only in a written agreement after we review your project in person.",
-      "Esta es una estimación automática y no vinculante que combina la mano de obra según nuestras tarifas actuales con los precios actuales de Home Depot de los productos exactos que eligió, basada únicamente en lo que usted indicó y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. No incluye trabajo de instalación de plomería ni electricidad (la mano de obra para conectar los inodoros, lavabos, duchas o bañeras indicados), permisos ni impuestos aplicables, que aumentarán el costo si su trabajo los necesita. Los precios de los productos eran los vigentes en su última actualización y pueden haber cambiado: confírmelos antes de comprar. Su precio real se fija solo en un acuerdo por escrito, después de revisar su proyecto en persona.",
-      "Esta é uma estimativa automática e sem compromisso que combina a mão de obra pelos nossos valores atuais com os preços atuais da Home Depot dos produtos exatos que você escolheu, baseada apenas no que você informou e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Não inclui serviço de instalação de encanamento nem de elétrica (a mão de obra para ligar os vasos, pias, chuveiros ou banheiras informados), alvarás nem impostos aplicáveis, que aumentarão o custo se o seu serviço precisar deles. Os preços dos produtos eram os vigentes na última atualização e podem ter mudado: confirme antes de comprar. Seu preço real só é definido em um acordo por escrito, depois que avaliarmos o seu projeto pessoalmente.",
+      "This is an automated, non-binding estimate combining labor at the business's current rates with current Home Depot prices for the materials you picked, based only on what was entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, the Kohler and Sterling products themselves, permits and any applicable taxes are not included and will add to the cost where the job needs them. Material prices were current as of when they were last refreshed and may have changed since — confirm before buying. The actual price is set only in a written agreement after the project is reviewed in person.",
+      "Esta es una estimación automática y no vinculante que combina la mano de obra según las tarifas actuales de la empresa con los precios actuales de Home Depot de los materiales que eligió, basada únicamente en lo indicado y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los productos Kohler y Sterling en sí, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios de los materiales eran los vigentes en su última actualización y pueden haber cambiado: confírmelos antes de comprar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
+      "Esta é uma estimativa automática e sem compromisso que combina a mão de obra pelos valores atuais da empresa com os preços atuais da Home Depot dos materiais que você escolheu, baseada apenas no que foi informado e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Inclui a mão de obra dos pontos hidráulicos e elétricos listados; outro serviço de encanamento ou elétrica, os produtos Kohler e Sterling em si, alvarás e impostos aplicáveis não estão incluídos e aumentarão o custo se o serviço precisar deles. Os preços dos materiais eram os vigentes na última atualização e podem ter mudado: confirme antes de comprar. O preço real só é definido em um acordo por escrito, depois que o projeto for avaliado pessoalmente.",
     ],
     "card.assumptions": ["What this estimate assumes", "Qué supone esta estimación", "O que esta estimativa considera"],
     "card.businessNamed": ["{business} ({name})", "{business} ({name})", "{business} ({name})"],
@@ -337,11 +254,6 @@
     ],
 
     // ---------- materials picks ----------
-    "products.unpriced": [
-      "No live Home Depot price was found for these, so they aren't in the total: {items}.",
-      "No se encontró un precio actual de Home Depot para estos productos, así que no están en el total: {items}.",
-      "Não encontramos um preço atual da Home Depot para estes produtos, então eles não estão no total: {items}.",
-    ],
     "products.vanityCabinet": [
       "The vanity cabinet itself isn't a Kohler or Sterling product, so it isn't priced here; only its bowl or top and faucet are.",
       "El mueble del lavabo no es un producto Kohler ni Sterling, así que no tiene precio aquí; solo el lavabo o la cubierta y la llave.",
@@ -954,6 +866,16 @@
       "A rough, non-binding estimate at your prices. Save it as a project, or download the PDF for your client.",
       "Una estimación aproximada y no vinculante con sus precios. Guárdela como proyecto o descargue el PDF para su cliente.",
       "Uma estimativa aproximada e sem compromisso com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
+    "studio.step.estimate.introOwnerDefaults": [
+      "A rough, non-binding estimate at default sample prices — you haven't set your own labor prices yet.",
+      "Una estimación aproximada y no vinculante con precios de ejemplo predeterminados: aún no ha definido sus propios precios de mano de obra.",
+      "Uma estimativa aproximada e sem compromisso com preços de exemplo padrão: você ainda não definiu os seus próprios preços de mão de obra.",
+    ],
+    "studio.step.estimate.setPrices": [
+      "Set your prices on the account page.",
+      "Defina sus precios en la página de la cuenta.",
+      "Defina os seus preços na página da conta.",
     ],
     "studio.step.send.title": ["Send your design", "Envíe su diseño", "Envie o seu projeto"],
     "studio.step.send.intro": [
@@ -2476,6 +2398,11 @@
       "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",
       "Esto es lo que suma con sus precios. Guárdelo como proyecto o descargue el PDF para su cliente.",
       "Isto é o total com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
+    "riley.step.estimateOwnerDefaults": [
+      "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
+      "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
+      "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
     ],
 
     // ---------- PDF (js/estimate-pdf.js) ----------

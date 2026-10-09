@@ -6,8 +6,8 @@
 // prices (js/business.js replaces DEFAULT_PRICES with what the owner set on
 // the account page): every line, including the per-fixture plumbing points,
 // the wiring and any drain line the layout needs, is at a rate the business
-// can see and change. computePublicEstimate() (no plumbing points, no
-// surcharges, no tax) remains for a homeowner-facing estimate.
+// can see and change. Everything exported here has a caller in a page; the
+// unit tests cover the same path the studio runs.
 //
 // Only the work that is explicitly chosen is priced: nothing is assumed
 // from the room's dimensions alone. The line items are exactly the charges
@@ -45,14 +45,6 @@
     return obj;
   }
 
-  var RATES_KEY = "pr_business_rates";
-
-  // Version of the calculation saved with each admin quote. Quotes saved
-  // before version 2 were priced by the old calculator (which charged
-  // demolition, tile, flooring and paint for every room) and are flagged for
-  // review instead of being silently re-priced.
-  var CALC_VERSION = 2;
-
   var DEFAULT_PRICES = {
     Demo_Price_Per_SqFt: 37.5,
 
@@ -85,48 +77,10 @@
     Drain_Run_Price_Per_Ft: 95,
 
     // Labor on real property may not be taxable. Defaults to 0% so no tax
-    // is added unless a tax adviser has confirmed it applies and the rate
-    // has been set deliberately under Business Prices.
+    // is added unless a tax adviser has confirmed it applies and the owner
+    // has set the rate deliberately on the account page.
     Labor_Tax_Rate_Percent: 0,
   };
-
-  var PRICE_LABELS = {
-    Demo_Price_Per_SqFt: "Demolition (per sq ft of bathroom floor)",
-
-    Toilet_Price: "Toilet install (each)",
-    Sink_Price: "Sink install (each)",
-    Shower_Price: "Shower install (each)",
-    Shower_Door_Price: "Shower door install (each)",
-    Door_Price: "Bathroom entry door install (each)",
-    Vanity_Price: "Vanity install (each)",
-    Cabinet_Price: "Cabinet install (each)",
-    Mirror_Price: "Mirror install (each, standard size)",
-    Mirror_Huge_Price: "Mirror install (each, huge/oversized)",
-    Shower_Shelf_Price: "Built-in shower shelf (each)",
-    Bathtub_Price: "Bathtub install (each; empty = 70% of the shower price)",
-
-    Tile_Price_Per_SqFt: "Tile (per sq ft of floor or wall tiled)",
-    Floor_Price_Per_SqFt: "Flooring other than tile (per sq ft of floor)",
-    Painting_Price_Per_SqFt: "Painting (per sq ft of wall or ceiling painted)",
-
-    Plumbing_Price_Per_Point: "Plumbing (per point: one per toilet, sink, shower and bathtub)",
-    No_Stack_Surcharge_Price: "Surcharge: no existing plumbing stack (flat)",
-    Bad_Valve_Surcharge_Price: "Surcharge: bad valve needs replacing (flat)",
-
-    Electrical_Price_Per_Point: "Electrical (per point: lamp, outlet, fan, switch, electric toilet)",
-    Drain_Run_Price_Per_Ft: "Moving plumbing (per foot of new drain line to the stack)",
-
-    Labor_Tax_Rate_Percent: "Tax rate on labor (%) — leave at 0 unless a tax adviser confirms tax applies",
-  };
-
-  // Prices only the contractor's own quote shows: the per-fixture plumbing
-  // points, the surcharges and tax.
-  var UNPUBLISHED_PRICE_KEYS = [
-    "Plumbing_Price_Per_Point",
-    "No_Stack_Surcharge_Price",
-    "Bad_Valve_Surcharge_Price",
-    "Labor_Tax_Rate_Percent",
-  ];
 
   // The bathtub install price: the business's own Bathtub_Price when set,
   // else 30% less than its shower price (the first client's rule).
@@ -139,8 +93,8 @@
   }
 
   // Fixture counts, in the order they are asked for and listed.
-  // needsPlumbing: installing it also needs plumbing work (priced per point
-  // in the admin tool, never priced publicly).
+  // needsPlumbing: installing it also needs plumbing work, priced per point
+  // (one point per fixture) at the business's Plumbing_Price_Per_Point.
   var FIXTURES = [
     { key: "Toilet_Quantity", priceKey: "Toilet_Price", needsPlumbing: true },
     { key: "Sink_Quantity", priceKey: "Sink_Price", needsPlumbing: true },
@@ -196,17 +150,7 @@
     translated(q, "label", "question." + q.key);
   });
 
-  var DIMENSIONS = [
-    { key: "Bathroom_Width_Ft", max: 50 },
-    { key: "Bathroom_Length_Ft", max: 50 },
-    { key: "Bathroom_Height_Ft", max: 20 },
-  ];
-  DIMENSIONS.forEach(function (d) {
-    translated(d, "label", "dimension." + d.key);
-  });
-
-  var MAX_FIXTURE_COUNT = 20;
-  var MAX_ELECTRICAL_POINTS = 50;
+  // A drain run longer than this is a bad input, not a bathroom.
   var MAX_DRAIN_RUN_FT = 200;
 
   function roundCents(n) {
@@ -246,25 +190,6 @@
     if (s === "") return null;
     if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(s)) return NaN;
     return Number(s);
-  }
-
-  // Merges any prices saved from the admin "Business Prices" screen over the
-  // defaults (admin only — the public estimate always uses DEFAULT_PRICES).
-  function getPrices() {
-    var prices = Object.assign({}, DEFAULT_PRICES);
-    try {
-      var saved = JSON.parse(globalThis.localStorage.getItem(RATES_KEY));
-      if (saved && saved.prices) {
-        Object.keys(saved.prices).forEach(function (key) {
-          if (Object.prototype.hasOwnProperty.call(DEFAULT_PRICES, key) && isFinite(Number(saved.prices[key]))) {
-            prices[key] = Number(saved.prices[key]);
-          }
-        });
-      }
-    } catch (e) {
-      /* no storage, or nothing saved: defaults */
-    }
-    return prices;
   }
 
   function fixtureRate(fixture, prices) {
@@ -308,61 +233,6 @@
       scope.paintCeiling === true ||
       walls;
     return { floorArea: floorArea, height: walls };
-  }
-
-  function isScopeComplete(scope) {
-    scope = scope || {};
-    return SCOPE_QUESTIONS.every(function (q) {
-      return q.options.some(function (o) {
-        return o.value === scope[q.key];
-      });
-    });
-  }
-
-  // Field-level validation of a job's answers and numbers.
-  // Returns { valid, errors: { fieldKey: message } }.
-  function validateJob(values, scope) {
-    values = values || {};
-    scope = scope || {};
-    var errors = {};
-
-    SCOPE_QUESTIONS.forEach(function (q) {
-      var answered = q.options.some(function (o) {
-        return o.value === scope[q.key];
-      });
-      if (!answered) errors[q.key] = T("error.chooseAnswer");
-    });
-
-    var needs = scopeNeeds(scope);
-    DIMENSIONS.forEach(function (d) {
-      var required = d.key === "Bathroom_Height_Ft" ? needs.height : needs.floorArea;
-      var n = parseNumber(values[d.key]);
-      if (n === null) {
-        if (required) errors[d.key] = T("error.dimension.missing." + d.key, { max: d.max });
-        return;
-      }
-      if (isNaN(n) || n <= 0 || n > d.max) {
-        errors[d.key] = T("error.dimension.range", { label: d.label, max: d.max });
-      }
-    });
-
-    FIXTURES.forEach(function (f) {
-      var n = parseNumber(values[f.key]);
-      if (n === null) return;
-      if (isNaN(n) || n < 0 || n > MAX_FIXTURE_COUNT || Math.floor(n) !== n) {
-        errors[f.key] = T("error.wholeNumber", { max: MAX_FIXTURE_COUNT });
-      }
-    });
-
-    var points = parseNumber(values.Electrical_Points);
-    if (
-      points !== null &&
-      (isNaN(points) || points < 0 || points > MAX_ELECTRICAL_POINTS || Math.floor(points) !== points)
-    ) {
-      errors.Electrical_Points = T("error.wholeNumber", { max: MAX_ELECTRICAL_POINTS });
-    }
-
-    return { valid: Object.keys(errors).length === 0, errors: errors };
   }
 
   // The one bathroom calculation. Prices only the work in `scope` and the
@@ -535,11 +405,6 @@
     };
   }
 
-  // Public estimate: published prices only, no plumbing or electrical, no tax.
-  function computePublicEstimate(values, scope) {
-    return computeEstimate(values, scope, { prices: DEFAULT_PRICES, includeTrade: false });
-  }
-
   function optionLabel(questionKey, value) {
     var q = SCOPE_QUESTIONS.filter(function (x) {
       return x.key === questionKey;
@@ -595,65 +460,18 @@
     return list;
   }
 
-  // Readable, editable summary of a public estimate, used to pre-fill the
-  // Contact form's project details.
-  function buildEstimateSummary(values, scope, result) {
-    var out = [T("summary.title")];
-    var needs = scopeNeeds(scope);
-    if (needs.floorArea) {
-      var size = {
-        w: formatQty(parseNumber(values.Bathroom_Width_Ft)),
-        l: formatQty(parseNumber(values.Bathroom_Length_Ft)),
-        h: formatQty(parseNumber(values.Bathroom_Height_Ft)),
-      };
-      out.push(T("summary.room", { size: T(needs.height ? "summary.size3" : "summary.size2", size) }));
-    }
-    out.push(T("summary.work", { scope: describeScope(scope) }));
-    var counts = FIXTURES.filter(function (f) {
-      return (parseNumber(values[f.key]) || 0) > 0;
-    }).map(function (f) {
-      return f.plural + " " + formatQty(parseNumber(values[f.key]));
-    });
-    out.push(T("summary.fixtures", { list: counts.length ? counts.join(", ") : T("summary.none") }));
-    var beforePlumbing = result.plumbingFixtureCount > 0 && !result.plumbingIncluded;
-    out.push(T(beforePlumbing ? "summary.totalBeforePlumbing" : "summary.total", { total: money(result.subtotal) }));
-    return out.join("\n");
-  }
-
-  function isLegacyQuoteData(bathroomData) {
-    return !!bathroomData && !(Number(bathroomData.calcVersion) >= CALC_VERSION);
-  }
-
   return {
-    CALC_VERSION: CALC_VERSION,
-    RATES_KEY: RATES_KEY,
     DEFAULT_PRICES: DEFAULT_PRICES,
-    PRICE_LABELS: PRICE_LABELS,
-    UNPUBLISHED_PRICE_KEYS: UNPUBLISHED_PRICE_KEYS,
-    FIXTURES: FIXTURES,
-    SCOPE_QUESTIONS: SCOPE_QUESTIONS,
-    DIMENSIONS: DIMENSIONS,
-    MAX_FIXTURE_COUNT: MAX_FIXTURE_COUNT,
-    MAX_ELECTRICAL_POINTS: MAX_ELECTRICAL_POINTS,
-    MAX_DRAIN_RUN_FT: MAX_DRAIN_RUN_FT,
     bathtubPrice: bathtubPrice,
     money: money,
     shortMoney: shortMoney,
     formatQty: formatQty,
     parseNumber: parseNumber,
     roundCents: roundCents,
-    getPrices: getPrices,
-    fixtureRate: fixtureRate,
     plumbingFixtureCount: plumbingFixtureCount,
     areas: areas,
-    scopeNeeds: scopeNeeds,
-    isScopeComplete: isScopeComplete,
-    validateJob: validateJob,
     computeEstimate: computeEstimate,
-    computePublicEstimate: computePublicEstimate,
     describeScope: describeScope,
     estimateAssumptions: estimateAssumptions,
-    buildEstimateSummary: buildEstimateSummary,
-    isLegacyQuoteData: isLegacyQuoteData,
   };
 });

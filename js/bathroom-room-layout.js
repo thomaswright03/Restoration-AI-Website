@@ -22,12 +22,12 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  // Mirrors Pricing.DIMENSIONS defaults/max in js/bathroom-pricing.js — kept
-  // as plain literals here so this module has no dependency on that file.
+  // The room's default size and the largest room the layout handles; plain
+  // literals so this module has no dependency on js/bathroom-pricing.js.
   var DEFAULT_ROOM = { widthFt: 8, lengthFt: 5, heightFt: 8 };
   var DIMENSION_BOUNDS = { widthFt: 50, lengthFt: 50, heightFt: 20 };
   var RENDER_MIN_DIM = 2; // floor for a sane, non-degenerate rendered room
-  var MAX_FIXTURE_COUNT = 20; // mirrors Pricing.MAX_FIXTURE_COUNT
+  var MAX_FIXTURE_COUNT = 20; // more of one fixture is a bad input, not a bathroom
   var MAX_FOOTPRINT_FT = 20; // cap on computeLayout({ footprints }) overrides
   var MAX_SEARCHED_FIXTURES = 6; // see the full search at the end of the wall scan
   var MAX_SEARCH_TRIES = 256; // every choice for 4 fixtures
@@ -256,8 +256,8 @@
 
   // Pure reducer for a fixture-count field. Blank/unparsable/non-numeric
   // becomes 0 — matches the domain convention that blank and 0 both mean
-  // "none" (js/bathroom-pricing.js's own validateJob treats them the same
-  // way). Valid values clamp to [0, MAX_FIXTURE_COUNT].
+  // "none" (js/bathroom-pricing.js prices a blank count the same way). Valid
+  // values clamp to [0, MAX_FIXTURE_COUNT].
   function applyFixtureInput(prevCounts, fixtureKey, rawValue) {
     var next = {};
     Object.keys(prevCounts || {}).forEach(function (k) {

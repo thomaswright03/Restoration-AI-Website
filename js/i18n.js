@@ -8,8 +8,8 @@
 // with {name} placeholders filled in by t(). Keep the three in step: the
 // unit tests fail when one is missing or its placeholders differ.
 //
-// The language is the page's own <html lang>, so the English pages (and the
-// admin tool, which is English only) always get English.
+// The language is the page's own <html lang>, so the English pages always
+// get English.
 //
 // Loads as a plain browser script (window.I18n) and as a Node module.
 

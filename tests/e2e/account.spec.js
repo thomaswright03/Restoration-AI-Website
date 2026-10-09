@@ -247,19 +247,21 @@ test("kill switch: with sign-ups paused the sign-up page offers only log in", as
   await expect(page.locator("#signups-paused")).toContainText("O cadastro de novas contas está pausado");
 });
 
-test("plan states read naturally: no renewal date, translated Stripe statuses, a failed card says what happens", async ({
-  page,
-}) => {
+test("a hand-set plan with no renewal date reads naturally", async ({ page }) => {
   await signedIn(page, { status: "active", plan: "max", periodEnd: null });
   await page.goto("/account.html");
   await expect(page.locator("#plan-status")).toHaveText("Active. You can save projects within your plan's limits.");
+});
 
+test("Stripe statuses are explained in the page's language, not shown raw", async ({ page }) => {
   await signedIn(page, { status: "incomplete", payments: true });
   await page.goto("/es/account.html");
   await expect(page.locator("#plan-status")).toContainText("Su primer pago aún no se procesó");
   await expect(page.locator("#plan-status")).not.toContainText(/incomplete/);
   await expect(page.locator("#plan-buy")).toBeHidden();
+});
 
+test("a failed card says what actually happens: saving is paused, projects stay open", async ({ page }) => {
   await signedIn(page, { status: "past_due", payments: true });
   await page.goto("/account.html");
   await expect(page.locator("#plan-status")).toContainText("saving projects is paused");

@@ -10,7 +10,10 @@
     "strict": false,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "punycode": ["./node_modules/@types/node/punycode.d.ts"]
+    }
   },
   "include": ["types/**/*.d.ts", "api/**/*.js", "js/room-plan.js", "js/surface-finishes.js", "js/net.js", "js/i18n.js"]
 }

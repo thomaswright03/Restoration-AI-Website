@@ -235,18 +235,19 @@
   }
 
   // "the vanity" (es "el mueble de lavabo"), for sentences about it.
-  // On a phone the room is too small to share with Riley's card, so she
-  // sits just under it, above the step, instead of over the 3D view.
-  var PHONE = window.matchMedia ? window.matchMedia("(max-width: 640px)") : null;
+  // On a phone or tablet the room sits above the step and is too small to
+  // share with Riley's card, so she sits just under it instead of over the
+  // 3D view. Matches the stacked layout in css/studio.css.
+  var STACKED = window.matchMedia ? window.matchMedia("(max-width: 900px)") : null;
   function placeRiley() {
     var stage = els.body.querySelector(".studio-stage");
-    var under = Boolean(PHONE && PHONE.matches);
+    var under = Boolean(STACKED && STACKED.matches);
     if (under && els.riley.parentNode !== els.body) els.body.insertBefore(els.riley, els.panel);
     if (!under && els.riley.parentNode !== stage) stage.insertBefore(els.riley, els.selChip);
     els.riley.classList.toggle("is-under", under);
   }
-  if (PHONE && PHONE.addEventListener)
-    PHONE.addEventListener("change", function () {
+  if (STACKED && STACKED.addEventListener)
+    STACKED.addEventListener("change", function () {
       if (els.body) placeRiley();
     });
 
@@ -1552,10 +1553,21 @@
     if (!drag.snap.valid) {
       var why = Plan.errorsOf(drag.issues, drag.id)[0];
       refresh();
+      // The nearest spot on that wall where it does work, if there is one.
+      var spot = Plan.nearestElectrical(design, sizes, drag.id, drag.snap.wall, drag.snap.offset, drag.snap.height);
       toast(
         why
           ? T("studio.dropRefused", { reason: pointIssueText(point, why, drag.preview) })
           : T("studio.dropRefusedPlain"),
+        spot
+          ? {
+              label: T("studio.nearestSpot"),
+              run: function () {
+                var d = Plan.moveElectrical(design, drag.id, spot);
+                commit(d, { announce: pointLabel(findPoint(drag.id, d), d) });
+              },
+            }
+          : null,
       );
       return;
     }
@@ -2043,9 +2055,9 @@
 
   function goToStep(step) {
     if (STEPS.indexOf(step) === -1) return;
-    // A product being chosen is shown by itself only while on Products;
-    // other steps start with the whole room, as Layout always does.
-    if (step !== "products" && focusedGroup) {
+    // Every step starts with the whole room: a product shown by itself on
+    // Products, or "Just this" turned on anywhere, ends with the step.
+    if (step !== ui.step && (focusedGroup || ui.isolate)) {
       focusedGroup = null;
       if (has3d) room3d.focusProductGroup(null);
       ui.isolate = false;
@@ -3150,10 +3162,7 @@
             gaps.map(function (g) {
               return h("li", { class: "is-warn" }, [
                 h("span", { class: "studio-issue-icon", icon: "info" }),
-                h("span", {
-                  class: "studio-issue-text",
-                  text: sentence(T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" })),
-                }),
+                h("span", { class: "studio-issue-text", text: gapText(g) }),
               ]);
             }),
           ),
@@ -3370,6 +3379,19 @@
     }
     commit(res.design, { announce: T("studio.elec.suggested", { n: res.added.length }) });
     toast(T("studio.elec.suggested", { n: res.added.length }), { label: T("studio.undo"), run: undo });
+  }
+
+  // One thing the electrical rules still ask for, as a sentence.
+  function gapText(g) {
+    return sentence(T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" }));
+  }
+
+  // What's still missing, when suggesting would add at least some of it;
+  // null when nothing is missing or there's no room left to add it.
+  function fillableGaps() {
+    var gaps = Plan.electricalGaps(design, sizes);
+    if (!gaps.length || !Plan.suggestElectrical(design, sizes).added.length) return null;
+    return gaps.map(gapText).join(" ");
   }
 
   // ---------- Step 3: products ----------
@@ -4187,6 +4209,24 @@
         ]),
       );
     }
+    // Electrical the rules ask for and the room doesn't have yet isn't in
+    // the price either, so it's said here with the way to add it.
+    var gaps = fillableGaps();
+    if (gaps) {
+      body.appendChild(
+        h("div", { class: "studio-banner is-warn", role: "note" }, [
+          h("span", { icon: "info" }),
+          h("p", { text: T("studio.est.elecGaps", { list: gaps }) }),
+          h("button", {
+            type: "button",
+            class: "btn btn-secondary btn-sm",
+            "data-key": "elec-fill",
+            text: T("studio.est.elecFill"),
+            onclick: suggestPoints,
+          }),
+        ]),
+      );
+    }
     body.appendChild(priced ? estimateCard(est) : designCard(est));
 
     var pdfStatus = h("p", { class: "studio-pdf-status", role: "status", hidden: true });
@@ -4701,10 +4741,20 @@
       });
       return;
     }
-    window.Riley.say({
-      tone: "ok",
-      text: (opts.greet ? T("riley.greeting") + " " : "") + T("riley.step." + ui.step),
-    });
+    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T("riley.step." + ui.step);
+    // On Electrical and Estimate she says what the rules still ask for,
+    // and offers to add it.
+    var gaps = ui.step === "electrical" || ui.step === "estimate" ? fillableGaps() : null;
+    if (gaps) {
+      rileyFix = { run: suggestPoints };
+      window.Riley.say({
+        tone: "warn",
+        text: intro + " " + T("riley.elecGaps", { list: gaps }),
+        actions: [{ id: "fix", label: T("riley.yes") }],
+      });
+      return;
+    }
+    window.Riley.say({ tone: "ok", text: intro });
   }
 
   function isError(x) {

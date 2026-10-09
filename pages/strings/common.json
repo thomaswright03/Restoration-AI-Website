@@ -8,6 +8,8 @@
   "nav.faq": ["FAQ", "Preguntas", "Perguntas"],
   "nav.login": ["Log in", "Iniciar sesión", "Entrar"],
   "nav.logout": ["Log out", "Cerrar sesión", "Sair"],
+  "nav.projects": ["My projects", "Mis proyectos", "Meus projetos"],
+  "nav.account": ["Account", "Cuenta", "Conta"],
   "nav.cta": ["Get started", "Empezar", "Começar"],
   "nav.language": ["Language", "Idioma", "Idioma"],
   "nav.langCode": ["EN", "ES", "PT"],

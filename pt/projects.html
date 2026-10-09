@@ -83,10 +83,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../pt/designer.html">Demonstração</a></li>
-          <li><a href="../pt/index.html#pricing">Preços</a></li>
+          <li data-nav-signed-out><a href="../pt/index.html#pricing">Preços</a></li>
           <li><a href="../pt/index.html#faq">Perguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../pt/projects.html">Meus projetos</a></li>
+          <li data-nav-signed-in hidden><a href="../pt/account.html">Conta</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
+          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -187,7 +190,7 @@
             </div>
             <p class="form-note">
               Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses
-              recomeçam no dia 1º de cada mês.
+              recomeçam a cada mês do calendário, contado em UTC (nos fusos dos EUA, a noite do último dia do mês).
             </p>
           </div>
 
@@ -210,6 +213,9 @@
                 <label for="projects-filter">Situação</label>
                 <select id="projects-filter"></select>
               </div>
+              <p class="projects-clear" id="projects-clear-wrap" hidden>
+                <button type="button" class="link-button" id="projects-clear">Limpar filtros</button>
+              </p>
             </div>
             <div class="app-empty" id="projects-empty" hidden>
               <p>Ainda não há projetos. Abra o projetista e use Salvar projeto no topo para guardar um projeto aqui.</p>
@@ -222,11 +228,14 @@
       </section>
 
       <dialog class="project-dialog" id="projects-delete-dialog" aria-labelledby="projects-delete-title">
-        <h2 id="projects-delete-title">Excluir projeto</h2>
-        <p id="projects-delete-text"></p>
-        <div class="app-actions">
-          <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancelar</button>
-          <button type="button" class="btn btn-danger" id="projects-delete-confirm">Excluir projeto</button>
+        <div class="project-dialog-body">
+          <button type="button" class="project-dialog-close" id="projects-delete-close" aria-label="Fechar">×</button>
+          <h2 id="projects-delete-title">Excluir projeto</h2>
+          <p id="projects-delete-text"></p>
+          <div class="app-actions">
+            <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancelar</button>
+            <button type="button" class="btn btn-danger" id="projects-delete-confirm">Excluir projeto</button>
+          </div>
         </div>
       </dialog>
     </main>

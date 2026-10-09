@@ -83,10 +83,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="/designer.html">Live demo</a></li>
-          <li><a href="/index.html#pricing">Pricing</a></li>
+          <li data-nav-signed-out><a href="/index.html#pricing">Pricing</a></li>
           <li><a href="/index.html#faq">FAQ</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="/projects.html">My projects</a></li>
+          <li data-nav-signed-in hidden><a href="/account.html">Account</a></li>
           <li><a href="/account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
-          <li><a href="/signup.html" class="nav-cta">Get started</a></li>
+          <li data-nav-signed-out><a href="/signup.html" class="nav-cta">Get started</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>

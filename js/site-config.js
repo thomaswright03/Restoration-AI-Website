@@ -114,11 +114,16 @@
   var script = document.currentScript;
   var url = script && script.src ? new URL("../site-config.json", script.src).href : "site-config.json";
 
-  var loaded = fetch(url, { cache: "no-cache" })
-    .then(function (res) {
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return res.json();
-    })
+  // js/net.js (loaded first on every page) gives the read a time limit, so a
+  // stalled settings file can't hold the page; the defaults apply instead.
+  var loaded = (
+    window.Net
+      ? window.Net.fetchJson(url, { cache: "no-cache" }, 10000)
+      : fetch(url, { cache: "no-cache" }).then(function (res) {
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          return res.json();
+        })
+  )
     .then(normalize)
     .catch(function () {
       var fallback = normalize(DEFAULTS);

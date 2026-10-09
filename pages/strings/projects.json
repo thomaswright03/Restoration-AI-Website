@@ -23,9 +23,9 @@
   "projects.usage.monthLabel": ["New projects this month", "Proyectos nuevos este mes", "Projetos novos este mês"],
   "projects.usage.totalLabel": ["Saved projects", "Proyectos guardados", "Projetos salvos"],
   "projects.usage.note": [
-    "Deleting a project frees a saved-project slot, but not this month's new projects; those start over on the 1st of each month.",
-    "Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes; esos vuelven a empezar el día 1 de cada mes.",
-    "Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses recomeçam no dia 1º de cada mês."
+    "Deleting a project frees a saved-project slot, but not this month's new projects; those start over with each calendar month, counted in UTC (for US time zones, the evening of the month's last day).",
+    "Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes; esos vuelven a empezar con cada mes del calendario, contado en UTC (en los husos horarios de EE. UU., la tarde-noche del último día del mes).",
+    "Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses recomeçam a cada mês do calendário, contado em UTC (nos fusos dos EUA, a noite do último dia do mês)."
   ],
   "projects.list.title": ["Your projects", "Sus proyectos", "Seus projetos"],
   "projects.search": [
@@ -82,5 +82,7 @@
     "You have unsaved changes to this info.",
     "Tiene cambios sin guardar en esta información.",
     "Você tem alterações não salvas nestas informações."
-  ]
+  ],
+  "projects.clearFilters": ["Clear filters", "Quitar filtros", "Limpar filtros"],
+  "projects.delete.close": ["Close", "Cerrar", "Fechar"]
 }

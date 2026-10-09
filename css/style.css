@@ -38,6 +38,7 @@
   --color-accent-bright: #3355f0; /* button fills (white text) */
   --color-accent-hover: #2445d6;
   --color-danger: #c2283c;
+  --color-danger-ink: #fff;
   --color-notice-bg: #fff7e0; /* amber notice band (owner preview) */
   --color-notice-line: #e9c46a;
   --color-notice-ink: #4a3500;
@@ -105,6 +106,7 @@
     --color-line-strong: #3a4970;
     --color-accent-text: #8ea6ff;
     --color-danger: #ff8094;
+    --color-danger-ink: #0b1122;
     --color-success: #5fd4ae;
     --color-selected-bg: #8ea6ff;
     --color-selected-ink: #0b1122;
@@ -128,6 +130,7 @@
   --color-line-strong: #3a4970;
   --color-accent-text: #8ea6ff;
   --color-danger: #ff8094;
+  --color-danger-ink: #0b1122;
   --color-success: #5fd4ae;
   --color-selected-bg: #8ea6ff;
   --color-selected-ink: #0b1122;
@@ -1028,6 +1031,7 @@ textarea {
 }
 
 .form-status {
+  white-space: pre-line;
   padding: var(--space-4) var(--space-5);
   border-radius: var(--radius);
   margin-bottom: var(--space-6);

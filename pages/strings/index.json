@@ -171,9 +171,9 @@
   ],
   "index.q7": ["What counts as a project?", "¿Qué cuenta como un proyecto?", "O que conta como um projeto?"],
   "index.a7": [
-    "Each design you save in your account, with its client details and materials list. Your plan sets how many new projects you can start each month and how many you can keep at once. Deleting a project frees a spot under the total, but doesn't give back one of the month's new projects.",
-    "Cada diseño que guarda en su cuenta, con los datos del cliente y la lista de materiales. Su plan fija cuántos proyectos nuevos puede empezar cada mes y cuántos puede guardar a la vez. Borrar un proyecto libera un lugar en el total, pero no le devuelve uno de los proyectos nuevos del mes.",
-    "Cada projeto que você salva na sua conta, com os dados do cliente e a lista de materiais. O seu plano define quantos projetos novos você pode começar por mês e quantos pode guardar ao mesmo tempo. Apagar um projeto libera uma vaga no total, mas não devolve um dos projetos novos do mês."
+    "Each design you save in your account, with its client details and materials list. Your plan sets how many new projects you can start each calendar month (counted in UTC) and how many you can keep at once. Deleting a project frees a spot under the total, but doesn't give back one of the month's new projects.",
+    "Cada diseño que guarda en su cuenta, con los datos del cliente y la lista de materiales. Su plan fija cuántos proyectos nuevos puede empezar cada mes del calendario (contado en UTC) y cuántos puede guardar a la vez. Borrar un proyecto libera un lugar en el total, pero no le devuelve uno de los proyectos nuevos del mes.",
+    "Cada projeto que você salva na sua conta, com os dados do cliente e a lista de materiais. O seu plano define quantos projetos novos você pode começar a cada mês do calendário (contado em UTC) e quantos pode guardar ao mesmo tempo. Apagar um projeto libera uma vaga no total, mas não devolve um dos projetos novos do mês."
   ],
   "index.q2": ["Can I use my own prices?", "¿Puedo usar mis propios precios?", "Posso usar os meus próprios preços?"],
   "index.a2": [

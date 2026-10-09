@@ -935,7 +935,8 @@ html[data-embed="1"] main.solid-header {
 }
 
 /* The dialog's X, in its top corner; Cancel is still there for everyone else. */
-.project-dialog form {
+.project-dialog form,
+.project-dialog-body {
   position: relative;
 }
 
@@ -966,6 +967,17 @@ html[data-embed="1"] main.solid-header {
   background: rgba(10, 16, 36, 0.55);
 }
 
+/* On the dark page a navy backdrop barely shows; go darker there. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .project-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}
+
+:root[data-theme="dark"] .project-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
 .project-dialog h2 {
   margin: 0 0 var(--space-2);
   font-family: var(--font-display);
@@ -987,6 +999,21 @@ html[data-embed="1"] main.solid-header {
 
 .projects-tools[hidden] {
   display: none;
+}
+
+/* "Clear filters" sits under the controls, on its own line. */
+.projects-clear {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.projects-clear[hidden] {
+  display: none;
+}
+
+/* A row with no client or status says so with a dash, not a gap. */
+.project-status.is-none {
+  color: var(--color-muted);
 }
 
 .projects-tools .form-group {
@@ -1261,10 +1288,12 @@ body:has(.project-page, .studio-page) .nav {
   border-color: var(--color-danger);
 }
 
+/* Text on the red: white in light mode, navy in dark mode, where the red is
+   light and white text would fall under 4.5:1. */
 .btn-danger {
   background: var(--color-danger);
   border-color: var(--color-danger);
-  color: #fff;
+  color: var(--color-danger-ink, #fff);
 }
 
 .btn-danger:hover:not(:disabled) {

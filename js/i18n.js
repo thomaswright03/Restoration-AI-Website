@@ -495,9 +495,9 @@
       "Para salvar projetos é preciso um plano pago. Você pode continuar projetando no plano grátis.",
     ],
     "proj.err.monthly": [
-      "You've started all {n} new projects your plan allows this month. Deleting a project doesn't give one back; the count starts over on the 1st.",
-      "Ya empezó los {n} proyectos nuevos que su plan permite este mes. Eliminar un proyecto no le devuelve uno; la cuenta vuelve a empezar el día 1.",
-      "Você já começou os {n} projetos novos que o seu plano permite este mês. Excluir um projeto não devolve um; a contagem recomeça no dia 1º.",
+      "You've started all {n} new projects your plan allows this month. Deleting a project doesn't give one back; the count starts over with each calendar month (counted in UTC, so for US time zones that's the evening of the month's last day).",
+      "Ya empezó los {n} proyectos nuevos que su plan permite este mes. Eliminar un proyecto no le devuelve uno; la cuenta vuelve a empezar con cada mes del calendario (contado en UTC, así que en los husos horarios de EE. UU. es la tarde-noche del último día del mes).",
+      "Você já começou os {n} projetos novos que o seu plano permite este mês. Excluir um projeto não devolve um; a contagem recomeça a cada mês do calendário (contado em UTC, então nos fusos dos EUA isso é a noite do último dia do mês).",
     ],
     "proj.err.total": [
       "You have {n} saved projects, the most your plan keeps. Delete one in My projects to make room.",
@@ -700,6 +700,22 @@
       "La compra de planes está pausada por ahora. Vuelva pronto.",
       "A compra de planos está pausada no momento. Volte em breve.",
     ],
+    "acct.stripe.checkout": [
+      "The payment page couldn't be opened just now. Please try again; if it keeps happening, let us know. Nothing was charged.",
+      "No se pudo abrir la página de pago en este momento. Inténtelo de nuevo; si sigue pasando, avísenos. No se cobró nada.",
+      "A página de pagamento não pôde ser aberta agora. Tente de novo; se continuar, avise a gente. Nada foi cobrado.",
+    ],
+    "acct.stripe.portal": [
+      "The billing page couldn't be opened just now. Please try again; if it keeps happening, let us know.",
+      "No se pudo abrir la página de facturación en este momento. Inténtelo de nuevo; si sigue pasando, avísenos.",
+      "A página de cobrança não pôde ser aberta agora. Tente de novo; se continuar, avise a gente.",
+    ],
+    "acct.projects.failed": [
+      "Your projects couldn't be counted right now.",
+      "No se pudieron contar sus proyectos en este momento.",
+      "Não foi possível contar os seus projetos agora.",
+    ],
+    "acct.saveFailed": ["Couldn't save.", "No se pudo guardar.", "Não foi possível salvar."],
     "acct.unavailable": [
       "We couldn't reach the server. Check your connection and try again in a moment.",
       "No pudimos conectar con el servidor. Revise su conexión y vuelva a intentarlo en un momento.",
@@ -817,6 +833,17 @@
       "Alterações não salvas: este projeto mudou desde a última vez que foi salvo.",
     ],
     "proj.filter.all": ["All statuses", "Todos los estados", "Todas as situações"],
+    "proj.infoUnsaved": [
+      "You have unsaved changes to this info.",
+      "Tiene cambios sin guardar en esta información.",
+      "Você tem alterações não salvas nestas informações.",
+    ],
+    "proj.bar.signinFailed": [
+      "Your sign-in couldn't be checked, so saving to your projects isn't available right now.",
+      "No se pudo comprobar su sesión, así que por ahora no se puede guardar en sus proyectos.",
+      "Não foi possível verificar o seu login, então salvar nos seus projetos não está disponível agora.",
+    ],
+    "proj.pausedNotice": ["Notice: {notice}", "Aviso: {notice}", "Aviso: {notice}"],
     "acct.slugTaken": [
       "That web address is taken. Try another.",
       "Esa dirección web ya está en uso. Pruebe otra.",
@@ -862,10 +889,16 @@
     "acct.lead.language": ["Language", "Idioma", "Idioma"],
     "acct.lead.delete": ["Delete", "Eliminar", "Excluir"],
     "acct.lead.deleteConfirm": [
-      "Delete this request? This can't be undone.",
-      "¿Eliminar esta solicitud? No se puede deshacer.",
-      "Excluir este pedido? Não dá para desfazer.",
+      "Delete the request from {name}? It can't be undone.",
+      "¿Eliminar la solicitud de {name}? No se puede deshacer.",
+      "Excluir o pedido de {name}? Não dá para desfazer.",
     ],
+    "acct.lead.deleteFailed": [
+      "Couldn't delete the request.",
+      "No se pudo eliminar la solicitud.",
+      "Não foi possível excluir o pedido.",
+    ],
+    "acct.lead.deleted": ["Request deleted.", "Solicitud eliminada.", "Pedido excluído."],
     "auth.checkEmail": [
       "Check your email to confirm your account, then log in.",
       "Revise su correo para confirmar su cuenta y luego inicie sesión.",

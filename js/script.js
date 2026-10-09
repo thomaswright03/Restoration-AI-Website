@@ -59,6 +59,14 @@ document.addEventListener("DOMContentLoaded", function () {
       authLink.textContent = authLink.getAttribute("data-logout-label");
       authLink.setAttribute("href", authLink.getAttribute("href").replace(/account\.html.*$/, "account.html?logout=1"));
     }
+    // A signed-in business gets My projects and Account where visitors see
+    // Pricing and Get started.
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-in]"), function (li) {
+      li.hidden = !signedIn;
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-out]"), function (li) {
+      li.hidden = signedIn;
+    });
   }
 
   // Language menu (a <details> in the nav): close it on a click elsewhere or

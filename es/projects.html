@@ -86,10 +86,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../es/designer.html">Demo en vivo</a></li>
-          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li data-nav-signed-out><a href="../es/index.html#pricing">Precios</a></li>
           <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../es/projects.html">Mis proyectos</a></li>
+          <li data-nav-signed-in hidden><a href="../es/account.html">Cuenta</a></li>
           <li><a href="../es/account.html" data-auth-link data-logout-label="Cerrar sesión">Iniciar sesión</a></li>
-          <li><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
+          <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -192,7 +195,8 @@
             </div>
             <p class="form-note">
               Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes;
-              esos vuelven a empezar el día 1 de cada mes.
+              esos vuelven a empezar con cada mes del calendario, contado en UTC (en los husos horarios de EE. UU., la
+              tarde-noche del último día del mes).
             </p>
           </div>
 
@@ -215,6 +219,9 @@
                 <label for="projects-filter">Estado del proyecto</label>
                 <select id="projects-filter"></select>
               </div>
+              <p class="projects-clear" id="projects-clear-wrap" hidden>
+                <button type="button" class="link-button" id="projects-clear">Quitar filtros</button>
+              </p>
             </div>
             <div class="app-empty" id="projects-empty" hidden>
               <p>Aún no hay proyectos. Abra el diseñador y use Guardar proyecto arriba para guardar un diseño aquí.</p>
@@ -227,11 +234,14 @@
       </section>
 
       <dialog class="project-dialog" id="projects-delete-dialog" aria-labelledby="projects-delete-title">
-        <h2 id="projects-delete-title">Eliminar proyecto</h2>
-        <p id="projects-delete-text"></p>
-        <div class="app-actions">
-          <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancelar</button>
-          <button type="button" class="btn btn-danger" id="projects-delete-confirm">Eliminar proyecto</button>
+        <div class="project-dialog-body">
+          <button type="button" class="project-dialog-close" id="projects-delete-close" aria-label="Cerrar">×</button>
+          <h2 id="projects-delete-title">Eliminar proyecto</h2>
+          <p id="projects-delete-text"></p>
+          <div class="app-actions">
+            <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancelar</button>
+            <button type="button" class="btn btn-danger" id="projects-delete-confirm">Eliminar proyecto</button>
+          </div>
         </div>
       </dialog>
     </main>

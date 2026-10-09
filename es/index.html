@@ -89,10 +89,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../es/designer.html">Demo en vivo</a></li>
-          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li data-nav-signed-out><a href="../es/index.html#pricing">Precios</a></li>
           <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../es/projects.html">Mis proyectos</a></li>
+          <li data-nav-signed-in hidden><a href="../es/account.html">Cuenta</a></li>
           <li><a href="../es/account.html" data-auth-link data-logout-label="Cerrar sesión">Iniciar sesión</a></li>
-          <li><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
+          <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -277,8 +280,9 @@
             <div class="faq-answer-inner">
               <p>
                 Cada diseño que guarda en su cuenta, con los datos del cliente y la lista de materiales. Su plan fija
-                cuántos proyectos nuevos puede empezar cada mes y cuántos puede guardar a la vez. Borrar un proyecto
-                libera un lugar en el total, pero no le devuelve uno de los proyectos nuevos del mes.
+                cuántos proyectos nuevos puede empezar cada mes del calendario (contado en UTC) y cuántos puede guardar
+                a la vez. Borrar un proyecto libera un lugar en el total, pero no le devuelve uno de los proyectos
+                nuevos del mes.
               </p>
             </div>
           </div>

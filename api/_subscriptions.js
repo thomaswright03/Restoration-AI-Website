@@ -27,6 +27,13 @@ function planItem(sub) {
   return items.find((i) => planFromPrice(i.price)) || items[0];
 }
 
+// The account's subscriptions row (one per owner), or null. `select` is the
+// PostgREST column list.
+async function subscriptionOf(ownerId, select = "*") {
+  const rows = await db("subscriptions?owner_id=eq." + encodeURIComponent(ownerId) + "&select=" + select);
+  return (rows && rows[0]) || null;
+}
+
 // Supabase refuses a row for an owner that no longer exists (the account
 // was deleted; the auth user is gone and so is the foreign key's target).
 function ownerGone(e) {
@@ -66,4 +73,4 @@ async function saveSubscription(ownerId, sub) {
   }
 }
 
-module.exports = { LIVE_STATUSES, periodEnd, planItem, saveSubscription, ownerGone };
+module.exports = { LIVE_STATUSES, periodEnd, planItem, subscriptionOf, saveSubscription, ownerGone };

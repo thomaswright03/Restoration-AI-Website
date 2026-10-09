@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["es2022", "dom"],
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["node"],
+    "paths": {
+      "punycode": ["./node_modules/@types/node/punycode.d.ts"]
+    }
+  },
+  "include": ["types/**/*.d.ts", "api/**/*.js", "js/room-plan.js", "js/surface-finishes.js", "js/net.js", "js/i18n.js"]
+}

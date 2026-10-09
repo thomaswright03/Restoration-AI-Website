@@ -47,7 +47,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Stripe: customers, subscriptions and invoices. Supabase keeps only the mirror the webhook writes.
 - The browser's localStorage: the designer's working draft (`rd3d_design_<slug>`), the language, the theme and Riley's voice. Nothing there is needed by the server.
 
-**Caching.** `vercel.json` marks `models/**/*.glb`, `js/vendor/**`, `fonts/**` and `images/**` as immutable for a year, because they are never edited in place: a changed 3D model, library or font gets a new file name (or a new folder, e.g. `js/vendor/three-r187/`) and the pages that reference it are updated. Pages, first-party `js/*.js`, `css/*.css` and `site-config.json` keep Vercel's revalidate-every-time default, so a deploy is live for everyone on the next page load. `tests/unit/vercel-config.test.js` pins this.
+**Caching.** `vercel.json` caches by whether a path's name changes with its content. Only the versioned Three.js folder (`js/vendor/three-r186/`, listed file by file so a missing path is never frozen) is `immutable` for a year; upgrading Three.js means a new folder (`js/vendor/three-r187/`), updating the import map in `pages/layout.html`, `npm run pages`, and the new file list in `vercel.json` (the unit test says which). `models/**/*.glb`, `fonts/**`, `images/**` and the unversioned libraries (`js/vendor/jspdf.umd.min.js`, `js/vendor/supabase/`) are edited in place under the same name, so they get `max-age=86400, stale-while-revalidate=604800`: a repeat visit within a day asks for nothing, and a changed file reaches returning browsers within a day. Pages and `site-config.json` keep Vercel's revalidate-every-time default; first-party `js/*.js` and `css/*.css` are `max-age=0, must-revalidate, stale-while-revalidate=86400`, so a deploy is live for everyone on the next page load. `tests/unit/vercel-config.test.js` pins all of this.
 
 ## Settings (`site-config.json`)
 
@@ -65,7 +65,7 @@ Start with Stripe test keys; switch to live keys once a test sign-up, checkout a
 
 ## Deploying, rolling back and changing the schema
 
-**Deploy.** Every push to `main` deploys (Vercel's Git integration); pull requests get a preview URL. CI (`.github/workflows/ci.yml`) runs lint, formatting, the pages check, unit and browser tests on every push and PR, so merge only green branches. There is no build, so a deploy is exactly the committed files plus the functions in `api/`.
+**Deploy.** Every push to `main` deploys (Vercel's Git integration); pull requests get a preview URL. CI (`.github/workflows/ci.yml`) runs lint, formatting, the type check, the pages check, unit and browser tests on every push and PR, so merge only green branches. There is no build, so a deploy is exactly the committed files plus the functions in `api/`.
 
 **Roll back.** Vercel keeps every deployment. In the Vercel project, open **Deployments**, find the last good one, and choose **Promote to Production** (or **Instant Rollback** on the current production deployment, which promotes the previous one). That takes effect within seconds and needs no commit; the environment variables stay as they are. Then fix `main` (revert the merge commit with `git revert -m 1 <merge sha>`, or push a fix) so the next deploy doesn't bring the problem back. A rollback does not touch Supabase or Stripe: if the bad release also changed the schema, see below.
 
@@ -111,13 +111,17 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/room-plan.js`: the room engine, with no drawing (walls, fixture sizes, clearance rules, the plumbing stack and how far a drain can run from it, suggesting the electrical, finding spots, arranging the room, snapping a dragged fixture, share links). Also runs in Node for the unit tests.
 - `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
 - `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
-- `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The flat surcharges (no stack, bad valve) and tax exist in the model but aren't charged by the studio.
+- `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The model can also add the flat surcharges (no stack, bad valve) and a labor tax rate, but the studio never sets the surcharge flags and its total is labor plus materials without the tax, so neither reaches an estimate today.
 - `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings (October 2026) and go stale; the file's header says how to refresh or add one (there is no generator script)
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
 - `js/script.js`: menu, language, FAQ and the request form
+- `js/net.js`: the one way the signed-in pages call `/api/*`: a JSON fetch with a time limit that tells offline, timed out, a server failure and an HTTP error apart (also runs in Node for the unit tests)
+- `js/site-config.js`: loads `site-config.json` and applies it to the page (`data-fill`, `data-show-if`), with defaults when it can't be loaded
+- `js/theme.js`: the Light / Dark / System switch
+- `js/product-photos.js`: generated by `tools/photos/build-product-photos.mjs`, the products' listing photos; don't edit by hand
 - `models/`: GLB fixture and product models; `tools/models/` converts OBJ sources to GLB and `models/products/*/manifest.json` records each model's source and conversion arguments (the OBJ sources themselves are not in the repo)
-- `js/vendor/`: Three.js r186 (the minified `three.module.js`/`three.core.js` build and the addons used), jsPDF and the Supabase client, self-hosted so no page loads a third-party script
+- `js/vendor/`: Three.js r186 in `three-r186/` (the minified `three.module.js`/`three.core.js` build and the addons used), jsPDF and the Supabase client, self-hosted so no page loads a third-party script
 - `js/account.js`: sign-up and account pages
 - `js/projects.js`: the My projects page and the designer's save bar
 
@@ -125,10 +129,15 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 
 ```
 npm ci
-npm run check      # lint, formatting, pages in sync, unit tests
-npm run test:e2e   # browser tests (Playwright)
+npm run check      # lint, formatting, type check, pages in sync, unit tests
+npx playwright install chromium   # once per machine, before the browser tests
+npm run test:e2e   # browser tests (Playwright; E2E_PORT=4400 to pick the port)
 npm run serve      # local server at http://localhost:8000, runs api/ like Vercel
-npm test           # all of the above in one go
+npm test           # check and test:e2e in one go
 ```
+
+**Type check.** `npm run typecheck` runs TypeScript's `checkJs` (no build, nothing is emitted) over `api/**` and the pure modules that also run in Node: `js/room-plan.js`, `js/surface-finishes.js`, `js/net.js` and `js/i18n.js` (`jsconfig.json` lists them; `types/globals.d.ts` declares the window globals and the tags put on Error objects). It's not strict, and the page scripts (`js/studio.js`, `js/projects.js`, `js/account.js`, ...) aren't covered yet: add a file to `include` once it passes.
+
+**Running locally with keys.** `npm run serve` reads `.env.local` in the repo root when it exists (copy `.env.example`; a variable already set in the shell wins), so the functions talk to your Supabase and Stripe test projects. Without it, demo mode. The browser tests never read it.
 
 `vercel.json` sets the security headers (no page may be framed by other sites) and the caching rules above. `robots.txt` and `sitemap.xml` are built by `npm run pages`. Review findings and what's still open live with the reviews in the project files, not in the repo.

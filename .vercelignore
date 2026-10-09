@@ -6,9 +6,10 @@
 /scripts/
 /supabase/
 /tests/
+/types/
 /tools/
 /test-results/
 /playwright-report/
 /blob-report/
-# Internal notes (audit report, readme): not for the public site.
+# The README: not for the public site.
 /*.md

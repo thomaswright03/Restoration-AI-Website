@@ -31,38 +31,47 @@
       ]
     },
     {
+      "source": "/js/vendor/three-r186/(addons/controls/OrbitControls\\.js|addons/environments/RoomEnvironment\\.js|addons/loaders/GLTFLoader\\.js|addons/utils/BufferGeometryUtils\\.js|addons/utils/SkeletonUtils\\.js|three\\.core\\.js|three\\.module\\.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/js/vendor/(jspdf\\.umd\\.min\\.js|supabase/supabase\\.js)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
+        }
+      ]
+    },
+    {
       "source": "/models/(.*)\\.glb",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
         }
       ]
     },
     {
-      "source": "/js/vendor/(.*)",
+      "source": "/fonts/(.*)\\.woff2",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
         }
       ]
     },
     {
-      "source": "/fonts/(.*)",
+      "source": "/images/(.*)\\.(png|jpg|jpeg|webp|svg)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    },
-    {
-      "source": "/images/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=86400, stale-while-revalidate=604800"
         }
       ]
     },

@@ -23,12 +23,16 @@ const { supabaseReady, db } = require("./_lib.js");
 const SWITCH_CACHE_MS = 15000;
 const NAMES = ["signups", "checkout", "saving"];
 
+/** @typedef {{ signups: boolean, checkout: boolean, saving: boolean, notice: string }} Switches */
+
+/** @type {Readonly<Switches>} */
 const ALL_ON = Object.freeze({ signups: true, checkout: true, saving: true, notice: "" });
 
 let cache = { at: 0, value: ALL_ON };
 
+/** @returns {Switches} */
 function normalize(row) {
-  const out = { notice: String((row && row.notice) || "").slice(0, 500) };
+  const out = /** @type {Switches} */ ({ notice: String((row && row.notice) || "").slice(0, 500) });
   for (const name of NAMES) out[name] = !(row && row[name] === false);
   return out;
 }

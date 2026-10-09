@@ -32,7 +32,7 @@
 // Loads as a plain browser script (window.SurfaceFinishes) and as a Node
 // module (for the unit tests).
 
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   "use strict";
   var api = factory();
   if (typeof module !== "undefined" && module.exports) {

@@ -37,7 +37,7 @@
 // wide spot to step into a tub or shower, and a door's swing kept clear.
 // Clear floor spaces may share floor with each other, as codes allow;
 // nothing may stand in one.
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   var api = factory();
   if (typeof module !== "undefined" && module.exports) {
     module.exports = api;
@@ -450,6 +450,7 @@
           return;
         }
         if (z.kind === "side") {
+          /** @type {{ have: number, what: string } | null} */
           var worst = null;
           [-1, 1].forEach(function (dir) {
             var room2 = sideRoom(g, others, dir);
@@ -806,6 +807,7 @@
     var room = design.room;
     var size = sizeOf(item, sizes);
     var base = validate(design, sizes);
+    /** @type {{ wall: string, offset: number, errs: number, span: number } | null} */
     var best = null;
     WALL_IDS.forEach(function (wid) {
       var span = wallSpan(room, wid);
@@ -1252,6 +1254,7 @@
   // that leaves the least pipe to run, counting a toilet's soil line for
   // more than the rest because it's the one nobody wants to move.
   function suggestStack(design, sizes) {
+    /** @type {{ wall: string, total: number } | null} */
     var best = null;
     WALL_IDS.forEach(function (wid) {
       var trial = setStack(design, wid);
@@ -1587,6 +1590,7 @@
           { wall: neighbor(basin.wall, 1), want: 0 },
           { wall: neighbor(basin.wall, -1), want: wallSpan(room, neighbor(basin.wall, -1)) },
         ];
+        /** @type {{ wall: string, offset: number, away: number } | null} */
         var best = null;
         spots.forEach(function (t) {
           var at = freeOffset(design, sizes, "outlet", t.wall, t.want, hi, basin.id, coverings, list);

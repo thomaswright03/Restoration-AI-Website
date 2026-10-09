@@ -1,18 +1,26 @@
 // Minimal local server that behaves like Vercel for this site: serves files
 // from the repo root, runs api/<name>.js for /api/<name> (the same handler
-// Vercel runs, with env vars from your shell), and answers any missing path
-// with 404.html and a 404 status.
+// Vercel runs), and answers any missing path with 404.html and a 404 status.
 //
-//   node scripts/serve.mjs [port]      (default 8000)
+//   node scripts/serve.mjs [port]      (default 8000, or PORT)
+//
+// The functions read their keys from the environment: your shell's, plus
+// .env.local in the repo root when it exists (copy .env.example; a variable
+// set in the shell wins). ENV_FILE=path reads another file; ENV_FILE= (empty)
+// reads none, which is how the browser tests keep real keys out of their run.
 
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { loadEnvFile } from "./env-file.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const port = Number(process.argv[2] || process.env.PORT || 8000);
+
+const envFile = process.env.ENV_FILE === undefined ? ".env.local" : process.env.ENV_FILE;
+const loaded = envFile ? loadEnvFile(resolve(root, envFile)) : [];
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -81,8 +89,14 @@ const server = createServer(async (req, res) => {
         .split(sep)
         .join("/")
     : "";
+  // Never the sources Vercel doesn't deploy (.vercelignore), nor a dotfile
+  // such as .env.local.
   const blocked =
-    file && /^(node_modules|\.git|tests|test-results|playwright-report|api|supabase|pages|scripts)\//.test(rel);
+    file &&
+    (/^(node_modules|tests|test-results|playwright-report|blob-report|api|supabase|pages|scripts|types|tools)\//.test(
+      rel,
+    ) ||
+      /(^|\/)\./.test(rel));
   if (!file || blocked) {
     const body = await readFile(join(root, "404.html"));
     res.writeHead(404, { "Content-Type": TYPES[".html"] });
@@ -98,5 +112,6 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`Serving ${root} at http://localhost:${port}`);
+  if (loaded.length) console.log(`Loaded ${loaded.length} settings from ${envFile}: ${loaded.join(", ")}`);
+  console.log(`Serving ${root} at http://localhost:${server.address().port}`);
 });

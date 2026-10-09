@@ -37,6 +37,9 @@ module.exports = defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: `node scripts/serve.mjs ${PORT}`,
+    // Never a developer's .env.local: the tests run in demo mode and mock
+    // the server themselves (tests/e2e/helpers.js).
+    env: { ENV_FILE: "" },
     url: `http://localhost:${PORT}/index.html`,
     reuseExistingServer: false,
   },

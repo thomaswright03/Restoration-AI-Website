@@ -19,6 +19,7 @@
 // A business's designer opens only for its signed-in owner, on every plan.
 "use strict";
 
+/** @type {Record<string, any>} */
 const CONFIG = require("../site-config.json").plans || {};
 
 function limits(name, fallback) {

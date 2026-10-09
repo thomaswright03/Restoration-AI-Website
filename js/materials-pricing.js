@@ -20,7 +20,7 @@
 // Loads as a plain browser script (window.MaterialsPricing, after
 // js/bathroom-pricing.js) and as a Node module (for the unit tests).
 
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   "use strict";
   var api = factory(
     root.I18n || (typeof require === "function" ? require("./i18n.js") : null),

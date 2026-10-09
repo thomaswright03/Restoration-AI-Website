@@ -32,7 +32,11 @@
   // it), and ?embed=1 shows it inside its project page. Neither touches the
   // design kept in this browser: the owner's unsaved work waits for them.
   var PAGE_PARAMS = new URLSearchParams(window.location.search);
-  var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && PAGE_PARAMS.get("embed") !== "1";
+  // ?embed=1 is the project page's "3D model" tab: a read-only view of the
+  // saved design (the room and its views, nothing to edit), with one way
+  // out, "Open in designer".
+  var VIEW_ONLY = PAGE_PARAMS.get("embed") === "1";
+  var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && !VIEW_ONLY;
   var HASH_KEY = "design";
   // Tile and plank floors are bought with extra for cuts and breakage;
   // walls take two coats of paint.
@@ -243,6 +247,7 @@
   // 3D view. Matches the stacked layout in css/studio.css.
   var STACKED = window.matchMedia ? window.matchMedia("(max-width: 900px)") : null;
   function placeRiley() {
+    if (!els.riley) return;
     var stage = els.body.querySelector(".studio-stage");
     var under = Boolean(STACKED && STACKED.matches);
     if (under && els.riley.parentNode !== els.body) els.body.insertBefore(els.riley, els.panel);
@@ -1177,7 +1182,7 @@
     if (plan) {
       planSvg(
         d,
-        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: true },
+        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: !VIEW_ONLY },
         els.planSvg,
       );
     } else {
@@ -1293,7 +1298,7 @@
     clear(chip);
     chip.insertAdjacentHTML("afterbegin", icon(kind === "ok" ? "check" : "alert"));
     chip.appendChild(h("span", { text: text }));
-    chip.disabled = !!previewing;
+    chip.disabled = !!previewing || VIEW_ONLY;
   }
 
   // The first thing with a problem (or, failing that, a tight spot):
@@ -1590,6 +1595,7 @@
   }
 
   function wire3d() {
+    if (VIEW_ONLY) return;
     var wrap = els.canvasWrap;
     // Captured before OrbitControls sees it: a press on a fixture picks it
     // up instead of turning the room.
@@ -1677,6 +1683,7 @@
   }
 
   function wirePlan() {
+    if (VIEW_ONLY) return;
     var svg = els.planSvg;
     svg.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
@@ -1774,6 +1781,7 @@
   // Delete removes what's picked; Escape lets go. Ctrl/Cmd+Z undoes,
   // Ctrl/Cmd+Shift+Z or Ctrl+Y redoes.
   function onKey(e) {
+    if (VIEW_ONLY) return;
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     var mod = e.ctrlKey || e.metaKey;
     if (mod && !typing && (e.key === "z" || e.key === "Z")) {
@@ -2089,6 +2097,7 @@
   }
 
   function renderBar() {
+    if (VIEW_ONLY) return;
     var stop = null;
     Array.prototype.forEach.call(els.steps.querySelectorAll("[data-step]"), function (btn) {
       var step = btn.getAttribute("data-step");
@@ -2178,6 +2187,7 @@
   var panelAgain = null;
 
   function renderPanel(opts) {
+    if (VIEW_ONLY) return;
     // A field losing focus as the old panel is taken down can change the
     // design (and ask for the panel again): that waits until this one is up.
     if (panelBusy) {
@@ -4777,54 +4787,6 @@
   // Start
   // ---------------------------------------------------------------------
   function buildChrome() {
-    els.steps = document.getElementById("studio-steps");
-    STEPS.forEach(function (step, i) {
-      els.steps.appendChild(
-        h(
-          "button",
-          {
-            type: "button",
-            class: "studio-step-btn",
-            "data-step": step,
-            onclick: function () {
-              goTo(step);
-            },
-          },
-          [
-            h("span", { class: "studio-step-num", text: String(i + 1) }),
-            h("span", { class: "studio-step-label", "data-label": step, text: T("studio.step." + step + ".short") }),
-          ],
-        ),
-      );
-    });
-    var actions = document.getElementById("studio-actions");
-    var action = function (name, labelKey, run) {
-      var btn = h(
-        "button",
-        { type: "button", class: "studio-action", "aria-label": T(labelKey), title: T(labelKey), onclick: run },
-        [h("span", { icon: name }), h("span", { class: "studio-action-label", text: T(labelKey) })],
-      );
-      actions.appendChild(btn);
-      return btn;
-    };
-    els.undo = action("undo", "studio.undo", undo);
-    els.redo = action("redo", "studio.redo", redo);
-    action("link", "studio.share", copyLink);
-    action("restart", "studio.startOver", startOver);
-    els.total = h(
-      "button",
-      {
-        type: "button",
-        class: "studio-total-chip",
-        hidden: true,
-        onclick: function () {
-          goTo("estimate");
-        },
-      },
-      [h("span", { class: "studio-total-chip-label", text: T("studio.estimateChip") }), (els.totalValue = h("strong"))],
-    );
-    actions.appendChild(els.total);
-
     var viewbar = els.viewbar;
     var views = h(
       "div",
@@ -4893,6 +4855,76 @@
     viewbar.appendChild(els.isoBtn);
     viewbar.appendChild(els.frameBtn);
     viewbar.appendChild(els.status);
+    if (VIEW_ONLY) {
+      // The project page's viewer: no steps, no undo, share or start over.
+      // Changing the design happens in the designer itself, in the top window.
+      document
+        .getElementById("studio-actions")
+        .appendChild(
+          h(
+            "a",
+            { class: "btn btn-primary studio-open-link", href: designerHref(), target: "_top", "data-key": "open" },
+            [h("span", { icon: "external" }), T("studio.openDesigner")],
+          ),
+        );
+      return;
+    }
+    els.steps = document.getElementById("studio-steps");
+    STEPS.forEach(function (step, i) {
+      els.steps.appendChild(
+        h(
+          "button",
+          {
+            type: "button",
+            class: "studio-step-btn",
+            "data-step": step,
+            onclick: function () {
+              goTo(step);
+            },
+          },
+          [
+            h("span", { class: "studio-step-num", text: String(i + 1) }),
+            h("span", { class: "studio-step-label", "data-label": step, text: T("studio.step." + step + ".short") }),
+          ],
+        ),
+      );
+    });
+    var actions = document.getElementById("studio-actions");
+    var action = function (name, labelKey, run) {
+      var btn = h(
+        "button",
+        { type: "button", class: "studio-action", "aria-label": T(labelKey), title: T(labelKey), onclick: run },
+        [h("span", { icon: name }), h("span", { class: "studio-action-label", text: T(labelKey) })],
+      );
+      actions.appendChild(btn);
+      return btn;
+    };
+    els.undo = action("undo", "studio.undo", undo);
+    els.redo = action("redo", "studio.redo", redo);
+    action("link", "studio.share", copyLink);
+    action("restart", "studio.startOver", startOver);
+    els.total = h(
+      "button",
+      {
+        type: "button",
+        class: "studio-total-chip",
+        hidden: true,
+        onclick: function () {
+          goTo("estimate");
+        },
+      },
+      [h("span", { class: "studio-total-chip-label", text: T("studio.estimateChip") }), (els.totalValue = h("strong"))],
+    );
+    actions.appendChild(els.total);
+  }
+
+  // This same design in the full designer: the page's address without the
+  // embed flag (the project id and business stay).
+  function designerHref() {
+    var params = new URLSearchParams(window.location.search);
+    params.delete("embed");
+    var q = params.toString();
+    return window.location.pathname + (q ? "?" + q : "");
   }
 
   // On wide screens the studio fills the window below the page header (and
@@ -4939,7 +4971,7 @@
     els.toast = document.getElementById("studio-toast");
     els.live = document.getElementById("studio-live");
     els.selChip = document.getElementById("studio-selchip");
-    els.riley = document.getElementById("studio-riley");
+    els.riley = VIEW_ONLY ? null : document.getElementById("studio-riley");
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
     placeRiley();
@@ -4985,7 +5017,7 @@
       if (!next) return;
       ui.selected = null;
       commit(next);
-      toast(T("studio.openedLink"));
+      if (!VIEW_ONLY) toast(T("studio.openedLink"));
       try {
         history.replaceState(null, "", window.location.href.split("#")[0]);
       } catch (e) {
@@ -5022,7 +5054,9 @@
     // The demo note above the studio appears once the page has loaded.
     document.addEventListener("DOMContentLoaded", fitStage);
     window.addEventListener("load", fitStage);
-    if (linked) toast(T("studio.openedLink"));
+    if (VIEW_ONLY) {
+      /* the viewer: nothing to say about where the design came from */
+    } else if (linked) toast(T("studio.openedLink"));
     else if (saved) toast(T("studio.welcomeBack"), { label: T("studio.startOver"), run: startOver });
 
     var configReady = window.SiteConfig ? window.SiteConfig.ready : Promise.resolve(null);

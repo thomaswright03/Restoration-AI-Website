@@ -1026,6 +1026,7 @@
     "studio.redo": ["Redo", "Rehacer", "Refazer"],
     "studio.undone": ["Undone.", "Se deshizo.", "Desfeito."],
     "studio.redone": ["Redone.", "Se rehízo.", "Refeito."],
+    "studio.openDesigner": ["Open in designer", "Abrir en el diseñador", "Abrir no projetista"],
     "studio.share": ["Share", "Compartir", "Compartilhar"],
     "studio.startOver": ["Start over", "Empezar de nuevo", "Recomeçar"],
     "studio.startedOver": [

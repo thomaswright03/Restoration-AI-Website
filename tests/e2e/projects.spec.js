@@ -315,6 +315,33 @@ test("a project's page shows its 3D model, edits its info, and lists its materia
   expect(axe2.violations.map((v) => v.id)).toEqual([]);
 });
 
+test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, Open in designer", async ({
+  page,
+}) => {
+  test.setTimeout(90000); // two visits to the designer, both drawing the 3D room
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, { projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }] });
+  await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
+  await expect(page.locator(".studio-status")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+  await expect(page.locator(".studio-action")).toHaveCount(0);
+  await expect(page.locator(".studio-total-chip")).toHaveCount(0);
+  await expect(page.locator("#studio-panel")).toBeHidden();
+  await expect(page.locator("#studio-riley")).toBeHidden();
+  await expect(page.locator("#project-bar")).toBeHidden();
+  await expect(page.locator("#studio-toast")).toBeHidden();
+  await expect(page.locator(".studio-view-btn[data-view]")).toHaveCount(3);
+  await page.locator(".studio-view-btn[data-view='plan']").click();
+  await expect(page.locator("#studio-plan")).toBeVisible();
+  // Nothing on the plan can be picked up or moved.
+  await expect(page.locator(".plan-item[tabindex]")).toHaveCount(0);
+  const open = page.getByRole("link", { name: "Open in designer" });
+  await expect(open).toHaveAttribute("href", "/designer.html?b=smith-bath&project=a1");
+  await expect(open).toHaveAttribute("target", "_top");
+});
+
 test("a project's 3D model follows the page when the theme is switched", async ({ page }) => {
   await page.goto("/designer.html");
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
@@ -433,7 +460,7 @@ test("viewing a saved project never overwrites the owner's unsaved design", asyn
 
   // They look at an old project (as its page does, and as "Open in the designer" does).
   await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
-  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator(".studio-status")).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
   await page.waitForTimeout(600); // past the studio's save debounce
   expect(await stored()).toBe(10);

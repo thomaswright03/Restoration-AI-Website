@@ -51,9 +51,9 @@
   "project.tab.info": ["Info", "Información", "Informações"],
   "project.tab.materials": ["Materials", "Materiales", "Materiais"],
   "project.model.note": [
-    "Look around the room here. To change the design and save it, use Open in the designer.",
-    "Recorra el baño aquí. Para cambiar el diseño y guardarlo, use Abrir en el diseñador.",
-    "Explore o banheiro aqui. Para mudar o projeto e salvar, use Abrir no projetista."
+    "A view of the saved design: look around the room, switch between 3D, the floor plan and walking in. Nothing here can be changed; to edit the design and save it, use Open in the designer.",
+    "Una vista del diseño guardado: recorra el baño y cambie entre 3D, el plano y el recorrido. Aquí no se puede cambiar nada; para editar el diseño y guardarlo, use Abrir en el diseñador.",
+    "Uma vista do projeto salvo: explore o banheiro e alterne entre 3D, a planta e o passeio. Nada aqui pode ser alterado; para editar o projeto e salvar, use Abrir no projetista."
   ],
   "project.model.frame": ["The project's 3D model", "El modelo 3D del proyecto", "O modelo 3D do projeto"],
   "project.info.save": ["Save info", "Guardar información", "Salvar informações"],

@@ -2439,13 +2439,41 @@
   }
 }
 
-/* Framed by our own project page (designer.html?embed=1): no product header. */
+/* Framed by our own project page (designer.html?embed=1): a read-only view
+   of the saved design. No product header, no steps or panel, no Riley; the
+   stage fills the frame, with the view buttons and "Open in designer". */
 html[data-embed="1"] .studio-page {
   --studio-header-h: 0px;
 }
 
-html[data-embed="1"] .studio-stage {
-  top: 0;
+html[data-embed="1"] .studio-steps,
+html[data-embed="1"] .studio-panel,
+html[data-embed="1"] .studio-hint,
+html[data-embed="1"] .studio-riley {
+  display: none;
+}
+
+html[data-embed="1"] .studio-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+html[data-embed="1"] .studio-room,
+html[data-embed="1"] .studio-plan {
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  html[data-embed="1"] .studio-body {
+    height: calc(100vh - var(--studio-bar-h));
+    height: calc(100dvh - var(--studio-bar-h));
+  }
+
+  html[data-embed="1"] .studio-stage {
+    position: relative;
+    top: 0;
+    height: 100%;
+    max-height: none;
+  }
 }
 
 /* ---------- The plumbing wall and the electrical, on the plan ---------- */

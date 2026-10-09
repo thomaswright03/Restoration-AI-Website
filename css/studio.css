@@ -310,6 +310,71 @@
   display: none;
 }
 
+/* Until the scripts arrive, both halves say so in words (H1: a slow
+   connection used to show a blank grey stage for 30 s and more). */
+.studio-canvas:empty::before {
+  content: attr(data-loading);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  color: var(--color-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+.studio-loading {
+  padding: var(--space-6) var(--space-5);
+  color: var(--color-ink-soft);
+}
+
+.studio-loading-text {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-weight: 600;
+}
+
+.studio-loading-text::before {
+  content: "";
+  flex: none;
+  width: 1em;
+  height: 1em;
+  border: 2px solid var(--color-line-strong);
+  border-top-color: var(--color-accent-bright);
+  border-radius: 50%;
+  animation: studio-spin 0.8s linear infinite;
+}
+
+/* The "taking longer" line appears on its own after 8 seconds. */
+.studio-loading-slow {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
+  opacity: 0;
+  animation: studio-appear 0.3s ease 8s forwards;
+}
+
+@keyframes studio-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes studio-appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-loading-text::before {
+    animation: none;
+  }
+}
+
 .studio-canvas canvas {
   display: block;
   width: 100%;
@@ -2264,6 +2329,18 @@
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
+  }
+}
+
+/* Desktops still have room for the names of Share and Start over (undo and
+   redo stay icons, their names in the tooltip). */
+@media (min-width: 1200px) and (max-width: 1600px) {
+  .studio-action:nth-child(n + 3) .studio-action-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
   }
 }
 

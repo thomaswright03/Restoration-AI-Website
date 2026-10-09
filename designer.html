@@ -185,7 +185,7 @@
           <div class="studio-stage">
             <div class="studio-viewbar" id="studio-viewbar"></div>
             <div class="studio-room" id="room-3d">
-              <div class="studio-canvas" id="room-3d-canvas"></div>
+              <div class="studio-canvas" id="room-3d-canvas" data-loading="Loading the designer…"></div>
               <div class="studio-labels" id="studio-labels" aria-hidden="true"></div>
               <button type="button" class="studio-mini" id="studio-mini" title="Open the floor plan">
                 <span class="visually-hidden">Open the floor plan</span>
@@ -197,7 +197,15 @@
             <div class="studio-toast" id="studio-toast" role="status" hidden></div>
             <p class="studio-hint" id="studio-hint"></p>
           </div>
-          <div class="studio-panel" id="studio-panel"></div>
+          <div class="studio-panel" id="studio-panel">
+            <div class="studio-loading" id="studio-loading" role="status">
+              <p class="studio-loading-text">Loading the designer…</p>
+              <p class="studio-loading-slow">
+                This is taking longer than usual. The designer is a big download the first time; on a slow connection it
+                can take a minute.
+              </p>
+            </div>
+          </div>
         </div>
         <p class="visually-hidden" id="studio-live" aria-live="polite"></p>
         <p class="studio-disclosure">
@@ -276,6 +284,9 @@
 
       <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">
         <form id="project-dialog-form" novalidate>
+          <button type="button" class="project-dialog-close" id="project-dialog-close" aria-label="Close">
+            <span aria-hidden="true">×</span>
+          </button>
           <h2 id="project-dialog-title">New project</h2>
           <p class="form-note">
             Who and where is this job for? Everything is optional, and you can change it later on the project's page.
@@ -339,6 +350,7 @@
     </footer>
 
     <script src="js/i18n.js"></script>
+    <script src="js/net.js"></script>
 
     <script src="js/bathroom-pricing.js"></script>
     <script src="js/business.js"></script>

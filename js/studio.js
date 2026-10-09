@@ -28,6 +28,11 @@
   var ADDABLE_POINTS = ["outlet", "switch", "light", "fan"];
   var MAX_DOORS = 3;
   var STORE_KEY = "rd3d_design_" + (BIZ.slug || "demo");
+  // designer.html?project=<id> opens a saved project (js/projects.js loads
+  // it), and ?embed=1 shows it inside its project page. Neither touches the
+  // design kept in this browser: the owner's unsaved work waits for them.
+  var PAGE_PARAMS = new URLSearchParams(window.location.search);
+  var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && PAGE_PARAMS.get("embed") !== "1";
   var HASH_KEY = "design";
   // Tile and plank floors are bought with extra for cuts and breakage;
   // walls take two coats of paint.
@@ -425,6 +430,9 @@
   var saveTimer = null;
 
   function saveSoon() {
+    // js/projects.js listens, to tell a saved project's unsaved changes.
+    document.dispatchEvent(new CustomEvent("studio:change"));
+    if (!KEEPS_DRAFT) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       try {
@@ -436,6 +444,7 @@
   }
 
   function savedDesign() {
+    if (!KEEPS_DRAFT) return null;
     try {
       var raw = JSON.parse(localStorage.getItem(STORE_KEY));
       return raw && Plan.sanitize(raw.design);
@@ -2231,7 +2240,14 @@
     return h("header", { class: "studio-step-head" }, [
       h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
-      h("p", { class: "studio-step-intro", text: T("studio.step." + step + ".intro") }),
+      h("p", {
+        class: "studio-step-intro",
+        // The owner's own designer: the estimate is theirs to save or hand
+        // to the client, not something to "send" to themselves.
+        text: T(
+          step === "estimate" && !BIZ.demo ? "studio.step.estimate.introOwner" : "studio.step." + step + ".intro",
+        ),
+      }),
     ]);
   }
 
@@ -4744,7 +4760,8 @@
       });
       return;
     }
-    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T("riley.step." + ui.step);
+    var stepKey = ui.step === "estimate" && !BIZ.demo ? "riley.step.estimateOwner" : "riley.step." + ui.step;
+    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.
     var gaps = ui.step === "electrical" || ui.step === "estimate" ? fillableGaps() : null;
@@ -5119,6 +5136,8 @@
       room3d.show();
     }
 
+    var loading = document.getElementById("studio-loading");
+    if (loading) loading.remove();
     renderViewbar();
     renderHint();
     refreshNow();

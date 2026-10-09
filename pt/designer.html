@@ -189,7 +189,7 @@
           <div class="studio-stage">
             <div class="studio-viewbar" id="studio-viewbar"></div>
             <div class="studio-room" id="room-3d">
-              <div class="studio-canvas" id="room-3d-canvas"></div>
+              <div class="studio-canvas" id="room-3d-canvas" data-loading="Carregando o projetista…"></div>
               <div class="studio-labels" id="studio-labels" aria-hidden="true"></div>
               <button type="button" class="studio-mini" id="studio-mini" title="Abrir a planta">
                 <span class="visually-hidden">Abrir a planta</span>
@@ -201,7 +201,15 @@
             <div class="studio-toast" id="studio-toast" role="status" hidden></div>
             <p class="studio-hint" id="studio-hint"></p>
           </div>
-          <div class="studio-panel" id="studio-panel"></div>
+          <div class="studio-panel" id="studio-panel">
+            <div class="studio-loading" id="studio-loading" role="status">
+              <p class="studio-loading-text">Carregando o projetista…</p>
+              <p class="studio-loading-slow">
+                Está demorando mais que o normal. Na primeira vez o projetista é um download grande; em uma conexão
+                lenta pode levar um minuto.
+              </p>
+            </div>
+          </div>
         </div>
         <p class="visually-hidden" id="studio-live" aria-live="polite"></p>
         <p class="studio-disclosure">
@@ -283,6 +291,9 @@
 
       <dialog class="project-dialog" id="project-dialog" aria-labelledby="project-dialog-title">
         <form id="project-dialog-form" novalidate>
+          <button type="button" class="project-dialog-close" id="project-dialog-close" aria-label="Fechar">
+            <span aria-hidden="true">×</span>
+          </button>
           <h2 id="project-dialog-title">Novo projeto</h2>
           <p class="form-note">
             Para quem e onde é este serviço? Tudo é opcional, e você pode mudar depois na página do projeto.
@@ -349,6 +360,7 @@
     </footer>
 
     <script src="../js/i18n.js"></script>
+    <script src="../js/net.js"></script>
 
     <script src="../js/bathroom-pricing.js"></script>
     <script src="../js/business.js"></script>

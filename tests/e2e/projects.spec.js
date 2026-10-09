@@ -8,7 +8,7 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
-const { openStudio } = require("./helpers.js");
+const { openStudio, answerAll } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
@@ -68,11 +68,17 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits } 
     }
     if (req.method() === "PATCH") {
       const p = find(body.id);
+      // Like api/projects.js: a save naming the version it loaded lands
+      // only on that version.
+      if (body.updated_at && body.updated_at !== p.updated_at) {
+        return route.fulfill({ status: 409, json: { error: "conflict", project: p } });
+      }
       Object.assign(
         p,
         body.name ? { name: body.name } : {},
         body.info ? { info: body.info } : {},
         body.design ? { design: body.design, summary: body.summary } : {},
+        { updated_at: new Date().toISOString() },
       );
       return route.fulfill({ json: { project: p } });
     }
@@ -107,7 +113,6 @@ test("My projects lists, renames and deletes, and shows the plan's limits", asyn
     ],
     used: { month: 3, total: 2 },
   });
-  page.on("dialog", (d) => d.accept());
   await page.goto("/projects.html");
   await expect(page.locator("#projects-plan")).toHaveText("Plan: Starter");
   await expect(page.locator("#usage-month")).toContainText("3 of 10");
@@ -123,7 +128,18 @@ test("My projects lists, renames and deletes, and shows the plan's limits", asyn
   await page.getByRole("button", { name: "Save name" }).click();
   await expect(page.locator(".project-name").nth(1)).toHaveText("Lee upstairs bath");
 
+  // Delete asks first, in a dialog that names the project, Cancel focused.
   await page.getByRole("button", { name: "Delete Smith main bath" }).click();
+  const confirm = page.locator("#projects-delete-dialog");
+  await expect(confirm).toBeVisible();
+  await expect(confirm).toContainText("Delete “Smith main bath”?");
+  await expect(confirm.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(confirm).toBeHidden();
+  await expect(page.locator(".project-item")).toHaveCount(2);
+  await page.getByRole("button", { name: "Delete Smith main bath" }).click();
+  await confirm.getByRole("button", { name: "Delete project" }).click();
+  await expect(confirm).toBeHidden();
   await expect(page.locator(".project-item")).toHaveCount(1);
   await expect(page.locator("#usage-total")).toContainText("1 of 50");
   // The monthly count doesn't go back down.
@@ -312,4 +328,291 @@ test("a project's 3D model follows the page when the theme is switched", async (
   await expect(model).toHaveAttribute("data-theme", "light");
   await page.locator("[data-theme-choice='system']").click();
   await expect(model).not.toHaveAttribute("data-theme", /./);
+});
+
+test("My projects sorts, filters by status, searches status words, and keeps the view in the address", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Smith main bath", info: { status: "progress" }, updated_at: "2026-10-03T12:00:00Z" },
+      { id: "a2", name: "Lee guest bath", info: { status: "lead" }, updated_at: "2026-10-02T12:00:00Z" },
+      { id: "a3", name: "Alvarez powder room", info: { status: "progress" }, updated_at: "2026-10-01T12:00:00Z" },
+    ],
+  });
+  await page.goto("/projects.html");
+  const names = page.locator(".project-name");
+  await expect(names).toHaveText(["Smith main bath", "Lee guest bath", "Alvarez powder room"]);
+
+  await page.getByLabel("Sort by").selectOption("name");
+  await expect(names).toHaveText(["Alvarez powder room", "Lee guest bath", "Smith main bath"]);
+  await page.getByLabel("Status", { exact: true }).selectOption("progress");
+  await expect(names).toHaveText(["Alvarez powder room", "Smith main bath"]);
+  await expect(page).toHaveURL(/sort=name/);
+  await expect(page).toHaveURL(/status=progress/);
+
+  // A reload keeps the view.
+  await page.reload();
+  await expect(names).toHaveText(["Alvarez powder room", "Smith main bath"]);
+  await expect(page.getByLabel("Status", { exact: true })).toHaveValue("progress");
+
+  await page.getByLabel("Status", { exact: true }).selectOption("");
+  await page.getByLabel(/^Search/).fill("new lead");
+  await expect(names).toHaveText(["Lee guest bath"]);
+  await expect(page).toHaveURL(/q=new\+lead/);
+  await page.getByLabel(/^Search/).fill("zzz");
+  await expect(page.locator("#projects-no-match")).toBeVisible();
+  await expect(page.locator("#projects-empty")).toBeHidden();
+});
+
+test("when the list can't load, My projects says so with Try again, and never 'No projects yet'", async ({ page }) => {
+  const state = await signedIn(page, { projects: [{ id: "a1", name: "Smith main bath", updated_at: DAY }] });
+  let failing = true;
+  await page.route("**/api/projects**", (route) => {
+    if (!failing) return route.fallback();
+    return route.fulfill({ status: 500, json: { error: "server" } });
+  });
+  await page.goto("/projects.html");
+  const failed = page.locator("#projects-failed");
+  await expect(failed).toBeVisible();
+  await expect(failed).toContainText("Couldn't load your projects. Something went wrong on our side.");
+  await expect(page.locator("#projects-empty")).toBeHidden();
+  await expect(page.locator("#projects-app")).toBeHidden();
+  await expect(page.locator("#projects-loading")).toBeHidden();
+
+  failing = false;
+  await failed.getByRole("button", { name: "Try again" }).click();
+  await expect(page.locator(".project-item")).toHaveCount(1);
+  await expect(failed).toBeHidden();
+  expect(state.calls.filter((c) => c.method === "GET").length).toBe(1);
+});
+
+test("a list request that never answers times out instead of loading forever", async ({ page }) => {
+  test.setTimeout(60000);
+  await signedIn(page);
+  await page.route("**/api/projects**", () => new Promise(() => {}));
+  await page.goto("/projects.html");
+  await expect(page.locator("#projects-loading")).toBeVisible();
+  await expect(page.locator("#projects-failed")).toBeVisible({ timeout: 25000 });
+  await expect(page.locator("#projects-failed")).toContainText("taking too long to answer");
+  await expect(page.locator("#projects-empty")).toBeHidden();
+});
+
+test("an ended sign-in on My projects shows only the way to log in again, in Portuguese too", async ({ page }) => {
+  await signedIn(page);
+  await page.route("**/api/projects**", (route) => route.fulfill({ status: 401, json: { error: "signin" } }));
+  await page.goto("/pt/projects.html?lang=pt");
+  const prompt = page.locator("#projects-signin");
+  await expect(prompt).toBeVisible();
+  await expect(prompt).toContainText("A sua sessão terminou");
+  await expect(prompt.getByRole("link", { name: "Entrar" })).toHaveAttribute("href", /signup\.html\?mode=login/);
+  await expect(page.locator("#projects-empty")).toBeHidden();
+  await expect(page.locator("#projects-failed")).toBeHidden();
+  await expect(page.locator("#projects-status")).toBeHidden();
+});
+
+test("viewing a saved project never overwrites the owner's unsaved design", async ({ page }) => {
+  test.setTimeout(90000); // four visits to the designer, three of them drawing the 3D room
+  await page.goto("/designer.html");
+  const saved = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const draft = await page.evaluate(() => {
+    const d = window.RoomPlan.fromTemplate("full5x8", null);
+    return window.RoomPlan.encode(window.RoomPlan.resize(d, { w: 10, l: d.room.l, h: d.room.h }));
+  });
+  await signedIn(page, { projects: [{ id: "a1", name: "Old job", design: saved, updated_at: DAY }] });
+
+  // The owner's work in progress: a 10 ft wide room, kept in this browser.
+  await openStudio(page, `/designer.html?b=smith-bath#design=${draft}`);
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(10);
+  const stored = () =>
+    page.evaluate(() => {
+      const raw = localStorage.getItem("rd3d_design_smith-bath");
+      return raw ? JSON.parse(raw).design.room.w : null;
+    });
+  await expect.poll(stored).toBe(10);
+
+  // They look at an old project (as its page does, and as "Open in the designer" does).
+  await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
+  await page.waitForTimeout(600); // past the studio's save debounce
+  expect(await stored()).toBe(10);
+
+  await openStudio(page, "/designer.html?b=smith-bath&project=a1");
+  await expect(page.locator("#project-bar")).toContainText("Project: Old job");
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
+  await page.locator("#studio-size-w").fill("6");
+  await page.locator("#studio-size-w").press("Enter");
+  await page.waitForTimeout(600);
+  expect(await stored()).toBe(10);
+
+  // Back in their own designer, the work in progress is still there.
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(10);
+});
+
+test("the save bar shows unsaved changes after a save, warns before leaving, and handles a two-tab conflict", async ({
+  page,
+}) => {
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const state = await signedIn(page, { projects: [{ id: "a1", name: "Wide bath", design, updated_at: DAY }] });
+  await openStudio(page, "/designer.html?b=smith-bath&project=a1");
+  await expect(page.locator("#project-bar")).toContainText("Project: Wide bath");
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
+  const status = page.locator("#project-status");
+  await expect(status).toBeHidden();
+  const leaving = () =>
+    page.evaluate(() => {
+      const e = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+  expect(await leaving()).toBe(false);
+
+  // An edit: the bar says so, and leaving asks first.
+  await page.locator("#studio-size-w").fill("9");
+  await page.locator("#studio-size-w").press("Enter");
+  await expect(status).toContainText("Unsaved changes");
+  expect(await leaving()).toBe(true);
+
+  await page.locator("#project-save").click();
+  await expect(status).toContainText("Saved “Wide bath”.");
+  expect(await leaving()).toBe(false);
+  const first = state.calls.filter((c) => c.method === "PATCH")[0];
+  expect(first.body.updated_at).toBe(DAY);
+
+  // "Saved" doesn't outlive the next edit.
+  await page.locator("#studio-size-w").fill("10");
+  await page.locator("#studio-size-w").press("Enter");
+  await expect(status).toContainText("Unsaved changes");
+  await expect(status).not.toContainText("Saved");
+
+  // Another tab saved meanwhile: the save is refused, with the choice.
+  state.projects[0].updated_at = "2026-10-05T09:00:00Z";
+  await page.locator("#project-save").click();
+  await expect(status).toContainText("changed in another tab or on another device");
+  await expect(status.getByRole("button", { name: "Load the newer version" })).toBeVisible();
+  await status.getByRole("button", { name: "Save mine anyway" }).click();
+  await expect(status).toContainText("Saved “Wide bath”.");
+  const patches = state.calls.filter((c) => c.method === "PATCH");
+  expect(patches.length).toBe(3);
+  expect(patches[2].body.updated_at).toBeUndefined();
+  expect(await page.evaluate(() => window.RoomPlan.decode(window.StudioDesign.encoded()).room.w)).toBe(10);
+});
+
+test("the save dialog has a close X, keeps typed details when reopened, and puts a field's error next to it", async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.route("**/api/projects**", (route) => {
+    const req = route.request();
+    if (req.method() !== "POST") return route.fallback();
+    return route.fulfill({ status: 400, json: { error: "info", field: "client", reason: "long" } });
+  });
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await page.locator("#project-save").click();
+  const dialog = page.locator("#project-dialog");
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel("Client name").fill("Maria Garcia");
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await page.locator("#project-save").click();
+  await expect(dialog.getByLabel("Client name")).toHaveValue("Maria Garcia");
+
+  // A bad email is caught here, at the field.
+  await dialog.getByLabel("Email").fill("not-an-email");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  await expect(dialog.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
+  await expect(dialog.getByLabel("Email")).toBeFocused();
+  await expect(dialog.locator("#new-email-error")).toHaveText("Enter a valid email address.");
+
+  // A field the server refuses is marked the same way.
+  await dialog.getByLabel("Email").fill("maria@example.com");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  await expect(dialog.getByLabel("Email")).not.toHaveAttribute("aria-invalid", "true");
+  await expect(dialog.getByLabel("Client name")).toHaveAttribute("aria-invalid", "true");
+  await expect(dialog.locator("#new-client-error")).toHaveText("This is too long. Shorten it.");
+  await expect(dialog.getByLabel("Client name")).toBeFocused();
+});
+
+test("saving a project while offline says so, and the design is kept", async ({ page, context }) => {
+  await signedIn(page);
+  await openStudio(page, "/es/designer.html?b=smith-bath&lang=es");
+  await page.locator("#project-save").click();
+  await context.setOffline(true);
+  await page.route("**/api/projects**", (route) => route.abort("internetdisconnected"));
+  await page.locator("#project-dialog").getByRole("button", { name: "Guardar proyecto" }).click();
+  await expect(page.locator("#project-dialog-status")).toContainText(
+    "No se pudo guardar el proyecto. Está sin conexión. Revise su conexión e inténtelo de nuevo.",
+  );
+  await context.setOffline(false);
+});
+
+test("a project's info form asks before leaving with edits, and a stale save offers the newer version", async ({
+  page,
+}) => {
+  const state = await signedIn(page, {
+    projects: [{ id: "a1", name: "Garcia bath", design: "", info: { client: "Maria Garcia" }, updated_at: DAY }],
+  });
+  await page.goto("/project.html?id=a1#info");
+  await expect(page.locator("#panel-info")).toBeVisible();
+  const leaving = () =>
+    page.evaluate(() => {
+      const e = new Event("beforeunload", { cancelable: true });
+      window.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+  expect(await leaving()).toBe(false);
+  await page.locator("#panel-info").getByLabel("Phone").fill("801-555-0100");
+  expect(await leaving()).toBe(true);
+
+  // Someone else saved the project meanwhile.
+  state.projects[0].updated_at = "2026-10-05T09:00:00Z";
+  state.projects[0].info = { client: "Maria Garcia", city: "Orem" };
+  await page.getByRole("button", { name: "Save info" }).click();
+  const out = page.locator("#project-info-status");
+  await expect(out).toContainText("changed in another tab or on another device");
+  await out.getByRole("button", { name: "Load the newer version" }).click();
+  await expect(page.locator("#panel-info").getByLabel("City")).toHaveValue("Orem");
+  await expect(page.locator("#panel-info").getByLabel("Phone")).toHaveValue("");
+  expect(await leaving()).toBe(false);
+
+  await page.locator("#panel-info").getByLabel("Phone").fill("801-555-0100");
+  await page.getByRole("button", { name: "Save info" }).click();
+  await expect(out).toHaveText("Info saved.");
+  expect(await leaving()).toBe(false);
+  const last = state.calls.filter((c) => c.method === "PATCH").pop();
+  expect(last.body.info).toEqual({ client: "Maria Garcia", city: "Orem", phone: "801-555-0100" });
+});
+
+test("rename cancels on Escape", async ({ page }) => {
+  await signedIn(page, { projects: [{ id: "a1", name: "Smith main bath", updated_at: DAY }] });
+  await page.goto("/projects.html");
+  await page.getByRole("button", { name: "Rename Smith main bath" }).click();
+  const input = page.getByLabel("Project name");
+  await input.fill("Something else");
+  await input.press("Escape");
+  await expect(page.locator(".project-rename")).toHaveCount(0);
+  await expect(page.locator(".project-name")).toHaveText("Smith main bath");
+  await expect(page.getByRole("button", { name: "Rename Smith main bath" })).toBeFocused();
+});
+
+test("in the owner's own designer the estimate step speaks to the business, not a homeowner", async ({ page }) => {
+  await signedIn(page);
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await answerAll(page);
+  await page.locator(".studio-step-btn[data-step='estimate']").click();
+  const intro = page.locator(".studio-step.is-estimate .studio-step-intro");
+  await expect(intro).toContainText("Save it as a project, or download the PDF for your client.");
+  await expect(page.locator(".riley-text")).toContainText("Save it as a project");
+  await expect(page.locator("#studio-request")).toBeHidden();
+  await expect(page.locator(".studio-step.is-estimate")).not.toContainText("Send your design to");
+
+  // The public demo keeps the homeowner's request flow.
+  await openStudio(page, "/designer.html");
+  await answerAll(page);
+  await page.locator(".studio-step-btn[data-step='estimate']").click();
+  await expect(page.locator(".studio-step.is-estimate .studio-step-intro")).toContainText("get a real quote");
+  await expect(page.locator(".studio-step.is-estimate")).toContainText("Send your design to Sample Remodeling Co.");
 });

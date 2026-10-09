@@ -677,6 +677,44 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("Escape closes Riley's voice list and returns focus to its button", async ({ page }) => {
+    await page.addInitScript(() => {
+      const voices = [{ name: "Samantha", lang: "en-US", localService: true }];
+      const synth = { getVoices: () => voices, speak: () => {}, cancel: () => {}, addEventListener: () => {} };
+      Object.defineProperty(window, "speechSynthesis", { value: synth, configurable: true });
+      window.SpeechSynthesisUtterance = function (text) {
+        this.text = text;
+      };
+    });
+    const errors = await openStudio(page);
+    const riley = page.locator(".riley");
+    const button = riley.getByRole("button", { name: "Choose Riley's voice" });
+    await button.click();
+    await expect(riley.locator(".riley-voices")).toBeVisible();
+    await riley.getByRole("button", { name: "Done" }).focus();
+    await page.keyboard.press("Escape");
+    await expect(riley.locator(".riley-voices")).toBeHidden();
+    await expect(button).toBeFocused();
+    await expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(errors).toEqual([]);
+  });
+
+  test("while its scripts are still on their way, the designer says it's loading", async ({ page }) => {
+    // The studio's own script arrives late, as on a slow connection.
+    await page.route("**/js/studio.js", async (route) => {
+      await new Promise((r) => setTimeout(r, 2500));
+      await route.continue();
+    });
+    // Not waiting for "load": deferred scripts have run by then.
+    await page.goto("/designer.html", { waitUntil: "commit" });
+    const loading = page.locator("#studio-loading");
+    await expect(loading).toBeVisible();
+    await expect(loading).toContainText("Loading the designer…");
+    await expect(page.locator("#room-3d-canvas")).toHaveAttribute("data-loading", "Loading the designer…");
+    await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 20000 });
+    await expect(loading).toHaveCount(0);
+  });
+
   test("Riley talks through each step and offers a fix when something won't work", async ({ page }) => {
     const errors = await openStudio(page);
     const riley = page.locator(".riley");

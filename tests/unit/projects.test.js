@@ -268,6 +268,7 @@ test("projects: client and job details are checked field by field", async () => 
 test("projects: a save that names the version it loaded is refused once the project changed", async () => {
   const data = fakeSupabase({ status: "active" });
   const created = (await call("POST", { body: { name: "Job", design: DESIGN } })).json().project;
+  data.projects[0].updated_at = "2026-10-01T12:00:00.000Z"; // saved a while ago
   const loaded = (await call("GET", { query: { id: created.id } })).json().project.updated_at;
 
   // The same tab saves: fine, and the version moves on.

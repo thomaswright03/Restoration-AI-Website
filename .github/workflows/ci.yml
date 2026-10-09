@@ -29,6 +29,9 @@ jobs:
       - name: Formatting (Prettier)
         run: npm run format:check
 
+      - name: Type check (tsc over api/ and the pure modules, jsconfig.json)
+        run: npm run typecheck
+
       - name: Built pages match their templates and every text has es/pt translations
         run: npm run check:pages
 

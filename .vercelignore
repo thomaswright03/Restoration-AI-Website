@@ -6,6 +6,7 @@
 /scripts/
 /supabase/
 /tests/
+/types/
 /tools/
 /test-results/
 /playwright-report/

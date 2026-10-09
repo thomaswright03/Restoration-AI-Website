@@ -13,7 +13,7 @@
 //
 // Loads as a plain browser script (window.I18n) and as a Node module.
 
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   "use strict";
   var api = factory();
   if (typeof module === "object" && module.exports) {

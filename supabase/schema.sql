@@ -172,3 +172,47 @@ end;
 $$;
 revoke all on function public.create_project(uuid, text, text, integer, integer, jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.create_project(uuid, text, text, integer, integer, jsonb, jsonb) to service_role;
+
+-- Kill switch (api/_switches.js). One row; flip a column to false in Table
+-- Editor to stop that part of the product without a deploy, true to resume:
+--   signups   new accounts (the sign-up page hides its form; the trigger below
+--             refuses the account even if a request gets past the page)
+--   checkout  buying a plan (api/checkout.js answers 503 {error: "paused"})
+--   saving    saving a project's design (api/projects.js answers 503 {error: "paused"})
+--   notice    a short message shown on the account and sign-up pages while not empty
+-- The API caches the row for 15 seconds. Only the server reads it.
+create table if not exists public.site_switches (
+  id smallint primary key default 1 check (id = 1),
+  signups boolean not null default true,
+  checkout boolean not null default true,
+  saving boolean not null default true,
+  notice text not null default '' check (char_length(notice) <= 500),
+  updated_at timestamptz not null default now()
+);
+insert into public.site_switches (id) values (1) on conflict (id) do nothing;
+alter table public.site_switches enable row level security;
+revoke all on public.site_switches from anon, authenticated;
+
+-- With signups off, Supabase Auth refuses to create the user (the sign-up
+-- request fails), so the switch holds even for a request made outside the
+-- page. Runs as the function's owner, so the auth service needs no rights on
+-- the table itself.
+create or replace function public.refuse_signup_when_paused()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if exists (select 1 from public.site_switches where id = 1 and signups = false) then
+    raise exception 'signups-paused' using hint = 'New sign-ups are paused (site_switches.signups).';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function public.refuse_signup_when_paused() from public, anon, authenticated;
+grant execute on function public.refuse_signup_when_paused() to supabase_auth_admin;
+drop trigger if exists refuse_signup_when_paused on auth.users;
+create trigger refuse_signup_when_paused
+  before insert on auth.users
+  for each row execute function public.refuse_signup_when_paused();

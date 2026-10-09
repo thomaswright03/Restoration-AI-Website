@@ -48,8 +48,10 @@ test("with no keys set, config reports demo mode and the business script says no
     delete process.env[k];
   }
   const cfg = fakeRes();
-  require("../../api/config.js")({ headers: {} }, cfg);
+  await require("../../api/config.js")({ headers: {} }, cfg);
   assert.equal(JSON.parse(cfg.body).accounts, false);
+  // With nothing configured every switch is on.
+  assert.deepEqual(JSON.parse(cfg.body).switches, { signups: true, checkout: true, saving: true });
 
   const biz = fakeRes();
   await require("../../api/business.js")({ query: { b: "smith" }, headers: {} }, biz);

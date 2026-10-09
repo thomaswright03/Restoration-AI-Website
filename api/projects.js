@@ -15,10 +15,15 @@
 // Limits per plan are in api/_plans.js. A new project is created by the
 // create_project() database function (supabase/schema.sql), which checks
 // both limits and inserts in one locked transaction.
+//
+// Saving a design (POST, or PATCH with a design) answers 503 {error: "paused"}
+// while the saving switch is off (api/_switches.js); renaming, editing the
+// details, reading and deleting still work.
 "use strict";
 
-const { supabaseReady, sendJson, db, currentUser, readForm } = require("./_lib.js");
+const { supabaseReady, sendJson, db, requireUser, readForm } = require("./_lib.js");
 const { planOf, limitsOf } = require("./_plans.js");
+const { isOff, pausedBody, switches } = require("./_switches.js");
 const Plan = require("../js/room-plan.js");
 
 const ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -106,11 +111,12 @@ function missingTables(e) {
 
 module.exports = async function handler(req, res) {
   if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
-  const user = await currentUser(req);
-  if (!user) return sendJson(res, 401, { error: "signin" });
-  const owner = "owner_id=eq." + encodeURIComponent(user.id);
 
   try {
+    const user = await requireUser(req, res);
+    if (!user) return;
+    const owner = "owner_id=eq." + encodeURIComponent(user.id);
+
     if (req.method === "GET") {
       const id = String((req.query && req.query.id) || "");
       if (id) {
@@ -137,6 +143,7 @@ module.exports = async function handler(req, res) {
       if (!info) return sendJson(res, 400, { error: "info" });
       const summary = cleanSummary(body.summary);
       if (summary === false) return sendJson(res, 400, { error: "summary" });
+      if (await isOff("saving")) return sendJson(res, 503, pausedBody("saving", await switches()));
       const { plan, limits } = await planFor(user.id);
       if (!limits.total) return sendJson(res, 403, { error: "plan", plan });
       const result = await db("rpc/create_project", {
@@ -173,6 +180,7 @@ module.exports = async function handler(req, res) {
         const summary = cleanSummary(body.summary);
         if (summary === false) return sendJson(res, 400, { error: "summary" });
         if (summary) patch.summary = summary;
+        if (await isOff("saving")) return sendJson(res, 503, pausedBody("saving", await switches()));
         // Saving a design is what a paid plan buys; renaming isn't.
         const { plan, limits } = await planFor(user.id);
         if (!limits.total) return sendJson(res, 403, { error: "plan", plan });

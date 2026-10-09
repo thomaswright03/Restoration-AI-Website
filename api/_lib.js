@@ -8,9 +8,47 @@
 //   STRIPE_PRICE_STARTER, STRIPE_PRICE_PRO, STRIPE_PRICE_MAX (monthly prices)
 //   PROMO_CODES (optional, free-week codes; see api/_plans.js)
 //   TRIAL_DAYS (optional: a trial for everyone, e.g. 14), SITE_URL (optional, e.g. https://example.com)
+//   STRIPE_API_VERSION (optional: overrides the pinned Stripe API version below)
+//
+// Every call to Supabase or Stripe has a timeout, so a hung upstream answers
+// with a JSON error within a few seconds instead of holding the function
+// until Vercel kills it. The handlers answer these errors (always JSON):
+//   401 {error: "signin"}        no valid sign-in token
+//   503 {error: "unavailable"}   Supabase Auth couldn't answer (not the same as "sign in")
+//   503 {error: "paused"}        the action is switched off (api/_switches.js)
+//   502 {error: "server"}        the database failed;  502 {error: "stripe"}  Stripe failed
 "use strict";
 
 const crypto = require("node:crypto");
+
+// How long one upstream call may take. Vercel functions get 10 s by default.
+const UPSTREAM_TIMEOUT_MS = 8000;
+
+// Stripe's behaviour (the shapes it sends, the webhook payloads) is pinned to
+// one API version, so a dashboard upgrade can't change what this code reads.
+// periodEnd() in api/stripe-webhook.js reads this version's shape.
+const STRIPE_API_VERSION = "2025-08-27.basil";
+
+// fetch with a bounded wait. A timeout or network failure rejects with an
+// Error whose .upstream is true, so handlers can tell it from a bug.
+async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, ms);
+  try {
+    return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
+  } catch (e) {
+    const err = new Error("Upstream " + (timedOut ? "timeout" : "unreachable") + ": " + url);
+    err.upstream = true;
+    err.cause = e;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function env(name) {
   return (process.env[name] || "").trim();
@@ -46,7 +84,7 @@ function siteUrl(req) {
 // so only ever used server-side, with filters built from validated input).
 async function db(path, options = {}) {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
-  const res = await fetch(env("SUPABASE_URL") + "/rest/v1/" + path, {
+  const res = await fetchWithTimeout(env("SUPABASE_URL") + "/rest/v1/" + path, {
     method: options.method || "GET",
     headers: Object.assign(
       { apikey: key, Authorization: "Bearer " + key, "Content-Type": "application/json" },
@@ -59,17 +97,48 @@ async function db(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
-// The signed-in user behind "Authorization: Bearer <Supabase access token>".
+// The signed-in user behind "Authorization: Bearer <Supabase access token>",
+// or null when there's no valid sign-in. Throws (err.upstream) when Supabase
+// Auth itself fails or doesn't answer, so an outage is never reported as
+// "please sign in".
 async function currentUser(req) {
   const header = String(req.headers.authorization || "");
   const m = /^Bearer\s+(\S+)$/.exec(header);
   if (!m) return null;
-  const res = await fetch(env("SUPABASE_URL") + "/auth/v1/user", {
+  const res = await fetchWithTimeout(env("SUPABASE_URL") + "/auth/v1/user", {
     headers: { apikey: env("SUPABASE_ANON_KEY"), Authorization: "Bearer " + m[1] },
   });
+  if (res.status >= 500) {
+    const err = new Error("Supabase auth " + res.status);
+    err.upstream = true;
+    throw err;
+  }
   if (!res.ok) return null;
-  const user = await res.json();
+  let user = null;
+  try {
+    user = await res.json();
+  } catch {
+    return null;
+  }
   return user && user.id ? user : null;
+}
+
+// The signed-in user, or null after answering the request itself: 401 for no
+// sign-in, 503 {error: "unavailable"} when the auth service failed.
+async function requireUser(req, res) {
+  let user;
+  try {
+    user = await currentUser(req);
+  } catch (e) {
+    console.error(e);
+    sendJson(res, 503, { error: "unavailable" });
+    return null;
+  }
+  if (!user) {
+    sendJson(res, 401, { error: "signin" });
+    return null;
+  }
+  return user;
 }
 
 // Stripe REST: form-encoded bodies, nested keys as a[b][c].
@@ -84,18 +153,42 @@ function formEncode(obj, prefix, out) {
   return out;
 }
 
-async function stripe(path, params, method) {
-  const res = await fetch("https://api.stripe.com/v1/" + path, {
-    method: method || (params ? "POST" : "GET"),
-    headers: {
-      Authorization: "Bearer " + env("STRIPE_SECRET_KEY"),
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: params ? formEncode(params).toString() : undefined,
+// A Stripe call. params: form fields (a GET with params puts them in the
+// query string). options.idempotencyKey: for a create call, so a retry of the
+// same request (a double click, a function retried) makes one object, not two.
+async function stripe(path, params, method, options = {}) {
+  method = method || (params ? "POST" : "GET");
+  const encoded = params ? formEncode(params).toString() : "";
+  const url = "https://api.stripe.com/v1/" + path + (method === "GET" && encoded ? "?" + encoded : "");
+  const headers = {
+    Authorization: "Bearer " + env("STRIPE_SECRET_KEY"),
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Stripe-Version": env("STRIPE_API_VERSION") || STRIPE_API_VERSION,
+  };
+  if (options.idempotencyKey) headers["Idempotency-Key"] = String(options.idempotencyKey).slice(0, 255);
+  const res = await fetchWithTimeout(url, {
+    method,
+    headers,
+    body: method === "GET" ? undefined : encoded || undefined,
   });
-  const data = await res.json();
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
   if (!res.ok) throw new Error("Stripe " + res.status + ": " + ((data.error && data.error.message) || ""));
   return data;
+}
+
+// A stable idempotency key for a Stripe create call: the same request within
+// the same 5-minute window reuses the object Stripe already made.
+function idempotencyKey(parts) {
+  const window = Math.floor(Date.now() / (5 * 60 * 1000));
+  return crypto
+    .createHash("sha256")
+    .update(JSON.stringify(parts) + ":" + window)
+    .digest("hex");
 }
 
 // Verifies a Stripe-Signature header against the raw request body.
@@ -163,14 +256,19 @@ async function activeBusiness(slug) {
 
 module.exports = {
   env,
+  UPSTREAM_TIMEOUT_MS,
+  STRIPE_API_VERSION,
+  fetchWithTimeout,
   supabaseReady,
   stripeReady,
   sendJson,
   siteUrl,
   db,
   currentUser,
+  requireUser,
   formEncode,
   stripe,
+  idempotencyKey,
   verifyStripeSignature,
   readRawBody,
   readForm,

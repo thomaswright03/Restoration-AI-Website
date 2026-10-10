@@ -98,7 +98,7 @@ Pages are built from templates so the three languages can't drift apart:
 - `pages/<page>.html`: each page's content
 - `pages/strings/*.json`: every text as `"key": ["English", "Español", "Português"]`
 
-After editing, run `npm run pages` and commit the rebuilt `*.html`, `es/*.html` and `pt/*.html`. CI fails if a built page is stale or a text is missing a translation. Text shown by JavaScript (the design studio, estimate, forms, account page messages) lives in `js/i18n.js`, also in all three languages.
+After editing, run `npm run pages` and commit the rebuilt `*.html`, `es/*.html` and `pt/*.html`. CI fails if a built page is stale or a text is missing a translation. Text shown by JavaScript (the design studio, estimate, forms, account page messages) lives in `js/i18n.js`, also in all three languages. The pages don't load that file: `npm run pages` also generates `js/i18n/en.js`, `js/i18n/es.js` and `js/i18n/pt.js` from it (`scripts/build-i18n.mjs`), one language each and a third of the size, and each page loads only its own (`pages/layout.html`). Commit them with the pages; `npm run check:pages` fails when they're out of date. Node and the unit tests keep loading the full `js/i18n.js`.
 
 ## The designer code
 

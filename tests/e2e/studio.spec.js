@@ -333,6 +333,56 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("a picked finish changes what the floor is made of, visibly", async ({ page }) => {
+    test.setTimeout(60000);
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "finishes").click();
+    await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
+    // The mean colour of a patch of bare floor near the C/D corner, where
+    // no fixture stands in the sample room.
+    const floorColor = async () => {
+      await page.waitForFunction(() => window.BathroomRoom3D.pendingModels() === 0);
+      await page.waitForTimeout(600);
+      const at = await onScreen(page, 1.0, 0, 3.8);
+      const png = await page.screenshot({ clip: { x: at.x - 4, y: at.y - 4, width: 9, height: 9 } });
+      return page.evaluate(
+        (b64) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const c = document.createElement("canvas");
+              c.width = img.width;
+              c.height = img.height;
+              const ctx = c.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+              const d = ctx.getImageData(0, 0, c.width, c.height).data;
+              const sum = [0, 0, 0];
+              for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) sum[k] += d[i + k];
+              resolve(sum.map((v) => Math.round(v / (d.length / 4))));
+            };
+            img.src = "data:image/png;base64," + b64;
+          }),
+        png.toString("base64"),
+      );
+    };
+    const floor = page.locator('.studio-swatch-group[data-cat="floorTile"] .studio-swatch');
+    await expect(floor.first()).toHaveAttribute("aria-pressed", "true");
+    const grey = await floorColor();
+    const before = await page.evaluate(() => window.BathroomRoom3D.getSurfaceFinishes());
+    expect(before.floor).toBe("hd-300126888"); // Vigo Gris, the grey stone-look tile
+    // The walnut wood-look tile: the floor's material changes, and so does
+    // its colour on screen, to a visibly browner, darker one.
+    await byKey(page, "sw-floorTile-hd-313050938").click();
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.getSurfaceFinishes().floor)).toBe("hd-313050938");
+    const walnut = await floorColor();
+    expect(walnut[0] - walnut[2], `walnut reads brown: ${walnut}`).toBeGreaterThan(25);
+    expect(grey[0] - grey[2], `grey reads grey: ${grey}`).toBeLessThan(20);
+    expect(grey[2] - walnut[2], `the floor got darker: ${grey} -> ${walnut}`).toBeGreaterThan(40);
+    expect(errors).toEqual([]);
+  });
+
   test("finishes change the room and the price", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);

@@ -2341,12 +2341,19 @@ function ensureScene() {
     // instead of looking flat. Generated once; not per-rebuild.
     var pmremGenerator = new THREE.PMREMGenerator(renderer);
     scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+    // Turned well down: at full strength its light boxes reflected off the
+    // floor and walls so brightly that a picked walnut tile read as pale tan
+    // and graphite tile as white. The lights below carry the room; the
+    // environment is for the reflections.
+    scene.environmentIntensity = 0.35;
     pmremGenerator.dispose();
 
     var camera = new THREE.PerspectiveCamera(ORBIT_FOV, 1, 0.1, 200);
 
-    var hemi = new THREE.HemisphereLight(sky.sky, sky.ground, 0.7);
-    var dir = new THREE.DirectionalLight(0xffffff, 1.8);
+    // Enough for white porcelain to read white, not so much that a finish's
+    // own colour washes out on the floor, which faces the light.
+    var hemi = new THREE.HemisphereLight(sky.sky, sky.ground, 0.55);
+    var dir = new THREE.DirectionalLight(0xffffff, 1.4);
     dir.castShadow = true;
     dir.shadow.mapSize.set(1024, 1024);
     dir.shadow.bias = -0.0015;
@@ -4150,6 +4157,22 @@ window.BathroomRoom3D = {
 
   // A picture of the whole room from the overview angle, without the
   // studio's outlines and marks: a JPEG data URL, or null.
+  // How many models (fixture and product GLBs) are still on their way: 0
+  // once everything the room shows is the real thing, not a stand-in. For
+  // the scripts and tests that take pictures of the room.
+  pendingModels: function () {
+    var s = threeState;
+    if (!s) return 0;
+    var n = 0;
+    Object.keys(s.modelRequests).forEach(function (key) {
+      if (s.modelRequests[key] && !s.realModels[key] && !s.modelFailedAt[key]) n++;
+    });
+    Object.keys(s.productModels).forEach(function (url) {
+      if (s.productModels[url] === false) n++;
+    });
+    return n;
+  },
+
   snapshot: function (width, height) {
     var s = threeState;
     if (!s) return null;

@@ -20,7 +20,7 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
     projects: projects.slice(),
     calls: [],
   };
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
     }),
@@ -900,7 +900,7 @@ test("saving paused (the kill switch): the designer's bar and My projects say so
   page,
 }) => {
   await signedIn(page);
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
         accounts: true,
@@ -1033,7 +1033,7 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
 });
 
 test("My projects sends an ended sign-in to log in with the way back", async ({ page }) => {
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
     }),
@@ -1384,4 +1384,77 @@ test("the Status filter shows its whole value and its label stays on one line, i
       expect(level || ownRow, label + " filter level with the others or on its own row").toBe(true);
     }
   }
+});
+
+// The kill switch flipped while a page is open: the switches are read again
+// when the page is looked at again (focus, or the tab shown), so the bar
+// hides Save and says saving is paused before anyone presses it, and My
+// projects shows the notice without a reload.
+test("saving switched off mid-session: the open designer and My projects say so on the next look, before a press", async ({
+  page,
+}) => {
+  await signedIn(page);
+  await openStudio(page, "/designer.html?b=smith-bath");
+  const bar = page.locator("#project-bar");
+  await expect(bar).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("#project-save")).toBeVisible();
+  const fresh = [];
+  await page.route("**/api/config*", (route) => {
+    fresh.push(route.request().url());
+    return route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: true, checkout: true, saving: false },
+        notice: "Back Monday 9am.",
+      },
+    });
+  });
+  // Nothing happens until the page is looked at again.
+  await page.waitForTimeout(500);
+  expect(fresh.length).toBe(0);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(bar).toContainText("Saving projects is paused right now.");
+  await expect(bar).toContainText("Notice: Back Monday 9am.");
+  await expect(page.locator("#project-save")).toBeHidden();
+  // Past the server's cache: the switches as they are now.
+  expect(fresh.some((u) => /fresh=1/.test(u))).toBe(true);
+  // The estimate step's Save goes too.
+  await answerAll(page);
+  await step(page, "estimate").click();
+  await expect(page.getByTestId("estimate-card")).toBeVisible();
+  await expect(page.locator('[data-key="save"]')).toHaveCount(0);
+  // Looking again straight away doesn't ask again (throttled).
+  const asked = fresh.length;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await page.waitForTimeout(300);
+  expect(fresh.length).toBe(asked);
+
+  // My projects, open with saving on, learns the same way.
+  await page.route("**/api/config*", (route) =>
+    route.fulfill({
+      json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
+    }),
+  );
+  await page.goto("/pt/projects.html");
+  await expect(page.locator("#projects-app")).toBeVisible();
+  await expect(page.locator("#projects-paused")).toBeHidden();
+  await page.route("**/api/config*", (route) =>
+    route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: true, checkout: true, saving: false },
+      },
+    }),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.locator("#projects-paused")).toBeVisible();
+  await expect(page.locator("#projects-paused")).toContainText("Salvar projetos está pausado no momento.");
 });

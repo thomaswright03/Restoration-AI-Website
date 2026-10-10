@@ -1044,6 +1044,13 @@
       });
       loadBusiness();
       loadProjectsSummary();
+      // The switches are read again when the page is looked at again, so a
+      // checkout paused mid-session hides the buy buttons before a press.
+      window.Net.watchConfig(function (c) {
+        config = Object.assign({}, config, { switches: c.switches, notice: c.notice });
+        renderPlan();
+        showSiteNotice();
+      });
     });
 
     $("sign-out").addEventListener("click", function () {

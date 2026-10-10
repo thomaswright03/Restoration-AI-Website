@@ -22,6 +22,13 @@
 //     a page says the server couldn't be reached instead of waiting. fresh:
 //     ask the server to read the switches again past its 15 s cache (after a
 //     refusal that may be a switch).
+//   Net.watchConfig(onConfig) -> stop()
+//     Re-reads the switches (Net.config(true)) when the page is looked at
+//     again (the window gets focus, or the tab becomes visible), at most once
+//     every RECHECK_MS, and calls onConfig(config) with each answer that came
+//     back: an open page learns that saving was paused mid-session before a
+//     press. An unreachable answer is kept quiet (the page already says what
+//     it knows).
 //
 // Must load after js/i18n.js and before js/account.js and js/projects.js.
 (function () {
@@ -131,11 +138,41 @@
     });
   }
 
+  // How often an open page may ask again for the switches.
+  var RECHECK_MS = 30000;
+
+  function watchConfig(onConfig) {
+    var last = 0; // when the last re-read was asked for (not the page's first read)
+    var busy = false;
+    function recheck() {
+      if (busy || document.visibilityState === "hidden") return;
+      var now = Date.now();
+      if (now - last < RECHECK_MS) return;
+      last = now;
+      busy = true;
+      config(true).then(function (c) {
+        busy = false;
+        if (c && !c.unreachable) onConfig(c);
+      });
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") recheck();
+    }
+    window.addEventListener("focus", recheck);
+    document.addEventListener("visibilitychange", onVisible);
+    return function stop() {
+      window.removeEventListener("focus", recheck);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }
+
   window.Net = {
     fetchJson: fetchJson,
     errorKey: errorKey,
     timedQuery: timedQuery,
     config: config,
+    watchConfig: watchConfig,
+    RECHECK_MS: RECHECK_MS,
     TIMEOUT: TIMEOUT,
     READ_TIMEOUT: READ_TIMEOUT,
     CONFIG_TIMEOUT: CONFIG_TIMEOUT,

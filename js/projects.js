@@ -932,11 +932,15 @@
         });
       });
       // Saving paused (the kill switch, /api/config): said here, before
-      // anyone opens the designer to save.
-      if (config.switches && config.switches.saving === false) {
-        $("projects-paused-text").textContent = pausedText(config);
-        show($("projects-paused"), true);
+      // anyone opens the designer to save, and kept current while the page
+      // is open (the switches are read again when the page is looked at).
+      function showPaused(c) {
+        var off = c.switches && c.switches.saving === false;
+        if (off) $("projects-paused-text").textContent = pausedText(c);
+        show($("projects-paused"), off);
       }
+      showPaused(config);
+      window.Net.watchConfig(showPaused);
       $("projects-filter").addEventListener("change", renderList);
       $("projects-retry").addEventListener("click", loadList);
       $("projects-clear").addEventListener("click", clearFilters);
@@ -1722,6 +1726,15 @@
           if (!current || !dirty) return;
           e.preventDefault();
           e.returnValue = T("proj.unsavedChanges");
+        });
+        // The switches are read again when the page is looked at again, so
+        // saving paused (or resumed) mid-session shows in the bar before a
+        // press, not after.
+        window.Net.watchConfig(function (c) {
+          var was = barConfig && barConfig.switches && barConfig.switches.saving === false;
+          var now = c.switches && c.switches.saving === false;
+          barConfig = c;
+          if (was !== now && !opening) renderBar();
         });
         // The counts and the project load side by side, not one after the other.
         barReady = api("GET", "?counts=1")

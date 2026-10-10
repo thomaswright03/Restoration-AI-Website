@@ -153,3 +153,26 @@ test("computeMaterialCost buys whole gallons of paint, rounding up to cover the 
   const zeroJob = M.computeMaterialCost("ceilingPaint", 0, "sq ft", 28);
   assert.equal(zeroJob.quantityLabel, "1 gallon", "always buy at least one gallon once the category applies");
 });
+
+test("the catalog carries the day its prices were checked, written in each language for the estimate", () => {
+  assert.match(M.PRICES_AS_OF, /^\d{4}-\d{2}-\d{2}$/);
+  const asOf = new Date(M.PRICES_AS_OF + "T00:00:00");
+  assert.ok(!Number.isNaN(asOf.getTime()), "PRICES_AS_OF is a real date");
+  assert.ok(asOf.getTime() <= Date.now(), "PRICES_AS_OF is not in the future");
+  assert.equal(M.asOfLabel("en-US"), "October 2026");
+  assert.equal(M.asOfLabel("es-US"), "octubre de 2026");
+  assert.equal(M.asOfLabel("pt-BR"), "outubro de 2026");
+  // The estimate's wording says "as of" that month, never "current".
+  const I18n = require("../../js/i18n.js");
+  for (const key of ["card.ledeMaterials", "card.materialsNote", "card.disclaimerMaterials"]) {
+    for (const text of I18n.STRINGS[key]) assert.match(text, /\{asOf\}/, key + " names the as-of date");
+    assert.doesNotMatch(I18n.STRINGS[key][0], /current Home Depot/, key);
+  }
+  // A soft check only (CI never fails on the calendar): a nudge to refresh.
+  const ageDays = (Date.now() - asOf.getTime()) / 86400000;
+  if (ageDays > 180) {
+    console.warn(
+      `materials-pricing.js: catalog prices are ${Math.round(ageDays)} days old (PRICES_AS_OF ${M.PRICES_AS_OF}); refresh them against the listings and set the date.`,
+    );
+  }
+});

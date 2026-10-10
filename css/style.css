@@ -547,9 +547,58 @@ p {
     radial-gradient(ellipse at 20% 15%, rgba(51, 85, 240, 0.16), transparent 55%),
     linear-gradient(160deg, var(--color-dark) 0%, var(--color-dark-soft) 100%);
   color: var(--color-on-dark);
-  padding: 200px var(--gutter) var(--space-10);
+  padding: 160px var(--gutter) var(--space-10);
   text-align: center;
   overflow: hidden;
+}
+
+/* The landing hero: at desktop the words sit left and the designer's picture
+   right, so the product is in the first screen (1440x900) instead of under
+   the fold; narrower, they stack, centred, as before. */
+@media (min-width: 1040px) {
+  .hero.hero-landing {
+    text-align: left;
+  }
+
+  .hero.hero-landing .hero-inner {
+    max-width: 1280px;
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    column-gap: var(--space-8);
+    align-items: center;
+  }
+
+  .hero.hero-landing .hero-words {
+    min-width: 0;
+  }
+
+  /* A little smaller beside the picture, so the Spanish and Portuguese
+     headlines stay to three lines. */
+  .hero.hero-landing h1 {
+    font-size: clamp(2.5rem, 4.3vw, 3.9rem);
+  }
+
+  .hero.hero-landing .eyebrow.center {
+    text-align: left;
+  }
+
+  .hero.hero-landing p {
+    margin-left: 0;
+  }
+
+  .hero.hero-landing .hero-actions {
+    justify-content: flex-start;
+  }
+
+  .hero.hero-landing .hero-shot {
+    margin: 0;
+    max-width: none;
+  }
+
+  .hero.hero-landing .hero-shot figcaption {
+    margin-left: 0;
+    text-align: left;
+  }
 }
 
 .hero.hero-page {
@@ -615,6 +664,8 @@ p {
   display: block;
   width: 100%;
   height: auto;
+  aspect-ratio: 1280 / 760;
+  object-fit: cover;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-on-dark-line);
   box-shadow:
@@ -628,6 +679,13 @@ p {
   max-width: 560px;
   font-size: var(--fs-sm);
   color: var(--color-on-dark-muted);
+}
+
+/* Phones get the tighter crop of the room (pages/index.html <picture>). */
+@media (max-width: 720px) {
+  .hero-shot img {
+    aspect-ratio: 720 / 672;
+  }
 }
 
 /* ---------- Buttons ---------- */

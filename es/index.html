@@ -128,30 +128,41 @@
     </header>
 
     <main id="main">
-      <section class="hero">
+      <section class="hero hero-landing">
         <div class="hero-inner">
-          <p class="eyebrow center">Para empresas de remodelación y restauración</p>
-          <h1><em>Diseñe</em> el baño de su cliente en 3D</h1>
-          <p>
-            Arme el baño, elija piezas y acabados y vea una estimación aproximada con sus precios. Guarde cada diseño
-            como proyecto, con los datos de su cliente y la lista de materiales.
-          </p>
-          <div class="hero-actions">
-            <a href="../es/signup.html" class="btn btn-primary">Empezar</a>
-            <a href="../es/designer.html" class="btn btn-outline">Probar la demo</a>
+          <div class="hero-words">
+            <p class="eyebrow center">Para empresas de remodelación y restauración</p>
+            <h1><em>Diseñe</em> el baño de su cliente en 3D</h1>
+            <p>
+              Arme el baño, elija piezas y acabados y vea una estimación aproximada con sus precios. Guarde cada diseño
+              como proyecto, con los datos de su cliente y la lista de materiales.
+            </p>
+            <div class="hero-actions">
+              <a href="../es/signup.html" class="btn btn-primary">Empezar</a>
+              <a href="../es/designer.html" class="btn btn-outline">Probar la demo</a>
+            </div>
+            <p class="hero-note">
+              ¿Tiene un código promocional? Sus primeros 7 días son gratis. Cancele cuando quiera.
+            </p>
           </div>
-          <p class="hero-note">¿Tiene un código promocional? Sus primeros 7 días son gratis. Cancele cuando quiera.</p>
+          <!-- The designer itself, retaken with scripts/hero-shots.mjs (one image per language); phones get a tighter crop of the room. -->
           <figure class="hero-shot">
-            <img
-              src="../images/designer-layout-3d.webp"
-              srcset="../images/designer-layout-3d-720.webp 720w, ../images/designer-layout-3d.webp 1440w"
-              sizes="(min-width: 1040px) 960px, calc(100vw - 32px)"
-              width="1440"
-              height="743"
-              alt="El paso de distribución del diseñador: un baño de 5 por 8 pies en 3D con un mueble de lavabo, un inodoro y una bañera colocados junto a sus paredes, un pequeño plano en la esquina, la lista de piezas en el baño y la estimación actualizada arriba a la derecha."
-              fetchpriority="high"
-              decoding="async"
-            />
+            <picture>
+              <source
+                media="(max-width: 720px)"
+                srcset="../images/hero-designer-es-phone.webp"
+                width="720"
+                height="672"
+              />
+              <img
+                src="../images/hero-designer-es.webp"
+                width="1280"
+                height="760"
+                alt="El paso de distribución del diseñador: un baño de 5 por 8½ pies en 3D con un mueble de lavabo, un inodoro y una bañera junto a sus paredes, los seis pasos arriba, la nota de Riley bajo el baño, las piezas para agregar a la derecha y la estimación actualizada en la esquina superior."
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <figcaption>
               El paso de distribución: arrastre las piezas junto a las paredes, vea el plano de un vistazo y observe
               cómo la estimación se actualiza.

@@ -1983,6 +1983,7 @@
     if (!base.tight) return items;
     items.forEach(function (item, i) {
       if (item.type !== "toilet") return;
+      /** @type {{ items: any[], score: { bad: number, tight: number } } | null} */
       var best = null;
       for (var k = 1; k <= 24 && base.tight; k++) {
         [k, -k].forEach(function (inches) {

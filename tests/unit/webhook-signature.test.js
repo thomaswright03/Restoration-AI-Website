@@ -65,6 +65,8 @@ test("webhook: a stale subscription event records the subscription as Stripe has
         },
       });
     }
+    // The account's row (none yet), read before a live subscription is recorded.
+    if (u.pathname === "/rest/v1/subscriptions" && (opts.method || "GET") === "GET") return reply(200, []);
     if (u.pathname === "/rest/v1/subscriptions") {
       saved.push(JSON.parse(opts.body));
       return reply(201);

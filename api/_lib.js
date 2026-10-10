@@ -74,10 +74,13 @@ async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
     timedOut = true;
     throw upstreamError(new Error("request budget spent"));
   }
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, Math.min(ms, left));
+  const timer = setTimeout(
+    () => {
+      timedOut = true;
+      controller.abort();
+    },
+    Math.min(ms, left),
+  );
   let res;
   try {
     res = await fetch(url, Object.assign({}, options, { signal: controller.signal }));

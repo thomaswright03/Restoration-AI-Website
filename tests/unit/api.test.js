@@ -173,3 +173,94 @@ test("dbCount asks the database for the number and reads it from Content-Range",
   assert.equal(await lib.dbCount("projects"), 3);
   assert.equal(n, 2);
 });
+
+test("dbCount leaves no timer pending once the count is in (a HEAD has no body to wait for)", async () => {
+  process.env.SUPABASE_URL = "https://db.example";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
+  const realSet = global.setTimeout;
+  const realClear = global.clearTimeout;
+  const pending = new Set();
+  global.setTimeout = (fn, ms, ...rest) => {
+    const id = realSet(
+      (...args) => {
+        pending.delete(id);
+        fn(...args);
+      },
+      ms,
+      ...rest,
+    );
+    pending.add(id);
+    return id;
+  };
+  global.clearTimeout = (id) => {
+    pending.delete(id);
+    realClear(id);
+  };
+  try {
+    global.fetch = async () => ({
+      ok: true,
+      status: 200,
+      body: null,
+      headers: { get: (k) => (k === "content-range" ? "0-4/5" : null) },
+      text: async () => "",
+      json: async () => null,
+    });
+    assert.equal(await lib.dbCount("projects?owner_id=eq.u1"), 5);
+    assert.equal(pending.size, 0, "the abort timer was cleared");
+    // A failed count too (a 5xx that was retried, then a header missing).
+    let n = 0;
+    global.fetch = async () => ({
+      ok: ++n > 1,
+      status: n > 1 ? 200 : 503,
+      body: null,
+      headers: { get: () => null },
+      text: async () => "",
+      json: async () => null,
+    });
+    await assert.rejects(lib.dbCount("projects"), /no Content-Range/);
+    assert.equal(pending.size, 0);
+  } finally {
+    global.setTimeout = realSet;
+    global.clearTimeout = realClear;
+  }
+});
+
+test("withBudget: every upstream call is cut to what the request has left, and a spent budget fails at once", async () => {
+  process.env.SUPABASE_URL = "https://db.example";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
+  assert.ok(lib.REQUEST_BUDGET_MS < 15000, "the budget ends before the browser's 15 s wait (js/net.js)");
+  const calls = [];
+  // A database that never answers: aborted by the budget, not by the 8 s cap.
+  global.fetch = (url, opts) =>
+    new Promise((resolve, reject) => {
+      calls.push(opts.method || "GET");
+      opts.signal.addEventListener("abort", () => reject(new Error("aborted")));
+    });
+  const started = Date.now();
+  await lib.withBudget(120, async () => {
+    await assert.rejects(lib.db("projects?select=id"), (e) => e.upstream && e.timedOut);
+    // The budget is spent: the next call doesn't even start.
+    await assert.rejects(lib.db("subscriptions?select=id"), (e) => e.upstream && e.timedOut);
+  });
+  assert.ok(Date.now() - started < 2000, "answered within the budget, not after the 8 s cap");
+  assert.deepEqual(calls, ["GET"], "no fetch once the budget was spent, and no retry of a timeout");
+  // Outside a budget, nothing changes: the per-call cap applies.
+  assert.equal(lib.budgetLeft(), Infinity);
+});
+
+test("withBudget: a retry is skipped when too little of the budget is left for it", async () => {
+  process.env.SUPABASE_URL = "https://db.example";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
+  // A 503 then rows: retried with a roomy budget...
+  let calls = scriptedFetch([{ status: 503, body: "busy" }, { body: "[]" }]);
+  await lib.withBudget(lib.RETRY_MIN_LEFT_MS + 5000, async () => {
+    assert.deepEqual(await lib.db("projects?select=id"), []);
+  });
+  assert.equal(calls.length, 2);
+  // ...and not when the retry couldn't finish inside what's left.
+  calls = scriptedFetch([{ status: 503, body: "busy" }, { body: "[]" }]);
+  await lib.withBudget(lib.RETRY_MIN_LEFT_MS - 100, async () => {
+    await assert.rejects(lib.db("projects?select=id"), /Supabase 503/);
+  });
+  assert.equal(calls.length, 1);
+});

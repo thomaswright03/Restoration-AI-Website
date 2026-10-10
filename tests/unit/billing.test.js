@@ -258,6 +258,42 @@ test("a Stripe create with an idempotency key is retried once on 5xx, 429 or a d
 
 // ---------------------------------------------------------------- plan mapping
 
+test("Stripe-Should-Retry decides a retry when Stripe sends it: a 500 saying false isn't retried, a 503 saying true is", async () => {
+  setEnv();
+  const lib = require("../../api/_lib.js");
+  function replies(list) {
+    let n = 0;
+    global.fetch = async () => list[n++];
+  }
+  // A keyed create: Stripe replays the stored 500 for the same key, and says so.
+  replies([
+    reply(500, { error: { message: "stored" } }, { "Stripe-Should-Retry": "false" }),
+    reply(200, { id: "cs_never" }),
+  ]);
+  await assert.rejects(lib.stripe("checkout/sessions", { mode: "subscription" }, "POST", { idempotencyKey: "k1" }), {
+    status: 500,
+    shouldRetry: false,
+  });
+  // The same without the header: retried as before.
+  replies([reply(500, { error: { message: "blip" } }), reply(200, { id: "cs_2" })]);
+  assert.equal(
+    (await lib.stripe("checkout/sessions", { mode: "subscription" }, "POST", { idempotencyKey: "k2" })).id,
+    "cs_2",
+  );
+  // true on a 503: retried.
+  replies([reply(503, { error: { message: "busy" } }, { "Stripe-Should-Retry": "true" }), reply(200, { id: "cs_3" })]);
+  assert.equal(
+    (await lib.stripe("checkout/sessions", { mode: "subscription" }, "POST", { idempotencyKey: "k3" })).id,
+    "cs_3",
+  );
+  // true never makes a plain write (no key) repeatable: it may have landed.
+  replies([reply(503, { error: { message: "busy" } }, { "Stripe-Should-Retry": "true" }), reply(200, { id: "x" })]);
+  await assert.rejects(lib.stripe("customers", { email: "a@b.co" }), /Stripe 503/);
+  // false on a GET that would otherwise be retried: not retried.
+  replies([reply(502, { error: { message: "bad" } }, { "Stripe-Should-Retry": "false" }), reply(200, { id: "cus" })]);
+  await assert.rejects(lib.stripe("customers/cus_1"), /Stripe 502/);
+});
+
 test("the plan follows the subscription's current price whenever that price maps to a plan", () => {
   setEnv();
   const plans = require("../../api/_plans.js");

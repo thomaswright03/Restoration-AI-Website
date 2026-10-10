@@ -18,6 +18,11 @@
 // click makes one session (api/_lib.js stripe()).
 //
 // 503 {error: "paused"} while the checkout switch is off (api/_switches.js).
+//
+// The whole request runs inside one time budget (api/_lib.js withBudget):
+// the switch read, the sign-in check, the subscription read and the Stripe
+// calls share it, so the answer (a session or an error) always comes before
+// the browser stops waiting and before vercel.json's maxDuration.
 "use strict";
 
 const {
@@ -34,6 +39,7 @@ const {
   logError,
   langDir,
   refuseMethod,
+  withBudget,
 } = require("./_lib.js");
 const { promoDays, firstPriceId } = require("./_plans.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
@@ -70,7 +76,10 @@ async function liveStripeSubscription(user, existing) {
 module.exports = async function handler(req, res) {
   if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
+  return withBudget(0, () => checkout(req, res));
+};
 
+async function checkout(req, res) {
   let user;
   try {
     if (await isOff("checkout")) return sendJson(res, 503, pausedBody("checkout", await switches()));
@@ -155,4 +164,4 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     return sendError(req, res, 502, { error: "server" }, e, user);
   }
-};
+}

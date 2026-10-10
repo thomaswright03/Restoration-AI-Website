@@ -40,6 +40,7 @@ interface Error {
   kind?: string;
   status?: number;
   retryAfterMs?: number;
+  shouldRetry?: boolean;
   code?: string;
   data?: any;
 }

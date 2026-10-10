@@ -20,9 +20,34 @@
 "use strict";
 
 const crypto = require("node:crypto");
+const { AsyncLocalStorage } = require("node:async_hooks");
 
 // How long one upstream call may take. Vercel functions get 10 s by default.
 const UPSTREAM_TIMEOUT_MS = 8000;
+
+// The time budget of one whole request (api/checkout.js, api/portal.js):
+// every upstream call inside withBudget() is cut to what is left of it, and
+// a retry is skipped when too little is left, so a request that chains
+// several calls still answers (success or a clear error) before the
+// browser's own 15 s wait (js/net.js) and before vercel.json's maxDuration.
+const REQUEST_BUDGET_MS = 9000;
+// A retry needs at least this much of the budget left to be worth starting.
+const RETRY_MIN_LEFT_MS = 1500;
+
+const budgetStore = new AsyncLocalStorage();
+
+// Runs fn with a deadline that every fetchWithTimeout() and withRetry()
+// inside it respects (through async context, so the Stripe and Supabase
+// helpers need no extra parameter).
+function withBudget(ms, fn) {
+  return budgetStore.run({ deadline: Date.now() + (ms || REQUEST_BUDGET_MS) }, fn);
+}
+
+// Milliseconds left of the enclosing budget, or Infinity outside one.
+function budgetLeft() {
+  const b = budgetStore.getStore();
+  return b ? Math.max(0, b.deadline - Date.now()) : Infinity;
+}
 
 // Stripe's behaviour (the shapes it sends, the webhook payloads) is pinned to
 // one API version, so a dashboard upgrade can't change what this code reads.
@@ -35,10 +60,6 @@ const STRIPE_API_VERSION = "2025-08-27.basil";
 async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
   const controller = new AbortController();
   let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, ms);
   const upstreamError = (e) => {
     const err = new Error("Upstream " + (timedOut ? "timeout" : "unreachable") + ": " + url);
     err.upstream = true;
@@ -46,12 +67,29 @@ async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
     err.cause = e;
     return err;
   };
+  // Inside withBudget(): never longer than what the request has left, and
+  // nothing at all once it's spent.
+  const left = budgetLeft();
+  if (left <= 0) {
+    timedOut = true;
+    throw upstreamError(new Error("request budget spent"));
+  }
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, Math.min(ms, left));
   let res;
   try {
     res = await fetch(url, Object.assign({}, options, { signal: controller.signal }));
   } catch (e) {
     clearTimeout(timer);
     throw upstreamError(e);
+  }
+  // A HEAD (dbCount) and any answer without a body have nothing more to
+  // wait for: the timer is done with, so it never outlives the call.
+  if (String(options.method || "GET").toUpperCase() === "HEAD" || res.body === null) {
+    clearTimeout(timer);
+    return res;
   }
   // Reading the body is bounded by the same timer; it stops once the body is in.
   const bounded = (read) => async () => {
@@ -150,13 +188,17 @@ function siteUrl(req) {
 // first try made, if it made one). A plain write is never retried: a create
 // or a patch that may have landed must not run twice.
 const RETRY_DELAY_MS = 150;
-// The longest a Retry-After is honoured for; the function has ~10 s in all.
+// The longest a Retry-After is honoured for (REQUEST_BUDGET_MS is the whole request).
 const RETRY_DELAY_MAX_MS = 1000;
 const RETRY_STATUSES = [429, 500, 502, 503, 504];
 
+// When Stripe says so, its word is final: Stripe-Should-Retry: false means
+// a retry would only get the same answer again (for a keyed create, Stripe
+// replays the stored result, a 500 included), and true means it's safe.
 function retryable(method, e, idempotent) {
   if (method !== "GET" && method !== "HEAD" && !idempotent) return false;
   if (e && e.upstream) return !e.timedOut;
+  if (e && typeof e.shouldRetry === "boolean") return e.shouldRetry;
   return !!(e && RETRY_STATUSES.includes(e.status));
 }
 
@@ -176,18 +218,26 @@ async function withRetry(method, call, idempotent = false) {
     return await call();
   } catch (e) {
     if (!retryable(method, e, idempotent)) throw e;
-    await new Promise((resolve) => setTimeout(resolve, retryDelay(e)));
+    // Not when the request's budget is nearly spent: the retry would only
+    // be cut short, and the caller is better off with this answer now.
+    const delay = retryDelay(e);
+    if (budgetLeft() < delay + RETRY_MIN_LEFT_MS) throw e;
+    await new Promise((resolve) => setTimeout(resolve, delay));
     return call();
   }
 }
 
 // An error for an upstream answer that isn't ok, carrying its status (and
 // its Retry-After, in ms) so the call can be retried on a 5xx or 429.
-function statusError(message, status, retryAfter) {
+// shouldRetry: Stripe's own Stripe-Should-Retry header ("true" | "false"),
+// when it sent one.
+function statusError(message, status, retryAfter, shouldRetry) {
   const err = new Error(message);
   err.status = status;
   const seconds = Number(retryAfter);
   if (seconds > 0) err.retryAfterMs = seconds * 1000;
+  const said = String(shouldRetry || "").toLowerCase();
+  if (said === "true" || said === "false") err.shouldRetry = said === "true";
   return err;
 }
 
@@ -337,10 +387,12 @@ async function stripeOnce(path, params, method, options) {
     data = {};
   }
   if (!res.ok) {
+    const header = (name) => (res.headers && res.headers.get ? res.headers.get(name) : null);
     throw statusError(
       "Stripe " + res.status + ": " + ((data.error && data.error.message) || ""),
       res.status,
-      res.headers && res.headers.get && res.headers.get("retry-after"),
+      header("retry-after"),
+      header("stripe-should-retry"),
     );
   }
   return data;
@@ -404,7 +456,11 @@ async function readForm(req) {
 module.exports = {
   env,
   UPSTREAM_TIMEOUT_MS,
+  REQUEST_BUDGET_MS,
+  RETRY_MIN_LEFT_MS,
   STRIPE_API_VERSION,
+  withBudget,
+  budgetLeft,
   fetchWithTimeout,
   supabaseReady,
   stripeReady,

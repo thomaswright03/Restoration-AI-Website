@@ -2,7 +2,8 @@
 // opens Stripe's billing portal (change card, switch plan, cancel, invoices).
 // 404 {error: "no-customer"} for an account that never bought a plan. The
 // portal session is created with an idempotency key, so a transient Stripe
-// failure is tried once more (api/_lib.js stripe()).
+// failure is tried once more (api/_lib.js stripe()). The whole request runs
+// inside one time budget (api/_lib.js withBudget), like api/checkout.js.
 "use strict";
 
 const {
@@ -17,13 +18,17 @@ const {
   readForm,
   langDir,
   refuseMethod,
+  withBudget,
 } = require("./_lib.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 
 module.exports = async function handler(req, res) {
   if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
+  return withBudget(0, () => portal(req, res));
+};
 
+async function portal(req, res) {
   let user;
   try {
     user = await requireUser(req, res);
@@ -53,4 +58,4 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     return sendError(req, res, 502, { error: "server" }, e, user);
   }
-};
+}

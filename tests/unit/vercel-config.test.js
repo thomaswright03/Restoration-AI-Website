@@ -157,3 +157,11 @@ test("pages, first-party scripts, styles and settings are never served stale wit
   // not be frozen by the .glb rule either.
   assert.equal(headersFor("/models/products/kohler/manifest.json")["cache-control"], undefined);
 });
+
+test("the functions' maxDuration covers the request budget api/_lib.js gives checkout and portal", () => {
+  const lib = require("../../api/_lib.js");
+  const fn = config.functions && config.functions["api/*.js"];
+  assert.ok(fn && fn.maxDuration > 0, "vercel.json sets maxDuration for api/*.js");
+  assert.ok(fn.maxDuration * 1000 >= lib.REQUEST_BUDGET_MS, "a request may finish its budget before Vercel kills it");
+  assert.ok(fn.maxDuration * 1000 >= lib.UPSTREAM_TIMEOUT_MS + 1000, "one upstream call and its answer fit");
+});

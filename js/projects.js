@@ -125,7 +125,11 @@
     if (err.code === "signin") return T("proj.err.signin");
     if (err.code === "not-found") return T("proj.err.notFound");
     if (err.code === "info" || err.code === "name") return fieldErrorText(d) || T("proj.err.info");
-    if (err.code === "paused") return (d.notice ? d.notice + " " : "") + T("proj.err.paused");
+    // The owner's notice, when there is one, on its own line (.form-status
+    // keeps line breaks), marked as a notice rather than run into the sentence.
+    if (err.code === "paused") {
+      return T("proj.err.paused") + (d.notice ? "\n" + T("proj.pausedNotice", { notice: d.notice }) : "");
+    }
     if (err.code === "conflict") return T("proj.conflict");
     if (err.kind === "http") return T("acct.error");
     return (actionKey ? T(actionKey) + " " : "") + T(window.Net.errorKey(err));
@@ -190,12 +194,13 @@
     return true;
   }
 
-  // "YYYY-MM-DD" naming a day that exists.
+  // "YYYY-MM-DD" naming a day that exists, in a plausible year for a job's
+  // start (1950 to 2100, the same bounds as api/projects.js).
   function realDay(text) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || "");
     if (!m) return false;
     var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-    return +m[1] >= 1900 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
+    return +m[1] >= 1950 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
   }
 
   // Two tabs: the project changed since this one loaded it. Says so, with
@@ -211,15 +216,18 @@
     );
   }
 
+  // /api/config with a time limit (js/net.js); unreachable when it can't be read.
   function loadConfig() {
-    return fetch("/api/config", { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
-      .catch(function () {
-        return { accounts: false, unreachable: true };
-      });
+    return window.Net.config();
+  }
+
+  // The sign-in page, with the way back to this page after logging in.
+  function loginPath() {
+    var query = new URLSearchParams({
+      mode: "login",
+      next: window.location.pathname + window.location.search + window.location.hash,
+    });
+    return sitePath("signup.html") + "?" + query.toString();
   }
 
   function loadScript(src) {
@@ -279,7 +287,7 @@
       .then(function (s) {
         if (s === false) return false;
         if (!s) {
-          window.location.href = sitePath("signup.html") + "?mode=login";
+          window.location.href = loginPath();
           return false;
         }
         return s;
@@ -496,6 +504,16 @@
     $("projects-filter").value = status;
   }
 
+  // "Clear filters" shows while a search or status filter narrows the list;
+  // it puts the search, the status and the sort back to their defaults.
+  function clearFilters() {
+    $("projects-search").value = "";
+    $("projects-sort").value = "updated";
+    $("projects-filter").value = "";
+    renderList();
+    $("projects-search").focus();
+  }
+
   function writeViewToUrl(view) {
     try {
       var url = new URL(window.location.href);
@@ -545,6 +563,7 @@
     // The empty state is only for a list that loaded with nothing in it.
     show($("projects-empty"), state.loaded && !state.projects.length);
     show($("projects-search-wrap"), state.projects.length > 1);
+    show($("projects-clear-wrap"), !!(view.q || view.status || view.sort !== "updated"));
     show($("projects-no-match"), !!state.projects.length && !shown.length);
     $("projects-count").textContent = state.projects.length ? "(" + state.projects.length + ")" : "";
     writeViewToUrl(view);
@@ -553,16 +572,21 @@
   function projectItem(p) {
     var info = p.info || {};
     var li = el("li", { class: "project-item", "data-project": p.id });
-    var meta = [];
-    if (info.client) meta.push(info.client);
+    // A row with no client or no status says so with a dash, so the rows
+    // line up and nothing looks left out by mistake.
+    var meta = [info.client || "—"];
     if (addressOf(info)) meta.push(addressOf(info));
     var main = el("div", { class: "project-main" }, [
       el("a", { class: "project-name", href: projectPage(p.id), text: p.name }),
-      meta.length ? el("p", { class: "project-client", text: meta.join(" · ") }) : null,
+      el("p", { class: "project-client", text: meta.join(" · ") }),
       el("p", { class: "project-meta" }, [
         info.status
           ? el("span", { class: "project-status is-" + info.status, text: T("proj.status." + info.status) })
-          : null,
+          : el("span", {
+              class: "project-status is-none",
+              text: "—",
+              "aria-label": T("proj.status.none"),
+            }),
         info.start ? T("proj.starts", { date: formatDay(info.start) }) + " · " : null,
         T("proj.updated", { date: formatDate(p.updated_at) }),
       ]),
@@ -757,8 +781,14 @@
       $("projects-sort").addEventListener("change", renderList);
       $("projects-filter").addEventListener("change", renderList);
       $("projects-retry").addEventListener("click", loadList);
+      $("projects-clear").addEventListener("click", clearFilters);
       $("projects-delete-cancel").addEventListener("click", closeDeleteDialog);
+      $("projects-delete-close").addEventListener("click", closeDeleteDialog);
       $("projects-delete-confirm").addEventListener("click", confirmRemove);
+      // A click on the backdrop lands on the dialog itself, not its body.
+      $("projects-delete-dialog").addEventListener("click", function (e) {
+        if (e.target === $("projects-delete-dialog")) closeDeleteDialog();
+      });
       $("projects-delete-dialog").addEventListener("close", function () {
         var was = deleting;
         deleting = null;
@@ -1032,7 +1062,7 @@
           window.addEventListener("beforeunload", function (e) {
             if (!infoDirty) return;
             e.preventDefault();
-            e.returnValue = T("project.info.unsaved");
+            e.returnValue = T("proj.infoUnsaved");
           });
           $("project-print").addEventListener("click", function () {
             window.print();
@@ -1309,13 +1339,27 @@
     var biz = window.DesignerBusiness || {};
     if (biz.unavailable && biz.unavailable !== "loading") return;
     if (!config.accounts || !hasStoredSignIn()) return;
+    var FAILED = { failed: true };
     signIn(config)
       .catch(function () {
-        return null;
+        return FAILED;
       })
       .then(function (s) {
-        if (!s) return;
         if ((window.DesignerBusiness || {}).unavailable) return;
+        if (s === FAILED) {
+          // There is a sign-in here, but it couldn't be checked (the auth
+          // service didn't answer): say so, with a way to try again, rather
+          // than quietly showing no bar at all.
+          var text = $("project-bar-text");
+          text.textContent = "";
+          text.appendChild(document.createTextNode(T("proj.bar.signinFailed") + " "));
+          text.appendChild(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
+          show($("project-save-form"), false);
+          show($("project-save-new"), false);
+          show($("project-bar"), true);
+          return;
+        }
+        if (!s) return;
         $("project-save-form").addEventListener("submit", function (e) {
           e.preventDefault();
           if (current) saveChanges();

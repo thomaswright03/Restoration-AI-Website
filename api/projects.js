@@ -29,7 +29,7 @@
 // details, reading and deleting still work.
 "use strict";
 
-const { supabaseReady, sendJson, db, requireUser, readForm } = require("./_lib.js");
+const { supabaseReady, sendJson, sendError, db, requireUser, readForm } = require("./_lib.js");
 const { planOf, limitsOf } = require("./_plans.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
@@ -57,13 +57,14 @@ const INFO = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-// "YYYY-MM-DD" naming a day that exists (no February 30th), in a plausible year.
+// "YYYY-MM-DD" naming a day that exists (no February 30th), in a plausible
+// year for a job's start date (1950 to 2100: a typo like 0226 is refused).
 function realDay(text) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
   if (!m) return false;
   const y = Number(m[1]);
   const d = new Date(Date.UTC(y, Number(m[2]) - 1, Number(m[3])));
-  return y >= 1900 && y <= 2100 && d.toISOString().slice(0, 10) === text;
+  return y >= 1950 && y <= 2100 && d.toISOString().slice(0, 10) === text;
 }
 
 // Only known fields, trimmed: { info } or, for the first field that doesn't
@@ -153,8 +154,9 @@ function missingTables(e) {
 module.exports = async function handler(req, res) {
   if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
 
+  let user;
   try {
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
     if (!user) return;
     const owner = "owner_id=eq." + encodeURIComponent(user.id);
 
@@ -268,9 +270,8 @@ module.exports = async function handler(req, res) {
     res.setHeader("Allow", "GET, POST, PATCH, DELETE");
     return sendJson(res, 405, { error: "method" });
   } catch (e) {
-    console.error(e);
-    if (missingTables(e)) return sendJson(res, 503, { error: "setup" });
-    return sendJson(res, 502, { error: "server" });
+    if (missingTables(e)) return sendError(req, res, 503, { error: "setup" }, e, user);
+    return sendError(req, res, 502, { error: "server" }, e, user);
   }
 };
 

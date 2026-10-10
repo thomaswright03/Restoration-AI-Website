@@ -53,15 +53,35 @@
     return new Date(iso).toLocaleDateString(window.I18n.locale(), { year: "numeric", month: "long", day: "numeric" });
   }
 
+  // /api/config with a time limit (js/net.js); unreachable when it can't be read.
   function loadConfig() {
-    return fetch("/api/config", { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
-      .catch(function () {
-        return { accounts: false, payments: false, unreachable: true };
-      });
+    return window.Net.config();
+  }
+
+  // Where to go after signing in: ?next=<path on this site> when the link
+  // says so (My projects sends people here with it), else My projects. A plan
+  // or promo code in the link goes to the account page, where the plans are.
+  function safeNext(value) {
+    var text = String(value || "");
+    if (!/^\/(?!\/)/.test(text)) return "";
+    try {
+      var url = new URL(text, window.location.origin);
+      if (url.origin !== window.location.origin) return "";
+      return url.pathname + url.search + url.hash;
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // The address of this page, for a ?next= that brings someone back here.
+  function herePath() {
+    return window.location.pathname + window.location.search + window.location.hash;
+  }
+
+  function loginPath(next) {
+    var query = new URLSearchParams({ mode: "login" });
+    if (safeNext(next)) query.set("next", safeNext(next));
+    return sitePath("signup.html") + "?" + query.toString();
   }
 
   // The kill switches (api/_switches.js): off only when the server says so.
@@ -79,13 +99,21 @@
   }
 
   // The message for a failed call to api/: what happened, in plain words.
-  function errorKey(err) {
+  // The API's own reasons come first (a paused checkout is a 503 too, and
+  // must never read as a connection problem); then what the connection did.
+  // stripeKey: the text for a Stripe failure in this call (the payment page
+  // or the billing page couldn't be opened; the server itself was reached).
+  function errorKey(err, stripeKey) {
     var code = err && err.code;
     var kind = err && err.kind;
+    if (code === "paused") return "acct.paused.checkout";
+    if (code === "already-subscribed") return "acct.alreadySubscribed";
+    if (code === "promo") return "acct.promo.invalid";
+    if (code === "promo-used") return "acct.promo.used";
+    if (code === "stripe") return stripeKey || "acct.stripe.checkout";
     if (
       code === "unavailable" ||
       code === "server" ||
-      code === "stripe" ||
       kind === "offline" ||
       kind === "timeout" ||
       kind === "network" ||
@@ -93,10 +121,6 @@
     ) {
       return "acct.unavailable";
     }
-    if (code === "paused") return "acct.paused.checkout";
-    if (code === "already-subscribed") return "acct.alreadySubscribed";
-    if (code === "promo") return "acct.promo.invalid";
-    if (code === "promo-used") return "acct.promo.used";
     return "acct.error";
   }
 
@@ -112,7 +136,19 @@
     if (code === "over_email_send_rate_limit" || code === "over_request_rate_limit") return "auth.rateLimited";
     if (code === "weak_password") return "auth.passwordShort";
     if (code === "user_already_exists" || /already|registered/i.test(error.message || "")) return "auth.exists";
+    if (databaseRefused(error) || (error.status >= 500 && error.status < 600)) return "auth.serviceDown";
     return "acct.error";
+  }
+
+  // The sign-up trigger (supabase/schema.sql, refuse_signup_when_paused)
+  // reaches the page as Supabase Auth's "Database error saving new user"
+  // (unexpected_failure): the switch flipped after the page loaded, or the
+  // database itself failed. Which one, the switches say (loadConfig again).
+  function databaseRefused(error) {
+    return (
+      (error && error.code === "unexpected_failure") ||
+      /database error|signups-paused/i.test((error && error.message) || "")
+    );
   }
 
   // ===================================================================
@@ -124,10 +160,15 @@
     var submit = $("auth-submit");
     var signupsOff = switchedOff("signups");
     var mode = params.get("mode") === "login" || signupsOff ? "login" : "signup";
-    if (signupsOff) {
+
+    // Sign-ups paused: say so, and offer only log in.
+    function showSignupsPaused() {
+      signupsOff = true;
       show($("signups-paused"), true);
       show(document.querySelector('[data-mode="signup"]'), false);
+      showSiteNotice();
     }
+    if (signupsOff) showSignupsPaused();
 
     function setMode(next) {
       mode = next;
@@ -158,14 +199,33 @@
     setMode(mode);
     if (params.get("deleted")) status(statusEl, "success", T("acct.delete.done"));
 
-    // Back to the account page, keeping a plan or promo code from the link.
-    function next() {
+    // After signing in: the account page when the link carries a plan or
+    // promo code (the plans are there), else ?next= or My projects. A new
+    // account goes to the account page either way: its plan is picked there.
+    function next(signup) {
       var keep = new URLSearchParams();
       var plan = params.get("plan");
       if (PLANS.indexOf(plan) >= 0) keep.set("plan", plan);
       if (params.get("promo")) keep.set("promo", params.get("promo"));
       var query = keep.toString();
-      return sitePath("account.html") + (query ? "?" + query : "");
+      if (query || signup) return sitePath("account.html") + (query ? "?" + query : "");
+      var wanted = safeNext(params.get("next"));
+      return wanted ? window.location.origin + wanted : sitePath("projects.html");
+    }
+
+    // A refused sign-up: paused (the switch flipped after the page loaded),
+    // or the sign-up service failed. The switches say which.
+    function explainRefusal(error) {
+      if (!databaseRefused(error)) return Promise.resolve(status(statusEl, "error", T(signupErrorKey(error))));
+      return loadConfig().then(function (c) {
+        if (c && c.switches) config = c;
+        if (switchedOff("signups")) {
+          showSignupsPaused();
+          setMode("login");
+          return status(statusEl, "error", T("acct.paused.signups"));
+        }
+        status(statusEl, "error", T("auth.serviceDown"));
+      });
     }
 
     form.addEventListener("submit", function (e) {
@@ -186,8 +246,11 @@
         });
       } else if (mode === "login") {
         request = client.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
-          if (r.error) return status(statusEl, "error", T("auth.badLogin"));
-          window.location.href = next();
+          if (r.error) {
+            var key = r.error.status >= 500 ? "auth.serviceDown" : "auth.badLogin";
+            return status(statusEl, "error", T(key));
+          }
+          window.location.href = next(false);
         });
       } else {
         request = client.auth
@@ -197,12 +260,12 @@
             options: {
               // lang picks the language of Supabase's emails (supabase/emails/).
               data: { business_name: $("auth-business").value.trim().slice(0, 120), lang: LANG },
-              emailRedirectTo: next(),
+              emailRedirectTo: next(true),
             },
           })
           .then(function (r) {
-            if (r.error) return status(statusEl, "error", T(signupErrorKey(r.error)));
-            if (r.data && r.data.session) window.location.href = next();
+            if (r.error) return explainRefusal(r.error);
+            if (r.data && r.data.session) window.location.href = next(true);
             else status(statusEl, "success", T("auth.checkEmail"));
           });
       }
@@ -216,7 +279,7 @@
     });
 
     client.auth.getSession().then(function (r) {
-      if (r.data && r.data.session && mode !== "reset") window.location.href = next();
+      if (r.data && r.data.session && mode !== "reset") window.location.href = next(false);
       else show($("auth-card"), true);
     });
   }
@@ -360,15 +423,55 @@
       });
   }
 
+  // A Save button while its request is out: disabled and reading "Saving…",
+  // so a second click can't send a second save. pending(button, false) puts
+  // its own label back.
+  function pending(button, on) {
+    if (!button) return;
+    if (on && !button.hasAttribute("data-label")) button.setAttribute("data-label", button.textContent);
+    button.disabled = on;
+    button.textContent = on ? T("proj.saving") : button.getAttribute("data-label") || button.textContent;
+  }
+
+  // What's wrong with one field, next to it (and the form's status line says
+  // the save didn't happen). fieldError(input, "") clears it.
+  function fieldError(input, text) {
+    var out = $(input.id + "-error");
+    if (text) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+    if (out) {
+      out.textContent = text;
+      out.hidden = !text;
+    }
+  }
+
+  // The message for a Supabase (PostgREST) failure saving a row.
+  function saveErrorText(error) {
+    var why = error && error.code === "23505" ? "acct.slugTaken" : saveReason(error);
+    return T("acct.saveFailed") + " " + T(why);
+  }
+
   function saveBusiness(e) {
     e.preventDefault();
     var out = $("business-status");
+    var button = $("business-save");
+    if (button.disabled) return;
     var name = $("biz-name").value.trim();
     var slug = $("biz-slug").value.trim().toLowerCase();
-    if (!name) return status(out, "error", T("acct.nameRequired"));
-    if (!/^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(slug) || slug === "demo") {
-      return status(out, "error", T("acct.slugInvalid"));
+    fieldError($("biz-name"), "");
+    fieldError($("biz-slug"), "");
+    if (!name) {
+      fieldError($("biz-name"), T("acct.nameRequired"));
+      $("biz-name").focus();
+      return status(out, "error", T("acct.saveFailed") + " " + T("acct.nameRequired"));
     }
+    if (!/^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(slug) || slug === "demo") {
+      fieldError($("biz-slug"), T("acct.slugInvalid"));
+      $("biz-slug").focus();
+      return status(out, "error", T("acct.saveFailed") + " " + T("acct.slugInvalid"));
+    }
+    pending(button, true);
+    status(out, "info", T("proj.saving"));
     var row = {
       owner_id: session.user.id,
       name: name,
@@ -381,16 +484,29 @@
     var query = business
       ? client.from("businesses").update(row).eq("id", business.id).select().single()
       : client.from("businesses").insert(row).select().single();
-    query.then(function (r) {
-      if (r.error) {
-        return status(out, "error", r.error.code === "23505" ? T("acct.slugTaken") : T("acct.error"));
-      }
-      business = r.data;
-      status(out, "success", T("acct.saved"));
-      fillPrices();
-      renderBusinessCards();
-      loadLeads();
-    });
+    Promise.resolve(query)
+      .then(
+        function (r) {
+          if (r.error) {
+            if (r.error.code === "23505") {
+              fieldError($("biz-slug"), T("acct.slugTaken"));
+              $("biz-slug").focus();
+            }
+            return status(out, "error", saveErrorText(r.error));
+          }
+          business = r.data;
+          status(out, "success", T("acct.saved"));
+          fillPrices();
+          renderBusinessCards();
+          loadLeads();
+        },
+        function (err) {
+          status(out, "error", saveErrorText(err));
+        },
+      )
+      .then(function () {
+        pending(button, false);
+      });
   }
 
   function savePrices(e, reset) {
@@ -407,18 +523,34 @@
         else prices[input.getAttribute("data-price-key")] = n;
       });
     }
-    if (bad) return status(out, "error", T("acct.priceInvalid"));
-    client
-      .from("businesses")
-      .update({ prices: prices, updated_at: new Date().toISOString() })
-      .eq("id", business.id)
-      .select()
-      .single()
-      .then(function (r) {
-        if (r.error) return status(out, "error", T("acct.error"));
-        business = r.data;
-        fillPrices();
-        status(out, "success", T("acct.saved"));
+    if (bad) return status(out, "error", T("acct.saveFailed") + " " + T("acct.priceInvalid"));
+    var buttons = [$("prices-save"), $("prices-reset")];
+    if (buttons[0].disabled) return;
+    pending(buttons[0], true);
+    buttons[1].disabled = true;
+    status(out, "info", T("proj.saving"));
+    Promise.resolve(
+      client
+        .from("businesses")
+        .update({ prices: prices, updated_at: new Date().toISOString() })
+        .eq("id", business.id)
+        .select()
+        .single(),
+    )
+      .then(
+        function (r) {
+          if (r.error) return status(out, "error", saveErrorText(r.error));
+          business = r.data;
+          fillPrices();
+          status(out, "success", T("acct.saved"));
+        },
+        function (err) {
+          status(out, "error", saveErrorText(err));
+        },
+      )
+      .then(function () {
+        pending(buttons[0], false);
+        buttons[1].disabled = false;
       });
   }
 
@@ -468,19 +600,84 @@
     del.type = "button";
     del.className = "link-button";
     del.textContent = T("acct.lead.delete");
+    del.setAttribute("aria-label", T("acct.lead.deleteNamed", { name: lead.name || "—" }));
     del.addEventListener("click", function () {
-      if (!window.confirm(T("acct.lead.deleteConfirm"))) return;
-      client
-        .from("leads")
-        .delete()
-        .eq("id", lead.id)
-        .then(function (r) {
-          if (!r.error) li.remove();
-          show($("leads-card"), !!$("leads-list").children.length);
-        });
+      askDeleteLead(lead, li, del);
     });
     li.appendChild(del);
     return li;
+  }
+
+  // "Delete" on a request asks first, in a dialog that names who it's from;
+  // Cancel has the focus, and Escape, the X or a click outside close it.
+  var deletingLead = null; // { lead, li, btn } while the dialog is up
+
+  function askDeleteLead(lead, li, btn) {
+    var dialog = $("lead-delete-dialog");
+    deletingLead = { lead: lead, li: li, btn: btn };
+    $("lead-delete-text").textContent = T("acct.lead.deleteConfirm", { name: lead.name || "—" });
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "");
+    $("lead-delete-cancel").focus();
+  }
+
+  function closeLeadDialog() {
+    var dialog = $("lead-delete-dialog");
+    if (typeof dialog.close === "function" && dialog.open) dialog.close();
+    else dialog.removeAttribute("open");
+  }
+
+  function confirmDeleteLead() {
+    if (!deletingLead) return;
+    var d = deletingLead;
+    deletingLead = null;
+    closeLeadDialog();
+    var out = $("leads-status");
+    d.btn.disabled = true;
+    Promise.resolve(client.from("leads").delete().eq("id", d.lead.id)).then(
+      function (r) {
+        if (r.error) throw r.error;
+        d.li.remove();
+        status(out, "success", T("acct.lead.deleted"));
+        var left = $("leads-list").children.length;
+        show($("leads-card"), !!left);
+        if (left) $("leads-card").querySelector("h2").focus();
+      },
+      function (err) {
+        d.btn.disabled = false;
+        d.btn.focus();
+        status(out, "error", T("acct.lead.deleteFailed") + " " + T(saveReason(err)));
+      },
+    );
+  }
+
+  // Why a Supabase call failed, in plain words: no answer or a server
+  // failure is "couldn't reach the server"; a refused row is "something went
+  // wrong" (the fields were checked before sending).
+  function saveReason(error) {
+    var code = String((error && error.code) || "");
+    var message = String((error && error.message) || "");
+    if (!code || /^(PGRST|5\d\d)/.test(code) || /fetch|network/i.test(message)) {
+      return navigator.onLine === false ? "net.offline" : "acct.unavailable";
+    }
+    return "acct.error";
+  }
+
+  function initLeadDialog() {
+    var dialog = $("lead-delete-dialog");
+    if (!dialog) return;
+    $("lead-delete-cancel").addEventListener("click", closeLeadDialog);
+    $("lead-delete-close").addEventListener("click", closeLeadDialog);
+    $("lead-delete-confirm").addEventListener("click", confirmDeleteLead);
+    // A click on the backdrop lands on the dialog itself, not its body.
+    dialog.addEventListener("click", function (e) {
+      if (e.target === dialog) closeLeadDialog();
+    });
+    dialog.addEventListener("close", function () {
+      var was = deletingLead;
+      deletingLead = null;
+      if (was && was.btn && document.contains(was.btn)) was.btn.focus();
+    });
   }
 
   // Requests homeowners sent before a business's designer became owner-only
@@ -505,18 +702,18 @@
 
   // The plan's project limits and what's used (api/projects.js); the full
   // list is on projects.html.
+  // On failure the line says so (with why) instead of going blank; the list
+  // page has its own Try again.
   function loadProjectsSummary() {
-    fetch("/api/projects", { headers: { Authorization: "Bearer " + session.access_token }, cache: "no-store" })
-      .then(function (res) {
-        return res.ok ? res.json() : null;
-      })
-      .catch(function () {
-        return null;
-      })
+    var out = $("projects-summary");
+    window.Net.fetchJson("/api/projects", {
+      headers: { Authorization: "Bearer " + session.access_token },
+      cache: "no-store",
+    })
       .then(function (data) {
-        var text = !data
-          ? ""
-          : data.plan === "free"
+        out.className = "";
+        out.textContent =
+          data.plan === "free"
             ? T("proj.summary.free")
             : T("proj.summary.paid", {
                 plan: T("proj.plan." + data.plan),
@@ -525,8 +722,14 @@
                 total: data.used.total,
                 limit: data.limits.total,
               });
-        $("projects-summary").textContent = text;
-        show($("projects-summary"), !!text);
+      })
+      .catch(function (err) {
+        var why = err.code === "signin" ? "proj.err.signin" : errorKey(err);
+        out.className = "form-note";
+        out.textContent = T("acct.projects.failed") + " " + T(why);
+      })
+      .then(function () {
+        show(out, true);
         show($("projects-card"), true);
       });
   }
@@ -541,10 +744,18 @@
       show(form, true);
       $("delete-confirm").focus();
     });
-    $("delete-cancel").addEventListener("click", function () {
+    function cancel() {
       show(form, false);
       show($("delete-start"), true);
       status(out, "info", "");
+      $("delete-start").focus();
+    }
+    $("delete-cancel").addEventListener("click", cancel);
+    // Escape closes the form, like a dialog, unless the deletion is under way.
+    form.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape" || $("delete-submit").disabled) return;
+      e.preventDefault();
+      cancel();
     });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -615,7 +826,8 @@
     client.auth.getSession().then(function (r) {
       session = r.data && r.data.session;
       if (!session) {
-        window.location.href = sitePath("signup.html") + "?mode=login";
+        // Log in, then back here (with any plan or promo code in the link).
+        window.location.href = loginPath(herePath());
         return;
       }
       show($("account-loading"), false);
@@ -676,6 +888,7 @@
       savePrices(null, true);
     });
     initDelete();
+    initLeadDialog();
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.addEventListener("click", function () {
         buy(b.getAttribute("data-plan"), b);
@@ -689,7 +902,7 @@
           window.location.href = data.url;
         })
         .catch(function (err) {
-          status($("plan-message"), "error", T(errorKey(err)));
+          status($("plan-message"), "error", T(errorKey(err, "acct.stripe.portal")));
           btn.disabled = false;
         });
     });

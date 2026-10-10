@@ -83,10 +83,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../pt/designer.html">Demonstração</a></li>
-          <li><a href="../pt/index.html#pricing">Preços</a></li>
+          <li data-nav-signed-out><a href="../pt/index.html#pricing">Preços</a></li>
           <li><a href="../pt/index.html#faq">Perguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../pt/projects.html">Meus projetos</a></li>
+          <li data-nav-signed-in hidden><a href="../pt/account.html">Conta</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
+          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>

@@ -11,7 +11,7 @@
 // days.
 "use strict";
 
-const { env, supabaseReady, sendJson, stripe, verifyStripeSignature, readRawBody } = require("./_lib.js");
+const { env, supabaseReady, sendJson, sendError, stripe, verifyStripeSignature, readRawBody } = require("./_lib.js");
 const { saveSubscription } = require("./_subscriptions.js");
 
 module.exports = async function handler(req, res) {
@@ -49,8 +49,7 @@ module.exports = async function handler(req, res) {
     }
     return sendJson(res, 200, recorded ? { received: true } : { received: true, ignored: "owner-gone" });
   } catch (e) {
-    console.error(e);
     // A 500 makes Stripe retry later.
-    return sendJson(res, 500, { error: "server" });
+    return sendError(req, res, 500, { error: "server" }, e, { id: (obj.metadata && obj.metadata.owner_id) || null });
   }
 };

@@ -13,8 +13,13 @@
 // Which plan a subscription is on: subscriptions.plan when set (the Stripe
 // webhook fills it from the price's lookup key or "plan" metadata, or it can
 // be set by hand), else its Stripe price id matched against
-// STRIPE_PRICE_PRO / STRIPE_PRICE_MAX (comma-separated lists allowed), else
-// Starter.
+// STRIPE_PRICE_STARTER / _PRO / _MAX (comma-separated lists allowed). A
+// price that matches nothing is a setup mistake (a price made in Stripe
+// without a lookup key or metadata, and not in the env lists): the account
+// gets Starter, the smallest paid plan (they did pay for a plan, so saving
+// isn't refused), and every plan lookup for it logs a warning naming the
+// price id and the owner, so the owner can set subscriptions.plan by hand or
+// fix the price. It is never silent.
 //
 // A business's designer opens only for its signed-in owner, on every plan.
 "use strict";
@@ -66,6 +71,20 @@ function planOf(sub) {
   if (sub.plan && PLANS[sub.plan] && sub.plan !== "free") return sub.plan;
   if (sub.price_id && priceList("STRIPE_PRICE_MAX").includes(sub.price_id)) return "max";
   if (sub.price_id && priceList("STRIPE_PRICE_PRO").includes(sub.price_id)) return "pro";
+  if (!(sub.price_id && priceList("STRIPE_PRICE_STARTER").includes(sub.price_id))) {
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        error: "unmapped-plan",
+        message:
+          "Subscription price isn't mapped to a plan (no plan column, lookup_key or metadata.plan, and not in " +
+          "STRIPE_PRICE_*): treating it as Starter. Set subscriptions.plan by hand or fix the price.",
+        priceId: sub.price_id || null,
+        ownerId: sub.owner_id || null,
+        subscriptionId: sub.stripe_subscription_id || null,
+      }),
+    );
+  }
   return "starter";
 }
 

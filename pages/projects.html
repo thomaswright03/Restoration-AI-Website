@@ -74,6 +74,9 @@
                 <label for="projects-filter">{{projects.filter}}</label>
                 <select id="projects-filter"></select>
               </div>
+              <p class="projects-clear" id="projects-clear-wrap" hidden>
+                <button type="button" class="link-button" id="projects-clear">{{projects.clearFilters}}</button>
+              </p>
             </div>
             <div class="app-empty" id="projects-empty" hidden>
               <p>{{projects.list.empty}}</p>
@@ -86,13 +89,23 @@
       </section>
 
       <dialog class="project-dialog" id="projects-delete-dialog" aria-labelledby="projects-delete-title">
-        <h2 id="projects-delete-title">{{projects.delete.title}}</h2>
-        <p id="projects-delete-text"></p>
-        <div class="app-actions">
-          <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>
-            {{projects.delete.cancel}}
+        <div class="project-dialog-body">
+          <button
+            type="button"
+            class="project-dialog-close"
+            id="projects-delete-close"
+            aria-label="{{projects.delete.close}}"
+          >
+            ×
           </button>
-          <button type="button" class="btn btn-danger" id="projects-delete-confirm">{{projects.delete.confirm}}</button>
+          <h2 id="projects-delete-title">{{projects.delete.title}}</h2>
+          <p id="projects-delete-text"></p>
+          <div class="app-actions">
+            <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>
+              {{projects.delete.cancel}}
+            </button>
+            <button type="button" class="btn btn-danger" id="projects-delete-confirm">{{projects.delete.confirm}}</button>
+          </div>
         </div>
       </dialog>
     </main>

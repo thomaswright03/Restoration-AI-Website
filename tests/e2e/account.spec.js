@@ -9,6 +9,7 @@ const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
 
 const SUPABASE = "https://fakeproject.supabase.co";
+const DAY_LEAD = "2026-10-02T00:00:00Z";
 
 async function signedIn(
   page,
@@ -304,4 +305,315 @@ test("the labor prices include electrical, drain line, plumbing and the bathtub,
   await expect(page.locator('[data-price-key="Plumbing_Price_Per_Point"]')).toHaveAttribute("placeholder", "300");
   await expect(page.locator('[data-price-key="Bathtub_Price"]')).toHaveAttribute("placeholder", "700");
   await expect(page.locator("#prices-card")).not.toContainText(/customers/i);
+});
+
+const SESSION_JSON = {
+  access_token: "token",
+  refresh_token: "refresh",
+  token_type: "bearer",
+  expires_in: 3600,
+  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  user: { id: "u1", email: "owner@example.com", aud: "authenticated", user_metadata: {} },
+};
+
+// The sign-up page with nobody signed in: /api/config says what it's told,
+// and Supabase Auth answers each call as the test decides.
+async function signupPage(page, config, auth) {
+  await page.route("**/api/config", (route) =>
+    route.fulfill({
+      json: Object.assign(
+        {
+          accounts: true,
+          payments: false,
+          supabaseUrl: SUPABASE,
+          supabaseAnonKey: "anon",
+          plans: {},
+          switches: { signups: true, checkout: true, saving: true },
+          notice: "",
+        },
+        typeof config === "function" ? config() : config,
+      ),
+    }),
+  );
+  await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
+  await page.route(SUPABASE + "/auth/v1/**", (route) => auth(route));
+}
+
+test("kill switch flipped after the page loaded: a refused checkout says it's paused, not that the server is down", async ({
+  page,
+}) => {
+  await signedIn(page, { status: "none", payments: true });
+  await page.route("**/api/checkout", (route) =>
+    route.fulfill({ status: 503, json: { error: "paused", switch: "checkout", notice: "Back on Monday." } }),
+  );
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-buy")).toBeVisible();
+  await page.locator('[data-plan="pro"]').click();
+  await expect(page.locator("#plan-message")).toContainText("Buying a plan is paused right now");
+  await expect(page.locator("#plan-message")).not.toContainText(/reach the server|went wrong/);
+  // The page now knows: the buttons go and the plan line says so too.
+  await expect(page.locator("#plan-buy")).toBeHidden();
+  await expect(page.locator("#plan-status")).toContainText("Buying a plan is paused right now");
+});
+
+test("a Stripe failure says the payment page couldn't be opened, not that the server couldn't be reached", async ({
+  page,
+}) => {
+  await signedIn(page, { status: "none", payments: true });
+  await page.route("**/api/checkout", (route) =>
+    route.fulfill({ status: 502, json: { error: "stripe", requestId: "iad1::abc" } }),
+  );
+  await page.goto("/account.html");
+  await page.locator('[data-plan="starter"]').click();
+  await expect(page.locator("#plan-message")).toContainText("The payment page couldn't be opened just now");
+  await expect(page.locator("#plan-message")).toContainText("Nothing was charged");
+  await expect(page.locator("#plan-message")).not.toContainText(/reach the server/);
+  // The buttons stay: trying again is the advice.
+  await expect(page.locator('[data-plan="starter"]')).toBeEnabled();
+
+  // The billing page, the same way.
+  await signedIn(page, { status: "active", payments: true });
+  await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
+    route.fulfill({ json: { owner_id: "u1", status: "active", plan: "pro", stripe_customer_id: "cus_1" } }),
+  );
+  await page.route("**/api/portal", (route) => route.fulfill({ status: 502, json: { error: "stripe" } }));
+  await page.goto("/es/account.html");
+  await page.locator("#manage-billing").click();
+  await expect(page.locator("#plan-message")).toContainText("No se pudo abrir la página de facturación");
+});
+
+test("sign-ups switched off after the sign-up page loaded: the refused sign-up says sign-ups are paused", async ({
+  page,
+}) => {
+  // The switch is on when the page loads and off by the time the form is sent.
+  let signups = true;
+  await signupPage(
+    page,
+    () => ({ switches: { signups, checkout: true, saving: true }, notice: "Back on Monday." }),
+    (route) => {
+      if (/\/auth\/v1\/signup/.test(route.request().url())) {
+        // What Supabase Auth says when the refuse_signup_when_paused trigger fires.
+        return route.fulfill({
+          status: 500,
+          json: { code: 500, error_code: "unexpected_failure", msg: "Database error saving new user" },
+        });
+      }
+      return route.fulfill({ json: {} });
+    },
+  );
+  await page.goto("/signup.html");
+  await expect(page.locator("#auth-card")).toBeVisible();
+  await expect(page.locator("#signups-paused")).toBeHidden();
+  signups = false;
+  await page.getByLabel("Email").fill("new@example.com");
+  await page.getByLabel("Password").fill("longenough1");
+  await page.locator("#auth-submit").click();
+  await expect(page.locator("#auth-status")).toContainText("New sign-ups are paused right now");
+  await expect(page.locator("#auth-status")).not.toContainText(/went wrong/);
+  await expect(page.locator("#signups-paused")).toBeVisible();
+  await expect(page.locator("#site-notice")).toContainText("Back on Monday.");
+  await expect(page.locator('[data-mode="signup"]')).toBeHidden();
+  await expect(page.locator('[data-mode="login"]')).toHaveAttribute("aria-pressed", "true");
+});
+
+test("a sign-up the auth service itself fails is explained as a service problem, in Portuguese too", async ({
+  page,
+}) => {
+  await signupPage(page, {}, (route) =>
+    route.fulfill({ status: 500, json: { code: 500, error_code: "unexpected_failure", msg: "Database error" } }),
+  );
+  await page.goto("/pt/signup.html");
+  await page.getByLabel("E-mail").fill("new@example.com");
+  await page.getByLabel("Senha").fill("longenough1");
+  await page.locator("#auth-submit").click();
+  await expect(page.locator("#auth-status")).toContainText("O serviço de login teve um problema");
+  // Sign-ups aren't paused: the form stays as it was.
+  await expect(page.locator("#signups-paused")).toBeHidden();
+  await expect(page.locator('[data-mode="signup"]')).toBeVisible();
+});
+
+test("after logging in: My projects, or the page ?next= names on this site, or the account page for a plan link", async ({
+  page,
+}) => {
+  const logIn = async (path) => {
+    await signupPage(page, {}, (route) => {
+      if (/grant_type=password/.test(route.request().url())) return route.fulfill({ json: SESSION_JSON });
+      return route.fulfill({ json: {} });
+    });
+    await page.goto(path);
+    await expect(page.locator("#auth-card")).toBeVisible();
+    await page.getByLabel("Email").fill("owner@example.com");
+    await page.getByLabel("Password").fill("longenough1");
+    await page.locator("#auth-submit").click();
+  };
+  await logIn("/signup.html?mode=login");
+  await page.waitForURL(/\/projects\.html$/);
+  await page.evaluate(() => localStorage.clear());
+
+  await logIn("/signup.html?mode=login&next=" + encodeURIComponent("/es/project.html?id=a1#info"));
+  await page.waitForURL(/\/es\/project\.html\?id=a1#info$/);
+  await page.evaluate(() => localStorage.clear());
+
+  // Another site is never a destination.
+  await logIn("/signup.html?mode=login&next=" + encodeURIComponent("//evil.example/x"));
+  await page.waitForURL(/\/projects\.html$/);
+  await page.evaluate(() => localStorage.clear());
+
+  await logIn("/signup.html?mode=login&plan=pro&promo=FREEWEEK");
+  await page.waitForURL(/\/account\.html\?plan=pro&promo=FREEWEEK$/);
+});
+
+test("signed in, the header offers My projects and Account instead of Pricing and Get started", async ({ page }) => {
+  await page.goto("/index.html");
+  const nav = page.locator("#nav-links");
+  await expect(nav.getByRole("link", { name: "Pricing" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Get started" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "My projects" })).toBeHidden();
+  await expect(nav.getByRole("link", { name: "Account" })).toBeHidden();
+
+  await page.evaluate(() => localStorage.setItem("sb-fakeproject-auth-token", "{}"));
+  await page.goto("/es/index.html");
+  const navEs = page.locator("#nav-links");
+  await expect(navEs.getByRole("link", { name: "Mis proyectos" })).toBeVisible();
+  await expect(navEs.getByRole("link", { name: "Cuenta" })).toBeVisible();
+  await expect(navEs.getByRole("link", { name: "Cerrar sesión" })).toBeVisible();
+  await expect(navEs.getByRole("link", { name: "Precios" })).toBeHidden();
+  await expect(navEs.getByRole("link", { name: "Empezar" })).toBeHidden();
+  await expect(navEs.getByRole("link", { name: "Mis proyectos" })).toHaveAttribute("href", /\/es\/projects\.html$/);
+  await page.evaluate(() => localStorage.clear());
+});
+
+test("the business and labor-prices Save buttons wait, say Saving…, then report what happened", async ({ page }) => {
+  await signedIn(page);
+  let fail = false;
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    const method = route.request().method();
+    if (method === "PATCH") await new Promise((r) => setTimeout(r, 600));
+    if (method === "PATCH" && fail === "taken") {
+      return route.fulfill({ status: 409, json: { code: "23505", message: "duplicate key value" } });
+    }
+    if (method === "PATCH" && fail) return route.fulfill({ status: 500, json: { message: "boom" } });
+    const sent = method === "PATCH" ? route.request().postDataJSON() : {};
+    return route.fulfill({
+      json: Object.assign(
+        { id: "b1", owner_id: "u1", slug: "smith-bath", name: "Smith Bath", phone: "", email: "", prices: {} },
+        sent,
+      ),
+    });
+  });
+  await page.goto("/account.html");
+  const save = page.locator("#business-save");
+  await expect(save).toHaveText("Save");
+  await page.locator("#biz-phone").fill("801-555-0100");
+  await save.click();
+  await expect(save).toHaveText("Saving…");
+  await expect(save).toBeDisabled();
+  await expect(page.locator("#business-status")).toHaveText("Saved.");
+  await expect(save).toHaveText("Save");
+  await expect(save).toBeEnabled();
+
+  // A missing name is pointed out at the field, and nothing is sent.
+  await page.locator("#biz-name").fill("");
+  await save.click();
+  await expect(page.locator("#biz-name-error")).toBeVisible();
+  await expect(page.locator("#biz-name")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#biz-name")).toBeFocused();
+  await expect(page.locator("#business-status")).toContainText("Couldn't save.");
+  await page.locator("#biz-name").fill("Smith Bath");
+
+  // A web address another business has is pointed out at its field.
+  fail = "taken";
+  await save.click();
+  await expect(page.locator("#biz-slug-error")).toHaveText("That web address is taken. Try another.");
+  await expect(page.locator("#biz-name-error")).toBeHidden();
+  await expect(page.locator("#business-status")).toContainText("Couldn't save.");
+  await expect(save).toBeEnabled();
+
+  // The labor prices, the same way; a server failure says so.
+  fail = false;
+  const pricesSave = page.locator("#prices-save");
+  await page.locator('[data-price-key="Shower_Price"]').fill("1200");
+  await pricesSave.click();
+  await expect(pricesSave).toHaveText("Saving…");
+  await expect(pricesSave).toBeDisabled();
+  await expect(page.locator("#prices-reset")).toBeDisabled();
+  await expect(page.locator("#prices-status")).toHaveText("Saved.");
+  await expect(pricesSave).toBeEnabled();
+  fail = true;
+  await pricesSave.click();
+  await expect(page.locator("#prices-status")).toContainText("Couldn't save.");
+  await expect(page.locator("#prices-status")).toContainText("couldn't reach the server");
+  await expect(pricesSave).toHaveText("Save");
+  await expect(pricesSave).toBeEnabled();
+});
+
+test("when the projects can't be counted the account page says so, with the reason", async ({ page }) => {
+  await signedIn(page);
+  await page.route("**/api/projects**", (route) => route.fulfill({ status: 502, json: { error: "server" } }));
+  await page.goto("/account.html");
+  await expect(page.locator("#projects-card")).toBeVisible();
+  await expect(page.locator("#projects-summary")).toContainText("Your projects couldn't be counted right now.");
+  await expect(page.locator("#projects-summary")).toContainText("couldn't reach the server");
+});
+
+test("Escape closes the delete-account form; deleting a customer request asks in a dialog and reports the result", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    leads: [
+      {
+        id: "l1",
+        name: "Ana",
+        phone: "555",
+        email: "",
+        service: "",
+        message: "Hi",
+        created_at: "2026-10-01T00:00:00Z",
+      },
+      { id: "l2", name: "Bo", phone: "", email: "bo@example.com", service: "", message: "", created_at: DAY_LEAD },
+    ],
+  });
+  let deletes = 0;
+  await page.route(SUPABASE + "/rest/v1/leads**", (route) => {
+    if (route.request().method() === "DELETE") {
+      deletes++;
+      return route.fulfill({ status: 204, body: "" });
+    }
+    return route.fallback();
+  });
+  await page.goto("/account.html");
+  await page.getByRole("button", { name: "Delete my account…" }).click();
+  await expect(page.locator("#delete-form")).toBeVisible();
+  await page.locator("#delete-confirm").press("Escape");
+  await expect(page.locator("#delete-form")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Delete my account…" })).toBeFocused();
+
+  const dialog = page.locator("#lead-delete-dialog");
+  const askAna = page.getByRole("button", { name: "Delete the request from Ana" });
+  await askAna.click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Delete the request from Ana?");
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(askAna).toBeFocused();
+  await askAna.click();
+  await page.mouse.click(4, 4); // the backdrop
+  await expect(dialog).toBeHidden();
+  await askAna.click();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  expect(deletes).toBe(0);
+
+  await askAna.click();
+  await dialog.getByRole("button", { name: "Delete request" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("#leads-status")).toHaveText("Request deleted.");
+  await expect(page.locator("#leads-list")).not.toContainText("Ana");
+  await expect(page.locator("#leads-list")).toContainText("Bo");
+  expect(deletes).toBe(1);
+  await expect(page.locator("#leads-card")).toBeVisible();
+
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
 });

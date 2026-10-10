@@ -89,10 +89,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="designer.html">Live demo</a></li>
-          <li><a href="index.html#pricing">Pricing</a></li>
+          <li data-nav-signed-out><a href="index.html#pricing">Pricing</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="projects.html">My projects</a></li>
+          <li data-nav-signed-in hidden><a href="account.html">Account</a></li>
           <li><a href="account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
-          <li><a href="signup.html" class="nav-cta">Get started</a></li>
+          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Get started</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -272,8 +275,8 @@
             <div class="faq-answer-inner">
               <p>
                 Each design you save in your account, with its client details and materials list. Your plan sets how
-                many new projects you can start each month and how many you can keep at once. Deleting a project frees a
-                spot under the total, but doesn't give back one of the month's new projects.
+                many new projects you can start each calendar month (counted in UTC) and how many you can keep at once.
+                Deleting a project frees a spot under the total, but doesn't give back one of the month's new projects.
               </p>
             </div>
           </div>

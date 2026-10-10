@@ -8,7 +8,7 @@ A product of Wright AI Solutions, LLC. The designer itself started as the one bu
 
 - **Landing page** (`index.html`): what it is, pricing, FAQ, sign-up.
 - **Live demo** (`designer.html`): the full designer, speaking for a sample business.
-- **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout; a promo code makes the first week free), set the business details and labor prices, read requests homeowners sent before the designer became owner-only, and delete the account.
+- **Sign-up / log in** (`signup.html`) and **account** (`account.html`): pick a plan (Stripe Checkout; a promo code makes the first week free), set the business details and labor prices, read requests homeowners sent before the designer became owner-only, and delete the account. After logging in, people land on My projects, or on the page `?next=` names (a path on this site; the pages that send someone to log in add it), or on the account page when the link carries a plan or promo code. Signed in, the header shows My projects, Account and Log out in place of Pricing and Get started.
 - **My projects** (`projects.html`): a subscriber's saved designs, with the client and address, to search, open, rename or delete, and what their plan allows. In the designer, a signed-in subscriber gets a bar above the studio to save the design as a project; the first save asks for the client's details.
 - **A project's page** (`project.html?id=`): the 3D model, the info (client, phone, email, address with unit/apt, job type, status, start date, notes) and the materials list worked out when the design was last saved, printable.
 - **Plans and limits** (`api/_plans.js`): Free can use the designer but can't save projects. Starter 10 new projects a month and 50 kept at once, Pro 25 and 100, Max 100 and 1000. Deleting a project frees a slot under the total but not the month's allowance (calendar month, UTC). The server enforces both (`api/projects.js` and the `create_project()` database function).
@@ -89,7 +89,7 @@ Sign-ups, buying a plan and saving projects can each be stopped without a deploy
    - `checkout` off: the account page's plan card says buying a plan is paused and shows no buy buttons; `/api/checkout` refuses. Existing subscriptions keep running, and Manage billing still works.
    - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work.
 
-If the table doesn't exist yet (re-run `supabase/schema.sql`), or the database can't be reached, every switch counts as on: the switch is for stopping the product on purpose, not for an outage. Unit tests: `tests/unit/switches-robustness.test.js`.
+If the table doesn't exist yet (re-run `supabase/schema.sql`), every switch counts as on. The row is read with a 1.5 s limit so `/api/config` stays fast when the database is slow; if the read fails, the switches stay as they were last read (all on if they never were): the switch is for stopping the product on purpose, not for an outage. Every API error is logged as one JSON line with the route, a request id (also returned to the browser as `requestId`), the user id and the error word. Unit tests: `tests/unit/switches-robustness.test.js`.
 
 ## Editing pages and text
 

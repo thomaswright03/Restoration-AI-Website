@@ -259,5 +259,9 @@
     "New drain line, per ft ($)",
     "Línea de drenaje nueva, por pie ($)",
     "Linha de esgoto nova, por pé ($)"
-  ]
+  ],
+  "account.lead.delete.title": ["Delete request", "Eliminar solicitud", "Excluir pedido"],
+  "account.lead.delete.cancel": ["Cancel", "Cancelar", "Cancelar"],
+  "account.lead.delete.confirm": ["Delete request", "Eliminar solicitud", "Excluir pedido"],
+  "account.lead.delete.close": ["Close", "Cerrar", "Fechar"]
 }

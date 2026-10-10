@@ -6,6 +6,7 @@ const {
   supabaseReady,
   stripeReady,
   sendJson,
+  sendError,
   siteUrl,
   requireUser,
   stripe,
@@ -21,8 +22,9 @@ module.exports = async function handler(req, res) {
   }
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
 
+  let user;
   try {
-    const user = await requireUser(req, res);
+    user = await requireUser(req, res);
     if (!user) return;
     const body = await readForm(req);
     const dir = body.lang === "es" || body.lang === "pt" ? body.lang + "/" : "";
@@ -32,8 +34,7 @@ module.exports = async function handler(req, res) {
       const sub = await subscriptionOf(user.id, "stripe_customer_id");
       customer = sub && sub.stripe_customer_id;
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "server" });
+      return sendError(req, res, 502, { error: "server" }, e, user);
     }
     if (!customer) return sendJson(res, 404, { error: "no-customer" });
     try {
@@ -45,11 +46,9 @@ module.exports = async function handler(req, res) {
       );
       return sendJson(res, 200, { url: session.url });
     } catch (e) {
-      console.error(e);
-      return sendJson(res, 502, { error: "stripe" });
+      return sendError(req, res, 502, { error: "stripe" }, e, user);
     }
   } catch (e) {
-    console.error(e);
-    return sendJson(res, 502, { error: "server" });
+    return sendError(req, res, 502, { error: "server" }, e, user);
   }
 };

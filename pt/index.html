@@ -89,10 +89,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../pt/designer.html">Demonstração</a></li>
-          <li><a href="../pt/index.html#pricing">Preços</a></li>
+          <li data-nav-signed-out><a href="../pt/index.html#pricing">Preços</a></li>
           <li><a href="../pt/index.html#faq">Perguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../pt/projects.html">Meus projetos</a></li>
+          <li data-nav-signed-in hidden><a href="../pt/account.html">Conta</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
+          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -284,8 +287,9 @@
             <div class="faq-answer-inner">
               <p>
                 Cada projeto que você salva na sua conta, com os dados do cliente e a lista de materiais. O seu plano
-                define quantos projetos novos você pode começar por mês e quantos pode guardar ao mesmo tempo. Apagar um
-                projeto libera uma vaga no total, mas não devolve um dos projetos novos do mês.
+                define quantos projetos novos você pode começar a cada mês do calendário (contado em UTC) e quantos pode
+                guardar ao mesmo tempo. Apagar um projeto libera uma vaga no total, mas não devolve um dos projetos
+                novos do mês.
               </p>
             </div>
           </div>

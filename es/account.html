@@ -86,10 +86,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="../es/designer.html">Demo en vivo</a></li>
-          <li><a href="../es/index.html#pricing">Precios</a></li>
+          <li data-nav-signed-out><a href="../es/index.html#pricing">Precios</a></li>
           <li><a href="../es/index.html#faq">Preguntas</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="../es/projects.html">Mis proyectos</a></li>
+          <li data-nav-signed-in hidden><a href="../es/account.html">Cuenta</a></li>
           <li><a href="../es/account.html" data-auth-link data-logout-label="Cerrar sesión">Iniciar sesión</a></li>
-          <li><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
+          <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -208,12 +211,30 @@
             <form id="business-form" novalidate>
               <div class="form-group">
                 <label for="biz-name">Nombre de la empresa</label>
-                <input type="text" id="biz-name" maxlength="120" required autocomplete="organization" />
+                <input
+                  type="text"
+                  id="biz-name"
+                  maxlength="120"
+                  required
+                  autocomplete="organization"
+                  aria-describedby="biz-name-error"
+                />
+                <p class="field-error" id="biz-name-error" hidden></p>
               </div>
               <div class="form-group">
                 <label for="biz-slug">Dirección web de su diseñador</label>
-                <input type="text" id="biz-slug" maxlength="64" required pattern="[a-z0-9][a-z0-9-]{1,62}[a-z0-9]" />
-                <p class="form-note">Letras minúsculas, números y guiones, p. ej., smith-remodeling.</p>
+                <input
+                  type="text"
+                  id="biz-slug"
+                  maxlength="64"
+                  required
+                  pattern="[a-z0-9][a-z0-9-]{1,62}[a-z0-9]"
+                  aria-describedby="biz-slug-help biz-slug-error"
+                />
+                <p class="form-note" id="biz-slug-help">
+                  Letras minúsculas, números y guiones, p. ej., smith-remodeling.
+                </p>
+                <p class="field-error" id="biz-slug-error" hidden></p>
               </div>
               <div class="form-group">
                 <label for="biz-phone">Teléfono que aparece en las estimaciones</label>
@@ -230,7 +251,7 @@
                   Aparece en las estimaciones después del nombre de su empresa, p. ej., Smith Remodeling LLC.
                 </p>
               </div>
-              <button type="submit" class="btn btn-primary">Guardar</button>
+              <button type="submit" class="btn btn-primary" id="business-save">Guardar</button>
               <p class="form-status" id="business-status" role="status" aria-live="polite" hidden></p>
             </form>
           </div>
@@ -450,7 +471,7 @@
                 no están en la estimación.
               </p>
               <div class="app-actions">
-                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="submit" class="btn btn-primary" id="prices-save">Guardar</button>
                 <button type="button" class="btn btn-outline-dark" id="prices-reset">
                   Usar los valores predeterminados
                 </button>
@@ -461,6 +482,7 @@
 
           <div class="app-card" id="leads-card" hidden>
             <h2>Solicitudes de clientes</h2>
+            <p class="form-status" id="leads-status" role="status" aria-live="polite" hidden></p>
             <ol class="lead-list" id="leads-list"></ol>
           </div>
 
@@ -487,6 +509,18 @@
           </div>
         </div>
       </section>
+
+      <dialog class="project-dialog" id="lead-delete-dialog" aria-labelledby="lead-delete-title">
+        <div class="project-dialog-body">
+          <button type="button" class="project-dialog-close" id="lead-delete-close" aria-label="Cerrar">×</button>
+          <h2 id="lead-delete-title">Eliminar solicitud</h2>
+          <p id="lead-delete-text"></p>
+          <div class="app-actions">
+            <button type="button" class="btn btn-outline-dark" id="lead-delete-cancel" autofocus>Cancelar</button>
+            <button type="button" class="btn btn-danger" id="lead-delete-confirm">Eliminar solicitud</button>
+          </div>
+        </div>
+      </dialog>
     </main>
 
     <footer class="site-footer product-chrome">

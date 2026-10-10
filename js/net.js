@@ -10,12 +10,18 @@
 //       code   the API's own error word ({error: "..."}), else the kind
 //       data   the parsed body, or {}
 //   Net.errorKey(err) -> the js/i18n.js key that says what to do
+//   Net.config() -> Promise<config>  /api/config (accounts, payments, the
+//     kill switches), with a time limit of its own; when it can't be read the
+//     answer is {accounts: false, payments: false, unreachable: true}, so a
+//     page says the server couldn't be reached instead of waiting.
 //
 // Must load after js/i18n.js and before js/account.js and js/projects.js.
 (function () {
   "use strict";
 
   var TIMEOUT = 15000;
+  // /api/config is on every signed-in page's way in, so it waits less.
+  var CONFIG_TIMEOUT = 10000;
 
   function fetchJson(url, options, timeoutMs) {
     options = Object.assign({}, options || {});
@@ -76,5 +82,17 @@
     return "net.server";
   }
 
-  window.Net = { fetchJson: fetchJson, errorKey: errorKey, TIMEOUT: TIMEOUT };
+  function config() {
+    return fetchJson("/api/config", { cache: "no-store" }, CONFIG_TIMEOUT).catch(function () {
+      return { accounts: false, payments: false, unreachable: true };
+    });
+  }
+
+  window.Net = {
+    fetchJson: fetchJson,
+    errorKey: errorKey,
+    config: config,
+    TIMEOUT: TIMEOUT,
+    CONFIG_TIMEOUT: CONFIG_TIMEOUT,
+  };
 })();

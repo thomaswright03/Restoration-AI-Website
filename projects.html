@@ -83,10 +83,13 @@
         </button>
         <ul class="nav-links" id="nav-links">
           <li><a href="designer.html">Live demo</a></li>
-          <li><a href="index.html#pricing">Pricing</a></li>
+          <li data-nav-signed-out><a href="index.html#pricing">Pricing</a></li>
           <li><a href="index.html#faq">FAQ</a></li>
+          <!-- Signed in (js/script.js): My projects and Account take the place of Pricing and Get started. -->
+          <li data-nav-signed-in hidden><a href="projects.html">My projects</a></li>
+          <li data-nav-signed-in hidden><a href="account.html">Account</a></li>
           <li><a href="account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
-          <li><a href="signup.html" class="nav-cta">Get started</a></li>
+          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Get started</a></li>
           <li class="nav-lang">
             <details class="lang-menu">
               <summary>
@@ -180,8 +183,8 @@
               </div>
             </div>
             <p class="form-note">
-              Deleting a project frees a saved-project slot, but not this month's new projects; those start over on the
-              1st of each month.
+              Deleting a project frees a saved-project slot, but not this month's new projects; those start over with
+              each calendar month, counted in UTC (for US time zones, the evening of the month's last day).
             </p>
           </div>
 
@@ -204,6 +207,9 @@
                 <label for="projects-filter">Status</label>
                 <select id="projects-filter"></select>
               </div>
+              <p class="projects-clear" id="projects-clear-wrap" hidden>
+                <button type="button" class="link-button" id="projects-clear">Clear filters</button>
+              </p>
             </div>
             <div class="app-empty" id="projects-empty" hidden>
               <p>No projects yet. Open the designer and use Save project at the top to keep a design here.</p>
@@ -216,11 +222,14 @@
       </section>
 
       <dialog class="project-dialog" id="projects-delete-dialog" aria-labelledby="projects-delete-title">
-        <h2 id="projects-delete-title">Delete project</h2>
-        <p id="projects-delete-text"></p>
-        <div class="app-actions">
-          <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancel</button>
-          <button type="button" class="btn btn-danger" id="projects-delete-confirm">Delete project</button>
+        <div class="project-dialog-body">
+          <button type="button" class="project-dialog-close" id="projects-delete-close" aria-label="Close">×</button>
+          <h2 id="projects-delete-title">Delete project</h2>
+          <p id="projects-delete-text"></p>
+          <div class="app-actions">
+            <button type="button" class="btn btn-outline-dark" id="projects-delete-cancel" autofocus>Cancel</button>
+            <button type="button" class="btn btn-danger" id="projects-delete-confirm">Delete project</button>
+          </div>
         </div>
       </dialog>
     </main>

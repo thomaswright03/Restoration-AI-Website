@@ -8,10 +8,17 @@
 //
 // It serves the repo with scripts/serve.mjs, opens the demo designer in the
 // test browser (Playwright's Chromium, installed for the e2e tests), waits
-// for the 3D room and Riley, goes to the Layout step, and takes two shots per
-// language: the whole studio at desktop width (1280 px) and a tighter crop of
-// the room for phones (720 px). The PNGs are encoded as WebP by the browser.
-// Run it after a visible change to the designer and commit the images.
+// for the 3D room, every product model and Riley, goes to the Layout step,
+// and takes two shots per language: the whole studio at desktop width
+// (1280 px) and a tighter crop of the room for phones (720 px). The PNGs are
+// encoded as WebP by the browser. Run it (npm run hero) after a visible
+// change to the designer and commit the images.
+//
+// The pictures are reproducible: the sample room and its product picks are
+// fixed (the same in every language), nothing is drawn until every model
+// has loaded (a run that didn't wait showed the stand-in toilet in one
+// language and the real one in another), and the camera is left to settle.
+// Two runs at the same commit give the same six files.
 
 /* global window, Image, document */
 import { spawn } from "node:child_process";
@@ -50,13 +57,27 @@ async function waitForServer(url, tries = 50) {
   throw new Error("the local server didn't start");
 }
 
+// The sample room's products, picked the same way in every language and on
+// every run: each fixture's first real Kohler or Sterling model.
+const PRODUCT_PICKS = { toilet: "K-31648-0" };
+
+// Every fixture and product model is in and drawn (no stand-ins left).
+async function waitForModels(page) {
+  await page.waitForFunction(() => window.BathroomRoom3D.pendingModels() === 0, null, { timeout: 120000 });
+  await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
+}
+
 // The designer, drawn and talking, on the Layout step.
 async function openDesigner(page, dir, lang) {
   await page.goto(`http://localhost:${PORT}/${dir}designer.html?lang=${lang}`);
   await page.waitForFunction(
     () => window.RoomStudio && window.BathroomRoom3D && window.BathroomRoom3D.available === true,
   );
-  await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
+  await waitForModels(page);
+  await page.evaluate((picks) => {
+    for (const slot of Object.keys(picks)) window.BathroomRoom3D.setProductPick(slot, picks[slot]);
+  }, PRODUCT_PICKS);
+  await waitForModels(page);
   // Riley's first line, then the plumbing wall she asks for, then Layout.
   await page.waitForFunction(() => /\S/.test((document.querySelector(".riley-text") || {}).textContent || ""));
   const wall = await page.evaluate(() => window.RoomPlan.stackWall(window.RoomStudio.design()));
@@ -65,8 +86,9 @@ async function openDesigner(page, dir, lang) {
   await page.locator('.studio-step-btn[data-step="layout"]').click();
   await page.locator(".studio-step.is-layout").waitFor();
   await page.waitForFunction(() => /\S/.test((document.querySelector(".riley-text") || {}).textContent || ""));
-  // Let the room settle (camera, shadows) before the picture.
-  await page.waitForTimeout(1200);
+  await waitForModels(page);
+  // Let the room settle (the camera's move, shadows) before the picture.
+  await page.waitForTimeout(1500);
 }
 
 // PNG bytes -> WebP bytes, encoded by the browser itself (no extra tooling).

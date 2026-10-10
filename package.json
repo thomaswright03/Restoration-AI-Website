@@ -9,6 +9,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "pages": "node scripts/build-pages.mjs",
+    "hero": "node scripts/hero-shots.mjs",
     "check:pages": "node scripts/build-pages.mjs --check",
     "test:unit": "node --test \"tests/unit/*.test.js\"",
     "test:e2e": "playwright test",

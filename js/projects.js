@@ -1495,6 +1495,7 @@
     opening = true;
     renderBar();
     status(out, "info", "");
+    restoreLoading();
     return api("GET", "?id=" + encodeURIComponent(id))
       .then(function (data) {
         return barReady.then(function () {
@@ -1526,6 +1527,22 @@
       });
   }
 
+  // Try again after a failed open: the loading panel and the canvas say
+  // "Loading the designer…" again (the page's own words, kept from before
+  // the failure) while the project is fetched.
+  var loadingWords = null; // { line, canvas }
+  function restoreLoading() {
+    var panel = document.getElementById("studio-loading");
+    if (!panel || !panel.classList.contains("is-failed") || !loadingWords) return;
+    panel.classList.remove("is-failed");
+    var line = panel.querySelector(".studio-loading-text");
+    if (line) line.textContent = loadingWords.line;
+    var slow = /** @type {HTMLElement | null} */ (panel.querySelector(".studio-loading-slow"));
+    if (slow) slow.hidden = false;
+    var canvas = document.getElementById("room-3d-canvas");
+    if (canvas && !canvas.children.length) canvas.setAttribute("data-loading", loadingWords.canvas);
+  }
+
   // The project couldn't be opened: the bar says why, with the way out that
   // can help (Try again for a connection or server problem, Log in for an
   // ended sign-in, and Back to My projects; a project that isn't there
@@ -1540,12 +1557,22 @@
     show($("project-save-new"), false);
     var panel = document.getElementById("studio-loading");
     if (panel && !studio("encoded")) {
+      var canvas = document.getElementById("room-3d-canvas");
+      if (!loadingWords) {
+        loadingWords = {
+          line: (panel.querySelector(".studio-loading-text") || panel).textContent,
+          canvas: (canvas && canvas.getAttribute("data-loading")) || "",
+        };
+      }
       panel.classList.add("is-failed");
       var line = panel.querySelector(".studio-loading-text") || panel;
       line.textContent = "";
       fillFailure(line, err, id);
       var slow = /** @type {HTMLElement | null} */ (panel.querySelector(".studio-loading-slow"));
       if (slow) slow.hidden = true;
+      // The empty canvas says "Loading the designer…" in words (css/studio.css,
+      // from data-loading): a failed open isn't loading any more.
+      if (canvas && !canvas.children.length) canvas.setAttribute("data-loading", "");
     }
   }
 

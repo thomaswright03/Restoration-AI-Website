@@ -721,7 +721,7 @@
     "studio.pdf.plan": "Planta baixa",
     "studio.pdf.design": "Seu projeto",
     "studio.pdf.link": "Abrir este projeto",
-    "studio.pdf.open": "Clique aqui para abrir este projeto em 3D",
+    "studio.pdf.open": "Abra este projeto em 3D em qualquer navegador, neste endereço:",
     "room3d.canvasLabel":
       "Vista em 3D do seu banheiro. Arraste uma peça para movê-la ou arraste em outro lugar para girar a vista. Tudo também pode ser feito pelo painel e pela planta.",
     "room3d.tooBig": "Grande demais para este banheiro",

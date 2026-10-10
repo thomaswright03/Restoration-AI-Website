@@ -725,7 +725,7 @@
     "studio.pdf.plan": "Plano",
     "studio.pdf.design": "Su diseño",
     "studio.pdf.link": "Abrir este diseño",
-    "studio.pdf.open": "Haga clic aquí para abrir este diseño en 3D",
+    "studio.pdf.open": "Abra este diseño en 3D en cualquier navegador, en esta dirección:",
     "room3d.canvasLabel":
       "Vista 3D de su baño. Arrastre una pieza para moverla, o arrastre en otro lugar para girar la vista. Todo se puede hacer también desde el panel y el plano.",
     "room3d.tooBig": "Demasiado grande para este baño",

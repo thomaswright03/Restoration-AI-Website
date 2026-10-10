@@ -4238,6 +4238,16 @@
     est.products.forEach(function (p) {
       out.push(p.label + " (" + p.mmns.join(" + ") + ")" + (p.qty > 1 ? " × " + p.qty : ""));
     });
+    // A fixture still on its stand-in (the standard toilet, say) is part of
+    // the design too, with no model number to give. A label's aside for the
+    // panel ("pick the sink below") stays there.
+    if (room3d && d === design) {
+      room3d.getProductPricingItems().forEach(function (item) {
+        if (item.mmns.length) return;
+        var name = item.productLabel.replace(/\s*\([^)]*\)\s*$/, "");
+        out.push(item.slotLabel + ": " + name + (item.qty > 1 ? " × " + item.qty : ""));
+      });
+    }
     return out;
   }
 
@@ -4634,7 +4644,8 @@
       });
     });
     shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w), bold: true });
-    shapes.texts.push({ x: -(WALL_T + 1.6), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
+    // Clear of the wall letters, which sit 0.7 ft outside the walls.
+    shapes.texts.push({ x: -(WALL_T + 2.3), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
     return shapes;
   }
 

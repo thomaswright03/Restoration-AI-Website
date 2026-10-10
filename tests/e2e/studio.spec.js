@@ -273,11 +273,28 @@ test.describe("design studio", () => {
       lines: window.__pdfSpec.lines.map((l) => ({ label: l.label, detail: l.detail || null, amount: l.amount })),
       picture: Boolean(window.__pdfSpec.picture),
       plan: Boolean(window.__pdfSpec.plan),
+      design: window.__pdfSpec.design,
+      link: window.__pdfSpec.sections[window.__pdfSpec.sections.length - 1].items[0],
+      planTexts: window.__pdfSpec.plan.texts.filter((t) => t.bold).map((t) => ({ text: t.text, x: t.x, z: t.z })),
     }));
     expect(card.length).toBeGreaterThan(2);
     expect(pdf.lines).toEqual(card);
     expect(pdf.picture).toBe(true);
     expect(pdf.plan).toBe(true);
+    // "Your design" names every product in the room, the ones still on a
+    // stand-in (the sample's toilet) included, and never a panel aside.
+    expect(pdf.design).toContainEqual(expect.stringMatching(/^Toilet: /));
+    expect(pdf.design).toContainEqual(expect.stringMatching(/^Tub: .*K-/));
+    expect(pdf.design.join("\n")).not.toMatch(/\(pick /);
+    // The closing link reads on paper: no "click here", and its address is given.
+    expect(pdf.link.text).not.toMatch(/click/i);
+    expect(pdf.link.text).toMatch(/address/);
+    expect(pdf.link.url).toMatch(/designer\.html#design=/);
+    // On the plan, the room's length label stands clear of the wall letters
+    // (which sit 0.7 ft outside the walls): at least 1.5 ft further out.
+    const letterD = pdf.planTexts.find((t) => t.text === "D");
+    const length = pdf.planTexts.find((t) => /^5/.test(t.text));
+    expect(letterD.x - length.x).toBeGreaterThanOrEqual(1.5);
     expect(errors).toEqual([]);
   });
 

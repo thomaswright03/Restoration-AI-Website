@@ -599,10 +599,55 @@ p {
   box-shadow: var(--shadow-soft);
 }
 
+.offline-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.offline-notice[hidden] {
+  display: none;
+}
+
+.offline-notice-text {
+  flex: 1 1 auto;
+}
+
+/* The X that closes it: a tap-sized button that reads as part of the notice. */
+.offline-notice-close {
+  flex: none;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)) calc(-1 * var(--space-2)) 0;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.offline-notice-close:hover,
+.offline-notice-close:focus-visible {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 .offline-notice.is-back {
   border-color: var(--color-success);
   background: var(--color-surface);
   color: var(--color-ink);
+}
+
+/* On the designer (js/script.js) the notice is part of the page, above the
+   studio, so it never floats over Riley's card or a control on a phone. */
+.offline-notice.is-inline {
+  position: static;
+  transform: none;
+  width: auto;
+  max-width: none;
+  margin: var(--space-3) var(--gutter) 0;
 }
 
 /* ---------- Hero ---------- */

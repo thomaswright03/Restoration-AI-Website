@@ -30,6 +30,53 @@ test("going offline shows a page-level notice before anything fails; coming back
   await expect(notice).toContainText("A conexão voltou.");
 });
 
+test("the offline notice can be closed with its X, by keyboard, and never covers the designer's controls on a phone", async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(60000);
+  await page.goto("/projects.html");
+  const notice = page.locator(".offline-notice");
+  await context.setOffline(true);
+  await expect(notice).toBeVisible();
+  const close = notice.getByRole("button", { name: "Close this notice" });
+  await close.click();
+  await expect(notice).toBeHidden();
+  // Still offline, so a page load shows it again; Escape with the X focused closes it.
+  await context.setOffline(false);
+  await page.goto("/es/projects.html");
+  await context.setOffline(true);
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "Cerrar este aviso" }).focus();
+  await page.keyboard.press("Escape");
+  await expect(notice).toBeHidden();
+  await context.setOffline(false);
+  // Coming back online still says so for a moment.
+  await expect(notice).toContainText("Volvió la conexión.");
+  await expect(notice).toBeHidden({ timeout: 10000 });
+
+  // The designer on a 375 px phone: the notice is part of the page above the
+  // studio (not a toast over it), so Riley's card and every control stay clear.
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/designer.html");
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 20000 });
+  await context.setOffline(true);
+  await expect(notice).toBeVisible();
+  expect(await notice.evaluate((el) => getComputedStyle(el).position)).toBe("static");
+  const overlaps = await page.evaluate(() => {
+    const n = document.querySelector(".offline-notice").getBoundingClientRect();
+    const hits = (sel) =>
+      Array.from(document.querySelectorAll(sel)).filter((el) => {
+        const r = el.getBoundingClientRect();
+        if (!r.width || !r.height) return false;
+        return r.left < n.right && r.right > n.left && r.top < n.bottom && r.bottom > n.top;
+      }).length;
+    return hits(".studio-riley, .riley, .studio-step-btn, .studio-viewbar button, .studio-panel button, .btn");
+  });
+  expect(overlaps).toBe(0);
+  await context.setOffline(false);
+});
+
 test("the theme can be switched from the header on every page, by keyboard, and the browser chrome colour follows", async ({
   page,
 }) => {

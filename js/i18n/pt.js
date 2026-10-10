@@ -318,6 +318,7 @@
     "net.server": "Algo deu errado do nosso lado. Tente de novo em um minuto; se continuar, avise a gente.",
     "net.offlineNotice": "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
     "net.backOnline": "A conexão voltou.",
+    "net.offlineDismiss": "Fechar este aviso",
     "proj.loading": "Carregando…",
     "proj.err.loadFailed": "Não foi possível carregar os seus projetos.",
     "proj.err.business":

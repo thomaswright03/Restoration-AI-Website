@@ -85,6 +85,10 @@ document.addEventListener("DOMContentLoaded", function () {
   // its connection, before anything fails, and a short "back online" when it
   // returns. Pages that save (My projects, the designer's save bar) still say
   // what happened to each action; this is the heads-up.
+  // It can be closed (the X, Enter or Space on it, or Escape while it has
+  // the focus). On the designer it sits in the page above the studio rather
+  // than floating over it, so it never covers Riley's card or a control on a
+  // phone.
   var I18n = window.I18n;
   if (I18n && document.body) {
     var notice = document.createElement("div");
@@ -92,21 +96,47 @@ document.addEventListener("DOMContentLoaded", function () {
     notice.setAttribute("role", "status");
     notice.setAttribute("aria-live", "polite");
     notice.hidden = true;
-    document.body.appendChild(notice);
+    var noticeText = document.createElement("span");
+    noticeText.className = "offline-notice-text";
+    var noticeClose = document.createElement("button");
+    noticeClose.type = "button";
+    noticeClose.className = "offline-notice-close";
+    noticeClose.setAttribute("aria-label", I18n.t("net.offlineDismiss"));
+    noticeClose.textContent = "×";
+    notice.appendChild(noticeText);
+    notice.appendChild(noticeClose);
+    var studioMain = document.querySelector("main.studio-page");
+    if (studioMain) {
+      notice.classList.add("is-inline");
+      studioMain.insertBefore(notice, studioMain.firstChild);
+    } else {
+      document.body.appendChild(notice);
+    }
     var backTimer = null;
     var wasOffline = false;
+    var dismiss = function () {
+      notice.hidden = true;
+      // Focus was on the X: it goes back to the page rather than nowhere.
+      if (document.activeElement === noticeClose) noticeClose.blur();
+    };
+    noticeClose.addEventListener("click", dismiss);
+    notice.addEventListener("keydown", function (e) {
+      if (e.key !== "Escape") return;
+      e.preventDefault();
+      dismiss();
+    });
     var setOffline = function (off) {
       clearTimeout(backTimer);
       if (off) {
         wasOffline = true;
-        notice.textContent = I18n.t("net.offlineNotice");
+        noticeText.textContent = I18n.t("net.offlineNotice");
         notice.classList.remove("is-back");
         notice.hidden = false;
         return;
       }
       if (!wasOffline) return;
       wasOffline = false;
-      notice.textContent = I18n.t("net.backOnline");
+      noticeText.textContent = I18n.t("net.backOnline");
       notice.classList.add("is-back");
       notice.hidden = false;
       backTimer = setTimeout(function () {

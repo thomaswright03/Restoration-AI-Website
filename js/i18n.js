@@ -714,6 +714,7 @@
       "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
     ],
     "net.backOnline": ["You're back online.", "Volvió la conexión.", "A conexão voltou."],
+    "net.offlineDismiss": ["Close this notice", "Cerrar este aviso", "Fechar este aviso"],
     "proj.loading": ["Loading…", "Cargando…", "Carregando…"],
     "proj.err.loadFailed": [
       "Couldn't load your projects.",

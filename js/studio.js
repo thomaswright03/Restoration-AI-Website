@@ -4687,7 +4687,9 @@
       // Without the materials estimator the price doesn't follow the picks.
       stepKey = "riley.step.finishesNotPriced";
     }
-    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
+    // The partial-prices line names the lines still at sample rates.
+    var vars = stepKey === "riley.step.estimateOwnerPartial" ? { list: sampleRateList() } : null;
+    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey, vars);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.
     var gaps = ui.step === "electrical" || ui.step === "estimate" ? fillableGaps() : null;

@@ -19,7 +19,7 @@ async function useConfig(page, overrides) {
   return config;
 }
 
-// Opens the design studio (the sample full bath: 8 ft x 5 ft, the plumbing
+// Opens the design studio (the sample full bath: 8½ ft x 5 ft, the plumbing
 // in wall A with the vanity and toilet on it, a tub on wall B, the door on
 // wall C) and waits until it's drawn. Returns the page errors seen, for a
 // final check.
@@ -82,6 +82,15 @@ async function onScreen(page, x, y, z) {
   );
 }
 
+// Nothing the designer shows (the steps, the estimate, Riley's bubble, the
+// chips) may carry an unfilled {placeholder} from js/i18n.js.
+async function expectNoPlaceholders(page) {
+  const text = await page.locator("#studio").innerText();
+  expect(text, "unfilled i18n placeholder on the page").not.toMatch(/\{\w+\}/);
+  const live = await page.locator("#studio-live").textContent();
+  expect(live || "", "unfilled i18n placeholder in the live region").not.toMatch(/\{\w+\}/);
+}
+
 const step = (page, name) => page.locator(`.studio-step-btn[data-step="${name}"]`);
 const byKey = (page, key) => page.locator(`[data-key="${key}"]`);
 const studioStatus = (page) => page.locator(".studio-status");
@@ -96,6 +105,7 @@ module.exports = {
   answerAll,
   confirmStack,
   onScreen,
+  expectNoPlaceholders,
   step,
   byKey,
   studioStatus,

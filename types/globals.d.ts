@@ -16,6 +16,7 @@ declare var Net: any;
 // js/net.js sets kind/status/code/data (see its header).
 interface Error {
   upstream?: boolean;
+  timedOut?: boolean;
   kind?: string;
   status?: number;
   code?: string;

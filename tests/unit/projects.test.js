@@ -33,20 +33,36 @@ function fakeRes() {
 
 // The rows a fake Supabase holds, and a fetch that serves them.
 function fakeSupabase(sub) {
-  const data = { subs: sub ? [Object.assign({ owner_id: USER }, sub)] : [], projects: [], creations: [] };
+  const data = {
+    subs: sub ? [Object.assign({ owner_id: USER }, sub)] : [],
+    projects: [],
+    creations: [],
+    // Every request made: { method, path, bytes } (bytes: the body sent back).
+    requests: [],
+  };
   let n = 0;
-  const reply = (status, body) => ({
+  const reply = (status, body, headers = {}) => ({
     ok: status < 300,
     status,
+    headers: { get: (k) => headers[k.toLowerCase()] ?? null },
     text: async () => (body === undefined ? "" : JSON.stringify(body)),
     json: async () => body,
   });
+  // Like PostgREST: a HEAD with Prefer: count=exact answers the matching
+  // rows' count in Content-Range, with no body.
+  const counted = (rows) =>
+    reply(200, undefined, { "content-range": rows.length ? "0-" + (rows.length - 1) + "/" + rows.length : "*/0" });
   global.fetch = async (url, opts = {}) => {
     const u = new URL(url);
     const method = opts.method || "GET";
     const q = u.searchParams;
     const eq = (k) => (q.get(k) || "").replace(/^eq\./, "");
     const body = opts.body ? JSON.parse(opts.body) : null;
+    const res = await serve(u, method, q, eq, body, opts);
+    data.requests.push({ method, path: u.pathname + u.search, bytes: (await res.text()).length });
+    return res;
+  };
+  const serve = async (u, method, q, eq, body, opts) => {
     if (u.pathname === "/auth/v1/user") {
       return opts.headers.Authorization === "Bearer good" ? reply(200, { id: USER }) : reply(401, {});
     }
@@ -57,10 +73,9 @@ function fakeSupabase(sub) {
       );
     if (u.pathname === "/rest/v1/project_creations") {
       const since = (q.get("created_at") || "").replace(/^gte\./, "");
-      return reply(
-        200,
-        data.creations.filter((c) => c.owner_id === eq("owner_id") && c.created_at >= since),
-      );
+      const rows = data.creations.filter((c) => c.owner_id === eq("owner_id") && c.created_at >= since);
+      if (method === "HEAD") return counted(rows);
+      return reply(200, rows);
     }
     if (u.pathname === "/rest/v1/projects") {
       const match = (p) =>
@@ -68,6 +83,7 @@ function fakeSupabase(sub) {
         (!q.get("id") || p.id === eq("id")) &&
         (!q.get("updated_at") || Date.parse(p.updated_at) === Date.parse(eq("updated_at")));
       const rows = data.projects.filter(match);
+      if (method === "HEAD") return counted(rows);
       if (method === "GET") return reply(200, rows);
       if (method === "PATCH") {
         rows.forEach((p) => Object.assign(p, body));
@@ -266,6 +282,67 @@ test("projects: client and job details are checked field by field", async () => 
   assert.equal(longName.statusCode, 400);
   assert.deepEqual(longName.json(), { error: "name", field: "name", reason: "long" });
   assert.equal((await call("POST", { body: { name: "Job", design: DESIGN, summary: [1] } })).statusCode, 400);
+});
+
+test("projects: counts come from the database as numbers, and ?counts=1 skips the list", async () => {
+  const data = fakeSupabase({ status: "active", plan: "max" });
+  for (let i = 0; i < 1000; i++)
+    data.projects.push({
+      id: "00000000-0000-4000-9000-" + String(i).padStart(12, "0"),
+      owner_id: USER,
+      name: "Old " + i,
+    });
+  data.creations.push({ owner_id: USER, created_at: new Date().toISOString() });
+  data.creations.push({ owner_id: OTHER, created_at: new Date().toISOString() });
+
+  const counts = await call("GET", { query: { counts: "1" } });
+  assert.equal(counts.statusCode, 200);
+  assert.deepEqual(counts.json(), { plan: "max", limits: limitsOf("max"), used: { month: 1, total: 1000 } });
+  // No project row travelled: the counts are HEAD requests with empty bodies.
+  const reads = data.requests.filter((r) => r.path.startsWith("/rest/v1/projects"));
+  assert.deepEqual(
+    reads.map((r) => r.method),
+    ["HEAD"],
+  );
+  assert.ok(reads.every((r) => r.bytes === 0));
+  const creations = data.requests.filter((r) => r.path.startsWith("/rest/v1/project_creations"));
+  assert.deepEqual(
+    creations.map((r) => r.method),
+    ["HEAD"],
+  );
+
+  // The usage payload is the same size at 1,000 projects as at 1.
+  data.projects.length = 1;
+  data.requests.length = 0;
+  const one = await call("GET", { query: { counts: "1" } });
+  assert.deepEqual(one.json().used, { month: 1, total: 1 });
+  assert.equal(one.body.length, counts.body.length - 3);
+
+  // The full list still comes with the counts, from one list request.
+  const list = await call("GET");
+  assert.equal(list.json().projects.length, 1);
+  assert.deepEqual(list.json().used, { month: 1, total: 1 });
+  const listReads = data.requests.filter((r) => r.path.startsWith("/rest/v1/projects") && r.method === "GET");
+  assert.equal(listReads.length, 1);
+});
+
+test("projects: names and details with NUL or other control characters are refused as values", async () => {
+  const { parseInfo, parseName } = require("../../api/projects.js");
+  assert.deepEqual(parseName("Smith\u0000 bath"), { reason: "value" });
+  assert.deepEqual(parseName("Smith\u001b[31m bath"), { reason: "value" });
+  assert.deepEqual(parseName("Smith\u0085bath"), { reason: "value" });
+  assert.deepEqual(parseName("Smith\tbath\n"), { name: "Smith bath" });
+  assert.deepEqual(parseInfo({ client: "Lee\u0000" }), { field: "client", reason: "value" });
+  assert.deepEqual(parseInfo({ notes: "line 1\nline 2\ttabbed\r\n" }), { info: { notes: "line 1\nline 2\ttabbed" } });
+  assert.deepEqual(parseInfo({ notes: "bell\u0007" }), { field: "notes", reason: "value" });
+  assert.deepEqual(parseInfo({ city: "São Paulo — ñ" }), { info: { city: "São Paulo — ñ" } });
+
+  fakeSupabase({ status: "active" });
+  const res = await call("POST", { body: { name: "Job\u0000", design: DESIGN } });
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.json(), { error: "name", field: "name", reason: "value" });
+  const info = await call("POST", { body: { name: "Job", design: DESIGN, info: { street: "1\u0000 Main" } } });
+  assert.deepEqual(info.json(), { error: "info", field: "street", reason: "value" });
 });
 
 test("projects: a save that names the version it loaded is refused once the project changed", async () => {

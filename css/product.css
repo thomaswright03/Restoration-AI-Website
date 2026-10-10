@@ -1164,7 +1164,8 @@ html[data-embed="1"] main.solid-header {
 
   .project-table-head,
   .project-list.is-table .project-item {
-    --project-columns: minmax(0, 1.5fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 17rem;
+    --project-columns: minmax(0, 1.6fr) minmax(0, 2fr) minmax(7.5rem, 0.9fr) minmax(8rem, 0.9fr) minmax(8rem, 0.9fr)
+      18rem;
     display: grid;
     grid-template-columns: var(--project-columns);
     align-items: center;
@@ -1172,6 +1173,7 @@ html[data-embed="1"] main.solid-header {
   }
 
   .project-table-head {
+    white-space: nowrap;
     position: sticky;
     top: 64px; /* under the site header, at its scrolled height */
     z-index: 1;
@@ -1214,7 +1216,24 @@ html[data-embed="1"] main.solid-header {
   }
 
   .project-table-head .project-sort[aria-pressed="true"]::after {
-    content: " ▾";
+    content: "\00a0▾";
+  }
+
+  /* The column heading says "Starts" / "Updated": the cell shows the date
+     alone (the words stay in the page for screen readers). */
+  .project-list.is-table .project-date-words {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The table needs more width than the account-style column has. */
+  .app-wide:has(.project-list.is-table) {
+    max-width: 1200px;
   }
 
   .project-list.is-table .project-main,
@@ -1239,13 +1258,12 @@ html[data-embed="1"] main.solid-header {
     color: var(--color-muted);
   }
 
-  /* Dates and the status stay on one line; the name and the client wrap. */
-  .project-list.is-table .project-status,
-  .project-list.is-table .project-start,
+  /* A date or a status pill stays on one line; the name, the client and
+     the "No … yet" notes wrap. */
+  .project-list.is-table .project-status:not(.is-none),
+  .project-list.is-table .project-start:not(.is-none),
   .project-list.is-table .project-updated {
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .project-list.is-table .project-status {
@@ -1260,16 +1278,11 @@ html[data-embed="1"] main.solid-header {
 
   .project-list.is-table .project-actions {
     justify-content: flex-end;
+    gap: var(--space-2) var(--space-3);
   }
 
   .project-list.is-table .project-rename {
     grid-column: 1 / -1;
-  }
-}
-
-@media (min-width: 1280px) {
-  .app-wide:has(.project-list.is-table) {
-    max-width: 1200px;
   }
 }
 

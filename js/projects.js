@@ -687,11 +687,10 @@
         info.status
           ? el("span", { class: "project-status is-" + info.status, text: T("proj.status." + info.status) })
           : el("span", { class: "project-status is-none", text: T("proj.status.none") }),
-        el("span", {
-          class: "project-start" + (info.start ? "" : " is-none"),
-          text: info.start ? T("proj.starts", { date: formatDay(info.start) }) : T("proj.noStart"),
-        }),
-        el("span", { class: "project-updated", text: T("proj.updated", { date: formatDate(p.updated_at) }) }),
+        info.start
+          ? datedCell("project-start", "proj.starts", formatDay(info.start))
+          : el("span", { class: "project-start is-none", text: T("proj.noStart") }),
+        datedCell("project-updated", "proj.updated", formatDate(p.updated_at)),
       ]),
     ]);
     li.appendChild(main);
@@ -727,6 +726,22 @@
       ]),
     );
     return li;
+  }
+
+  // "Starts Dec 1, 2026", with the words around the date in their own span:
+  // the table view, whose column heading already says "Starts", shows the
+  // date alone (the words stay for screen readers).
+  function datedCell(cls, key, date) {
+    var full = T(key, { date: date });
+    var at = full.indexOf(date);
+    if (at < 0) return el("span", { class: cls, text: full });
+    return el("span", { class: cls }, [
+      at > 0 ? el("span", { class: "project-date-words", text: full.slice(0, at) }) : null,
+      date,
+      at + date.length < full.length
+        ? el("span", { class: "project-date-words", text: full.slice(at + date.length) })
+        : null,
+    ]);
   }
 
   function startRename(li, p) {

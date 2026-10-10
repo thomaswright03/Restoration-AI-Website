@@ -584,6 +584,59 @@ html[data-embed="1"] main.solid-header {
   column-gap: var(--space-6);
 }
 
+.price-summary {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  margin: var(--space-3) 0 0;
+}
+
+.price-mark {
+  margin: var(--space-1) 0 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.price-grid input:not(:placeholder-shown) + .price-mark {
+  color: var(--color-accent-text);
+}
+
+/* A card whose body folds away under its heading (the old homeowner requests). */
+.app-details summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.app-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.app-details summary::before {
+  content: "";
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  flex: none;
+}
+
+.app-details[open] summary::before {
+  transform: rotate(45deg);
+}
+
+.app-details summary h2 {
+  margin: 0;
+}
+
+.app-details[open] summary {
+  margin-bottom: var(--space-4);
+}
+
 .auth-tabs {
   display: flex;
   gap: var(--space-2);

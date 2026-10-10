@@ -583,6 +583,53 @@
       "Su plan terminó. Sus proyectos siguen aquí para leerlos; empiece un plan nuevo para volver a guardar.",
       "O seu plano terminou. Os seus projetos continuam aqui para leitura; comece um plano novo para salvar de novo.",
     ],
+    "acct.status.canceledPaymentsOff": [
+      "Your plan has ended. Your projects are still here to read. Paid plans aren't available right now, so a new plan can't be started yet; your business details and labor prices below still work.",
+      "Su plan terminó. Sus proyectos siguen aquí para leerlos. Los planes de pago no están disponibles por ahora, así que todavía no se puede empezar un plan nuevo; los datos de su empresa y sus precios de mano de obra de abajo siguen funcionando.",
+      "O seu plano terminou. Os seus projetos continuam aqui para leitura. Os planos pagos não estão disponíveis no momento, então ainda não dá para começar um plano novo; os dados da empresa e os preços de mão de obra abaixo continuam valendo.",
+    ],
+    "acct.status.canceledPaused": [
+      "Your plan has ended. Your projects are still here to read. Buying a plan is paused right now; please check back soon to start a new one.",
+      "Su plan terminó. Sus proyectos siguen aquí para leerlos. La compra de planes está pausada por ahora; vuelva pronto para empezar uno nuevo.",
+      "O seu plano terminou. Os seus projetos continuam aqui para leitura. A compra de planos está pausada no momento; volte em breve para começar um novo.",
+    ],
+    "acct.status.incomplete_expiredPaymentsOff": [
+      "That checkout wasn't completed, so nothing was charged and you're on the free plan. Paid plans aren't available right now; please check back soon.",
+      "Ese pago no se completó, así que no se cobró nada y tiene el plan gratis. Los planes de pago no están disponibles por ahora; vuelva pronto.",
+      "Aquele pagamento não foi concluído, então nada foi cobrado e você está no plano grátis. Os planos pagos não estão disponíveis no momento; volte em breve.",
+    ],
+    "acct.status.incomplete_expiredPaused": [
+      "That checkout wasn't completed, so nothing was charged and you're on the free plan. Buying a plan is paused right now; please check back soon to try again.",
+      "Ese pago no se completó, así que no se cobró nada y tiene el plan gratis. La compra de planes está pausada por ahora; vuelva pronto para intentarlo de nuevo.",
+      "Aquele pagamento não foi concluído, então nada foi cobrado e você está no plano grátis. A compra de planos está pausada no momento; volte em breve para tentar de novo.",
+    ],
+    "acct.plan.loadFailed": [
+      "Your plan details couldn't be loaded, so this page can't say which plan you're on yet.",
+      "No se pudieron cargar los datos de su plan, así que esta página aún no puede decir qué plan tiene.",
+      "Os dados do seu plano não puderam ser carregados, então esta página ainda não pode dizer em que plano você está.",
+    ],
+    "acct.biz.loadFailed": [
+      "Your business details couldn't be loaded. Nothing was changed; what you saved is still there.",
+      "No se pudieron cargar los datos de su empresa. No se cambió nada; lo que guardó sigue ahí.",
+      "Os dados da sua empresa não puderam ser carregados. Nada foi alterado; o que você salvou continua lá.",
+    ],
+    "acct.prices.default": ["Default", "Predeterminado", "Padrão"],
+    "acct.prices.yours": ["Your price", "Su precio", "Seu preço"],
+    "acct.prices.summaryNone": [
+      "No prices set yet: every estimate line uses the default shown in its box.",
+      "Aún no fijó precios: cada línea de la estimación usa el valor predeterminado que muestra su casilla.",
+      "Nenhum preço definido ainda: cada linha da estimativa usa o valor padrão mostrado no campo.",
+    ],
+    "acct.prices.summary": [
+      "{set} of {total} prices set; the other lines use the defaults shown in grey.",
+      "{set} de {total} precios fijados; las demás líneas usan los valores predeterminados en gris.",
+      "{set} de {total} preços definidos; as outras linhas usam os valores padrão em cinza.",
+    ],
+    "acct.prices.summaryAll": [
+      "All {total} prices set: every estimate line is at your price.",
+      "Los {total} precios están fijados: cada línea de la estimación está a su precio.",
+      "Todos os {total} preços definidos: cada linha da estimativa está no seu preço.",
+    ],
     "acct.status.other": [
       "Your plan isn't active right now, so saving projects is paused. Use Manage billing to sort it out, or email us.",
       "Su plan no está activo por ahora, así que guardar proyectos está pausado. Use Administrar pagos para resolverlo o escríbanos.",

@@ -10,10 +10,12 @@
 //       code   the API's own error word ({error: "..."}), else the kind
 //       data   the parsed body, or {}
 //   Net.errorKey(err) -> the js/i18n.js key that says what to do
-//   Net.config() -> Promise<config>  /api/config (accounts, payments, the
-//     kill switches), with a time limit of its own; when it can't be read the
-//     answer is {accounts: false, payments: false, unreachable: true}, so a
-//     page says the server couldn't be reached instead of waiting.
+//   Net.config(fresh) -> Promise<config>  /api/config (accounts, payments,
+//     the kill switches), with a time limit of its own; when it can't be read
+//     the answer is {accounts: false, payments: false, unreachable: true}, so
+//     a page says the server couldn't be reached instead of waiting. fresh:
+//     ask the server to read the switches again past its 15 s cache (after a
+//     refusal that may be a switch).
 //
 // Must load after js/i18n.js and before js/account.js and js/projects.js.
 (function () {
@@ -82,8 +84,9 @@
     return "net.server";
   }
 
-  function config() {
-    return fetchJson("/api/config", { cache: "no-store" }, CONFIG_TIMEOUT).catch(function () {
+  function config(fresh) {
+    var url = fresh ? "/api/config?fresh=1" : "/api/config";
+    return fetchJson(url, { cache: "no-store" }, CONFIG_TIMEOUT).catch(function () {
       return { accounts: false, payments: false, unreachable: true };
     });
   }

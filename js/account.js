@@ -217,7 +217,9 @@
     // or the sign-up service failed. The switches say which.
     function explainRefusal(error) {
       if (!databaseRefused(error)) return Promise.resolve(status(statusEl, "error", T(signupErrorKey(error))));
-      return loadConfig().then(function (c) {
+      // fresh: past the server's 15 s cache, so a switch flipped seconds ago
+      // reads as "paused" and not as a service fault.
+      return window.Net.config(true).then(function (c) {
         if (c && c.switches) config = c;
         if (switchedOff("signups")) {
           showSignupsPaused();
@@ -290,6 +292,41 @@
   var session = null;
   var business = null;
   var subscription = null;
+  // Whether the last read of each failed (or ran out of time). While a read
+  // has failed the page shows that, never "no plan" or an empty form: a
+  // paying business must not be told it's on the free plan, and an owner
+  // must not re-type details that are safely saved.
+  var planFailed = false;
+
+  // A Supabase read with a time limit: a hung database must not leave a card
+  // blank forever. Resolves with the data; rejects with the PostgREST error,
+  // or {kind: "timeout"} after READ_MS.
+  var READ_MS = 10000;
+  function timedRead(query) {
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function () {
+        done = true;
+        var err = new Error("timeout");
+        err.kind = "timeout";
+        err.code = "timeout";
+        reject(err);
+      }, READ_MS);
+      Promise.resolve(query).then(
+        function (r) {
+          if (done) return;
+          clearTimeout(timer);
+          if (r && r.error) reject(r.error);
+          else resolve((r && r.data) || null);
+        },
+        function (err) {
+          if (done) return;
+          clearTimeout(timer);
+          reject(err);
+        },
+      );
+    });
+  }
 
   // js/net.js: a time limit, and err.kind tells offline, timeout and server
   // failure apart. Rejects with err.code set to the API's error word.
@@ -318,19 +355,37 @@
       return date ? T("acct.status.ending", { date: date }) : T("acct.status.endingNoDate");
     }
     if (s.status === "active") return date ? T("acct.status.active", { date: date }) : T("acct.status.activeNoDate");
-    if (s.status === "none") {
-      if (!config.payments) return T("acct.status.nonePaymentsOff");
-      if (switchedOff("checkout")) return T("acct.status.nonePaused");
-      return T("acct.status.none");
+    // The states a plan can be bought from: when it can't be (payments not
+    // set up, or checkout paused), the sentence must not point at buttons
+    // that aren't there.
+    if (s.status === "none" || s.status === "canceled" || s.status === "incomplete_expired") {
+      if (!config.payments) return T("acct.status." + s.status + "PaymentsOff");
+      if (switchedOff("checkout")) return T("acct.status." + s.status + "Paused");
+      return T("acct.status." + s.status);
     }
-    var known = ["past_due", "unpaid", "paused", "incomplete", "incomplete_expired", "canceled"];
+    var known = ["past_due", "unpaid", "paused", "incomplete"];
     return T(known.indexOf(s.status) >= 0 ? "acct.status." + s.status : "acct.status.other");
   }
 
+  // The plan card when the subscription couldn't be read: what happened, a
+  // Try again, and nothing that could be acted on wrongly (no buy buttons,
+  // no promo box, no "free plan").
+  function renderPlanFailed(err) {
+    $("plan-status").textContent = T("acct.plan.loadFailed") + " " + T(saveReason(err));
+    show($("plan-buy"), false);
+    show($("plan-promo-row"), false);
+    show($("plan-trial-note"), false);
+    show($("plan-manage"), false);
+    show($("plan-retry-row"), true);
+    $("plan-retry").disabled = false;
+  }
+
   function renderPlan() {
+    if (planFailed) return;
     var s = subscription || { status: "none" };
     var out = $("plan-message");
     var text = planText(s);
+    show($("plan-retry-row"), false);
     var canBuy =
       ["none", "canceled", "incomplete_expired"].indexOf(s.status) >= 0 &&
       !!config.payments &&
@@ -359,15 +414,20 @@
     if (business) renderBusinessCards();
   }
 
+  // The subscription row (none yet = the free plan). A failed or hung read is
+  // shown as such, never as the free plan. Never rejects.
   function loadSubscription() {
-    return client
-      .from("subscriptions")
-      .select("*")
-      .maybeSingle()
-      .then(function (r) {
-        subscription = r.data || null;
+    return timedRead(client.from("subscriptions").select("*").maybeSingle()).then(
+      function (data) {
+        planFailed = false;
+        subscription = data;
         renderPlan();
-      });
+      },
+      function (err) {
+        planFailed = true;
+        renderPlanFailed(err);
+      },
+    );
   }
 
   function slugify(text) {
@@ -391,36 +451,81 @@
     $("biz-legal").value = b.legal_name || "";
   }
 
+  function priceInputs() {
+    return Array.prototype.slice.call(document.querySelectorAll("[data-price-key]"));
+  }
+
   function fillPrices() {
     var saved = (business && business.prices) || {};
     // The bathtub's default follows this business's own shower price.
     var effective = Object.assign({}, Pricing.DEFAULT_PRICES, saved, { Bathtub_Price: null });
-    Array.prototype.forEach.call(document.querySelectorAll("[data-price-key]"), function (input) {
+    priceInputs().forEach(function (input) {
       var key = input.getAttribute("data-price-key");
       var fallback = key === "Bathtub_Price" ? Pricing.bathtubPrice(effective) : Pricing.DEFAULT_PRICES[key];
       input.placeholder = String(fallback);
       input.value = saved[key] !== undefined && saved[key] !== null ? saved[key] : "";
+      input.removeAttribute("aria-invalid");
     });
+    markPrices();
   }
 
-  // The cards that need a business: its labor prices. (Customer requests
-  // show only when there are old ones to read; see loadLeads.)
+  // Which prices are the owner's and which are the defaults, said on each
+  // box (the small word under it) and in one line over the grid ("3 of 18
+  // prices set"). Follows what's typed, so it reads right before Save too.
+  function markPrices() {
+    var inputs = priceInputs();
+    var set = 0;
+    inputs.forEach(function (input) {
+      var own = input.value !== "";
+      if (own) set++;
+      var mark = $(input.id + "-mark");
+      if (mark) mark.textContent = T(own ? "acct.prices.yours" : "acct.prices.default");
+    });
+    var summary = $("prices-summary");
+    if (!summary) return;
+    var total = inputs.length;
+    summary.textContent =
+      set === 0
+        ? T("acct.prices.summaryNone", { total: total })
+        : set === total
+          ? T("acct.prices.summaryAll", { total: total })
+          : T("acct.prices.summary", { set: set, total: total });
+  }
+
+  // The cards that need a business: its labor prices. (Old homeowner
+  // requests show only when there are some to read; see loadLeads.)
   function renderBusinessCards() {
     show($("prices-card"), !!business);
   }
 
+  // The business row (none yet = a new account, the form starts empty). The
+  // form is shown only once the read has answered: a failed or hung read
+  // shows what happened and a Try again, never an empty form whose Save
+  // would look like a second business. Never rejects.
   function loadBusiness() {
-    return client
-      .from("businesses")
-      .select("*")
-      .maybeSingle()
-      .then(function (r) {
-        business = r.data || null;
+    show($("business-form"), false);
+    show($("business-failed"), false);
+    show($("business-loading"), true);
+    $("business-retry").disabled = true;
+    return timedRead(client.from("businesses").select("*").maybeSingle()).then(
+      function (data) {
+        business = data;
         fillBusinessForm();
         fillPrices();
         renderBusinessCards();
+        show($("business-loading"), false);
+        show($("business-form"), true);
         if (business) loadLeads();
-      });
+      },
+      function (err) {
+        business = null;
+        renderBusinessCards();
+        show($("business-loading"), false);
+        $("business-failed-text").textContent = T("acct.biz.loadFailed") + " " + T(saveReason(err));
+        show($("business-failed"), true);
+        $("business-retry").disabled = false;
+      },
+    );
   }
 
   // A Save button while its request is out: disabled and reading "Saving…",
@@ -481,9 +586,12 @@
       legal_name: $("biz-legal").value.trim(),
       updated_at: new Date().toISOString(),
     };
+    // One business per account (owner_id is unique). A known row is updated
+    // by id; with none read, the save is an upsert on owner_id, so if a row
+    // does exist after all it's updated, and a second one is never inserted.
     var query = business
       ? client.from("businesses").update(row).eq("id", business.id).select().single()
-      : client.from("businesses").insert(row).select().single();
+      : client.from("businesses").upsert(row, { onConflict: "owner_id" }).select().single();
     Promise.resolve(query)
       .then(
         function (r) {
@@ -514,16 +622,24 @@
     var out = $("prices-status");
     if (!business) return status(out, "error", T("acct.saveBusinessFirst"));
     var prices = {};
-    var bad = false;
+    var bad = [];
     if (!reset) {
-      Array.prototype.forEach.call(document.querySelectorAll("[data-price-key]"), function (input) {
+      priceInputs().forEach(function (input) {
+        input.removeAttribute("aria-invalid");
         if (input.value === "") return;
         var n = Number(input.value);
-        if (!isFinite(n) || n < 0 || n > 100000) bad = true;
+        if (!isFinite(n) || n < 0 || n > 100000) bad.push(input);
         else prices[input.getAttribute("data-price-key")] = n;
       });
     }
-    if (bad) return status(out, "error", T("acct.saveFailed") + " " + T("acct.priceInvalid"));
+    if (bad.length) {
+      // Said at the field: marked, and the first one gets the focus.
+      bad.forEach(function (input) {
+        input.setAttribute("aria-invalid", "true");
+      });
+      bad[0].focus();
+      return status(out, "error", T("acct.saveFailed") + " " + T("acct.priceInvalid"));
+    }
     var buttons = [$("prices-save"), $("prices-reset")];
     if (buttons[0].disabled) return;
     pending(buttons[0], true);
@@ -641,7 +757,7 @@
         status(out, "success", T("acct.lead.deleted"));
         var left = $("leads-list").children.length;
         show($("leads-card"), !!left);
-        if (left) $("leads-card").querySelector("h2").focus();
+        if (left) $("leads-card").querySelector("summary").focus();
       },
       function (err) {
         d.btn.disabled = false;
@@ -826,8 +942,11 @@
     client.auth.getSession().then(function (r) {
       session = r.data && r.data.session;
       if (!session) {
-        // Log in, then back here (with any plan or promo code in the link).
-        window.location.href = loginPath(herePath());
+        // Log in, then back here when the link carries a plan, a promo code
+        // or a checkout result (those belong on this page). Otherwise the
+        // nav's Log in brought them, and logging in lands on My projects.
+        var backHere = params.get("plan") || params.get("promo") || params.get("checkout");
+        window.location.href = loginPath(backHere ? herePath() : "");
         return;
       }
       show($("account-loading"), false);
@@ -837,6 +956,7 @@
       show($("account-email"), true);
 
       var checkout = params.get("checkout");
+      $("plan-status").textContent = T("proj.loading");
       if (checkout === "success") checkoutWait = "pending";
       if (checkout === "cancelled") status($("plan-message"), "info", T("acct.checkout.cancelled"));
 
@@ -883,6 +1003,20 @@
     });
     $("prices-form").addEventListener("submit", function (e) {
       savePrices(e, false);
+    });
+    priceInputs().forEach(function (input) {
+      input.addEventListener("input", function () {
+        input.removeAttribute("aria-invalid");
+        markPrices();
+      });
+    });
+    $("plan-retry").addEventListener("click", function () {
+      $("plan-retry").disabled = true;
+      $("plan-status").textContent = T("proj.loading");
+      loadSubscription();
+    });
+    $("business-retry").addEventListener("click", function () {
+      loadBusiness();
     });
     $("prices-reset").addEventListener("click", function () {
       savePrices(null, true);

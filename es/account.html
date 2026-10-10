@@ -171,6 +171,9 @@
           <div class="app-card" id="plan-card">
             <h2>Su plan</h2>
             <p class="plan-status" id="plan-status"></p>
+            <div class="app-actions" id="plan-retry-row" hidden>
+              <button type="button" class="btn btn-outline-dark" id="plan-retry">Intentar de nuevo</button>
+            </div>
             <div id="plan-buy" hidden>
               <div class="form-group plan-promo" id="plan-promo-row" hidden>
                 <label for="plan-promo">Código promocional (opcional)</label>
@@ -208,7 +211,14 @@
               Aparecen en sus estimaciones y PDF. Solo usted puede abrir su diseñador; sus clientes nunca ven esta
               página.
             </p>
-            <form id="business-form" novalidate>
+            <p class="app-loading" id="business-loading">Cargando…</p>
+            <div class="app-notice" id="business-failed" role="alert" hidden>
+              <p id="business-failed-text"></p>
+              <div class="app-actions">
+                <button type="button" class="btn btn-outline-dark" id="business-retry">Intentar de nuevo</button>
+              </div>
+            </div>
+            <form id="business-form" novalidate hidden>
               <div class="form-group">
                 <label for="biz-name">Nombre de la empresa</label>
                 <input
@@ -262,6 +272,7 @@
               Cada línea de sus estimaciones usa estos precios, solo mano de obra. Deje una casilla vacía para usar el
               valor predeterminado que muestra.
             </p>
+            <p class="price-summary" id="prices-summary" role="status" aria-live="polite"></p>
             <form id="prices-form" novalidate>
               <div class="price-grid">
                 <div class="form-group">
@@ -273,7 +284,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Demo_Price_Per_SqFt-mark"
                   />
+                  <p class="price-mark" id="price-Demo_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Tile_Price_Per_SqFt">Azulejo, por pie² ($)</label>
@@ -284,7 +297,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Tile_Price_Per_SqFt-mark"
                   />
+                  <p class="price-mark" id="price-Tile_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Floor_Price_Per_SqFt">Otro piso, por pie² ($)</label>
@@ -295,7 +310,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Floor_Price_Per_SqFt-mark"
                   />
+                  <p class="price-mark" id="price-Floor_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Painting_Price_Per_SqFt">Pintura, por pie² ($)</label>
@@ -306,7 +323,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Painting_Price_Per_SqFt-mark"
                   />
+                  <p class="price-mark" id="price-Painting_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Toilet_Price">Instalación de inodoro, c/u ($)</label>
@@ -317,7 +336,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Toilet_Price-mark"
                   />
+                  <p class="price-mark" id="price-Toilet_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Sink_Price">Instalación de lavabo, c/u ($)</label>
@@ -328,7 +349,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Sink_Price-mark"
                   />
+                  <p class="price-mark" id="price-Sink_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Price">Instalación de ducha, c/u ($)</label>
@@ -339,7 +362,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Shower_Price-mark"
                   />
+                  <p class="price-mark" id="price-Shower_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Door_Price">Instalación de puerta de ducha, c/u ($)</label>
@@ -350,7 +375,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Shower_Door_Price-mark"
                   />
+                  <p class="price-mark" id="price-Shower_Door_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Shelf_Price">Repisa de ducha empotrada, c/u ($)</label>
@@ -361,7 +388,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Shower_Shelf_Price-mark"
                   />
+                  <p class="price-mark" id="price-Shower_Shelf_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Bathtub_Price">Instalación de bañera, c/u ($)</label>
@@ -372,7 +401,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Bathtub_Price-mark"
                   />
+                  <p class="price-mark" id="price-Bathtub_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Vanity_Price">Instalación de mueble de lavabo, c/u ($)</label>
@@ -383,7 +414,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Vanity_Price-mark"
                   />
+                  <p class="price-mark" id="price-Vanity_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Cabinet_Price">Instalación de gabinete, c/u ($)</label>
@@ -394,7 +427,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Cabinet_Price-mark"
                   />
+                  <p class="price-mark" id="price-Cabinet_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Mirror_Price">Instalación de espejo estándar, c/u ($)</label>
@@ -405,7 +440,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Mirror_Price-mark"
                   />
+                  <p class="price-mark" id="price-Mirror_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Mirror_Huge_Price">Instalación de espejo extragrande, c/u ($)</label>
@@ -416,7 +453,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Mirror_Huge_Price-mark"
                   />
+                  <p class="price-mark" id="price-Mirror_Huge_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Door_Price">Instalación de puerta de entrada, c/u ($)</label>
@@ -427,7 +466,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Door_Price-mark"
                   />
+                  <p class="price-mark" id="price-Door_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Plumbing_Price_Per_Point">Plomería, por punto ($)</label>
@@ -438,7 +479,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Plumbing_Price_Per_Point-mark"
                   />
+                  <p class="price-mark" id="price-Plumbing_Price_Per_Point-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Electrical_Price_Per_Point"
@@ -451,7 +494,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Electrical_Price_Per_Point-mark"
                   />
+                  <p class="price-mark" id="price-Electrical_Price_Per_Point-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Drain_Run_Price_Per_Ft">Línea de drenaje nueva, por pie ($)</label>
@@ -462,7 +507,9 @@
                     min="0"
                     step="0.01"
                     inputmode="decimal"
+                    aria-describedby="price-Drain_Run_Price_Per_Ft-mark"
                   />
+                  <p class="price-mark" id="price-Drain_Run_Price_Per_Ft-mark"></p>
                 </div>
               </div>
               <p class="form-note">
@@ -481,9 +528,17 @@
           </div>
 
           <div class="app-card" id="leads-card" hidden>
-            <h2>Solicitudes de clientes</h2>
-            <p class="form-status" id="leads-status" role="status" aria-live="polite" hidden></p>
-            <ol class="lead-list" id="leads-list"></ol>
+            <details class="app-details">
+              <summary>
+                <h2>Solicitudes antiguas de propietarios (de antes de que el diseñador fuera solo para el dueño)</h2>
+              </summary>
+              <p class="form-note">
+                Solicitudes que los propietarios enviaron por su diseñador cuando era público. Ya no llegan nuevas;
+                puede leerlas o eliminarlas.
+              </p>
+              <p class="form-status" id="leads-status" role="status" aria-live="polite" hidden></p>
+              <ol class="lead-list" id="leads-list"></ol>
+            </details>
           </div>
 
           <div class="app-card app-card-danger" id="delete-card">

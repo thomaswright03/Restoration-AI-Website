@@ -41,10 +41,13 @@ function normalize(row) {
   return out;
 }
 
-// The switches as they are now (cached for SWITCH_CACHE_MS).
-async function switches(now = Date.now()) {
+// The switches as they are now (cached for SWITCH_CACHE_MS). fresh: read the
+// row again even inside the cache window, for the one caller that has just
+// seen a refusal and needs to know whether a switch is behind it
+// (/api/config?fresh=1, from the sign-up page).
+async function switches(now = Date.now(), fresh = false) {
   if (!supabaseReady()) return ALL_ON;
-  if (now - cache.at < SWITCH_CACHE_MS) return cache.value;
+  if (!fresh && now - cache.at < SWITCH_CACHE_MS) return cache.value;
   // Until the row is read again: what it said last time (all on at first).
   let value = cache.value;
   try {

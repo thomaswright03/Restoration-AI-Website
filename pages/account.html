@@ -40,6 +40,9 @@
           <div class="app-card" id="plan-card">
             <h2>{{account.plan.title}}</h2>
             <p class="plan-status" id="plan-status"></p>
+            <div class="app-actions" id="plan-retry-row" hidden>
+              <button type="button" class="btn btn-outline-dark" id="plan-retry">{{account.down.retry}}</button>
+            </div>
             <div id="plan-buy" hidden>
               <div class="form-group plan-promo" id="plan-promo-row" hidden>
                 <label for="plan-promo">{{account.plan.promo}}</label>
@@ -69,7 +72,14 @@
           <div class="app-card">
             <h2>{{account.biz.title}}</h2>
             <p class="form-note">{{account.biz.help}}</p>
-            <form id="business-form" novalidate>
+            <p class="app-loading" id="business-loading">{{account.loading}}</p>
+            <div class="app-notice" id="business-failed" role="alert" hidden>
+              <p id="business-failed-text"></p>
+              <div class="app-actions">
+                <button type="button" class="btn btn-outline-dark" id="business-retry">{{account.down.retry}}</button>
+              </div>
+            </div>
+            <form id="business-form" novalidate hidden>
               <div class="form-group">
                 <label for="biz-name">{{account.biz.name}}</label>
                 <input
@@ -116,79 +126,98 @@
           <div class="app-card" id="prices-card" hidden>
             <h2>{{account.prices.title}}</h2>
             <p class="form-note">{{account.prices.help}}</p>
+            <p class="price-summary" id="prices-summary" role="status" aria-live="polite"></p>
             <form id="prices-form" novalidate>
               <div class="price-grid">
                 <div class="form-group">
                   <label for="price-Demo_Price_Per_SqFt">{{account.price.Demo_Price_Per_SqFt}}</label>
-                  <input type="number" id="price-Demo_Price_Per_SqFt" data-price-key="Demo_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Demo_Price_Per_SqFt" data-price-key="Demo_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Demo_Price_Per_SqFt-mark" />
+                  <p class="price-mark" id="price-Demo_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Tile_Price_Per_SqFt">{{account.price.Tile_Price_Per_SqFt}}</label>
-                  <input type="number" id="price-Tile_Price_Per_SqFt" data-price-key="Tile_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Tile_Price_Per_SqFt" data-price-key="Tile_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Tile_Price_Per_SqFt-mark" />
+                  <p class="price-mark" id="price-Tile_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Floor_Price_Per_SqFt">{{account.price.Floor_Price_Per_SqFt}}</label>
-                  <input type="number" id="price-Floor_Price_Per_SqFt" data-price-key="Floor_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Floor_Price_Per_SqFt" data-price-key="Floor_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Floor_Price_Per_SqFt-mark" />
+                  <p class="price-mark" id="price-Floor_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Painting_Price_Per_SqFt">{{account.price.Painting_Price_Per_SqFt}}</label>
-                  <input type="number" id="price-Painting_Price_Per_SqFt" data-price-key="Painting_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Painting_Price_Per_SqFt" data-price-key="Painting_Price_Per_SqFt" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Painting_Price_Per_SqFt-mark" />
+                  <p class="price-mark" id="price-Painting_Price_Per_SqFt-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Toilet_Price">{{account.price.Toilet_Price}}</label>
-                  <input type="number" id="price-Toilet_Price" data-price-key="Toilet_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Toilet_Price" data-price-key="Toilet_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Toilet_Price-mark" />
+                  <p class="price-mark" id="price-Toilet_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Sink_Price">{{account.price.Sink_Price}}</label>
-                  <input type="number" id="price-Sink_Price" data-price-key="Sink_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Sink_Price" data-price-key="Sink_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Sink_Price-mark" />
+                  <p class="price-mark" id="price-Sink_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Price">{{account.price.Shower_Price}}</label>
-                  <input type="number" id="price-Shower_Price" data-price-key="Shower_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Shower_Price" data-price-key="Shower_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Shower_Price-mark" />
+                  <p class="price-mark" id="price-Shower_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Door_Price">{{account.price.Shower_Door_Price}}</label>
-                  <input type="number" id="price-Shower_Door_Price" data-price-key="Shower_Door_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Shower_Door_Price" data-price-key="Shower_Door_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Shower_Door_Price-mark" />
+                  <p class="price-mark" id="price-Shower_Door_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Shower_Shelf_Price">{{account.price.Shower_Shelf_Price}}</label>
-                  <input type="number" id="price-Shower_Shelf_Price" data-price-key="Shower_Shelf_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Shower_Shelf_Price" data-price-key="Shower_Shelf_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Shower_Shelf_Price-mark" />
+                  <p class="price-mark" id="price-Shower_Shelf_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Bathtub_Price">{{account.price.Bathtub_Price}}</label>
-                  <input type="number" id="price-Bathtub_Price" data-price-key="Bathtub_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Bathtub_Price" data-price-key="Bathtub_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Bathtub_Price-mark" />
+                  <p class="price-mark" id="price-Bathtub_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Vanity_Price">{{account.price.Vanity_Price}}</label>
-                  <input type="number" id="price-Vanity_Price" data-price-key="Vanity_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Vanity_Price" data-price-key="Vanity_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Vanity_Price-mark" />
+                  <p class="price-mark" id="price-Vanity_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Cabinet_Price">{{account.price.Cabinet_Price}}</label>
-                  <input type="number" id="price-Cabinet_Price" data-price-key="Cabinet_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Cabinet_Price" data-price-key="Cabinet_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Cabinet_Price-mark" />
+                  <p class="price-mark" id="price-Cabinet_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Mirror_Price">{{account.price.Mirror_Price}}</label>
-                  <input type="number" id="price-Mirror_Price" data-price-key="Mirror_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Mirror_Price" data-price-key="Mirror_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Mirror_Price-mark" />
+                  <p class="price-mark" id="price-Mirror_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Mirror_Huge_Price">{{account.price.Mirror_Huge_Price}}</label>
-                  <input type="number" id="price-Mirror_Huge_Price" data-price-key="Mirror_Huge_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Mirror_Huge_Price" data-price-key="Mirror_Huge_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Mirror_Huge_Price-mark" />
+                  <p class="price-mark" id="price-Mirror_Huge_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Door_Price">{{account.price.Door_Price}}</label>
-                  <input type="number" id="price-Door_Price" data-price-key="Door_Price" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Door_Price" data-price-key="Door_Price" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Door_Price-mark" />
+                  <p class="price-mark" id="price-Door_Price-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Plumbing_Price_Per_Point">{{account.price.Plumbing_Price_Per_Point}}</label>
-                  <input type="number" id="price-Plumbing_Price_Per_Point" data-price-key="Plumbing_Price_Per_Point" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Plumbing_Price_Per_Point" data-price-key="Plumbing_Price_Per_Point" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Plumbing_Price_Per_Point-mark" />
+                  <p class="price-mark" id="price-Plumbing_Price_Per_Point-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Electrical_Price_Per_Point">{{account.price.Electrical_Price_Per_Point}}</label>
-                  <input type="number" id="price-Electrical_Price_Per_Point" data-price-key="Electrical_Price_Per_Point" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Electrical_Price_Per_Point" data-price-key="Electrical_Price_Per_Point" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Electrical_Price_Per_Point-mark" />
+                  <p class="price-mark" id="price-Electrical_Price_Per_Point-mark"></p>
                 </div>
                 <div class="form-group">
                   <label for="price-Drain_Run_Price_Per_Ft">{{account.price.Drain_Run_Price_Per_Ft}}</label>
-                  <input type="number" id="price-Drain_Run_Price_Per_Ft" data-price-key="Drain_Run_Price_Per_Ft" min="0" step="0.01" inputmode="decimal" />
+                  <input type="number" id="price-Drain_Run_Price_Per_Ft" data-price-key="Drain_Run_Price_Per_Ft" min="0" step="0.01" inputmode="decimal" aria-describedby="price-Drain_Run_Price_Per_Ft-mark" />
+                  <p class="price-mark" id="price-Drain_Run_Price_Per_Ft-mark"></p>
                 </div>
               </div>
               <p class="form-note">{{account.prices.note}}</p>
@@ -201,9 +230,12 @@
           </div>
 
           <div class="app-card" id="leads-card" hidden>
-            <h2>{{account.leads.title}}</h2>
-            <p class="form-status" id="leads-status" role="status" aria-live="polite" hidden></p>
-            <ol class="lead-list" id="leads-list"></ol>
+            <details class="app-details">
+              <summary><h2>{{account.leads.title}}</h2></summary>
+              <p class="form-note">{{account.leads.help}}</p>
+              <p class="form-status" id="leads-status" role="status" aria-live="polite" hidden></p>
+              <ol class="lead-list" id="leads-list"></ol>
+            </details>
           </div>
 
           <div class="app-card app-card-danger" id="delete-card">

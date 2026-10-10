@@ -2,7 +2,10 @@
 // project URL and its public anon key, both safe to share), whether
 // payments are switched on, and the kill switches (api/_switches.js): which
 // of sign-ups, checkout and saving are paused right now, and a notice to
-// show. Missing keys = the site runs in demo mode.
+// show. Missing keys = the site runs in demo mode. ?fresh=1 reads the
+// switches again past their 15 s cache: the sign-up page asks that way when
+// a sign-up was just refused, so it can say "paused" the moment the switch
+// is off instead of calling it a service problem.
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson } = require("./_lib.js");
@@ -16,7 +19,8 @@ function firstPrice(name) {
 
 module.exports = async function handler(req, res) {
   const ready = supabaseReady();
-  const s = await switches();
+  const fresh = String((req.query && req.query.fresh) || "") === "1";
+  const s = await switches(Date.now(), fresh);
   sendJson(res, 200, {
     accounts: ready,
     payments: ready && stripeReady(),

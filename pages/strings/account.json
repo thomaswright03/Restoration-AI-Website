@@ -202,7 +202,16 @@
     "Instalación de puerta de entrada, c/u ($)",
     "Instalação de porta de entrada, cada ($)"
   ],
-  "account.leads.title": ["Customer requests", "Solicitudes de clientes", "Pedidos de clientes"],
+  "account.leads.title": [
+    "Old homeowner requests (from before the designer became owner-only)",
+    "Solicitudes antiguas de propietarios (de antes de que el diseñador fuera solo para el dueño)",
+    "Pedidos antigos de proprietários (de antes de o projetista ficar só para o dono)"
+  ],
+  "account.leads.help": [
+    "Requests homeowners sent through your designer when it was public. Nothing new arrives here; you can read or delete them.",
+    "Solicitudes que los propietarios enviaron por su diseñador cuando era público. Ya no llegan nuevas; puede leerlas o eliminarlas.",
+    "Pedidos que proprietários enviaram pelo seu projetista quando ele era público. Nada de novo chega aqui; você pode lê-los ou excluí-los."
+  ],
   "account.projects.title": ["Projects", "Proyectos", "Projetos"],
   "account.projects.link": ["Open my projects", "Abrir mis proyectos", "Abrir meus projetos"],
   "account.delete.title": ["Delete account", "Eliminar cuenta", "Excluir conta"],

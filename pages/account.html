@@ -11,7 +11,7 @@
         <p class="app-loading" id="account-loading">{{account.loading}}</p>
 
         <div class="app-notice" id="server-down" role="alert" hidden>
-          <p><strong>{{account.down.title}}</strong> {{account.down.text}}</p>
+          <p><strong>{{account.down.title}}</strong> <span id="server-down-text">{{account.down.text}}</span></p>
           <p><a href="">{{account.down.retry}}</a></p>
         </div>
 
@@ -104,6 +104,22 @@
                 />
                 <p class="form-note" id="biz-slug-help">{{account.biz.slugHelp}}</p>
                 <p class="field-error" id="biz-slug-error" hidden></p>
+                <div class="biz-url" id="biz-url-row" hidden>
+                  <p class="biz-url-line">
+                    <span class="biz-url-label">{{account.biz.urlLabel}}</span>
+                    <code id="biz-url" class="biz-url-value"></code>
+                  </p>
+                  <p class="form-note" id="biz-url-unsaved" hidden>{{account.biz.urlUnsaved}}</p>
+                  <div class="app-actions biz-url-actions">
+                    <button type="button" class="btn btn-outline-dark btn-sm" id="biz-url-copy">
+                      {{account.biz.copyUrl}}
+                    </button>
+                    <a class="btn btn-outline-dark btn-sm" id="biz-url-open" href="#" target="_blank" rel="noopener">
+                      {{account.biz.openUrl}}
+                    </a>
+                  </div>
+                  <p class="form-status" id="biz-url-status" role="status" aria-live="polite" hidden></p>
+                </div>
               </div>
               <div class="form-group">
                 <label for="biz-phone">{{account.biz.phone}}</label>

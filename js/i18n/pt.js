@@ -298,7 +298,6 @@
     "acct.stripe.portal": "A página de cobrança não pôde ser aberta agora. Tente de novo; se continuar, avise a gente.",
     "acct.projects.failed": "Não foi possível contar os seus projetos agora.",
     "acct.saveFailed": "Não foi possível salvar.",
-    "acct.unavailable": "Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo em instantes.",
     "acct.checkout.success": "Obrigado! O seu plano vai aparecer como ativo em instantes.",
     "acct.checkout.cancelled": "O pagamento foi cancelado. Nada foi cobrado.",
     "acct.promo.invalid":
@@ -308,10 +307,15 @@
     "acct.paymentsOff": "Os pagamentos ainda não estão ativados. Volte em breve.",
     "acct.error": "Algo deu errado. Tente de novo.",
     "acct.saved": "Salvo.",
+    "acct.url.copied": "Endereço copiado.",
+    "acct.url.copyFailed":
+      "Não foi possível copiar automaticamente; o endereço está selecionado, copie com Ctrl+C ou Cmd+C.",
     "net.offline": "Você está off-line. Verifique a sua conexão e tente de novo.",
     "net.network": "Não foi possível conectar ao servidor. Verifique a sua conexão e tente de novo.",
     "net.timeout": "O servidor está demorando demais para responder. Tente de novo em instantes.",
     "net.server": "Algo deu errado do nosso lado. Tente de novo em um minuto; se continuar, avise a gente.",
+    "net.offlineNotice": "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
+    "net.backOnline": "A conexão voltou.",
     "proj.loading": "Carregando…",
     "proj.err.loadFailed": "Não foi possível carregar os seus projetos.",
     "proj.err.business":

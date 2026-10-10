@@ -97,7 +97,7 @@
           <li><a href="../es/account.html" data-auth-link data-logout-label="Cerrar sesión">Iniciar sesión</a></li>
           <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
           <li class="nav-lang">
-            <details class="lang-menu">
+            <details class="lang-menu nav-menu">
               <summary>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
@@ -123,6 +123,22 @@
               </ul>
             </details>
           </li>
+          <li class="nav-theme">
+            <details class="lang-menu nav-menu theme-menu">
+              <summary aria-label="Tema de color">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" />
+                </svg>
+                <span class="visually-hidden">Tema de color</span>
+              </summary>
+              <div class="lang-menu-list theme-menu-list" role="group" aria-label="Tema de color">
+                <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+                <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+                <button type="button" data-theme-choice="dark" aria-pressed="false">Oscuro</button>
+              </div>
+            </details>
+          </li>
         </ul>
       </nav>
     </header>
@@ -136,6 +152,7 @@
         <div class="app-notice" id="server-down" role="alert" hidden>
           <p>
             <strong>No pudimos conectar con el servidor.</strong> Revise su conexión a internet y vuelva a intentarlo.
+            Si tiene conexión, el problema es de nuestro lado: inténtelo de nuevo en un minuto.
           </p>
           <p><a href="">Intentar de nuevo</a></p>
         </div>

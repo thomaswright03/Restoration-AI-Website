@@ -636,11 +636,6 @@
       "Não foi possível contar os seus projetos agora.",
     ],
     "acct.saveFailed": ["Couldn't save.", "No se pudo guardar.", "Não foi possível salvar."],
-    "acct.unavailable": [
-      "We couldn't reach the server. Check your connection and try again in a moment.",
-      "No pudimos conectar con el servidor. Revise su conexión y vuelva a intentarlo en un momento.",
-      "Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo em instantes.",
-    ],
     "acct.checkout.success": [
       "Thanks! Your plan will show as active in a moment.",
       "¡Gracias! Su plan aparecerá como activo en un momento.",
@@ -672,6 +667,12 @@
       "Algo deu errado. Tente de novo.",
     ],
     "acct.saved": ["Saved.", "Guardado.", "Salvo."],
+    "acct.url.copied": ["Address copied.", "Dirección copiada.", "Endereço copiado."],
+    "acct.url.copyFailed": [
+      "Couldn't copy automatically; the address is selected, so copy it with Ctrl+C or Cmd+C.",
+      "No se pudo copiar automáticamente; la dirección está seleccionada, cópiela con Ctrl+C o Cmd+C.",
+      "Não foi possível copiar automaticamente; o endereço está selecionado, copie com Ctrl+C ou Cmd+C.",
+    ],
 
     // ---------- Server calls (js/net.js): what happened and what to do ----------
     "net.offline": [
@@ -694,6 +695,13 @@
       "Algo salió mal de nuestro lado. Inténtelo de nuevo en un minuto; si sigue pasando, avísenos.",
       "Algo deu errado do nosso lado. Tente de novo em um minuto; se continuar, avise a gente.",
     ],
+    // The page-level notice (js/script.js) while the browser is offline, and when it's back.
+    "net.offlineNotice": [
+      "You're offline. You can keep looking around; saving and signing in wait until you're back online.",
+      "Está sin conexión. Puede seguir mirando; guardar e iniciar sesión esperan hasta que vuelva la conexión.",
+      "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
+    ],
+    "net.backOnline": ["You're back online.", "Volvió la conexión.", "A conexão voltou."],
     "proj.loading": ["Loading…", "Cargando…", "Carregando…"],
     "proj.err.loadFailed": [
       "Couldn't load your projects.",

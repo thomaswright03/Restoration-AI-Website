@@ -40,7 +40,7 @@ body:has(main.solid-header) .site-header {
   display: inline-block;
   width: 22px;
   height: 22px;
-  margin-right: 10px;
+  margin-right: var(--space-2);
   vertical-align: -4px;
   border-radius: var(--radius-sm);
   background: url("../favicon.svg") center / contain no-repeat;
@@ -53,20 +53,20 @@ body:has(main.solid-header) .site-header {
 }
 
 .nav-links a::after {
-  background: #5eead4;
+  background: var(--color-highlight-on-dark);
 }
 
 .nav-links a.nav-cta {
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--color-accent-bright);
-  color: #fff;
+  color: var(--color-on-dark);
   font-weight: 600;
 }
 
 .nav-links a.nav-cta:hover {
-  background: color-mix(in srgb, var(--color-accent-bright) 85%, #fff);
-  color: #fff;
+  background: color-mix(in srgb, var(--color-accent-bright) 85%, var(--color-on-dark));
+  color: var(--color-on-dark);
 }
 
 /* Blueprint grid behind the hero, dark bands and CTA. */
@@ -118,7 +118,7 @@ body:has(main.solid-header) .site-header {
 .hero h1 em {
   font-style: normal;
   color: transparent;
-  background: linear-gradient(90deg, #5eead4, #8ea6ff);
+  background: linear-gradient(90deg, var(--color-highlight-on-dark), #8ea6ff);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -159,7 +159,7 @@ body:has(main.solid-header) .site-header {
 .hero .eyebrow,
 .section-dark .eyebrow,
 .cta-band .eyebrow {
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
 }
 
 .hero .eyebrow.center {
@@ -178,14 +178,14 @@ body:has(main.solid-header) .site-header {
 .btn-primary {
   background: var(--color-accent-bright);
   border-color: var(--color-accent-bright);
-  color: #fff;
+  color: var(--color-on-dark);
   box-shadow: 0 10px 24px -12px rgba(51, 85, 240, 0.8);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .btn-outline {
@@ -233,9 +233,6 @@ label {
 
 .app-card input:not([type="checkbox"]):not([type="radio"]),
 .app-card select,
-.designer-form input,
-.designer-form select,
-.designer-form textarea,
 #auth-form input {
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius);
@@ -287,7 +284,7 @@ label {
 }
 
 main.solid-header {
-  padding-top: 88px;
+  padding-top: var(--header-height);
 }
 
 /* Sign-up, account and project pages fill in once the sign-in check is
@@ -375,12 +372,6 @@ html[data-embed="1"] main.solid-header {
   color: var(--color-ink);
 }
 
-.plan-note {
-  color: var(--color-muted);
-  font-size: var(--fs-sm);
-  margin: 0 0 var(--space-5);
-}
-
 .plan-grid-3 {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
   max-width: 1040px;
@@ -447,27 +438,66 @@ html[data-embed="1"] main.solid-header {
   font-size: var(--fs-2xl);
 }
 
-.designer-form {
-  max-width: 640px;
-  margin: 0 auto;
-}
-
-.powered-by {
-  text-align: center;
-  color: var(--color-muted);
-  font-size: var(--fs-sm);
-  margin-top: var(--space-7);
-}
-
 /* ---------- Sign-up and account ---------- */
 .app-narrow {
   max-width: 520px;
   margin: 0 auto;
 }
 
+/* The signed-in pages (account, My projects, a project) share one column. */
 .app-wide {
-  max-width: 860px;
+  max-width: var(--app-width);
   margin: 0 auto;
+}
+
+/* Under the fixed header the page starts closer than a marketing section
+   does, the same on every signed-in page. */
+main.app-page > .section {
+  padding-top: var(--space-7);
+}
+
+/* On a phone, the text links that stand alone on a line and the project
+   names in the list are as tall as a finger. */
+@media (pointer: coarse) {
+  main.app-page p > a:only-child,
+  .project-name {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+  }
+}
+
+/* The owner's designer address under the web-address field (js/account.js). */
+.biz-url {
+  margin-top: var(--space-3);
+}
+
+.biz-url-line {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--color-ink-soft);
+}
+
+.biz-url-value {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--fs-sm);
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.biz-url-actions {
+  margin-top: var(--space-3);
+}
+
+.biz-url .form-status {
+  margin: var(--space-3) 0 0;
+}
+
+a.btn[aria-disabled="true"] {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 .app-head {
@@ -592,7 +622,7 @@ html[data-embed="1"] main.solid-header {
 
 .price-mark {
   margin: var(--space-1) 0 0;
-  font-size: 0.75rem;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-muted);
@@ -705,14 +735,14 @@ html[data-embed="1"] main.solid-header {
 }
 
 .theme-switch button[aria-pressed="true"] {
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 /* On navy, highlights are teal. */
 .section-dark .card-number,
 .footer-col a:hover,
 .nav-links .lang-menu-list a[aria-current="true"] {
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
 }
 
 .section-dark .card-number {
@@ -721,7 +751,7 @@ html[data-embed="1"] main.solid-header {
 
 /* ---------- Projects (js/projects.js) ---------- */
 .btn.btn-sm {
-  min-height: 40px;
+  min-height: var(--tap);
   padding: var(--space-1) var(--space-4);
   font-size: var(--fs-sm);
 }
@@ -742,7 +772,7 @@ html[data-embed="1"] main.solid-header {
 
 .usage meter {
   width: 100%;
-  height: 12px;
+  height: var(--space-3);
 }
 
 .project-list {
@@ -854,7 +884,7 @@ html[data-embed="1"] main.solid-header {
 
 .project-bar-form input {
   width: min(220px, 100%);
-  min-height: 40px;
+  min-height: var(--tap);
   border: 1px solid var(--color-line-strong);
   border-radius: var(--radius);
   padding: var(--space-1) var(--space-3);
@@ -864,7 +894,7 @@ html[data-embed="1"] main.solid-header {
 }
 
 .project-bar-form .btn {
-  min-height: 40px;
+  min-height: var(--tap);
   padding: var(--space-1) var(--space-4);
   font-size: var(--fs-sm);
 }
@@ -1006,7 +1036,7 @@ html[data-embed="1"] main.solid-header {
   background: transparent;
   color: var(--color-ink-soft);
   font: inherit;
-  font-size: 1.6rem;
+  font-size: var(--fs-xl);
   line-height: 1;
   cursor: pointer;
 }
@@ -1188,15 +1218,8 @@ html[data-embed="1"] main.solid-header {
 }
 
 /* ---------- One project's page ---------- */
-/* The saved design uses the whole width, like the designer itself. */
-.app-wide.project-page {
-  max-width: none;
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
-}
-
-/* On the project and designer pages the top bar lines up with the full-width studio. */
-body:has(.project-page, .studio-page) .nav {
+/* On the designer page the top bar lines up with the full-width studio. */
+body:has(.studio-page) .nav {
   max-width: none;
 }
 

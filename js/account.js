@@ -53,9 +53,13 @@
     return new Date(iso).toLocaleDateString(window.I18n.locale(), { year: "numeric", month: "long", day: "numeric" });
   }
 
-  // /api/config with a time limit (js/net.js); unreachable when it can't be read.
+  // /api/config with a time limit (js/net.js); unreachable when it can't be
+  // read, with reason: the js/i18n.js key that says why (offline, timed out,
+  // unreachable, or the server failing), for the "couldn't reach" notice.
   function loadConfig() {
-    return window.Net.config();
+    return window.Net.fetchJson("/api/config", { cache: "no-store" }, window.Net.CONFIG_TIMEOUT).catch(function (err) {
+      return { accounts: false, payments: false, unreachable: true, reason: window.Net.errorKey(err) };
+    });
   }
 
   // Where to go after signing in: ?next=<path on this site> when the link
@@ -98,9 +102,12 @@
     show(el, true);
   }
 
-  // The message for a failed call to api/: what happened, in plain words.
-  // The API's own reasons come first (a paused checkout is a 503 too, and
-  // must never read as a connection problem); then what the connection did.
+  // The message for a failed call to api/: what happened, in plain words,
+  // naming the real cause. The API's own reasons come first (a paused
+  // checkout is a 503 too, and must never read as a connection problem);
+  // then the server's own failure (a 5xx, or the API saying "server" or
+  // "unavailable": nothing to do with the connection); then what the
+  // connection did (js/net.js err.kind: offline, timed out, unreachable).
   // stripeKey: the text for a Stripe failure in this call (the payment page
   // or the billing page couldn't be opened; the server itself was reached).
   function errorKey(err, stripeKey) {
@@ -111,22 +118,43 @@
     if (code === "promo") return "acct.promo.invalid";
     if (code === "promo-used") return "acct.promo.used";
     if (code === "stripe") return stripeKey || "acct.stripe.checkout";
-    if (
-      code === "unavailable" ||
-      code === "server" ||
-      kind === "offline" ||
-      kind === "timeout" ||
-      kind === "network" ||
-      kind === "server"
-    ) {
-      return "acct.unavailable";
+    if (code === "unavailable" || code === "server" || kind === "server") return "net.server";
+    if (kind === "offline" || kind === "timeout" || kind === "network") return window.Net.errorKey(err);
+    return "acct.error";
+  }
+
+  // A fetch that never got an answer (Supabase's client rejects with a
+  // TypeError, or answers with an error whose status is 0 and whose message
+  // names the fetch): the connection, not the service.
+  function connectionFailed(error) {
+    if (!error) return false;
+    if (error instanceof TypeError) return true;
+    if (error.status === 0) return true;
+    return /failed to fetch|fetch failed|networkerror|load failed|network request failed/i.test(error.message || "");
+  }
+
+  // Why a Supabase call (a read, a save, a sign-in) failed, in plain words,
+  // by its real cause: ran out of time (timedRead), no answer from the
+  // network (offline, or the server unreachable), the server itself failing
+  // (a PostgREST or 5xx code), else a refused request ("something went
+  // wrong": the fields were checked before sending).
+  function failReason(error) {
+    if (error && error.kind === "timeout") return "net.timeout";
+    if (connectionFailed(error)) return navigator.onLine === false ? "net.offline" : "net.network";
+    var code = String((error && error.code) || "");
+    if (!code || /^(PGRST|5\d\d)/.test(code) || (error && error.status >= 500 && error.status < 600)) {
+      return "net.server";
     }
     return "acct.error";
   }
 
   function accountsOff() {
     show($("account-loading"), false);
-    show($(config && config.unreachable ? "server-down" : "accounts-off"), true);
+    var down = config && config.unreachable;
+    // Why /api/config couldn't be read, when known (loadConfig): the
+    // connection or the server, not always "check your connection".
+    if (down && config.reason && $("server-down-text")) $("server-down-text").textContent = T(config.reason);
+    show($(down ? "server-down" : "accounts-off"), true);
   }
 
   // Supabase Auth error codes worth their own message.
@@ -137,6 +165,7 @@
     if (code === "weak_password") return "auth.passwordShort";
     if (code === "user_already_exists" || /already|registered/i.test(error.message || "")) return "auth.exists";
     if (databaseRefused(error) || (error.status >= 500 && error.status < 600)) return "auth.serviceDown";
+    if (connectionFailed(error)) return failReason(error);
     return "acct.error";
   }
 
@@ -249,7 +278,14 @@
       } else if (mode === "login") {
         request = client.auth.signInWithPassword({ email: email, password: password }).then(function (r) {
           if (r.error) {
-            var key = r.error.status >= 500 ? "auth.serviceDown" : "auth.badLogin";
+            // A wrong password is a 400; a failing service is a 5xx; no
+            // answer at all is the connection. Never "don't match" for those.
+            var key =
+              r.error.status >= 500
+                ? "auth.serviceDown"
+                : connectionFailed(r.error)
+                  ? failReason(r.error)
+                  : "auth.badLogin";
             return status(statusEl, "error", T(key));
           }
           window.location.href = next(false);
@@ -272,8 +308,9 @@
           });
       }
       request
-        .catch(function () {
-          status(statusEl, "error", T("acct.error"));
+        .catch(function (err) {
+          // The client itself threw (no answer from the network, most often).
+          status(statusEl, "error", T(failReason(err)));
         })
         .then(function () {
           submit.disabled = false;
@@ -371,7 +408,7 @@
   // Try again, and nothing that could be acted on wrongly (no buy buttons,
   // no promo box, no "free plan").
   function renderPlanFailed(err) {
-    $("plan-status").textContent = T("acct.plan.loadFailed") + " " + T(saveReason(err));
+    $("plan-status").textContent = T("acct.plan.loadFailed") + " " + T(failReason(err));
     show($("plan-buy"), false);
     show($("plan-promo-row"), false);
     show($("plan-trial-note"), false);
@@ -449,6 +486,56 @@
     $("biz-phone").value = b.phone || "";
     $("biz-email").value = b.email || session.user.email || "";
     $("biz-legal").value = b.legal_name || "";
+    renderDesignerUrl();
+  }
+
+  // The owner's designer opens at designer.html?b=<slug> on this site, in the
+  // page's language. The full address is shown under the field, following
+  // what's typed, with Copy and Open once it's the saved one (an address that
+  // isn't saved yet opens nothing, so the buttons wait for Save).
+  function designerUrl(slug) {
+    return sitePath("designer.html") + "?b=" + encodeURIComponent(slug);
+  }
+
+  function renderDesignerUrl() {
+    var out = $("biz-url");
+    if (!out) return;
+    var typed = $("biz-slug").value.trim().toLowerCase();
+    var saved = !!(business && business.slug && typed === business.slug);
+    var url = typed ? designerUrl(typed) : "";
+    out.textContent = url;
+    show($("biz-url-row"), !!url);
+    show($("biz-url-unsaved"), !!url && !saved);
+    $("biz-url-copy").disabled = !saved;
+    var open = $("biz-url-open");
+    open.setAttribute("href", saved ? url : "#");
+    open.setAttribute("aria-disabled", saved ? "false" : "true");
+    open.tabIndex = saved ? 0 : -1;
+  }
+
+  function copyDesignerUrl() {
+    var url = $("biz-url").textContent;
+    var out = $("biz-url-status");
+    var done = function () {
+      status(out, "success", T("acct.url.copied"));
+    };
+    var failed = function () {
+      // No clipboard (an insecure page, a browser that refused): the address
+      // is right there and selected, so one key copies it.
+      var range = document.createRange();
+      range.selectNodeContents($("biz-url"));
+      var selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      status(out, "error", T("acct.url.copyFailed"));
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, failed);
+    } else {
+      failed();
+    }
   }
 
   function priceInputs() {
@@ -521,7 +608,7 @@
         business = null;
         renderBusinessCards();
         show($("business-loading"), false);
-        $("business-failed-text").textContent = T("acct.biz.loadFailed") + " " + T(saveReason(err));
+        $("business-failed-text").textContent = T("acct.biz.loadFailed") + " " + T(failReason(err));
         show($("business-failed"), true);
         $("business-retry").disabled = false;
       },
@@ -552,7 +639,7 @@
 
   // The message for a Supabase (PostgREST) failure saving a row.
   function saveErrorText(error) {
-    var why = error && error.code === "23505" ? "acct.slugTaken" : saveReason(error);
+    var why = error && error.code === "23505" ? "acct.slugTaken" : failReason(error);
     return T("acct.saveFailed") + " " + T(why);
   }
 
@@ -604,6 +691,7 @@
           }
           business = r.data;
           status(out, "success", T("acct.saved"));
+          renderDesignerUrl();
           fillPrices();
           renderBusinessCards();
           loadLeads();
@@ -762,21 +850,9 @@
       function (err) {
         d.btn.disabled = false;
         d.btn.focus();
-        status(out, "error", T("acct.lead.deleteFailed") + " " + T(saveReason(err)));
+        status(out, "error", T("acct.lead.deleteFailed") + " " + T(failReason(err)));
       },
     );
-  }
-
-  // Why a Supabase call failed, in plain words: no answer or a server
-  // failure is "couldn't reach the server"; a refused row is "something went
-  // wrong" (the fields were checked before sending).
-  function saveReason(error) {
-    var code = String((error && error.code) || "");
-    var message = String((error && error.message) || "");
-    if (!code || /^(PGRST|5\d\d)/.test(code) || /fetch|network/i.test(message)) {
-      return navigator.onLine === false ? "net.offline" : "acct.unavailable";
-    }
-    return "acct.error";
   }
 
   function initLeadDialog() {
@@ -1000,6 +1076,12 @@
     $("business-form").addEventListener("submit", saveBusiness);
     $("biz-name").addEventListener("input", function () {
       if (!business) $("biz-slug").value = slugify($("biz-name").value);
+      renderDesignerUrl();
+    });
+    $("biz-slug").addEventListener("input", renderDesignerUrl);
+    $("biz-url-copy").addEventListener("click", copyDesignerUrl);
+    $("biz-url-open").addEventListener("click", function (e) {
+      if (this.getAttribute("aria-disabled") === "true") e.preventDefault();
     });
     $("prices-form").addEventListener("submit", function (e) {
       savePrices(e, false);

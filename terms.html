@@ -91,7 +91,7 @@
           <li><a href="account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
           <li data-nav-signed-out><a href="signup.html" class="nav-cta">Get started</a></li>
           <li class="nav-lang">
-            <details class="lang-menu">
+            <details class="lang-menu nav-menu">
               <summary>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
@@ -117,6 +117,22 @@
                   <a href="pt/terms.html?lang=pt" hreflang="pt-BR" lang="pt-BR" data-lang-choice="pt">Português</a>
                 </li>
               </ul>
+            </details>
+          </li>
+          <li class="nav-theme">
+            <details class="lang-menu nav-menu theme-menu">
+              <summary aria-label="Colour theme">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" />
+                </svg>
+                <span class="visually-hidden">Colour theme</span>
+              </summary>
+              <div class="lang-menu-list theme-menu-list" role="group" aria-label="Colour theme">
+                <button type="button" data-theme-choice="system" aria-pressed="true">System</button>
+                <button type="button" data-theme-choice="light" aria-pressed="false">Light</button>
+                <button type="button" data-theme-choice="dark" aria-pressed="false">Dark</button>
+              </div>
             </details>
           </li>
         </ul>

@@ -1,4 +1,5 @@
-// Room Designer 3D — page behaviour: navigation, the FAQ and scroll reveal.
+// Room Designer 3D — page behaviour: navigation (the menu button, the
+// language and theme menus), the offline notice, the FAQ and scroll reveal.
 // The design studio itself is js/studio.js.
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -57,20 +58,68 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Language menu (a <details> in the nav): close it on a click elsewhere or
-  // Escape. The chosen language is saved by the page's head script, from the
-  // ?lang= its links carry.
-  var langMenu = document.querySelector(".lang-menu");
-  if (langMenu) {
+  // The nav's menus (a <details> each: the language menu and the theme
+  // menu): close on a click elsewhere, on Escape (the focus goes back to the
+  // button), and the theme menu once a theme is picked. The chosen language
+  // is saved by the page's head script, from the ?lang= its links carry; the
+  // theme buttons are js/theme.js's.
+  Array.prototype.forEach.call(document.querySelectorAll(".nav-menu"), function (menu) {
     document.addEventListener("click", function (e) {
-      if (langMenu.open && !langMenu.contains(e.target)) langMenu.open = false;
+      if (menu.open && !menu.contains(e.target)) menu.open = false;
     });
     document.addEventListener("keydown", function (e) {
-      if (e.key === "Escape" && langMenu.open) {
-        langMenu.open = false;
-        langMenu.querySelector("summary").focus();
+      if (e.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary").focus();
       }
     });
+    menu.addEventListener("click", function (e) {
+      if (e.target.closest("[data-theme-choice]")) {
+        menu.open = false;
+        menu.querySelector("summary").focus();
+      }
+    });
+  });
+
+  // Offline: a notice at the foot of the page the moment the browser loses
+  // its connection, before anything fails, and a short "back online" when it
+  // returns. Pages that save (My projects, the designer's save bar) still say
+  // what happened to each action; this is the heads-up.
+  var I18n = window.I18n;
+  if (I18n && document.body) {
+    var notice = document.createElement("div");
+    notice.className = "offline-notice";
+    notice.setAttribute("role", "status");
+    notice.setAttribute("aria-live", "polite");
+    notice.hidden = true;
+    document.body.appendChild(notice);
+    var backTimer = null;
+    var wasOffline = false;
+    var setOffline = function (off) {
+      clearTimeout(backTimer);
+      if (off) {
+        wasOffline = true;
+        notice.textContent = I18n.t("net.offlineNotice");
+        notice.classList.remove("is-back");
+        notice.hidden = false;
+        return;
+      }
+      if (!wasOffline) return;
+      wasOffline = false;
+      notice.textContent = I18n.t("net.backOnline");
+      notice.classList.add("is-back");
+      notice.hidden = false;
+      backTimer = setTimeout(function () {
+        notice.hidden = true;
+      }, 4000);
+    };
+    window.addEventListener("offline", function () {
+      setOffline(true);
+    });
+    window.addEventListener("online", function () {
+      setOffline(false);
+    });
+    if (navigator.onLine === false) setOffline(true);
   }
 
   var header = document.querySelector(".site-header");
@@ -84,7 +133,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Scroll-reveal (skipped when the visitor prefers reduced motion).
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var revealTargets = document.querySelectorAll(".card, .value-item, .faq-item, .scope-note");
+  var revealTargets = document.querySelectorAll(".card, .faq-item, .scope-note");
   if (!reduceMotion && "IntersectionObserver" in window) {
     var observer = new IntersectionObserver(
       function (entries) {

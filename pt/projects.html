@@ -91,7 +91,7 @@
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
           <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
           <li class="nav-lang">
-            <details class="lang-menu">
+            <details class="lang-menu nav-menu">
               <summary>
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
                   <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
@@ -122,6 +122,22 @@
               </ul>
             </details>
           </li>
+          <li class="nav-theme">
+            <details class="lang-menu nav-menu theme-menu">
+              <summary aria-label="Tema de cores">
+                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+                  <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" />
+                </svg>
+                <span class="visually-hidden">Tema de cores</span>
+              </summary>
+              <div class="lang-menu-list theme-menu-list" role="group" aria-label="Tema de cores">
+                <button type="button" data-theme-choice="system" aria-pressed="true">Sistema</button>
+                <button type="button" data-theme-choice="light" aria-pressed="false">Claro</button>
+                <button type="button" data-theme-choice="dark" aria-pressed="false">Escuro</button>
+              </div>
+            </details>
+          </li>
         </ul>
       </nav>
     </header>
@@ -145,6 +161,7 @@
         <div class="app-notice" id="server-down" role="alert" hidden>
           <p>
             <strong>Não conseguimos falar com o servidor.</strong> Verifique sua conexão com a internet e tente de novo.
+            Se você está conectado, o problema é do nosso lado: tente de novo em um minuto.
           </p>
           <p><a href="">Tentar de novo</a></p>
         </div>

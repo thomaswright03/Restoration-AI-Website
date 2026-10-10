@@ -88,7 +88,18 @@ Sign-ups, buying a plan and saving projects can each be stopped without a deploy
    - `checkout` off: the account page's plan card says buying a plan is paused and shows no buy buttons; `/api/checkout` refuses. Existing subscriptions keep running, and Manage billing still works.
    - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work. The designer's save bar and My projects read the switch from `/api/config` on load and say saving is paused (with the notice) before anyone fills in the save dialog.
 
-If the table doesn't exist yet (re-run `supabase/schema.sql`), every switch counts as on. The row is read with a 1.5 s limit so `/api/config` stays fast when the database is slow; if the read fails, the switches stay as they were last read (all on if they never were): the switch is for stopping the product on purpose, not for an outage. Every API error is logged as one JSON line with the route, a request id (also returned to the browser as `requestId`), the user id and the error word. Unit tests: `tests/unit/switches-robustness.test.js`.
+If the table doesn't exist yet (re-run `supabase/schema.sql`), every switch counts as on. The row is read with a 1.5 s limit so `/api/config` stays fast when the database is slow; if the read fails, the switches stay as they were last read (all on if they never were): the switch is for stopping the product on purpose, not for an outage. Unit tests: `tests/unit/switches-robustness.test.js`.
+
+## Finding an error in the logs
+
+Every function writes one JSON line per failure to Vercel's function log, and nothing else is stored. In the Vercel project, open **Logs** (or **Deployments > the current deployment > Logs**), set the level to Error, and search for the text below; each line has `route`, `method`, `requestId`, `userId` (the account's id, never an email), `error` (the word the browser got) and `message` (the cause, e.g. `Stripe 503: ...`).
+
+- **Someone reports a failure.** Every API error the page shows carries the request id as a last sentence, "Reference: iad1::abc…" (Spanish "Referencia", Portuguese "Referência"), when the server itself failed (a 5xx, Stripe or the database); a refusal they can act on (a wrong promo code, no sign-in) carries none. Search the logs for that id: it is the line's `requestId` (Vercel's own request id, `x-vercel-id`, so the same request's platform log is next to it).
+- **Errors in the browser.** An uncaught exception, an unhandled promise rejection or a script that didn't load on any page is reported to `POST /api/log` (`js/net.js` `Net.report`, installed by `js/script.js`) and logged as a line with `"source":"browser"`, `kind`, `page` (the path only; the query string is dropped), `message`, `stack`, `file` and `userId`. Search for `"source":"browser"`. A page sends at most 5 reports per load and the function takes at most 20 a minute from one address (4 KB each), so a page in a loop can't flood the log.
+- **Billing.** `"error":"duplicate-subscription"` (level warn): two Checkout tabs completed and the webhook cancelled the newer subscription (`cancelled`), keeping `kept`; refund the cancelled one's charge in the Stripe dashboard if it was billed. `"error":"unmapped-price"` / `"unmapped-plan"`: a subscription sits on a Stripe price that names no plan; give the price a lookup key (`starter`, `pro`, `max`) or set `subscriptions.plan` by hand.
+- **Alerts.** Vercel's log drains or Observability alerts can be pointed at these lines (`"level":"error"`); there is no alerting in the repo itself.
+
+Checkout and the billing portal run inside one 9 s budget (`api/_lib.js` `withBudget`): each upstream call gets what is left of it and a retry is skipped when too little remains, so the request always answers before the browser's 15 s wait and `vercel.json`'s `maxDuration` (10 s). Stripe's `Stripe-Should-Retry` header decides a retry when it is sent.
 
 ## Editing pages and text
 
@@ -115,7 +126,7 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
 - `js/script.js`: the header menu, the language menu, the offline notice, scroll reveal and the FAQ
-- `js/net.js`: the one way the signed-in pages call `/api/*`: a JSON fetch with a time limit that tells offline, timed out, a server failure and an HTTP error apart (also runs in Node for the unit tests)
+- `js/net.js`: the one way the signed-in pages call `/api/*`: a JSON fetch with a time limit that tells offline, timed out, a server failure and an HTTP error apart, the one `/api/config` reader (`Net.config`), the "Reference: …" request id for an API error, and the browser error reports to `/api/log` (also runs in Node for the unit tests)
 - `js/site-config.js`: loads `site-config.json` and applies it to the page (`data-fill`, `data-show-if`), with defaults when it can't be loaded
 - `js/theme.js`: the Light / Dark / System switch
 - `js/product-photos.js`: generated by `tools/photos/build-product-photos.mjs`, the products' listing photos; don't edit by hand
@@ -135,7 +146,9 @@ npm run serve      # local server at http://localhost:8000, runs api/ like Verce
 npm test           # check and test:e2e in one go
 ```
 
-**Type check.** `npm run typecheck` runs TypeScript's `checkJs` (no build, nothing is emitted) over `api/**`, the pure modules that also run in Node (`js/room-plan.js`, `js/surface-finishes.js`, `js/net.js`, `js/i18n.js`, `js/bathroom-pricing.js`, `js/materials-pricing.js`) and `js/estimate-pdf.js` (`jsconfig.json` lists them; `types/globals.d.ts` declares the window globals and the tags put on Error objects). It's not strict, and the page scripts (`js/studio.js`, `js/projects.js`, `js/account.js`, ...) aren't covered yet: add a file to `include` once it passes.
+**Type check.** `npm run typecheck` runs TypeScript's `checkJs` (no build, nothing is emitted) over `api/**`, the pure modules that also run in Node (`js/room-plan.js`, `js/surface-finishes.js`, `js/net.js`, `js/i18n.js`, `js/bathroom-pricing.js`, `js/materials-pricing.js`), `js/estimate-pdf.js` and the page scripts `js/projects.js` and `js/account.js` (`jsconfig.json` lists them; `types/globals.d.ts` declares the window globals and the tags put on Error objects). A second pass, `jsconfig.api.json`, checks `api/**` again with `strictNullChecks` on (the functions are marked `// @ts-check`, so only they are held to it). The rest isn't strict yet, and `js/studio.js`, `js/bathroom-room-3d.js`, `js/business.js`, `js/riley.js`, `js/site-config.js`, `js/script.js` and `js/theme.js` aren't covered: add a file to `include` once it passes.
+
+**Scripts** (`scripts/`): `serve.mjs` (the local server, `npm run serve`), `build-pages.mjs` (`npm run pages` / `npm run check:pages`, which also runs `build-i18n.mjs` for `js/i18n/*.js`), `env-file.mjs` (reads `.env.local` for the server) and `hero-shots.mjs`: `node scripts/hero-shots.mjs` retakes the landing page's six hero images (`images/hero-designer-<lang>.webp` and `-phone.webp`, EN/ES/PT) from the demo designer in the test browser. Run it after a visible change to the designer and commit the images (`--port` or `HERO_PORT` picks the local port it uses; default 4461).
 
 **Running locally with keys.** `npm run serve` reads `.env.local` in the repo root when it exists (copy `.env.example`; a variable already set in the shell wins), so the functions talk to your Supabase and Stripe test projects. Without it, demo mode. The browser tests never read it.
 

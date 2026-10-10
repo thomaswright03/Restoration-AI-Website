@@ -970,7 +970,7 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
   // the heading row sticks while the list scrolls, and from 1280 px the page
   // uses the width a table needs rather than a ~760 px card.
   const aligned = await page.evaluate(() => {
-    const heads = Array.from(document.querySelectorAll("#projects-table-head > *"));
+    const heads = Array.from(document.querySelectorAll("#projects-table-head [role=columnheader]"));
     const cells = [
       ".project-name",
       ".project-client",
@@ -990,17 +990,34 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
     .locator(".project-name")
     .evaluate((a) => a.getBoundingClientRect().height / parseFloat(getComputedStyle(a).lineHeight));
   expect(nameLines).toBeLessThanOrEqual(2);
-  // The headings sort: by name puts "Lee guest bath" first and marks the heading.
-  await page.getByRole("button", { name: "Name (A to Z)" }).click();
+  // The headings sort: by name puts "Lee guest bath" first and marks the
+  // heading; a second click reverses the order (said on the column header
+  // and kept in the address); the Sort by control puts it forward again.
+  const nameHead = page.getByRole("columnheader", { name: "Project" });
+  const nameBtn = nameHead.getByRole("button");
+  await expect(nameHead).toHaveAttribute("aria-sort", "none");
+  await nameBtn.click();
   await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Lee guest bath");
   await expect(page.getByLabel("Sort by")).toHaveValue("name");
-  await expect(page.getByRole("button", { name: "Name (A to Z)" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page).toHaveURL(/sort=name/);
-  await page.getByRole("button", { name: "Last updated" }).click();
-  await expect(page.getByLabel("Sort by")).toHaveValue("updated");
+  await expect(nameBtn).toHaveAttribute("aria-pressed", "true");
+  await expect(nameHead).toHaveAttribute("aria-sort", "ascending");
+  await expect(page).toHaveURL(/sort=name(?!-)/);
+  await nameBtn.click();
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Smith main bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "descending");
+  await expect(nameBtn).toHaveClass(/is-desc/);
+  await expect(page).toHaveURL(/sort=name-desc/);
   await page.reload();
   await expect(list).toHaveClass(/is-table/);
   await expect(page.getByLabel("View")).toHaveValue("table");
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Smith main bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "descending");
+  await page.getByLabel("Sort by").selectOption("name");
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Lee guest bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "ascending");
+  await page.getByRole("columnheader", { name: "Updated" }).getByRole("button").click();
+  await expect(page.getByLabel("Sort by")).toHaveValue("updated");
+  await expect(page).not.toHaveURL(/sort=/);
   // Phones keep the cards whatever the pick, and don't offer it.
   await page.setViewportSize({ width: 375, height: 800 });
   await expect(page.getByLabel("View")).toBeHidden();
@@ -1230,4 +1247,141 @@ test("a start date in an implausible year is refused at the field, in the browse
   await page.getByRole("button", { name: "Save info" }).click();
   await expect(start).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#info-start-error")).toHaveText(`Pick a start date between 2000 and ${year}.`);
+});
+
+// The table view is offered only where it fits: from 1180 px every heading
+// sits in its own box in all three languages, the Project column has real
+// room, and the page keeps using the width above 1280.
+test("the table view fits at every width it's offered, in en/es/pt, and grows with the window", async ({ page }) => {
+  test.setTimeout(90000);
+  const projects = [];
+  for (let i = 0; i < 12; i++) {
+    projects.push({
+      id: "p" + i,
+      name: "Garcia master bath " + i,
+      info: {
+        client: "Maria Garcia " + i,
+        street: "1200 Blueprint Avenue",
+        city: "Springfield",
+        state: "IL",
+        zip: "62704",
+        status: ["lead", "estimate", "approved", "progress", "done"][i % 5],
+        start: "2026-11-0" + ((i % 9) + 1),
+      },
+      updated_at: DAY,
+    });
+  }
+  await signedIn(page, { projects });
+  await page.addInitScript(() => localStorage.setItem("rd3d_projects_view", "table"));
+  for (const dir of ["", "es/", "pt/"]) {
+    for (const width of [1180, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/" + dir + "projects.html");
+      await expect(page.locator(".project-item")).toHaveCount(12);
+      await expect(page.locator("#projects-list")).toHaveClass(/is-table/);
+      const facts = await page.evaluate(() => {
+        const heads = Array.from(document.querySelectorAll("#projects-table-head [role=columnheader]"));
+        const row = document.querySelector(".project-item");
+        const cells = [".project-name", ".project-client", ".project-status", ".project-start", ".project-updated"];
+        const name = row.querySelector(".project-name");
+        return {
+          // No heading runs past its box or into its neighbour.
+          overflow: heads.map((h) => h.scrollWidth - h.clientWidth),
+          gaps: heads.map((h, i) =>
+            i ? h.getBoundingClientRect().left - heads[i - 1].getBoundingClientRect().right : 1,
+          ),
+          projectWidth: name.getBoundingClientRect().width,
+          nameLines: name.getBoundingClientRect().height / parseFloat(getComputedStyle(name).lineHeight),
+          aligned: heads.map(
+            (h, i) =>
+              i >= cells.length ||
+              Math.abs(h.getBoundingClientRect().left - row.querySelector(cells[i]).getBoundingClientRect().left) <= 1,
+          ),
+          page: document.querySelector(".app-wide").getBoundingClientRect().width,
+        };
+      });
+      const label = dir + "@" + width;
+      for (const o of facts.overflow) expect(o, label + " heading overflow").toBeLessThanOrEqual(0);
+      for (const g of facts.gaps) expect(g, label + " headings apart").toBeGreaterThan(0);
+      expect(facts.aligned.every(Boolean), label + " headings over their columns").toBe(true);
+      expect(facts.projectWidth, label + " project column").toBeGreaterThanOrEqual(160);
+      if (width >= 1280) expect(facts.nameLines, label + " name on one line").toBeLessThanOrEqual(1.05);
+      if (width === 1440) expect(facts.page, "the table grows past 1280").toBeGreaterThan(1250);
+    }
+  }
+  // Between the phone layout and 1180 the cards stay, and the table isn't offered.
+  for (const width of [900, 1024, 1100]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.getByLabel("View")).toBeHidden();
+    await expect(page.locator("#projects-table-head")).toBeHidden();
+    // The rows are cards again: the name sits above the dates, not beside them.
+    const stacked = await page
+      .locator(".project-item")
+      .first()
+      .evaluate((li) => {
+        return (
+          li.querySelector(".project-updated").getBoundingClientRect().top >
+          li.querySelector(".project-name").getBoundingClientRect().top
+        );
+      });
+    expect(stacked, "cards at " + width).toBe(true);
+  }
+});
+
+// Every control in the list's toolbar shows its whole value, and the labels
+// stay on one line, so the Spanish "Estado del proyecto" doesn't push its
+// select below the others.
+test("the Status filter shows its whole value and its label stays on one line, in en/es/pt at desktop widths", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Smith main bath", info: { status: "progress" }, updated_at: DAY },
+      { id: "a2", name: "Lee guest bath", info: {}, updated_at: DAY },
+    ],
+  });
+  for (const dir of ["", "es/", "pt/"]) {
+    for (const width of [1024, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/" + dir + "projects.html");
+      await expect(page.locator(".project-item")).toHaveCount(2);
+      const facts = await page.evaluate(() => {
+        // The width the selected option's words need, in the select's font.
+        const needs = (select) => {
+          const probe = document.createElement("span");
+          probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap";
+          probe.style.font = getComputedStyle(select).font;
+          probe.textContent = select.options[select.selectedIndex].textContent;
+          document.body.appendChild(probe);
+          const w = probe.getBoundingClientRect().width;
+          probe.remove();
+          return w;
+        };
+        const out = {};
+        for (const id of ["projects-sort", "projects-filter"]) {
+          const select = document.getElementById(id);
+          const label = document.querySelector('label[for="' + id + '"]');
+          out[id] = {
+            room: select.clientWidth - needs(select), // the arrow and padding need ~30 px
+            labelLines: label.getBoundingClientRect().height / parseFloat(getComputedStyle(label).lineHeight),
+            top: select.getBoundingClientRect().top,
+            left: select.parentElement.getBoundingClientRect().left,
+          };
+        }
+        out.toolsLeft = document.getElementById("projects-search-wrap").getBoundingClientRect().left;
+        return out;
+      });
+      const label = dir + "@" + width;
+      for (const id of ["projects-sort", "projects-filter"]) {
+        expect(facts[id].room, label + " " + id + " shows its whole value").toBeGreaterThanOrEqual(30);
+        expect(facts[id].labelLines, label + " " + id + " label on one line").toBeLessThanOrEqual(1.05);
+      }
+      // The filter sits level with the sort control, or (when the toolbar
+      // wraps on a narrow page) starts its own row: never a control pushed
+      // down by its own label.
+      const level = Math.abs(facts["projects-sort"].top - facts["projects-filter"].top) <= 1;
+      const ownRow = Math.abs(facts["projects-filter"].left - facts.toolsLeft) <= 1;
+      expect(level || ownRow, label + " filter level with the others or on its own row").toBe(true);
+    }
+  }
 });

@@ -1073,11 +1073,23 @@ a.btn[aria-disabled="true"] {
 
 /* ---------- My projects list extras ---------- */
 /* Search, sort and status filter in one row where there's room. */
+/* The search box takes the room; each select is as wide as its longest
+   choice (never clipped to "All statuse…"), its label on one line. */
 .projects-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
   gap: var(--space-3) var(--space-4);
   margin-bottom: var(--space-4);
+}
+
+.projects-tools .projects-search {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.projects-tools label {
+  white-space: nowrap;
 }
 
 .projects-tools[hidden] {
@@ -1086,7 +1098,7 @@ a.btn[aria-disabled="true"] {
 
 /* "Clear filters" sits under the controls, on its own line. */
 .projects-clear {
-  grid-column: 1 / -1;
+  flex: 1 1 100%;
   margin: 0;
 }
 
@@ -1134,7 +1146,8 @@ a.btn[aria-disabled="true"] {
 
 @media (max-width: 720px) {
   .projects-tools {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 
@@ -1176,33 +1189,23 @@ a.btn[aria-disabled="true"] {
    that sticks below the site header while the list scrolls. The heading row
    and every row share one column template, with a fixed-width last column
    (the buttons), so the headings sit over their columns whatever a row
-   holds. Narrow screens keep the cards whatever the pick, so the control
-   hides. From 1280 px the page uses the width a table needs. */
+   holds. The table is offered only from 1180 px, the width at which every
+   column has room (the Project and Client columns never go under 10 and 12
+   rem); narrower screens keep the cards whatever the pick, so the control
+   hides. The page then uses the width a table needs, up to 1400 px, so a
+   normal name stays on one line at 1280 and the table keeps growing at 1440. */
 .projects-view,
 .project-table-head {
   display: none;
 }
 
-@media (min-width: 900px) {
-  .projects-tools {
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.7fr);
-  }
-
+@media (min-width: 1180px) {
   .projects-view {
     display: block;
   }
 
-  .project-table-head,
-  .project-list.is-table .project-item {
-    --project-columns: minmax(0, 1.6fr) minmax(0, 2fr) minmax(7.5rem, 0.9fr) minmax(8rem, 0.9fr) minmax(8rem, 0.9fr)
-      18rem;
-    display: grid;
-    grid-template-columns: var(--project-columns);
-    align-items: center;
-    gap: var(--space-2) var(--space-4);
-  }
-
   .project-table-head {
+    display: block;
     white-space: nowrap;
     position: sticky;
     top: 64px; /* under the site header, at its scrolled height */
@@ -1220,12 +1223,38 @@ a.btn[aria-disabled="true"] {
     display: none;
   }
 
+  .project-table-row,
+  .project-list.is-table .project-item {
+    --project-columns: minmax(10rem, 1.4fr) minmax(12rem, 2fr) minmax(7.5rem, 0.8fr) minmax(7rem, 0.8fr)
+      minmax(7rem, 0.8fr) 18rem;
+    display: grid;
+    grid-template-columns: var(--project-columns);
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  /* A heading never runs into its neighbour, whatever the language. */
+  .project-table-row > * {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* The buttons sit at the right of their column; so does their heading. */
+  .project-table-row .project-col-actions {
+    text-align: right;
+  }
+
   /* A heading that sorts the list: a button that looks like the others,
-     with an arrow on the one in use. */
+     with an arrow on the one in use (down for the forward order, up for
+     the reversed one). */
   .project-table-head .project-sort {
     appearance: none;
     border: 0;
     padding: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
     background: none;
     color: inherit;
     font: inherit;
@@ -1249,6 +1278,10 @@ a.btn[aria-disabled="true"] {
     content: "\00a0▾";
   }
 
+  .project-table-head .project-sort[aria-pressed="true"].is-desc::after {
+    content: "\00a0▴";
+  }
+
   /* The column heading says "Starts" / "Updated": the cell shows the date
      alone (the words stay in the page for screen readers). */
   .project-list.is-table .project-date-words {
@@ -1263,7 +1296,7 @@ a.btn[aria-disabled="true"] {
 
   /* The table needs more width than the account-style column has. */
   .app-wide:has(.project-list.is-table) {
-    max-width: 1200px;
+    max-width: 1400px;
   }
 
   .project-list.is-table .project-main,

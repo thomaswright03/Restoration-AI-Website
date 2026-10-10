@@ -537,6 +537,10 @@
 
   var SORTS = ["updated", "name", "start", "status"];
   var VIEW_KEY = "rd3d_projects_view"; // "cards" or "table", this browser's pick
+  // The table's headings sort either way: a second click on the heading in
+  // use reverses the order (sortDesc). The Sort by control's orders are the
+  // forward ones; picking one there puts the order forward again.
+  var sortDesc = false;
 
   function sortName(value) {
     return SORTS.indexOf(value) > 0 ? value : "updated";
@@ -547,18 +551,23 @@
     return {
       q: (field("projects-search").value || "").trim(),
       sort: sortName(field("projects-sort").value),
+      desc: sortDesc,
       status: field("projects-filter").value || "",
     };
   }
 
   // The view lives in the address (?q=&sort=&status=), so a reload or a
-  // shared link keeps it; the defaults stay out of it.
+  // shared link keeps it; the defaults stay out of it. A reversed order is
+  // ?sort=name-desc.
   function readViewFromUrl() {
     var q = params.get("q") || "";
-    var sort = sortName(params.get("sort"));
+    var sortParam = String(params.get("sort") || "");
+    var desc = /-desc$/.test(sortParam);
+    var sort = sortName(sortParam.replace(/-desc$/, ""));
     var status = STATUSES.indexOf(params.get("status")) >= 0 ? params.get("status") : "";
     field("projects-search").value = q;
     field("projects-sort").value = sort;
+    sortDesc = desc;
     field("projects-filter").value = status;
   }
 
@@ -589,6 +598,7 @@
   function clearFilters() {
     field("projects-search").value = "";
     field("projects-sort").value = "updated";
+    sortDesc = false;
     field("projects-filter").value = "";
     renderList();
     $("projects-search").focus();
@@ -599,6 +609,7 @@
       var url = new URL(window.location.href);
       ["q", "sort", "status"].forEach(function (k) {
         var v = view[k];
+        if (k === "sort" && view.desc) v += "-desc";
         if (v && !(k === "sort" && v === "updated")) url.searchParams.set(k, v);
         else url.searchParams.delete(k);
       });
@@ -619,8 +630,9 @@
 
   // Last updated (newest first); name; start date (soonest first, projects
   // without one last); status (in the order a job goes through, projects
-  // without one last). Ties fall back to last updated.
-  function sortProjects(list, sort) {
+  // without one last). Ties fall back to last updated. desc reverses the
+  // whole order (so projects without a date or status come first).
+  function sortProjects(list, sort, desc) {
     var collator = new Intl.Collator(window.I18n.locale(), { sensitivity: "base", numeric: true });
     var byUpdated = function (a, b) {
       return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
@@ -629,7 +641,7 @@
       var i = STATUSES.indexOf((p.info || {}).status);
       return i < 0 ? STATUSES.length : i;
     };
-    return list.slice().sort(function (a, b) {
+    var sorted = list.slice().sort(function (a, b) {
       if (sort === "name") return collator.compare(a.name || "", b.name || "") || byUpdated(a, b);
       if (sort === "start") {
         var sa = (a.info || {}).start || "";
@@ -640,6 +652,7 @@
       if (sort === "status") return rank(a) - rank(b) || byUpdated(a, b);
       return byUpdated(a, b);
     });
+    return desc ? sorted.reverse() : sorted;
   }
 
   function renderList() {
@@ -652,6 +665,7 @@
         return !q || searchText(p).indexOf(q) >= 0;
       }),
       view.sort,
+      view.desc,
     );
     list.innerHTML = "";
     shown.forEach(function (p) {
@@ -662,8 +676,13 @@
     show($("projects-search-wrap"), state.projects.length > 1);
     show($("projects-view-wrap"), state.projects.length > 1);
     applyListLayout();
+    // The heading in use is marked, with the direction on its column header.
     Array.prototype.forEach.call($("projects-table-head").querySelectorAll(".project-sort"), function (btn) {
-      btn.setAttribute("aria-pressed", btn.getAttribute("data-sort") === view.sort ? "true" : "false");
+      var on = btn.getAttribute("data-sort") === view.sort;
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      btn.classList.toggle("is-desc", on && view.desc);
+      var header = btn.closest("[role=columnheader]");
+      if (header) header.setAttribute("aria-sort", on ? (view.desc ? "descending" : "ascending") : "none");
     });
     show($("projects-clear-wrap"), !!(view.q || view.status || view.sort !== "updated"));
     show($("projects-no-match"), !!state.projects.length && !shown.length);
@@ -896,13 +915,19 @@
       fillFilter();
       readViewFromUrl();
       $("projects-search").addEventListener("input", renderList);
-      $("projects-sort").addEventListener("change", renderList);
+      $("projects-sort").addEventListener("change", function () {
+        sortDesc = false;
+        renderList();
+      });
       field("projects-view").value = readListLayout();
       $("projects-view").addEventListener("change", applyListLayout);
-      // The table's headings sort too: the same sorts as the Sort by control.
+      // The table's headings sort too: the same sorts as the Sort by
+      // control, and a second click on the heading in use reverses the order.
       Array.prototype.forEach.call($("projects-table-head").querySelectorAll(".project-sort"), function (btn) {
         btn.addEventListener("click", function () {
-          field("projects-sort").value = sortName(btn.getAttribute("data-sort"));
+          var next = sortName(btn.getAttribute("data-sort"));
+          sortDesc = next === field("projects-sort").value ? !sortDesc : false;
+          field("projects-sort").value = next;
           renderList();
         });
       });

@@ -82,6 +82,9 @@
     <link rel="modulepreload" href="js/vendor/three-r186/three.module.js" />
     <link rel="modulepreload" href="js/vendor/three-r186/three.core.js" />
     <link rel="modulepreload" href="js/vendor/three-r186/addons/controls/OrbitControls.js" />
+    <link rel="modulepreload" href="js/vendor/three-r186/addons/loaders/GLTFLoader.js" />
+    <link rel="modulepreload" href="js/vendor/three-r186/addons/environments/RoomEnvironment.js" />
+    <link rel="modulepreload" href="js/vendor/three-r186/addons/utils/BufferGeometryUtils.js" />
     <link rel="stylesheet" href="css/studio.css" />
   </head>
   <body>
@@ -163,6 +166,16 @@
           This designer opens only for its owner, signed in to their account. If it's yours, log in and open it from My
           projects.
         </p>
+      </section>
+
+      <!-- The business lookup failed or hung (js/business.js): not "not yours", so it offers Try again. -->
+      <section class="section designer-unavailable" id="designer-failed" hidden>
+        <h1 class="section-title">We couldn't open this designer</h1>
+        <p class="section-subtitle">
+          The business's details didn't load. This is usually a brief connection problem on our side, not something you
+          did.
+        </p>
+        <p><button type="button" class="btn btn-primary" id="designer-failed-retry">Try again</button></p>
       </section>
 
       <section class="project-bar product-chrome" id="project-bar" aria-label="Your project" hidden>
@@ -300,10 +313,12 @@
     <script src="js/surface-finishes.js"></script>
     <script src="js/site-config.js"></script>
     <script src="js/theme.js"></script>
-    <script src="js/estimate-pdf.js"></script>
-    <script src="js/riley.js"></script>
-    <script src="js/script.js"></script>
-    <script type="module" src="js/bathroom-room-3d.js"></script>
+    <!-- Only needed once the page is up: the PDF (which fetches its library on demand), Riley, the page chrome. -->
+    <script src="js/estimate-pdf.js" defer></script>
+    <script src="js/riley.js" defer></script>
+    <script src="js/script.js" defer></script>
+    <!-- The 3D room (three.js) is the big download: async, so the studio starts on the floor plan as soon as its own scripts are in, and takes the room up when it lands (bathroomroom3d:loaded). -->
+    <script type="module" src="js/bathroom-room-3d.js" async></script>
     <script src="js/studio.js" defer></script>
     <script src="js/projects.js" defer></script>
   </body>

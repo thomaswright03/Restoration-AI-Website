@@ -21,6 +21,13 @@
         <p class="section-subtitle">{{designer.unavailable.text}}</p>
       </section>
 
+      <!-- The business lookup failed or hung (js/business.js): not "not yours", so it offers Try again. -->
+      <section class="section designer-unavailable" id="designer-failed" hidden>
+        <h1 class="section-title">{{designer.failed.title}}</h1>
+        <p class="section-subtitle">{{designer.failed.text}}</p>
+        <p><button type="button" class="btn btn-primary" id="designer-failed-retry">{{designer.failed.retry}}</button></p>
+      </section>
+
       <section class="project-bar product-chrome" id="project-bar" aria-label="{{designer.project.label}}" hidden>
         <p class="project-bar-text" id="project-bar-text"></p>
         <form class="project-bar-form" id="project-save-form" novalidate hidden>

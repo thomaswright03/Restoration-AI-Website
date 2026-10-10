@@ -5014,9 +5014,58 @@
     return errorCount(checkAll(design, nextSizes)) <= errorCount(issues);
   }
 
+  // The 3D module (js/bathroom-room-3d.js), once it has run.
+  function loaded3d() {
+    var r = window.BathroomRoom3D;
+    return r && typeof r.setPlan === "function" ? r : null;
+  }
+
+  function on3dUnavailable() {
+    has3d = false;
+    ui.view = "plan";
+    renderViewbar();
+    renderStage();
+    renderHint();
+    renderPanel();
+    toast(T("studio.no3d"));
+  }
+
+  function start3d() {
+    document.addEventListener("bathroomroom3d:unavailable", on3dUnavailable);
+    room3d.onFrame(positionLabels);
+    room3d.show();
+  }
+
+  // The 3D module arrived after the studio started on the floor plan: take
+  // it up, and show the room the way a fast connection would have.
+  function adopt3d() {
+    document.removeEventListener("bathroomroom3d:loaded", adopt3d);
+    if (room3d || !design) return;
+    room3d = loaded3d();
+    if (!room3d) return;
+    DEFAULT_PICKS = room3d.getProductPicks();
+    room3d.setFitCheck(fitsWith);
+    sizes = room3d.itemSizes();
+    if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
+    has3d = true;
+    wire3d();
+    document.addEventListener("bathroomroom3d:unavailable", on3dUnavailable);
+    room3d.onFrame(positionLabels);
+    refreshNow();
+    setView("3d");
+    fitStage();
+  }
+
   function init() {
     els.studio = document.getElementById("studio");
     if (!els.studio || !Plan || !Pricing) return;
+    if (BIZ.unavailable === "loading" && BIZ.ready) {
+      // The business's profile is still on its way: start once it's here.
+      BIZ.ready.then(function () {
+        if (!BIZ.unavailable) init();
+      });
+      return;
+    }
     if (BIZ.unavailable) return;
     els.panel = document.getElementById("studio-panel");
     els.viewbar = document.getElementById("studio-viewbar");
@@ -5042,20 +5091,22 @@
     });
     buildChrome();
 
-    room3d =
-      window.BathroomRoom3D && typeof window.BathroomRoom3D.setPlan === "function" ? window.BathroomRoom3D : null;
+    room3d = loaded3d();
     if (room3d) {
       DEFAULT_PICKS = room3d.getProductPicks();
       room3d.setFitCheck(fitsWith);
       has3d = true;
     } else {
+      // The 3D module is still on its way (it loads without holding the
+      // page): start on the floor plan and switch to the room when it lands.
       ui.view = "plan";
+      document.addEventListener("bathroomroom3d:loaded", adopt3d);
     }
     sizes = room3d ? room3d.itemSizes() : null;
 
     var linked = pendingOpen ? null : linkedDesign();
     var saved = linked || pendingOpen ? null : savedDesign();
-    design = pendingOpen || linked || saved || Plan.fromTemplate("full5x8", sizes);
+    design = pendingOpen || linked || saved || Plan.fromTemplate("sample", sizes);
     pendingOpen = null;
     if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
     if (linked) {
@@ -5094,19 +5145,7 @@
       if (!inside) els.linkDialog.close();
     });
 
-    if (room3d) {
-      document.addEventListener("bathroomroom3d:unavailable", function () {
-        has3d = false;
-        ui.view = "plan";
-        renderViewbar();
-        renderStage();
-        renderHint();
-        renderPanel();
-        toast(T("studio.no3d"));
-      });
-      room3d.onFrame(positionLabels);
-      room3d.show();
-    }
+    if (room3d) start3d();
 
     var loading = document.getElementById("studio-loading");
     if (loading) loading.remove();

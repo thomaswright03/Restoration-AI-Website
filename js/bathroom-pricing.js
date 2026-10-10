@@ -21,7 +21,7 @@
 // Loads as a plain browser script (window.BathroomPricing) and as a Node
 // module (for the unit tests).
 
-(function (root, factory) {
+(function (/** @type {any} */ root, factory) {
   "use strict";
   var api = factory(root.I18n || (typeof require === "function" ? require("./i18n.js") : null));
   if (typeof module === "object" && module.exports) {

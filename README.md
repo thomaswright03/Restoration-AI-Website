@@ -135,7 +135,7 @@ npm run serve      # local server at http://localhost:8000, runs api/ like Verce
 npm test           # check and test:e2e in one go
 ```
 
-**Type check.** `npm run typecheck` runs TypeScript's `checkJs` (no build, nothing is emitted) over `api/**` and the pure modules that also run in Node: `js/room-plan.js`, `js/surface-finishes.js`, `js/net.js` and `js/i18n.js` (`jsconfig.json` lists them; `types/globals.d.ts` declares the window globals and the tags put on Error objects). It's not strict, and the page scripts (`js/studio.js`, `js/projects.js`, `js/account.js`, ...) aren't covered yet: add a file to `include` once it passes.
+**Type check.** `npm run typecheck` runs TypeScript's `checkJs` (no build, nothing is emitted) over `api/**`, the pure modules that also run in Node (`js/room-plan.js`, `js/surface-finishes.js`, `js/net.js`, `js/i18n.js`, `js/bathroom-pricing.js`, `js/materials-pricing.js`) and `js/estimate-pdf.js` (`jsconfig.json` lists them; `types/globals.d.ts` declares the window globals and the tags put on Error objects). It's not strict, and the page scripts (`js/studio.js`, `js/projects.js`, `js/account.js`, ...) aren't covered yet: add a file to `include` once it passes.
 
 **Running locally with keys.** `npm run serve` reads `.env.local` in the repo root when it exists (copy `.env.example`; a variable already set in the shell wins), so the functions talk to your Supabase and Stripe test projects. Without it, demo mode. The browser tests never read it.
 

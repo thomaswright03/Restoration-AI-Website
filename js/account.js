@@ -53,13 +53,22 @@
     return new Date(iso).toLocaleDateString(window.I18n.locale(), { year: "numeric", month: "long", day: "numeric" });
   }
 
-  // /api/config with a time limit (js/net.js); unreachable when it can't be
-  // read, with reason: the js/i18n.js key that says why (offline, timed out,
-  // unreachable, or the server failing), for the "couldn't reach" notice.
+  // /api/config with a time limit (js/net.js Net.config); unreachable when
+  // it can't be read, with reason: the js/i18n.js key that says why, for the
+  // "couldn't reach" notice.
   function loadConfig() {
-    return window.Net.fetchJson("/api/config", { cache: "no-store" }, window.Net.CONFIG_TIMEOUT).catch(function (err) {
-      return { accounts: false, payments: false, unreachable: true, reason: window.Net.errorKey(err) };
-    });
+    return window.Net.config();
+  }
+
+  // The message for a failed API call: what happened (errorKey), and the
+  // server's request id to quote when it was the server that failed, so a
+  // report can be matched to its log line (js/net.js Net.withReference).
+  function apiMessage(err, stripeKey) {
+    var text = T(errorKey(err, stripeKey));
+    var code = err && err.code;
+    var kind = err && err.kind;
+    var serverSide = code === "unavailable" || code === "server" || code === "stripe" || kind === "server";
+    return serverSide ? window.Net.withReference(text, err) : text;
   }
 
   // Where to go after signing in: ?next=<path on this site> when the link
@@ -894,9 +903,9 @@
               });
       })
       .catch(function (err) {
-        var why = err.code === "signin" ? "proj.err.signin" : errorKey(err);
         out.className = "form-note";
-        out.textContent = T("acct.projects.failed") + " " + T(why);
+        out.textContent =
+          T("acct.projects.failed") + " " + (err.code === "signin" ? T("proj.err.signin") : apiMessage(err));
       })
       .then(function () {
         show(out, true);
@@ -944,7 +953,7 @@
           window.location.href = sitePath("signup.html") + "?deleted=1";
         })
         .catch(function (err) {
-          status(out, "error", T(err.code === "stripe" ? "acct.delete.stripe" : errorKey(err)));
+          status(out, "error", apiMessage(err, "acct.delete.stripe"));
           $("delete-submit").disabled = false;
         });
     });
@@ -962,7 +971,7 @@
       })
       .catch(function (err) {
         var key = errorKey(err);
-        status(out, "error", T(key));
+        status(out, "error", apiMessage(err));
         if (key === "acct.promo.invalid" || key === "acct.promo.used") $("plan-promo").focus();
         button.disabled = false;
         // The server found a plan already running (a webhook still on its
@@ -1096,7 +1105,7 @@
           window.location.href = data.url;
         })
         .catch(function (err) {
-          status($("plan-message"), "error", T(errorKey(err, "acct.stripe.portal")));
+          status($("plan-message"), "error", apiMessage(err, "acct.stripe.portal"));
           btn.disabled = false;
         });
     });

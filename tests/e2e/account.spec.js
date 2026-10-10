@@ -368,6 +368,8 @@ test("a Stripe failure says the payment page couldn't be opened, not that the se
   await expect(page.locator("#plan-message")).toContainText("The payment page couldn't be opened just now");
   await expect(page.locator("#plan-message")).toContainText("Nothing was charged");
   await expect(page.locator("#plan-message")).not.toContainText(/reach the server/);
+  // The server's request id, to quote: it's the requestId in the log line.
+  await expect(page.locator("#plan-message")).toContainText("Reference: iad1::abc");
   // The buttons stay: trying again is the advice.
   await expect(page.locator('[data-plan="starter"]')).toBeEnabled();
 
@@ -376,10 +378,21 @@ test("a Stripe failure says the payment page couldn't be opened, not that the se
   await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
     route.fulfill({ json: { owner_id: "u1", status: "active", plan: "pro", stripe_customer_id: "cus_1" } }),
   );
-  await page.route("**/api/portal", (route) => route.fulfill({ status: 502, json: { error: "stripe" } }));
+  await page.route("**/api/portal", (route) =>
+    route.fulfill({ status: 502, json: { error: "stripe", requestId: "gru1::xyz" } }),
+  );
   await page.goto("/es/account.html");
   await page.locator("#manage-billing").click();
   await expect(page.locator("#plan-message")).toContainText("No se pudo abrir la página de facturación");
+  await expect(page.locator("#plan-message")).toContainText("Referencia: gru1::xyz");
+  // A refusal the person can act on (a wrong promo code) carries no reference: nothing failed on the server.
+  await signedIn(page, { status: "none", payments: true });
+  await page.route("**/api/checkout", (route) =>
+    route.fulfill({ status: 400, json: { error: "promo", requestId: "iad1::nope" } }),
+  );
+  await page.goto("/account.html?promo=WRONG");
+  await page.locator('[data-plan="starter"]').click();
+  await expect(page.locator("#plan-message")).not.toContainText("Reference");
 });
 
 test("sign-ups switched off after the sign-up page loaded: the refused sign-up says sign-ups are paused", async ({

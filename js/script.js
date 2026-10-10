@@ -2,6 +2,12 @@
 // language and theme menus), the offline notice, the FAQ and scroll reveal.
 // The design studio itself is js/studio.js.
 
+// Errors the page hits (an uncaught exception, a script that didn't load)
+// are reported to /api/log, so the owner can see browser-side failures in
+// the function log (js/net.js Net.reportErrors). Installed as soon as this
+// file runs, before the page's own scripts start.
+if (window.Net && typeof window.Net.reportErrors === "function") window.Net.reportErrors();
+
 document.addEventListener("DOMContentLoaded", function () {
   "use strict";
 

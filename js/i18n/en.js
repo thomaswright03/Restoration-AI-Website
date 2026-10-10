@@ -309,6 +309,7 @@
     "net.offlineNotice":
       "You're offline. You can keep looking around; saving and signing in wait until you're back online.",
     "net.backOnline": "You're back online.",
+    "net.reference": "Reference: {id}",
     "proj.loading": "Loading…",
     "proj.err.loadFailed": "Couldn't load your projects.",
     "proj.err.business":

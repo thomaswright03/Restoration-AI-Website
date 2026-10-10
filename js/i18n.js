@@ -702,6 +702,8 @@
       "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
     ],
     "net.backOnline": ["You're back online.", "Volvió la conexión.", "A conexão voltou."],
+    // After an API error: the request id the server logged, to quote when asking for help.
+    "net.reference": ["Reference: {id}", "Referencia: {id}", "Referência: {id}"],
     "proj.loading": ["Loading…", "Cargando…", "Carregando…"],
     "proj.err.loadFailed": [
       "Couldn't load your projects.",

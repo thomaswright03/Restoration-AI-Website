@@ -86,3 +86,40 @@ test("the header with its menus open has no accessibility violations and fits a 
   const box = await page.locator(".site-header .theme-menu [data-theme-choice='dark']").boundingBox();
   expect(box.height).toBeGreaterThanOrEqual(44);
 });
+
+test("an uncaught error or a script that fails to load is reported to /api/log, with the page and no personal data", async ({
+  page,
+}) => {
+  const reports = [];
+  await page.route("**/api/log", (route) => {
+    reports.push(route.request().postDataJSON());
+    route.fulfill({ status: 204, body: "" });
+  });
+  // A page error loop: the reports stop at Net.REPORT_MAX.
+  await page.goto("/index.html?lang=en");
+  await page.evaluate(() => {
+    for (let i = 0; i < 8; i++) {
+      setTimeout(() => {
+        throw new Error("boom " + i);
+      }, 0);
+    }
+  });
+  await expect.poll(() => reports.length, { timeout: 5000 }).toBe(5);
+  expect(reports[0]).toMatchObject({ kind: "error", page: "/index.html", lang: "en", userId: "" });
+  expect(reports[0].message).toContain("boom 0");
+  expect(reports[0].stack).toContain("boom 0");
+  expect(JSON.stringify(reports)).not.toContain("lang=en");
+
+  // A key file missing (a 404 on a script): reported with the file.
+  reports.length = 0;
+  await page.goto("/es/designer.html?lang=es");
+  await page.evaluate(() => {
+    const s = document.createElement("script");
+    s.src = "/js/does-not-exist.js";
+    document.head.appendChild(s);
+  });
+  await expect.poll(() => reports.length, { timeout: 5000 }).toBeGreaterThan(0);
+  const load = reports.find((r) => r.kind === "load");
+  expect(load).toMatchObject({ page: "/es/designer.html", lang: "es" });
+  expect(load.source).toContain("/js/does-not-exist.js");
+});

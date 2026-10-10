@@ -320,6 +320,7 @@
     "net.offlineNotice":
       "Está sin conexión. Puede seguir mirando; guardar e iniciar sesión esperan hasta que vuelva la conexión.",
     "net.backOnline": "Volvió la conexión.",
+    "net.reference": "Referencia: {id}",
     "proj.loading": "Cargando…",
     "proj.err.loadFailed": "No se pudieron cargar sus proyectos.",
     "proj.err.business":

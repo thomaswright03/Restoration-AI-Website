@@ -604,6 +604,33 @@ p {
   flex-wrap: wrap;
 }
 
+/* The product itself, under the hero text: a screenshot of the designer in a
+   thin frame that reads on the dark hero in both themes. The width/height
+   attributes keep its space before it loads. */
+.hero-shot {
+  max-width: 960px;
+  margin: var(--space-8) auto 0;
+}
+
+.hero-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-on-dark-line);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  background: #f3f5fb;
+}
+
+.hero-shot figcaption {
+  margin: var(--space-4) auto 0;
+  max-width: 560px;
+  font-size: var(--fs-sm);
+  color: var(--color-on-dark-muted);
+}
+
 /* ---------- Buttons ---------- */
 .btn {
   display: inline-flex;

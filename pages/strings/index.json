@@ -30,6 +30,16 @@
     "¿Tiene un código promocional? Sus primeros {{@promoDays}} días son gratis. Cancele cuando quiera.",
     "Tem um código promocional? Os seus primeiros {{@promoDays}} dias são grátis. Cancele quando quiser."
   ],
+  "index.heroImageAlt": [
+    "The designer's layout step: a 5 by 8 foot bathroom in 3D with a vanity, toilet and bathtub placed along its walls, a small floor plan in the corner, the list of fixtures in the room, and the running estimate in the top right.",
+    "El paso de distribución del diseñador: un baño de 5 por 8 pies en 3D con un mueble de lavabo, un inodoro y una bañera colocados junto a sus paredes, un pequeño plano en la esquina, la lista de piezas en el baño y la estimación actualizada arriba a la derecha.",
+    "A etapa de layout do projetista: um banheiro de 5 por 8 pés em 3D com um gabinete de pia, um vaso sanitário e uma banheira junto às paredes, uma pequena planta no canto, a lista de peças no banheiro e a estimativa atualizada no canto superior direito."
+  ],
+  "index.heroImageCaption": [
+    "The layout step: drag fixtures along the walls, see the plan at a glance, and watch the estimate follow.",
+    "El paso de distribución: arrastre las piezas junto a las paredes, vea el plano de un vistazo y observe cómo la estimación se actualiza.",
+    "A etapa de layout: arraste as peças junto às paredes, veja a planta de relance e acompanhe a estimativa mudar."
+  ],
   "index.how.eyebrow": ["How it works", "Cómo funciona", "Como funciona"],
   "index.how.title": ["Up and running in three steps", "Listo en tres pasos", "Pronto em três passos"],
   "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],

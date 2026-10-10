@@ -49,6 +49,26 @@ test("the landing page shows the plan prices from site-config.json in each langu
   await expect(page.locator(".plan-price").first()).toContainText("US$ 49,99");
 });
 
+test("the landing page's hero shows the designer itself, described in the page's language", async ({ page }) => {
+  for (const [dir, word] of [
+    ["", "layout step"],
+    ["es/", "distribución"],
+    ["pt/", "layout"],
+  ]) {
+    await page.goto(`/${dir}index.html?lang=${dir ? dir.slice(0, 2) : "en"}`);
+    const shot = page.locator(".hero .hero-shot img");
+    await expect(shot).toBeVisible();
+    await expect(shot).toHaveAttribute("alt", new RegExp(word, "i"));
+    await expect(shot).toHaveAttribute("width", "1440");
+    await expect(shot).toHaveAttribute("height", "743");
+    // A real, loaded image (not a broken one), served as WebP.
+    await expect
+      .poll(() => shot.evaluate((img) => img.complete && img.naturalWidth > 0 && /\.webp$/.test(img.currentSrc)))
+      .toBe(true);
+    await expect(page.locator(".hero .hero-shot figcaption")).not.toBeEmpty();
+  }
+});
+
 test("the demo designer speaks for the sample business", async ({ page }) => {
   await page.goto("/designer.html");
   await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");

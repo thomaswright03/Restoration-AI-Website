@@ -25,7 +25,7 @@ async function signedIn(
   } = {},
 ) {
   const calls = [];
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
         accounts: true,
@@ -225,7 +225,7 @@ test("kill switch: checkout paused hides the buy buttons and says so; a notice s
 });
 
 test("kill switch: with sign-ups paused the sign-up page offers only log in", async ({ page }) => {
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
         accounts: true,
@@ -319,7 +319,7 @@ const SESSION_JSON = {
 // The sign-up page with nobody signed in: /api/config says what it's told,
 // and Supabase Auth answers each call as the test decides.
 async function signupPage(page, config, auth) {
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: Object.assign(
         {
@@ -590,6 +590,7 @@ test("Escape closes the delete-account form; deleting a customer request asks in
 
   const dialog = page.locator("#lead-delete-dialog");
   const askAna = page.getByRole("button", { name: "Delete the request from Ana" });
+  await page.locator("#leads-card summary").click();
   await askAna.click();
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("Delete the request from Ana?");
@@ -616,4 +617,306 @@ test("Escape closes the delete-account form; deleting a customer request asks in
 
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   expect(axe.violations.map((v) => v.id)).toEqual([]);
+});
+
+// The account page when its own database reads fail or hang: it says so,
+// offers Try again, and shows nothing that could be acted on wrongly (no
+// "free plan", no Buy buttons, no empty business form to re-type into).
+const HANG = () => new Promise(() => {});
+const DOWN = (route) => route.fulfill({ status: 500, json: { code: "PGRST000", message: "connection refused" } });
+
+for (const [how, answer] of [
+  ["fails", DOWN],
+  ["hangs", HANG],
+]) {
+  test(`when the subscription read ${how}, the plan card says so with Try again, never the free plan or Buy buttons`, async ({
+    page,
+  }) => {
+    const calls = await signedIn(page, { plan: "starter", status: "active", payments: true });
+    let down = true;
+    await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) => {
+      if (down) return answer(route);
+      return route.fulfill({
+        json: { owner_id: "u1", status: "active", plan: "starter", stripe_customer_id: "cus_1" },
+      });
+    });
+    await page.goto("/account.html");
+    const status = page.locator("#plan-status");
+    await expect(status).toContainText("Your plan details couldn't be loaded", { timeout: 15000 });
+    await expect(status).not.toContainText(/free plan|Pick a plan/i);
+    await expect(page.locator("#plan-buy")).toBeHidden();
+    await expect(page.locator("#plan-manage")).toBeHidden();
+    await expect(page.locator("#plan-retry")).toBeVisible();
+    // The rest of the page still works: the business details loaded.
+    await expect(page.locator("#business-form")).toBeVisible();
+    await expect(page.locator("#biz-name")).toHaveValue("Smith Bath");
+    expect(calls).toEqual([]);
+
+    down = false;
+    await page.locator("#plan-retry").click();
+    await expect(status).toContainText("Active.");
+    await expect(page.locator("#plan-retry")).toBeHidden();
+    await expect(page.locator("#plan-manage")).toBeVisible();
+    await expect(page.locator("#plan-buy")).toBeHidden();
+  });
+
+  test(`when the business read ${how}, the form stays away and Try again brings the saved details back`, async ({
+    page,
+  }) => {
+    await signedIn(page, { plan: "starter", status: "active", payments: true, prices: { Toilet_Price: 250 } });
+    let down = true;
+    let posts = 0;
+    await page.route(SUPABASE + "/rest/v1/businesses**", (route) => {
+      if (route.request().method() !== "GET") posts++;
+      if (down) return answer(route);
+      return route.fulfill({
+        json: {
+          id: "b1",
+          owner_id: "u1",
+          slug: "smith-bath",
+          name: "Smith Bath",
+          phone: "",
+          email: "",
+          prices: { Toilet_Price: 250 },
+        },
+      });
+    });
+    await page.goto("/account.html");
+    const failed = page.locator("#business-failed");
+    await expect(failed).toContainText("Your business details couldn't be loaded", { timeout: 15000 });
+    await expect(failed).toContainText("what you saved is still there");
+    // No empty form to re-type into, no prices card with defaults, no old-requests card.
+    await expect(page.locator("#business-form")).toBeHidden();
+    await expect(page.locator("#biz-name")).toBeHidden();
+    await expect(page.locator("#prices-card")).toBeHidden();
+    await expect(page.locator("#leads-card")).toBeHidden();
+    // The plan card is unaffected.
+    await expect(page.locator("#plan-status")).toContainText("Active.");
+    expect(posts).toBe(0);
+
+    down = false;
+    await page.locator("#business-retry").click();
+    await expect(page.locator("#business-form")).toBeVisible();
+    await expect(failed).toBeHidden();
+    await expect(page.locator("#biz-name")).toHaveValue("Smith Bath");
+    await expect(page.locator("#prices-card")).toBeVisible();
+    await expect(page.locator('[data-price-key="Toilet_Price"]')).toHaveValue("250");
+    expect(posts).toBe(0);
+  });
+}
+
+test("the business form waits for the read instead of starting empty; a first save is an upsert on the owner", async ({
+  page,
+}) => {
+  await signedIn(page);
+  const requests = [];
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    const req = route.request();
+    if (req.method() === "GET") {
+      await new Promise((r) => setTimeout(r, 400));
+      return route.fulfill({ status: 200, contentType: "application/json", body: "null" });
+    }
+    requests.push({ method: req.method(), prefer: req.headers()["prefer"] || "", body: req.postDataJSON() });
+    return route.fulfill({
+      json: Object.assign({ id: "b9", owner_id: "u1", prices: {} }, req.postDataJSON()),
+    });
+  });
+  await page.goto("/account.html");
+  await expect(page.locator("#business-loading")).toBeVisible();
+  await expect(page.locator("#business-form")).toBeHidden();
+  await expect(page.locator("#business-form")).toBeVisible();
+  await expect(page.locator("#business-loading")).toBeHidden();
+  await page.locator("#biz-name").fill("New Co");
+  await expect(page.locator("#biz-slug")).toHaveValue("new-co");
+  await page.locator("#business-save").click();
+  await expect(page.locator("#business-status")).toHaveText("Saved.");
+  expect(requests).toHaveLength(1);
+  expect(requests[0].method).toBe("POST");
+  expect(requests[0].prefer).toMatch(/resolution=merge-duplicates/);
+  expect(requests[0].body).toEqual(expect.objectContaining({ owner_id: "u1", slug: "new-co", name: "New Co" }));
+  await expect(page.locator("#prices-card")).toBeVisible();
+});
+
+test("labor prices: each box says whether it's the default or the owner's, a line counts them, and a bad price is marked on its field", async ({
+  page,
+}) => {
+  await signedIn(page, { prices: { Toilet_Price: 250, Shower_Price: 1000, Sink_Price: 180 } });
+  await page.goto("/account.html");
+  await expect(page.locator("#prices-summary")).toHaveText(
+    "3 of 18 prices set; the other lines use the defaults shown in grey.",
+  );
+  await expect(page.locator("#price-Toilet_Price-mark")).toHaveText("Your price");
+  await expect(page.locator("#price-Demo_Price_Per_SqFt-mark")).toHaveText("Default");
+  await expect(page.locator('[data-price-key="Demo_Price_Per_SqFt"]')).toHaveAttribute(
+    "aria-describedby",
+    "price-Demo_Price_Per_SqFt-mark",
+  );
+  // The marks follow what's typed.
+  await page.locator('[data-price-key="Demo_Price_Per_SqFt"]').fill("40");
+  await expect(page.locator("#price-Demo_Price_Per_SqFt-mark")).toHaveText("Your price");
+  await expect(page.locator("#prices-summary")).toContainText("4 of 18");
+  await page.locator('[data-price-key="Toilet_Price"]').fill("");
+  await expect(page.locator("#price-Toilet_Price-mark")).toHaveText("Default");
+  await expect(page.locator("#prices-summary")).toContainText("3 of 18");
+
+  // A price out of range is pointed out at its box, which gets the focus; nothing is sent.
+  let patches = 0;
+  await page.route(SUPABASE + "/rest/v1/businesses**", (route) => {
+    if (route.request().method() === "PATCH") patches++;
+    return route.fallback();
+  });
+  await page.locator('[data-price-key="Sink_Price"]').fill("-5");
+  await page.locator("#prices-save").click();
+  await expect(page.locator('[data-price-key="Sink_Price"]')).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator('[data-price-key="Sink_Price"]')).toBeFocused();
+  await expect(page.locator('[data-price-key="Shower_Price"]')).not.toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#prices-status")).toContainText("Prices must be numbers from 0 to 100,000.");
+  expect(patches).toBe(0);
+  await page.locator('[data-price-key="Sink_Price"]').fill("200");
+  await expect(page.locator('[data-price-key="Sink_Price"]')).not.toHaveAttribute("aria-invalid", "true");
+
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+
+  // No prices and all prices, in Spanish and Portuguese.
+  await signedIn(page, { prices: {} });
+  await page.goto("/es/account.html");
+  await expect(page.locator("#prices-summary")).toContainText("Aún no fijó precios");
+  await expect(page.locator("#price-Toilet_Price-mark")).toHaveText("Predeterminado");
+  const all = {};
+  for (const key of await page.locator("[data-price-key]").evaluateAll((els) => els.map((e) => e.dataset.priceKey))) {
+    all[key] = 100;
+  }
+  await signedIn(page, { prices: all });
+  await page.goto("/pt/account.html");
+  await expect(page.locator("#prices-summary")).toHaveText(
+    "Todos os 18 preços definidos: cada linha da estimativa está no seu preço.",
+  );
+  await expect(page.locator("#price-Toilet_Price-mark")).toHaveText("Seu preço");
+});
+
+test("an ended plan with buying off or paused says plans can't be bought right now, not 'pick a plan below'", async ({
+  page,
+}) => {
+  await signedIn(page, { status: "canceled", payments: false });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("Paid plans aren't available right now");
+  await expect(page.locator("#plan-status")).not.toContainText(/start a new plan to save again|pick a plan below/i);
+  await expect(page.locator("#plan-buy")).toBeHidden();
+
+  await signedIn(page, {
+    status: "canceled",
+    payments: true,
+    switches: { signups: true, checkout: false, saving: true },
+  });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("Buying a plan is paused right now");
+  await expect(page.locator("#plan-buy")).toBeHidden();
+
+  await signedIn(page, { status: "incomplete_expired", payments: false });
+  await page.goto("/es/account.html");
+  await expect(page.locator("#plan-status")).toContainText("no se cobró nada");
+  await expect(page.locator("#plan-status")).toContainText("Los planes de pago no están disponibles por ahora");
+  await expect(page.locator("#plan-status")).not.toContainText(/Elija un plan abajo/);
+
+  await signedIn(page, {
+    status: "incomplete_expired",
+    payments: true,
+    switches: { signups: true, checkout: false, saving: true },
+  });
+  await page.goto("/pt/account.html");
+  await expect(page.locator("#plan-status")).toContainText("A compra de planos está pausada no momento");
+  await expect(page.locator("#plan-status")).not.toContainText(/Escolha um plano abaixo/);
+  await expect(page.locator("#plan-buy")).toBeHidden();
+
+  // With buying possible, the ended plan still offers the buttons.
+  await signedIn(page, { status: "canceled", payments: true });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("start a new plan to save again");
+  await expect(page.locator("#plan-buy")).toBeVisible();
+});
+
+test("old homeowner requests sit folded under a heading that says what they are, and open to read", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    leads: [{ id: "l1", name: "Ana", phone: "555", email: "", service: "", message: "Hi", created_at: DAY_LEAD }],
+  });
+  await page.goto("/account.html");
+  const card = page.locator("#leads-card");
+  await expect(card).toBeVisible();
+  await expect(card.locator("summary")).toContainText(
+    "Old homeowner requests (from before the designer became owner-only)",
+  );
+  await expect(card.locator("details")).not.toHaveAttribute("open", "");
+  await expect(page.locator("#leads-list")).toBeHidden();
+  await card.locator("summary").click();
+  await expect(page.locator("#leads-list")).toBeVisible();
+  await expect(page.locator("#leads-list")).toContainText("Ana");
+  await expect(card).toContainText("Nothing new arrives here");
+  await expect(page.locator("body")).not.toContainText(/Customer requests/);
+});
+
+test("signed out, the account page goes to the sign-in that lands on My projects; a plan link comes back here", async ({
+  page,
+}) => {
+  await page.route("**/api/config*", (route) =>
+    route.fulfill({
+      json: { accounts: true, payments: true, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {}, switches: {} },
+    }),
+  );
+  await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
+  // The header's Log in link points at the account page.
+  await page.goto("/index.html");
+  await expect(page.locator("[data-auth-link]")).toHaveAttribute("href", /account\.html$/);
+  await page.locator("[data-auth-link]").click();
+  await page.waitForURL(/\/signup\.html\?mode=login$/);
+  await expect(page.locator('[data-mode="login"]')).toHaveAttribute("aria-pressed", "true");
+  await page.goto("/es/account.html");
+  await page.waitForURL(/\/es\/signup\.html\?mode=login$/);
+  await page.goto("/account.html?plan=pro&promo=FREEWEEK");
+  await page.waitForURL(/\/signup\.html\?mode=login&next=%2Faccount\.html%3Fplan%3Dpro%26promo%3DFREEWEEK$/);
+});
+
+test("a sign-up refused within the switch cache window asks the server for a fresh reading", async ({ page }) => {
+  // The first /api/config says sign-ups are on; only a ?fresh=1 read says off,
+  // the way the server answers when the switch flipped seconds ago.
+  const configUrls = [];
+  await signupPage(
+    page,
+    () => ({ switches: { signups: true, checkout: true, saving: true } }),
+    (route) => {
+      if (/\/auth\/v1\/signup/.test(route.request().url())) {
+        return route.fulfill({
+          status: 500,
+          json: { code: 500, error_code: "unexpected_failure", msg: "Database error saving new user" },
+        });
+      }
+      return route.fulfill({ json: {} });
+    },
+  );
+  await page.route("**/api/config**", (route) => {
+    const url = new URL(route.request().url());
+    configUrls.push(url.search);
+    const fresh = url.searchParams.get("fresh") === "1";
+    return route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: !fresh, checkout: true, saving: true },
+        notice: "",
+      },
+    });
+  });
+  await page.goto("/signup.html");
+  await expect(page.locator("#auth-card")).toBeVisible();
+  await page.getByLabel("Email").fill("new@example.com");
+  await page.getByLabel("Password").fill("longenough1");
+  await page.locator("#auth-submit").click();
+  await expect(page.locator("#auth-status")).toContainText("New sign-ups are paused right now");
+  await expect(page.locator("#auth-status")).not.toContainText(/service had a problem|went wrong/);
+  expect(configUrls).toContain("?fresh=1");
 });

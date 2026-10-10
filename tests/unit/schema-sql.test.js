@@ -244,6 +244,158 @@ test("row-level security: a signed-in owner reads only their own projects and ca
   );
 });
 
+test("row-level security: businesses are the owner's alone to read and change", async () => {
+  await db.query("insert into auth.users (id) values ($1::uuid), ($2::uuid) on conflict do nothing", [USER, OTHER]);
+  await db.query(
+    "insert into public.businesses (owner_id, slug, name) values ($1::uuid, 'mine-co', 'Mine Co'), ($2::uuid, 'theirs-co', 'Theirs Co') on conflict (owner_id) do nothing",
+    [USER, OTHER],
+  );
+  const seen = await as("authenticated", USER, (tx) => tx.query("select slug from public.businesses order by slug"));
+  assert.deepEqual(
+    seen.rows.map((r) => r.slug),
+    ["mine-co"],
+  );
+  // Another owner's row can't be changed, deleted or even found by id.
+  const upd = await as("authenticated", USER, (tx) =>
+    tx.query("update public.businesses set name = 'Taken over' where slug = 'theirs-co' returning id"),
+  );
+  assert.equal(upd.rows.length, 0);
+  const del = await as("authenticated", USER, (tx) =>
+    tx.query("delete from public.businesses where slug = 'theirs-co' returning id"),
+  );
+  assert.equal(del.rows.length, 0, "no delete policy at all: deleting goes with the account");
+  await assert.rejects(
+    as("authenticated", USER, (tx) =>
+      tx.query("insert into public.businesses (owner_id, slug, name) values ($1::uuid, 'sneaked-co', 'Sneaked')", [
+        OTHER,
+      ]),
+    ),
+    /row-level security/,
+    "a row can't be created in another owner's name",
+  );
+  await assert.rejects(
+    as("authenticated", USER, (tx) =>
+      tx.query("update public.businesses set owner_id = $1::uuid where slug = 'mine-co'", [OTHER]),
+    ),
+    /row-level security/,
+    "a row can't be handed to another owner",
+  );
+  const theirs = await db.query("select name, owner_id from public.businesses where slug = 'theirs-co'");
+  assert.equal(theirs.rows[0].name, "Theirs Co");
+  // The owner's own row is theirs to update.
+  const mine = await as("authenticated", USER, (tx) =>
+    tx.query("update public.businesses set phone = '555' where slug = 'mine-co' returning phone"),
+  );
+  assert.equal(mine.rows[0].phone, "555");
+});
+
+test("one business per account: a second insert fails and an upsert on owner_id updates the row", async () => {
+  await db.query("insert into auth.users (id) values ($1::uuid) on conflict do nothing", [USER]);
+  await db.query(
+    "insert into public.businesses (owner_id, slug, name) values ($1::uuid, 'mine-co', 'Mine Co') on conflict (owner_id) do nothing",
+    [USER],
+  );
+  // What js/account.js would have done with a read that wrongly came back empty.
+  await assert.rejects(
+    as("authenticated", USER, (tx) =>
+      tx.query("insert into public.businesses (owner_id, slug, name) values ($1::uuid, 'mine-again', 'Mine')", [USER]),
+    ),
+    /businesses_owner_id_key/,
+  );
+  // What it does now: PostgREST's upsert with on_conflict=owner_id.
+  const r = await as("authenticated", USER, (tx) =>
+    tx.query(
+      "insert into public.businesses (owner_id, slug, name, phone) values ($1::uuid, 'mine-co', 'Mine Co', '777') on conflict (owner_id) do update set slug = excluded.slug, name = excluded.name, phone = excluded.phone returning id, phone",
+      [USER],
+    ),
+  );
+  assert.equal(r.rows[0].phone, "777");
+  assert.equal(await count("businesses", USER), 1, "still one row");
+});
+
+test("row-level security: a subscription is readable by its owner only, and never written from the browser", async () => {
+  await db.query("insert into auth.users (id) values ($1::uuid), ($2::uuid) on conflict do nothing", [USER, OTHER]);
+  await db.query(
+    "insert into public.subscriptions (owner_id, status, plan) values ($1::uuid, 'active', 'pro'), ($2::uuid, 'canceled', 'starter') on conflict (owner_id) do update set status = excluded.status, plan = excluded.plan",
+    [USER, OTHER],
+  );
+  const seen = await as("authenticated", USER, (tx) => tx.query("select status, plan from public.subscriptions"));
+  assert.deepEqual(seen.rows, [{ status: "active", plan: "pro" }]);
+  const other = await as("authenticated", OTHER, (tx) => tx.query("select status from public.subscriptions"));
+  assert.deepEqual(other.rows, [{ status: "canceled" }]);
+  // No insert, update or delete policy: only the Stripe webhook (service role) writes.
+  const upd = await as("authenticated", USER, (tx) =>
+    tx.query("update public.subscriptions set plan = 'max', status = 'active' returning owner_id"),
+  );
+  assert.equal(upd.rows.length, 0);
+  const del = await as("authenticated", USER, (tx) => tx.query("delete from public.subscriptions returning owner_id"));
+  assert.equal(del.rows.length, 0);
+  await assert.rejects(
+    as("authenticated", USER, (tx) =>
+      tx.query("insert into public.subscriptions (owner_id, status, plan) values ($1::uuid, 'active', 'max')", [
+        "44444444-4444-4444-8444-444444444444",
+      ]),
+    ),
+    /row-level security/,
+  );
+  const still = await db.query("select plan from public.subscriptions where owner_id = $1::uuid", [USER]);
+  assert.equal(still.rows[0].plan, "pro");
+});
+
+test("row-level security: leads follow their business: read and delete by its owner only, never inserted from the browser", async () => {
+  await db.query("insert into auth.users (id) values ($1::uuid), ($2::uuid) on conflict do nothing", [USER, OTHER]);
+  await db.query(
+    "insert into public.businesses (owner_id, slug, name) values ($1::uuid, 'mine-co', 'Mine Co'), ($2::uuid, 'theirs-co', 'Theirs Co') on conflict (owner_id) do nothing",
+    [USER, OTHER],
+  );
+  const biz = await db.query("select id, owner_id from public.businesses where owner_id in ($1::uuid, $2::uuid)", [
+    USER,
+    OTHER,
+  ]);
+  const mineId = biz.rows.find((r) => r.owner_id === USER).id;
+  const theirsId = biz.rows.find((r) => r.owner_id === OTHER).id;
+  await db.query("delete from public.leads where business_id in ($1::uuid, $2::uuid)", [mineId, theirsId]);
+  await db.query(
+    "insert into public.leads (business_id, name) values ($1::uuid, 'Ana (mine)'), ($2::uuid, 'Bo (theirs)')",
+    [mineId, theirsId],
+  );
+  const seen = await as("authenticated", USER, (tx) => tx.query("select name from public.leads order by name"));
+  assert.deepEqual(
+    seen.rows.map((r) => r.name),
+    ["Ana (mine)"],
+  );
+  const del = await as("authenticated", USER, (tx) =>
+    tx.query("delete from public.leads where business_id = $1::uuid returning id", [theirsId]),
+  );
+  assert.equal(del.rows.length, 0, "another business's request can't be deleted");
+  const upd = await as("authenticated", USER, (tx) =>
+    tx.query("update public.leads set name = 'x' where business_id = $1::uuid returning id", [mineId]),
+  );
+  assert.equal(upd.rows.length, 0, "no update policy: requests are read or deleted, never edited");
+  await assert.rejects(
+    as("authenticated", USER, (tx) =>
+      tx.query("insert into public.leads (business_id, name) values ($1::uuid, 'Planted')", [mineId]),
+    ),
+    /row-level security/,
+    "the form that wrote leads is retired; nothing inserts from the browser",
+  );
+  const own = await as("authenticated", USER, (tx) =>
+    tx.query("delete from public.leads where business_id = $1::uuid returning name", [mineId]),
+  );
+  assert.deepEqual(
+    own.rows.map((r) => r.name),
+    ["Ana (mine)"],
+  );
+  const left = await db.query("select name from public.leads where business_id in ($1::uuid, $2::uuid)", [
+    mineId,
+    theirsId,
+  ]);
+  assert.deepEqual(
+    left.rows.map((r) => r.name),
+    ["Bo (theirs)"],
+  );
+});
+
 test("row-level security: the anon key reads nothing", async () => {
   for (const table of ["businesses", "subscriptions", "projects", "project_creations", "leads"]) {
     const r = await as("anon", null, (tx) => tx.query(`select count(*)::int as n from public.${table}`));

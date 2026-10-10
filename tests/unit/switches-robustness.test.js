@@ -366,6 +366,32 @@ test("kill switch: the row is read with a short time limit, and a hung database 
   assert.equal(cfg.json().switches.checkout, false);
 });
 
+test("/api/config?fresh=1 reads the switches again inside the cache window; without it the cache answers", async () => {
+  const row = { signups: true, checkout: true, saving: true, notice: "" };
+  const calls = setup({ switches: row });
+  const reads = () => calls.filter((c) => c.url.includes("site_switches")).length;
+  let cfg = fakeRes();
+  await require("../../api/config.js")({ headers: {}, query: {} }, cfg);
+  assert.equal(cfg.json().switches.signups, true);
+  assert.equal(reads(), 1);
+  // The owner pauses sign-ups a moment later: the cache still says on...
+  row.signups = false;
+  cfg = fakeRes();
+  await require("../../api/config.js")({ headers: {}, query: {} }, cfg);
+  assert.equal(cfg.json().switches.signups, true);
+  assert.equal(reads(), 1, "answered from the cache");
+  // ...but the sign-up page, explaining a refused sign-up, asks for a fresh reading.
+  cfg = fakeRes();
+  await require("../../api/config.js")({ headers: {}, query: { fresh: "1" } }, cfg);
+  assert.equal(cfg.json().switches.signups, false);
+  assert.equal(reads(), 2);
+  // The fresh reading refreshes the cache for everyone.
+  cfg = fakeRes();
+  await require("../../api/config.js")({ headers: {}, query: {} }, cfg);
+  assert.equal(cfg.json().switches.signups, false);
+  assert.equal(reads(), 2);
+});
+
 test("checkout: the idempotency key changes with the language and the promo code, not just the plan", async () => {
   const key = (calls) => calls.find((c) => c.url.includes("/v1/checkout/sessions")).headers["Idempotency-Key"];
   let calls = setup();

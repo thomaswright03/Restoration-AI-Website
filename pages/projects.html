@@ -95,31 +95,40 @@
               <a class="btn btn-primary" href="{{@root}}{{@dir}}designer.html">{{projects.list.emptyAction}}</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
-            <div class="project-table-head" id="projects-table-head" hidden>
-              <button type="button" class="project-sort" data-sort="name" aria-label="{{projects.sort.name}}">
-                {{projects.col.name}}
-              </button>
-              <span>{{projects.col.client}}</span>
-              <button
-                type="button"
-                class="project-sort"
-                data-sort="status"
-                aria-label="{{projects.sort.status}}"
-              >
-                {{projects.col.status}}
-              </button>
-              <button type="button" class="project-sort" data-sort="start" aria-label="{{projects.sort.start}}">
-                {{projects.col.start}}
-              </button>
-              <button
-                type="button"
-                class="project-sort"
-                data-sort="updated"
-                aria-label="{{projects.sort.updated}}"
-              >
-                {{projects.col.updated}}
-              </button>
-              <span>{{projects.col.actions}}</span>
+            <!-- The table view's heading row (css/product.css): a column header per
+                 cell, the sortable ones a button that sorts either way (js/projects.js
+                 sets aria-sort on the one in use). -->
+            <div
+              class="project-table-head"
+              id="projects-table-head"
+              role="table"
+              aria-label="{{projects.list.title}}"
+              hidden
+            >
+              <div class="project-table-row" role="row">
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="name">
+                    {{projects.col.name}}
+                  </button>
+                </div>
+                <div role="columnheader">{{projects.col.client}}</div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="status">
+                    {{projects.col.status}}
+                  </button>
+                </div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="start">
+                    {{projects.col.start}}
+                  </button>
+                </div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="updated">
+                    {{projects.col.updated}}
+                  </button>
+                </div>
+                <div role="columnheader" class="project-col-actions">{{projects.col.actions}}</div>
+              </div>
             </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>

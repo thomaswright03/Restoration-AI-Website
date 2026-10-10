@@ -148,6 +148,8 @@
     "proj.summary.free":
       "Tiene el plan gratis: puede usar el diseñador, pero para guardar proyectos necesita un plan de pago.",
     "proj.summary.paid": "Plan {plan}: {month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+    "proj.summary.counts": "{month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+    "proj.summary.planPending": "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
     "proj.updated": "Actualizado el {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",
@@ -233,6 +235,8 @@
     "proj.mat.laborTotal": "Mano de obra",
     "proj.mat.materialsTotal": "Materiales",
     "proj.mat.total": "Total estimado",
+    "proj.mat.ratesSample": "La mano de obra estaba a las tarifas de ejemplo de Room Designer 3D cuando se guardó.",
+    "proj.mat.ratesPartial": "Al guardarse, estas líneas estaban a tarifas de ejemplo: {list}.",
     "proj.mat.asOf":
       "Según el diseño guardado por última vez ({date}). Los precios son estimados y pueden haber cambiado.",
     "proj.err.name": "Póngale un nombre al proyecto.",
@@ -321,6 +325,7 @@
       "Está sin conexión. Puede seguir mirando; guardar e iniciar sesión esperan hasta que vuelva la conexión.",
     "net.backOnline": "Volvió la conexión.",
     "net.reference": "Referencia: {id}",
+    "net.offlineDismiss": "Cerrar este aviso",
     "proj.loading": "Cargando…",
     "proj.err.loadFailed": "No se pudieron cargar sus proyectos.",
     "proj.err.business":

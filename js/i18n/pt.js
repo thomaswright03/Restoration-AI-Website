@@ -148,6 +148,8 @@
     "proj.summary.free":
       "Você está no plano grátis: pode usar o projetista, mas para salvar projetos precisa de um plano pago.",
     "proj.summary.paid": "Plano {plan}: {month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    "proj.summary.counts": "{month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    "proj.summary.planPending": "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
     "proj.updated": "Atualizado em {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",
@@ -233,6 +235,8 @@
     "proj.mat.laborTotal": "Mão de obra",
     "proj.mat.materialsTotal": "Materiais",
     "proj.mat.total": "Total estimado",
+    "proj.mat.ratesSample": "A mão de obra estava nos valores de exemplo do Room Designer 3D quando isto foi salvo.",
+    "proj.mat.ratesPartial": "Ao salvar, estas linhas estavam em valores de exemplo: {list}.",
     "proj.mat.asOf": "Conforme o projeto salvo por último ({date}). Os preços são estimativas e podem ter mudado.",
     "proj.err.name": "Dê um nome ao projeto.",
     "proj.err.paused":
@@ -317,6 +321,7 @@
     "net.offlineNotice": "Você está off-line. Pode continuar olhando; salvar e entrar esperam até a conexão voltar.",
     "net.backOnline": "A conexão voltou.",
     "net.reference": "Referência: {id}",
+    "net.offlineDismiss": "Fechar este aviso",
     "proj.loading": "Carregando…",
     "proj.err.loadFailed": "Não foi possível carregar os seus projetos.",
     "proj.err.business":

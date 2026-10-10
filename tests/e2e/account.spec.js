@@ -7,10 +7,14 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
+const { delayed, slowSignIn, orders } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 const DAY_LEAD = "2026-10-02T00:00:00Z";
 
+// delays (ms) hold each mocked answer, for the slow and out-of-order answers
+// live gives: signin (the sign-in library), subscription (the plan row),
+// business (the business row), projects (/api/projects).
 async function signedIn(
   page,
   {
@@ -22,9 +26,11 @@ async function signedIn(
     notice = "",
     periodEnd = "2026-11-01T00:00:00Z",
     prices = {},
+    delays = {},
   } = {},
 ) {
   const calls = [];
+  await slowSignIn(page, delays.signin);
   await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
@@ -41,22 +47,25 @@ async function signedIn(
     }),
   );
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
-  await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
-    route.fulfill({
+  await page.route(SUPABASE + "/rest/v1/subscriptions**", async (route) => {
+    await delayed(delays.subscription);
+    return route.fulfill({
       json: { owner_id: "u1", status, plan, current_period_end: periodEnd },
-    }),
-  );
-  await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
-    route.fulfill({
+    });
+  });
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    await delayed(delays.business);
+    return route.fulfill({
       json: { id: "b1", owner_id: "u1", slug: "smith-bath", name: "Smith Bath", phone: "", email: "", prices },
-    }),
-  );
+    });
+  });
   await page.route(SUPABASE + "/rest/v1/leads**", (route) => route.fulfill({ json: leads }));
-  await page.route("**/api/projects**", (route) =>
-    route.fulfill({
+  await page.route("**/api/projects**", async (route) => {
+    await delayed(delays.projects);
+    return route.fulfill({
       json: { plan, limits: { monthly: 10, total: 50 }, used: { month: 0, total: 0 }, projects: [] },
-    }),
-  );
+    });
+  });
   await page.route("**/api/checkout", async (route) => {
     calls.push(route.request().postDataJSON());
     return route.fulfill({ json: { ok: true } });
@@ -1014,7 +1023,47 @@ test("when /api/config fails the notice says why: the server, or the connection"
   await expect(page.locator("#server-down")).not.toContainText(/internet connection/);
   await page.route("**/api/config*", (route) => route.abort("connectionrefused"));
   await page.goto("/es/signup.html");
-  await expect(page.locator("#server-down")).toContainText("No se pudo conectar con el servidor");
+  await expect(page.locator("#server-down")).toContainText("No pudimos conectar con el servidor.");
+  // The heading already says the server couldn't be reached: the line under
+  // it says what to do, not the same thing again.
+  await expect(page.locator("#server-down")).not.toContainText("No se pudo conectar con el servidor");
+  await expect(page.locator("#server-down")).toContainText("Revise su conexión a internet");
+  await page.goto("/account.html");
+  await expect(page.locator("#server-down")).toContainText("We couldn't reach the server.");
+  await expect(page.locator("#server-down")).not.toContainText("The server couldn't be reached");
+  await expect(page.locator("#server-down")).toContainText("Check your internet connection, then try again.");
+});
+
+// When the plan can't be read, no card on the page names a plan: the Projects
+// card shows the counts alone until the plan card knows, then both agree.
+test("when the plan can't be loaded the Projects card doesn't claim one either, and both agree once it loads", async ({
+  page,
+}) => {
+  await signedIn(page, { plan: "starter" });
+  let failing = true;
+  await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) => {
+    if (!failing) return route.fallback();
+    return route.fulfill({ status: 500, json: { code: "PGRST000", message: "db down" } });
+  });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("Your plan details couldn't be loaded", { timeout: 20000 });
+  const summary = page.locator("#projects-summary");
+  await expect(summary).toContainText("0 of 10 new projects this month, 0 of 50 saved.");
+  await expect(summary).not.toContainText(/Starter|plan/i);
+  failing = false;
+  await page.locator("#plan-retry").click();
+  await expect(page.locator("#plan-status")).not.toContainText("couldn't be loaded");
+  await expect(summary).toContainText("Starter plan: 0 of 10 new projects this month, 0 of 50 saved.");
+
+  // On the free plan (no counts to show) the card says the plan is still to come, in Portuguese too.
+  failing = true;
+  await page.route("**/api/projects**", (route) =>
+    route.fulfill({ json: { plan: "free", limits: { monthly: 0, total: 0 }, used: { month: 0, total: 0 } } }),
+  );
+  await page.goto("/pt/account.html");
+  await expect(page.locator("#plan-status")).toContainText("não puderam ser carregados", { timeout: 20000 });
+  await expect(summary).toContainText("O que o seu plano permite vai aparecer aqui");
+  await expect(summary).not.toContainText(/grátis/i);
 });
 
 // The account page shows the owner's full designer address, not only its
@@ -1049,4 +1098,36 @@ test("the account page shows the full designer address with Copy and Open; a cha
   await page.goto("/es/account.html");
   await expect(url).toHaveText(/\/es\/designer\.html\?b=smith-bath$/);
   await expect(page.locator("#biz-url-copy")).toHaveText("Copiar dirección");
+});
+
+// The account page's three reads (the plan, the business, the project
+// counts) and the sign-in check land in any order on live: every card must
+// end up right, and no card may read a "loading" state as an answer.
+test("the account page fills every card whichever answers first: the plan, the business, the projects or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const runs = orders("subscription", "business").concat(
+    orders("signin", "subscription"),
+    orders("projects", "subscription"),
+    orders("signin", "business"),
+  );
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { plan: "pro", delays, prices: { Toilet_Price: 250 } });
+    await page.goto("/account.html");
+    await expect(page.locator("#account-app"), which).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("#plan-status"), which).toContainText("Active. Renews on November 1, 2026.", {
+      timeout: 15000,
+    });
+    await expect(page.locator("#plan-status"), which).not.toContainText(/couldn't be loaded|Loading/);
+    await expect(page.locator("#biz-name"), which).toHaveValue("Smith Bath", { timeout: 15000 });
+    await expect(page.locator("#business-failed"), which).toBeHidden();
+    await expect(page.locator("#projects-summary"), which).toContainText(
+      "Pro plan: 0 of 10 new projects this month, 0 of 50 saved.",
+      { timeout: 15000 },
+    );
+    await expect(page.locator("#biz-url"), which).toHaveText(/designer\.html\?b=smith-bath$/);
+  }
 });

@@ -8,11 +8,21 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
-const { openStudio, answerAll, step } = require("./helpers.js");
+const { openStudio, answerAll, step, delayed, slowSignIn, orders } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", projects = [], used, limits, prices = {}, bizDelay = 0 } = {}) {
+// delays (ms) hold each mocked answer, so a flow can be run with the slow and
+// out-of-order answers live gives: signin (the sign-in library, so the
+// sign-in check finishes late), business (the designer's /api/business
+// profile), businessRow (the businesses row My projects and the project page
+// read), projects (/api/projects). bizDelay is the old name of delays.business.
+async function signedIn(
+  page,
+  { plan = "starter", projects = [], used, limits, prices = {}, bizDelay = 0, delays = {} } = {},
+) {
+  delays = Object.assign({ business: bizDelay }, delays);
+  await slowSignIn(page, delays.signin);
   const state = {
     plan,
     limits: limits || (plan === "free" ? { monthly: 0, total: 0 } : { monthly: 10, total: 50 }),
@@ -20,17 +30,20 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
     projects: projects.slice(),
     calls: [],
   };
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
     }),
   );
   // Later routes win: anything else Supabase is asked gets an empty answer.
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
-  await page.route(SUPABASE + "/rest/v1/businesses**", (route) => route.fulfill({ json: { slug: "smith-bath" } }));
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    await delayed(delays.businessRow);
+    return route.fulfill({ json: { slug: "smith-bath" } });
+  });
   // The business's designer profile, as api/business.js would send it.
   await page.route("**/api/business?b=smith-bath*", async (route) => {
-    if (bizDelay) await new Promise((resolve) => setTimeout(resolve, bizDelay));
+    await delayed(delays.business);
     return route.fulfill({
       contentType: "application/javascript",
       body: `window.DesignerBusiness.load(${JSON.stringify({ slug: "smith-bath", name: "Smith Bath Co.", prices })});`,
@@ -41,6 +54,7 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
     const url = new URL(req.url());
     const body = req.postData() ? JSON.parse(req.postData()) : null;
     state.calls.push({ method: req.method(), id: url.searchParams.get("id"), body });
+    await delayed(delays.projects);
     const find = (id) => state.projects.find((p) => p.id === id);
     if (req.method() === "GET" && url.searchParams.get("id")) {
       const p = find(url.searchParams.get("id"));
@@ -251,19 +265,111 @@ test("the designer opens a saved project as that project: no link toast, its ans
   await expect(page.locator("#project-status")).toContainText("Unsaved changes");
 });
 
-test("a business profile that answers after the sign-in check still opens the saved project and shows the save bar", async ({
+// The race round 4 shipped (9c0c220): the sign-in check and the business
+// profile load side by side, and on live the profile is the slower one. Both
+// orders must open the saved project and show the save bar, and nothing of
+// the sample business shows while the owner's profile is on its way.
+test("the owner's designer opens a saved project and shows the save bar whichever answers first: the business profile or the sign-in check", async ({
   page,
 }) => {
+  test.setTimeout(150000);
   await page.goto("/designer.html");
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
-  await signedIn(page, { projects: [{ id: "a1", name: "Late bath", design, updated_at: DAY }], bizDelay: 1500 });
-  await openStudio(page, "/designer.html?b=smith-bath&project=a1");
-  await expect(page.locator("#project-bar")).toContainText("Project: Late bath");
-  await expect(page.locator("#studio-loading")).toBeHidden();
-  // The owner's designer with no project keeps its save bar too.
-  await openStudio(page, "/designer.html?b=smith-bath");
-  await expect(page.locator("#project-bar")).toBeVisible();
-  await expect(page.locator("#project-save-form")).toBeVisible();
+  for (const delays of orders("business", "signin")) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { projects: [{ id: "a1", name: "Late bath", design, updated_at: DAY }], delays });
+    await page.goto("/designer.html?b=smith-bath&project=a1");
+    // The header never says "Sample Remodeling Co." while the business loads
+    // (the hung-lookup test in business-profile.spec.js watches the whole wait).
+    await expect(page.locator(".studio-biz"), which).not.toContainText("Sample");
+    await expect(page.locator(".studio-step-btn"), which).toHaveCount(6, { timeout: 30000 });
+    await expect(page.locator("#project-bar"), which).toContainText("Project: Late bath");
+    await expect(page.locator("#project-save"), which).toBeVisible();
+    await expect(page.locator("#studio-loading"), which).toBeHidden();
+    await expect(page.locator(".studio-biz"), which).toHaveText("Smith Bath Co.");
+    // The owner's designer with no project keeps its save bar too.
+    await page.goto("/designer.html?b=smith-bath");
+    await expect(page.locator(".studio-step-btn"), which).toHaveCount(6, { timeout: 30000 });
+    await expect(page.locator("#project-bar"), which).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("#project-save-form"), which).toBeVisible();
+    await expect(page.locator("#project-bar"), which).toContainText("isn't saved");
+  }
+});
+
+// The same for the project API answering late: the bar waits ("Opening…")
+// and never offers a Save that would make a second project.
+test("the owner's designer with the projects API slower than the sign-in and the profile still opens the project", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, {
+    projects: [{ id: "a1", name: "Slow API bath", design, updated_at: DAY }],
+    delays: { projects: 2000 },
+  });
+  await page.goto("/designer.html?b=smith-bath&project=a1");
+  await expect(page.locator("#project-bar")).toContainText("Opening your project…", { timeout: 15000 });
+  await expect(page.locator("#project-save")).toBeHidden();
+  await expect(page.locator("#project-bar")).toContainText("Project: Slow API bath", { timeout: 30000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
+  await expect(page.locator("#project-save")).toBeVisible();
+});
+
+// My projects and a project's page read the projects API and the business
+// row side by side, after the sign-in check: every order must land on the
+// owner's designer, never the demo one, with the list or the 3D viewer in.
+test("My projects lists the projects whichever answers first: the business row, the projects API or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const projects = [
+    { id: "a1", name: "Smith main bath", design: "", updated_at: DAY },
+    { id: "a2", name: "Lee guest bath", design: "", updated_at: DAY },
+  ];
+  const runs = orders("businessRow", "projects").concat(orders("signin", "businessRow"), orders("signin", "projects"));
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { projects, delays });
+    await page.goto("/projects.html");
+    await expect(page.locator(".project-item"), which).toHaveCount(2, { timeout: 15000 });
+    await expect(page.locator("#projects-plan"), which).toHaveText("Plan: Starter");
+    await expect(page.locator("#project-new"), which).toHaveAttribute("href", /designer\.html\?b=smith-bath$/);
+    await expect(page.locator("#projects-failed"), which).toBeHidden();
+  }
+});
+
+test("a project's page and its 3D model tab open whichever answers first: the business row, the projects API or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(240000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const runs = orders("businessRow", "projects").concat(orders("signin", "businessRow"));
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    // The viewer in the frame loads the business profile and the project
+    // too, with the same delays.
+    await signedIn(page, {
+      projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }],
+      delays: Object.assign({ business: delays.businessRow || 0 }, delays),
+    });
+    await page.goto("/project.html?id=a1");
+    await expect(page.locator("#project-title"), which).toHaveText("Garcia bath", { timeout: 15000 });
+    await expect(page.locator("#project-edit"), which).toHaveAttribute(
+      "href",
+      /designer\.html\?b=smith-bath&project=a1$/,
+    );
+    await expect(page.locator("#project-model-frame"), which).toHaveAttribute("src", /b=smith-bath.*embed=1$/);
+    const frame = page.frameLocator("#project-model-frame");
+    await expect(frame.locator("#studio-loading"), which).toBeHidden({ timeout: 40000 });
+    await expect(frame.locator("#room-3d-canvas canvas"), which).toBeVisible({ timeout: 40000 });
+    await expect(frame.locator(".studio-biz"), which).toHaveText("Smith Bath Co.");
+    await expect(frame.locator("#designer-failed"), which).toBeHidden();
+  }
 });
 
 test("on the free plan the designer works but has no save button", async ({ page }) => {
@@ -364,8 +470,67 @@ test("a project's page shows its 3D model, edits its info, and lists its materia
   await expect(page.locator("#project-materials")).toContainText("44 sq ft");
   await expect(page.locator("#project-materials")).toContainText("Not priced");
   await expect(page.locator(".materials-totals")).toContainText("$732");
+  // An older row, saved before the rates were recorded: nothing about them.
+  await expect(page.locator("#project-materials")).not.toContainText(/sample rates/);
   const axe2 = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("#project-model-frame").analyze();
   expect(axe2.violations.map((v) => v.id)).toEqual([]);
+});
+
+// The materials list says how the labor was priced when the design was
+// saved (summary.rates): at sample rates throughout, some named lines, or
+// (the business's own prices) nothing.
+test("a project's materials list says which labor lines were at sample rates when it was saved, in en/es/pt", async ({
+  page,
+}) => {
+  const base = {
+    v: 1,
+    room: { w: 8, l: 5, h: 8 },
+    fixtures: [],
+    labor: [{ label: "Tile floor", detail: "40 sq ft", cost: 600 }],
+    laborSubtotal: 600,
+    materials: [],
+    products: [],
+    materialsTotal: 0,
+    grandTotal: 600,
+    notes: [],
+  };
+  await signedIn(page, {
+    projects: [
+      {
+        id: "s1",
+        name: "Sample",
+        summary: Object.assign({}, base, { rates: { mode: "sample", sampleLines: ["Tile floor"] } }),
+        updated_at: DAY,
+      },
+      {
+        id: "p1",
+        name: "Partial",
+        summary: Object.assign({}, base, { rates: { mode: "partial", sampleLines: ["Tile floor", "Toilet"] } }),
+        updated_at: DAY,
+      },
+      {
+        id: "o1",
+        name: "Own",
+        summary: Object.assign({}, base, { rates: { mode: "own", sampleLines: [] } }),
+        updated_at: DAY,
+      },
+    ],
+  });
+  const materials = page.locator("#project-materials");
+  await page.goto("/project.html?id=s1#materials");
+  await expect(materials).toContainText("Labor was at Room Designer 3D's sample rates when this was saved.");
+  await page.goto("/project.html?id=p1#materials");
+  await expect(materials).toContainText("At save time these lines were at sample rates: Tile floor, Toilet.");
+  await expect(materials).not.toContainText("Labor was at");
+  await page.goto("/project.html?id=o1#materials");
+  await expect(materials).toContainText("$600");
+  await expect(materials).not.toContainText(/sample rates/);
+  await page.goto("/es/project.html?id=p1#materials");
+  await expect(materials).toContainText("Al guardarse, estas líneas estaban a tarifas de ejemplo: Tile floor, Toilet.");
+  await page.goto("/pt/project.html?id=s1#materials");
+  await expect(materials).toContainText(
+    "A mão de obra estava nos valores de exemplo do Room Designer 3D quando isto foi salvo.",
+  );
 });
 
 test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, no second Open button", async ({
@@ -900,7 +1065,7 @@ test("saving paused (the kill switch): the designer's bar and My projects say so
   page,
 }) => {
   await signedIn(page);
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
         accounts: true,
@@ -970,7 +1135,7 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
   // the heading row sticks while the list scrolls, and from 1280 px the page
   // uses the width a table needs rather than a ~760 px card.
   const aligned = await page.evaluate(() => {
-    const heads = Array.from(document.querySelectorAll("#projects-table-head > *"));
+    const heads = Array.from(document.querySelectorAll("#projects-table-head [role=columnheader]"));
     const cells = [
       ".project-name",
       ".project-client",
@@ -990,17 +1155,34 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
     .locator(".project-name")
     .evaluate((a) => a.getBoundingClientRect().height / parseFloat(getComputedStyle(a).lineHeight));
   expect(nameLines).toBeLessThanOrEqual(2);
-  // The headings sort: by name puts "Lee guest bath" first and marks the heading.
-  await page.getByRole("button", { name: "Name (A to Z)" }).click();
+  // The headings sort: by name puts "Lee guest bath" first and marks the
+  // heading; a second click reverses the order (said on the column header
+  // and kept in the address); the Sort by control puts it forward again.
+  const nameHead = page.getByRole("columnheader", { name: "Project" });
+  const nameBtn = nameHead.getByRole("button");
+  await expect(nameHead).toHaveAttribute("aria-sort", "none");
+  await nameBtn.click();
   await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Lee guest bath");
   await expect(page.getByLabel("Sort by")).toHaveValue("name");
-  await expect(page.getByRole("button", { name: "Name (A to Z)" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page).toHaveURL(/sort=name/);
-  await page.getByRole("button", { name: "Last updated" }).click();
-  await expect(page.getByLabel("Sort by")).toHaveValue("updated");
+  await expect(nameBtn).toHaveAttribute("aria-pressed", "true");
+  await expect(nameHead).toHaveAttribute("aria-sort", "ascending");
+  await expect(page).toHaveURL(/sort=name(?!-)/);
+  await nameBtn.click();
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Smith main bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "descending");
+  await expect(nameBtn).toHaveClass(/is-desc/);
+  await expect(page).toHaveURL(/sort=name-desc/);
   await page.reload();
   await expect(list).toHaveClass(/is-table/);
   await expect(page.getByLabel("View")).toHaveValue("table");
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Smith main bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "descending");
+  await page.getByLabel("Sort by").selectOption("name");
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Lee guest bath");
+  await expect(nameHead).toHaveAttribute("aria-sort", "ascending");
+  await page.getByRole("columnheader", { name: "Updated" }).getByRole("button").click();
+  await expect(page.getByLabel("Sort by")).toHaveValue("updated");
+  await expect(page).not.toHaveURL(/sort=/);
   // Phones keep the cards whatever the pick, and don't offer it.
   await page.setViewportSize({ width: 375, height: 800 });
   await expect(page.getByLabel("View")).toBeHidden();
@@ -1016,7 +1198,7 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
 });
 
 test("My projects sends an ended sign-in to log in with the way back", async ({ page }) => {
-  await page.route("**/api/config", (route) =>
+  await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
     }),
@@ -1110,9 +1292,14 @@ test("a saved project that can't be opened says so with a way out: Try again for
   await expect(panel).toContainText("Couldn't open the project.");
   await expect(panel.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(panel.locator(".studio-loading-slow")).toBeHidden();
+  // Nothing on the page still says it's loading: the canvas's words go too.
+  await expect(page.locator("#room-3d-canvas")).toHaveAttribute("data-loading", "");
+  await expect(page.locator("#studio")).not.toContainText("Loading the designer");
 
   failing = false;
   await bar.getByRole("button", { name: "Try again" }).click();
+  // While it tries again, the loading words are back.
+  await expect(page.locator("#room-3d-canvas")).toHaveAttribute("data-loading", "Loading the designer…");
   await expect(bar).toContainText("Project: Old job", { timeout: 30000 });
   await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
   await expect(page.locator("#project-save")).toBeVisible();
@@ -1230,4 +1417,214 @@ test("a start date in an implausible year is refused at the field, in the browse
   await page.getByRole("button", { name: "Save info" }).click();
   await expect(start).toHaveAttribute("aria-invalid", "true");
   await expect(page.locator("#info-start-error")).toHaveText(`Pick a start date between 2000 and ${year}.`);
+});
+
+// The table view is offered only where it fits: from 1180 px every heading
+// sits in its own box in all three languages, the Project column has real
+// room, and the page keeps using the width above 1280.
+test("the table view fits at every width it's offered, in en/es/pt, and grows with the window", async ({ page }) => {
+  test.setTimeout(90000);
+  const projects = [];
+  for (let i = 0; i < 12; i++) {
+    projects.push({
+      id: "p" + i,
+      name: "Garcia master bath " + i,
+      info: {
+        client: "Maria Garcia " + i,
+        street: "1200 Blueprint Avenue",
+        city: "Springfield",
+        state: "IL",
+        zip: "62704",
+        status: ["lead", "estimate", "approved", "progress", "done"][i % 5],
+        start: "2026-11-0" + ((i % 9) + 1),
+      },
+      updated_at: DAY,
+    });
+  }
+  await signedIn(page, { projects });
+  await page.addInitScript(() => localStorage.setItem("rd3d_projects_view", "table"));
+  for (const dir of ["", "es/", "pt/"]) {
+    for (const width of [1180, 1280, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/" + dir + "projects.html");
+      await expect(page.locator(".project-item")).toHaveCount(12);
+      await expect(page.locator("#projects-list")).toHaveClass(/is-table/);
+      const facts = await page.evaluate(() => {
+        const heads = Array.from(document.querySelectorAll("#projects-table-head [role=columnheader]"));
+        const row = document.querySelector(".project-item");
+        const cells = [".project-name", ".project-client", ".project-status", ".project-start", ".project-updated"];
+        const name = row.querySelector(".project-name");
+        return {
+          // No heading runs past its box or into its neighbour.
+          overflow: heads.map((h) => h.scrollWidth - h.clientWidth),
+          gaps: heads.map((h, i) =>
+            i ? h.getBoundingClientRect().left - heads[i - 1].getBoundingClientRect().right : 1,
+          ),
+          projectWidth: name.getBoundingClientRect().width,
+          nameLines: name.getBoundingClientRect().height / parseFloat(getComputedStyle(name).lineHeight),
+          aligned: heads.map(
+            (h, i) =>
+              i >= cells.length ||
+              Math.abs(h.getBoundingClientRect().left - row.querySelector(cells[i]).getBoundingClientRect().left) <= 1,
+          ),
+          page: document.querySelector(".app-wide").getBoundingClientRect().width,
+        };
+      });
+      const label = dir + "@" + width;
+      for (const o of facts.overflow) expect(o, label + " heading overflow").toBeLessThanOrEqual(0);
+      for (const g of facts.gaps) expect(g, label + " headings apart").toBeGreaterThan(0);
+      expect(facts.aligned.every(Boolean), label + " headings over their columns").toBe(true);
+      expect(facts.projectWidth, label + " project column").toBeGreaterThanOrEqual(160);
+      if (width >= 1280) expect(facts.nameLines, label + " name on one line").toBeLessThanOrEqual(1.05);
+      if (width === 1440) expect(facts.page, "the table grows past 1280").toBeGreaterThan(1250);
+    }
+  }
+  // Between the phone layout and 1180 the cards stay, and the table isn't offered.
+  for (const width of [900, 1024, 1100]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.getByLabel("View")).toBeHidden();
+    await expect(page.locator("#projects-table-head")).toBeHidden();
+    // The rows are cards again: the name sits above the dates, not beside them.
+    const stacked = await page
+      .locator(".project-item")
+      .first()
+      .evaluate((li) => {
+        return (
+          li.querySelector(".project-updated").getBoundingClientRect().top >
+          li.querySelector(".project-name").getBoundingClientRect().top
+        );
+      });
+    expect(stacked, "cards at " + width).toBe(true);
+  }
+});
+
+// Every control in the list's toolbar shows its whole value, and the labels
+// stay on one line, so the Spanish "Estado del proyecto" doesn't push its
+// select below the others.
+test("the Status filter shows its whole value and its label stays on one line, in en/es/pt at desktop widths", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Smith main bath", info: { status: "progress" }, updated_at: DAY },
+      { id: "a2", name: "Lee guest bath", info: {}, updated_at: DAY },
+    ],
+  });
+  for (const dir of ["", "es/", "pt/"]) {
+    for (const width of [1024, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/" + dir + "projects.html");
+      await expect(page.locator(".project-item")).toHaveCount(2);
+      const facts = await page.evaluate(() => {
+        // The width the selected option's words need, in the select's font.
+        const needs = (select) => {
+          const probe = document.createElement("span");
+          probe.style.cssText = "position:absolute;visibility:hidden;white-space:nowrap";
+          probe.style.font = getComputedStyle(select).font;
+          probe.textContent = select.options[select.selectedIndex].textContent;
+          document.body.appendChild(probe);
+          const w = probe.getBoundingClientRect().width;
+          probe.remove();
+          return w;
+        };
+        const out = {};
+        for (const id of ["projects-sort", "projects-filter"]) {
+          const select = document.getElementById(id);
+          const label = document.querySelector('label[for="' + id + '"]');
+          out[id] = {
+            room: select.clientWidth - needs(select), // the arrow and padding need ~30 px
+            labelLines: label.getBoundingClientRect().height / parseFloat(getComputedStyle(label).lineHeight),
+            top: select.getBoundingClientRect().top,
+            left: select.parentElement.getBoundingClientRect().left,
+          };
+        }
+        out.toolsLeft = document.getElementById("projects-search-wrap").getBoundingClientRect().left;
+        return out;
+      });
+      const label = dir + "@" + width;
+      for (const id of ["projects-sort", "projects-filter"]) {
+        expect(facts[id].room, label + " " + id + " shows its whole value").toBeGreaterThanOrEqual(30);
+        expect(facts[id].labelLines, label + " " + id + " label on one line").toBeLessThanOrEqual(1.05);
+      }
+      // The filter sits level with the sort control, or (when the toolbar
+      // wraps on a narrow page) starts its own row: never a control pushed
+      // down by its own label.
+      const level = Math.abs(facts["projects-sort"].top - facts["projects-filter"].top) <= 1;
+      const ownRow = Math.abs(facts["projects-filter"].left - facts.toolsLeft) <= 1;
+      expect(level || ownRow, label + " filter level with the others or on its own row").toBe(true);
+    }
+  }
+});
+
+// The kill switch flipped while a page is open: the switches are read again
+// when the page is looked at again (focus, or the tab shown), so the bar
+// hides Save and says saving is paused before anyone presses it, and My
+// projects shows the notice without a reload.
+test("saving switched off mid-session: the open designer and My projects say so on the next look, before a press", async ({
+  page,
+}) => {
+  await signedIn(page);
+  await openStudio(page, "/designer.html?b=smith-bath");
+  const bar = page.locator("#project-bar");
+  await expect(bar).toBeVisible({ timeout: 15000 });
+  await expect(page.locator("#project-save")).toBeVisible();
+  const fresh = [];
+  await page.route("**/api/config*", (route) => {
+    fresh.push(route.request().url());
+    return route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: true, checkout: true, saving: false },
+        notice: "Back Monday 9am.",
+      },
+    });
+  });
+  // Nothing happens until the page is looked at again.
+  await page.waitForTimeout(500);
+  expect(fresh.length).toBe(0);
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(bar).toContainText("Saving projects is paused right now.");
+  await expect(bar).toContainText("Notice: Back Monday 9am.");
+  await expect(page.locator("#project-save")).toBeHidden();
+  // Past the server's cache: the switches as they are now.
+  expect(fresh.some((u) => /fresh=1/.test(u))).toBe(true);
+  // The estimate step's Save goes too.
+  await answerAll(page);
+  await step(page, "estimate").click();
+  await expect(page.getByTestId("estimate-card")).toBeVisible();
+  await expect(page.locator('[data-key="save"]')).toHaveCount(0);
+  // Looking again straight away doesn't ask again (throttled).
+  const asked = fresh.length;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await page.waitForTimeout(300);
+  expect(fresh.length).toBe(asked);
+
+  // My projects, open with saving on, learns the same way.
+  await page.route("**/api/config*", (route) =>
+    route.fulfill({
+      json: { accounts: true, payments: false, supabaseUrl: SUPABASE, supabaseAnonKey: "anon", plans: {} },
+    }),
+  );
+  await page.goto("/pt/projects.html");
+  await expect(page.locator("#projects-app")).toBeVisible();
+  await expect(page.locator("#projects-paused")).toBeHidden();
+  await page.route("**/api/config*", (route) =>
+    route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: true, checkout: true, saving: false },
+      },
+    }),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await expect(page.locator("#projects-paused")).toBeVisible();
+  await expect(page.locator("#projects-paused")).toContainText("Salvar projetos está pausado no momento.");
 });

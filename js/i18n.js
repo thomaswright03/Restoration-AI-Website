@@ -306,6 +306,18 @@
       "Plan {plan}: {month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
       "Plano {plan}: {month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
     ],
+    // The same two lines while the plan card can't say which plan this is:
+    // this card doesn't name one either.
+    "proj.summary.counts": [
+      "{month} of {monthly} new projects this month, {total} of {limit} saved.",
+      "{month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+      "{month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    ],
+    "proj.summary.planPending": [
+      "What your plan allows will show here once your plan details load.",
+      "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
+      "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
+    ],
     "proj.updated": ["Updated {date}", "Actualizado el {date}", "Atualizado em {date}"],
     "proj.open": ["Open", "Abrir", "Abrir"],
     "proj.openNamed": ["Open {name}", "Abrir {name}", "Abrir {name}"],
@@ -455,6 +467,18 @@
     "proj.mat.laborTotal": ["Labor", "Mano de obra", "Mão de obra"],
     "proj.mat.materialsTotal": ["Materials", "Materiales", "Materiais"],
     "proj.mat.total": ["Estimated total", "Total estimado", "Total estimado"],
+    // How the labor was priced when the design was saved (summary.rates,
+    // js/studio.js projectSummary): sample rates throughout, or named lines.
+    "proj.mat.ratesSample": [
+      "Labor was at Room Designer 3D's sample rates when this was saved.",
+      "La mano de obra estaba a las tarifas de ejemplo de Room Designer 3D cuando se guardó.",
+      "A mão de obra estava nos valores de exemplo do Room Designer 3D quando isto foi salvo.",
+    ],
+    "proj.mat.ratesPartial": [
+      "At save time these lines were at sample rates: {list}.",
+      "Al guardarse, estas líneas estaban a tarifas de ejemplo: {list}.",
+      "Ao salvar, estas linhas estavam em valores de exemplo: {list}.",
+    ],
     "proj.mat.asOf": [
       "As worked out when the design was last saved ({date}). Prices are estimates and may have changed.",
       "Según el diseño guardado por última vez ({date}). Los precios son estimados y pueden haber cambiado.",
@@ -704,6 +728,7 @@
     "net.backOnline": ["You're back online.", "Volvió la conexión.", "A conexão voltou."],
     // After an API error: the request id the server logged, to quote when asking for help.
     "net.reference": ["Reference: {id}", "Referencia: {id}", "Referência: {id}"],
+    "net.offlineDismiss": ["Close this notice", "Cerrar este aviso", "Fechar este aviso"],
     "proj.loading": ["Loading…", "Cargando…", "Carregando…"],
     "proj.err.loadFailed": [
       "Couldn't load your projects.",

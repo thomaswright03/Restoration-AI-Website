@@ -149,6 +149,13 @@
     biz.demo = false;
     // Assume unavailable until the profile script says otherwise (it may 404
     // or be blocked), so a broken link never shows the sample business.
+    // Nothing business-specific shows meanwhile: an owner (or a customer
+    // beside them) must never see the sample company's name or number while
+    // theirs loads.
+    biz.name = "";
+    biz.initials = "";
+    biz.phone = "";
+    biz.email = "";
     biz.unavailable = "loading";
     profileScript(signInToken());
   } else {

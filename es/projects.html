@@ -257,29 +257,26 @@
               <a class="btn btn-primary" href="../es/designer.html">Abrir el diseñador</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>Ningún proyecto coincide con esa búsqueda o filtro.</p>
-            <div class="project-table-head" id="projects-table-head" hidden>
-              <button type="button" class="project-sort" data-sort="name" aria-label="Nombre (A a Z)">Proyecto</button>
-              <span>Cliente y dirección</span>
-              <button
-                type="button"
-                class="project-sort"
-                data-sort="status"
-                aria-label="Estado (de cliente nuevo a terminado)"
-              >
-                Estado
-              </button>
-              <button
-                type="button"
-                class="project-sort"
-                data-sort="start"
-                aria-label="Fecha de inicio (la más próxima primero)"
-              >
-                Empieza
-              </button>
-              <button type="button" class="project-sort" data-sort="updated" aria-label="Última actualización">
-                Actualizado
-              </button>
-              <span>Acciones</span>
+            <!-- The table view's heading row (css/product.css): a column header per
+                 cell, the sortable ones a button that sorts either way (js/projects.js
+                 sets aria-sort on the one in use). -->
+            <div class="project-table-head" id="projects-table-head" role="table" aria-label="Sus proyectos" hidden>
+              <div class="project-table-row" role="row">
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="name">Proyecto</button>
+                </div>
+                <div role="columnheader">Cliente y dirección</div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="status">Estado</button>
+                </div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="start">Empieza</button>
+                </div>
+                <div role="columnheader" aria-sort="none">
+                  <button type="button" class="project-sort" data-sort="updated">Actualizado</button>
+                </div>
+                <div role="columnheader" class="project-col-actions">Acciones</div>
+              </div>
             </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>

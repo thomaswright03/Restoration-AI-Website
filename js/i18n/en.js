@@ -145,6 +145,8 @@
     "proj.usage.total": "Saved projects: {used} of {limit}",
     "proj.summary.free": "You're on the free plan: you can use the designer, but saving projects needs a paid plan.",
     "proj.summary.paid": "{plan} plan: {month} of {monthly} new projects this month, {total} of {limit} saved.",
+    "proj.summary.counts": "{month} of {monthly} new projects this month, {total} of {limit} saved.",
+    "proj.summary.planPending": "What your plan allows will show here once your plan details load.",
     "proj.updated": "Updated {date}",
     "proj.open": "Open",
     "proj.openNamed": "Open {name}",
@@ -228,6 +230,8 @@
     "proj.mat.laborTotal": "Labor",
     "proj.mat.materialsTotal": "Materials",
     "proj.mat.total": "Estimated total",
+    "proj.mat.ratesSample": "Labor was at Room Designer 3D's sample rates when this was saved.",
+    "proj.mat.ratesPartial": "At save time these lines were at sample rates: {list}.",
     "proj.mat.asOf":
       "As worked out when the design was last saved ({date}). Prices are estimates and may have changed.",
     "proj.err.name": "Give the project a name.",
@@ -310,6 +314,7 @@
       "You're offline. You can keep looking around; saving and signing in wait until you're back online.",
     "net.backOnline": "You're back online.",
     "net.reference": "Reference: {id}",
+    "net.offlineDismiss": "Close this notice",
     "proj.loading": "Loading…",
     "proj.err.loadFailed": "Couldn't load your projects.",
     "proj.err.business":

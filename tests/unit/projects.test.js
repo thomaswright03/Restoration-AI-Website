@@ -118,13 +118,16 @@ function fakeSupabase(sub) {
   return data;
 }
 
-async function call(method, { body, query, token = "good" } = {}) {
+async function call(method, { body, query, token = "good", headers = {} } = {}) {
   process.env.SUPABASE_URL = "https://db.example";
   process.env.SUPABASE_ANON_KEY = "anon";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
   const handler = require("../../api/projects.js");
   const res = fakeRes();
-  await handler({ method, body, query: query || {}, headers: { authorization: "Bearer " + token } }, res);
+  await handler(
+    { method, body, query: query || {}, headers: Object.assign({ authorization: "Bearer " + token }, headers) },
+    res,
+  );
   return res;
 }
 
@@ -227,6 +230,25 @@ test("projects: a lapsed plan can still rename and delete, but not save designs"
   assert.equal((await call("PATCH", { body: { id: created.id, design: DESIGN } })).statusCode, 403);
   assert.equal((await call("PATCH", { body: { id: created.id, name: "Job 2" } })).statusCode, 200);
   assert.equal((await call("DELETE", { query: { id: created.id } })).statusCode, 200);
+});
+
+test("projects: a body that isn't a JSON object is refused as such, not as a missing name", async () => {
+  fakeSupabase({ status: "active" });
+  const json = { "content-type": "application/json" };
+  for (const body of ['{"name":', "[1, 2]", "null", '"text"', "42"]) {
+    const res = await call("POST", { body, headers: json });
+    assert.equal(res.statusCode, 400, body);
+    assert.deepEqual(res.json(), { error: "json" }, body);
+  }
+  // An already-parsed array (a platform that parses JSON itself) too.
+  const arr = await call("PATCH", { body: [{ id: "x" }], headers: json });
+  assert.deepEqual(arr.json(), { error: "json" });
+  // A well-formed object with no name is still a missing name.
+  const empty = await call("POST", { body: "{}", headers: json });
+  assert.deepEqual(empty.json(), { error: "name", field: "name", reason: "empty" });
+  // A raw (Buffer) body is parsed the same way.
+  const buf = await call("POST", { body: Buffer.from('{"name": "Buffered"}'), headers: json });
+  assert.equal(buf.json().error, "design");
 });
 
 test("projects: a design must be one the designer can open", async () => {

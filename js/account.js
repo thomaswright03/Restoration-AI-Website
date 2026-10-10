@@ -176,7 +176,11 @@
     var down = config && config.unreachable;
     // Why /api/config couldn't be read, when known (loadConfig): the
     // connection or the server, not always "check your connection".
-    if (down && config.reason && $("server-down-text")) $("server-down-text").textContent = T(config.reason);
+    // "The server couldn't be reached" would only repeat the heading: the
+    // page's own line (check the connection; if online, it's our side) stays.
+    if (down && config.reason && config.reason !== "net.network" && $("server-down-text")) {
+      $("server-down-text").textContent = T(config.reason);
+    }
     show($(down ? "server-down" : "accounts-off"), true);
   }
 
@@ -460,10 +464,12 @@
         planFailed = false;
         subscription = data;
         renderPlan();
+        renderProjectsSummary();
       },
       function (err) {
         planFailed = true;
         renderPlanFailed(err);
+        renderProjectsSummary();
       },
     );
   }
@@ -897,6 +903,40 @@
   // list is on projects.html.
   // On failure the line says so (with why) instead of going blank; the list
   // page has its own Try again.
+  var projectCounts = null; // the API's answer, for the line below
+
+  // The Projects card's line. While the plan card says the plan couldn't be
+  // loaded, this card doesn't name one either (the two must agree): the
+  // counts alone, or nothing plan-specific on the free plan.
+  function renderProjectsSummary() {
+    var data = projectCounts;
+    var out = $("projects-summary");
+    if (!data) return;
+    out.className = "";
+    if (planFailed) {
+      out.textContent =
+        data.plan === "free"
+          ? T("proj.summary.planPending")
+          : T("proj.summary.counts", {
+              month: data.used.month,
+              monthly: data.limits.monthly,
+              total: data.used.total,
+              limit: data.limits.total,
+            });
+      return;
+    }
+    out.textContent =
+      data.plan === "free"
+        ? T("proj.summary.free")
+        : T("proj.summary.paid", {
+            plan: T("proj.plan." + data.plan),
+            month: data.used.month,
+            monthly: data.limits.monthly,
+            total: data.used.total,
+            limit: data.limits.total,
+          });
+  }
+
   function loadProjectsSummary() {
     var out = $("projects-summary");
     window.Net.fetchJson("/api/projects?counts=1", {
@@ -904,17 +944,8 @@
       cache: "no-store",
     })
       .then(function (data) {
-        out.className = "";
-        out.textContent =
-          data.plan === "free"
-            ? T("proj.summary.free")
-            : T("proj.summary.paid", {
-                plan: T("proj.plan." + data.plan),
-                month: data.used.month,
-                monthly: data.limits.monthly,
-                total: data.used.total,
-                limit: data.limits.total,
-              });
+        projectCounts = data;
+        renderProjectsSummary();
       })
       .catch(function (err) {
         out.className = "form-note";
@@ -1067,6 +1098,13 @@
       });
       loadBusiness();
       loadProjectsSummary();
+      // The switches are read again when the page is looked at again, so a
+      // checkout paused mid-session hides the buy buttons before a press.
+      window.Net.watchConfig(function (c) {
+        config = Object.assign({}, config, { switches: c.switches, notice: c.notice });
+        renderPlan();
+        showSiteNotice();
+      });
     });
 
     $("sign-out").addEventListener("click", function () {

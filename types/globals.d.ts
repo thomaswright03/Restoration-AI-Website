@@ -17,6 +17,18 @@ declare var Net: any;
 interface Window {
   jspdf?: any;
   EstimatePdf?: any;
+  // js/vendor/supabase/supabase.js, loaded by the signed-in pages.
+  supabase?: any;
+  // js/studio.js: the design as encoded, opening a saved one, starting the
+  // studio, and the estimate summary (read by js/projects.js).
+  StudioDesign?: {
+    encoded: () => string;
+    open: (code: string, name?: string) => boolean;
+    start: () => void;
+    summary: () => any;
+  };
+  // js/business.js: whose designer this is (see its header).
+  DesignerBusiness?: any;
 }
 
 // Errors are tagged where they are thrown so the caller can say what

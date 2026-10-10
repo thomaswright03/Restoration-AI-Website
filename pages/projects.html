@@ -96,7 +96,7 @@
             </div>
             <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
             <div class="project-table-head" id="projects-table-head" hidden>
-              <button type="button" class="project-sort" data-sort="name" title="{{projects.sort}}: {{projects.sort.name}}">
+              <button type="button" class="project-sort" data-sort="name" aria-label="{{projects.sort.name}}">
                 {{projects.col.name}}
               </button>
               <span>{{projects.col.client}}</span>
@@ -104,18 +104,18 @@
                 type="button"
                 class="project-sort"
                 data-sort="status"
-                title="{{projects.sort}}: {{projects.sort.status}}"
+                aria-label="{{projects.sort.status}}"
               >
                 {{projects.col.status}}
               </button>
-              <button type="button" class="project-sort" data-sort="start" title="{{projects.sort}}: {{projects.sort.start}}">
+              <button type="button" class="project-sort" data-sort="start" aria-label="{{projects.sort.start}}">
                 {{projects.col.start}}
               </button>
               <button
                 type="button"
                 class="project-sort"
                 data-sort="updated"
-                title="{{projects.sort}}: {{projects.sort.updated}}"
+                aria-label="{{projects.sort.updated}}"
               >
                 {{projects.col.updated}}
               </button>

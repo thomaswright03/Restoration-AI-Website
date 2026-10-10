@@ -739,7 +739,7 @@ test("in the owner's own designer the estimate step speaks to the business, not 
   // (The public demo's ending is covered in studio.spec.js.)
 });
 
-test("My projects shows a dash for a missing client or status, and Clear filters puts the list back", async ({
+test("My projects says 'No client yet' / 'No status yet' for empty fields, and Clear filters puts the list back", async ({
   page,
 }) => {
   await signedIn(page, {
@@ -753,8 +753,12 @@ test("My projects shows a dash for a missing client or status, and Clear filters
   await expect(rows).toHaveCount(2);
   await expect(rows.nth(0).locator(".project-client")).toHaveText("Pat Smith");
   await expect(rows.nth(0).locator(".project-status")).toHaveText("In progress");
-  await expect(rows.nth(1).locator(".project-client")).toHaveText("—");
-  await expect(rows.nth(1).locator(".project-status.is-none")).toHaveText("—");
+  // Empty fields are labelled, never a bare dash or an empty pill.
+  await expect(rows.nth(1).locator(".project-client")).toHaveText("No client yet");
+  await expect(rows.nth(1).locator(".project-status.is-none")).toHaveText("No status yet");
+  await expect(rows.nth(1).locator(".project-start")).toHaveText("No start date yet");
+  await expect(page.locator("#projects-list")).not.toContainText("—");
+  await expect(page.locator("#projects-usage")).not.toContainText("UTC");
 
   const clear = page.getByRole("button", { name: "Clear filters" });
   await expect(clear).toBeHidden();
@@ -944,7 +948,40 @@ test("at desktop width My projects can be a table, and the pick is kept in this 
   });
   expect(columns).toBe(true);
   await expect(row.locator(".project-start")).toHaveText("Starts Dec 1, 2026");
-  await expect(page.locator(".project-item").nth(1).locator(".project-start")).toHaveText("—");
+  await expect(page.locator(".project-item").nth(1).locator(".project-start")).toHaveText("No start date yet");
+  // Each heading sits over its column (the same column template, with a
+  // fixed-width actions column, so a row's buttons can't shift the others),
+  // the heading row sticks while the list scrolls, and from 1280 px the page
+  // uses the width a table needs rather than a ~760 px card.
+  const aligned = await page.evaluate(() => {
+    const heads = Array.from(document.querySelectorAll("#projects-table-head > *"));
+    const cells = [
+      ".project-name",
+      ".project-client",
+      ".project-status",
+      ".project-start",
+      ".project-updated",
+      ".project-actions",
+    ].map((sel) => document.querySelector(".project-item " + sel));
+    return heads.map((h, i) => Math.abs(h.getBoundingClientRect().left - cells[i].getBoundingClientRect().left));
+  });
+  expect(aligned.length).toBe(6);
+  for (const off of aligned) expect(off).toBeLessThanOrEqual(1);
+  expect(await page.locator("#projects-table-head").evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
+  expect(await page.locator(".app-wide").evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(1000);
+  // A normal name stays on one or two lines.
+  const nameLines = await row
+    .locator(".project-name")
+    .evaluate((a) => a.getBoundingClientRect().height / parseFloat(getComputedStyle(a).lineHeight));
+  expect(nameLines).toBeLessThanOrEqual(2);
+  // The headings sort: by name puts "Lee guest bath" first and marks the heading.
+  await page.getByRole("button", { name: "Name (A to Z)" }).click();
+  await expect(page.locator(".project-item").first().locator(".project-name")).toHaveText("Lee guest bath");
+  await expect(page.getByLabel("Sort by")).toHaveValue("name");
+  await expect(page.getByRole("button", { name: "Name (A to Z)" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/sort=name/);
+  await page.getByRole("button", { name: "Last updated" }).click();
+  await expect(page.getByLabel("Sort by")).toHaveValue("updated");
   await page.reload();
   await expect(list).toHaveClass(/is-table/);
   await expect(page.getByLabel("View")).toHaveValue("table");
@@ -973,4 +1010,208 @@ test("My projects sends an ended sign-in to log in with the way back", async ({ 
   await page.waitForURL(/\/es\/signup\.html\?mode=login&next=/);
   const next = new URL(page.url()).searchParams.get("next");
   expect(next).toBe("/es/projects.html?status=lead");
+});
+
+// Opening a saved project: the designer never shows the sample room as the
+// project, never says "isn't saved" or offers Save while the project is on its
+// way, and the plan counts and the project load side by side.
+test("while a saved project loads, the bar says so and offers nothing to save, and the studio waits for it", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => {
+    const d = window.RoomPlan.fromTemplate("full5x8", null);
+    return window.RoomPlan.encode(window.RoomPlan.resize(d, { w: 10, l: d.room.l, h: d.room.h }));
+  });
+  const state = await signedIn(page, { projects: [{ id: "a1", name: "Wide bath", design, updated_at: DAY }] });
+  // The project itself takes 4 s; the counts answer at once.
+  let release;
+  const held = new Promise((r) => (release = r));
+  const timing = [];
+  await page.route("**/api/projects**", async (route) => {
+    const url = new URL(route.request().url());
+    timing.push({ id: url.searchParams.get("id"), counts: url.searchParams.get("counts"), at: Date.now() });
+    if (route.request().method() === "GET" && url.searchParams.get("id")) await held;
+    return route.fallback();
+  });
+  await page.goto("/designer.html?b=smith-bath&project=a1");
+  const bar = page.locator("#project-bar");
+  await expect(bar).toBeVisible({ timeout: 15000 });
+  await expect(bar).toContainText("Opening your project…");
+  // Both requests were sent, in parallel (the counts didn't wait for the project).
+  await expect.poll(() => timing.length).toBe(2);
+  expect(timing.some((t) => t.counts === "1")).toBe(true);
+  expect(timing.some((t) => t.id === "a1")).toBe(true);
+  // During the load: no "isn't saved", no Save, no studio to edit, the loading panel up.
+  await page.waitForTimeout(1500);
+  await expect(bar).toContainText("Opening your project…");
+  await expect(bar).not.toContainText("isn't saved");
+  await expect(bar).not.toContainText("new projects left");
+  await expect(page.locator("#project-save")).toBeHidden();
+  await expect(page.locator("#project-save-new")).toBeHidden();
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+  await expect(page.locator("#studio-loading")).toBeVisible();
+  expect(await page.evaluate(() => (window.RoomStudio ? window.StudioDesign.encoded() : ""))).toBe("");
+  // Pressing Enter in the bar's form can't start a new project.
+  expect(state.calls.filter((c) => c.method === "POST").length).toBe(0);
+
+  release();
+  await expect(bar).toContainText("Project: Wide bath", { timeout: 15000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator("#studio-loading")).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => window.RoomPlan.decode(window.StudioDesign.encoded()).room.w)).toBe(10);
+  await expect(page.locator("#project-save")).toBeVisible();
+  await expect(page.locator("#project-save")).toHaveText("Save changes");
+  await expect(page.locator("#project-status")).toBeHidden();
+  expect(state.calls.filter((c) => c.method === "POST").length).toBe(0);
+});
+
+test("a saved project that can't be opened says so with a way out: Try again for a server problem, Back to My projects when it's gone", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, { projects: [{ id: "a1", name: "Old job", design, updated_at: DAY }] });
+  let failing = true;
+  await page.route("**/api/projects**", (route) => {
+    const url = new URL(route.request().url());
+    if (!failing || !url.searchParams.get("id")) return route.fallback();
+    return route.fulfill({ status: 500, json: { error: "server" } });
+  });
+  await page.goto("/designer.html?b=smith-bath&project=a1");
+  const bar = page.locator("#project-bar");
+  await expect(bar).toContainText("Couldn't open the project.", { timeout: 15000 });
+  await expect(bar).not.toContainText("isn't saved");
+  await expect(page.locator("#project-save")).toBeHidden();
+  await expect(page.locator("#project-save-new")).toBeHidden();
+  await expect(bar.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(bar.getByRole("link", { name: "Back to My projects" })).toHaveAttribute("href", /projects\.html$/);
+  // The studio didn't start on the sample room: its loading panel says the same.
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+  const panel = page.locator("#studio-loading");
+  await expect(panel).toContainText("Couldn't open the project.");
+  await expect(panel.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(panel.locator(".studio-loading-slow")).toBeHidden();
+
+  failing = false;
+  await bar.getByRole("button", { name: "Try again" }).click();
+  await expect(bar).toContainText("Project: Old job", { timeout: 15000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator("#project-save")).toBeVisible();
+
+  // A project that isn't there: no Try again that can't help.
+  await page.goto("/es/designer.html?b=smith-bath&project=gone");
+  await expect(bar).toContainText("No se encontró ese proyecto.", { timeout: 15000 });
+  await expect(bar.getByRole("button", { name: "Intentar de nuevo" })).toHaveCount(0);
+  await expect(bar.getByRole("link", { name: "Volver a Mis proyectos" })).toHaveAttribute(
+    "href",
+    /es\/projects\.html$/,
+  );
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+
+  // The project page says the same, with the same way out.
+  await page.goto("/project.html?id=gone");
+  const error = page.locator("#project-error");
+  await expect(error).toContainText("That project wasn't found.");
+  await expect(error.getByRole("link", { name: "Try again" })).toHaveCount(0);
+  await expect(error.getByRole("link", { name: "Back to My projects" })).toHaveAttribute("href", /projects\.html$/);
+});
+
+test("a business read that never answers times out on My projects and the project page, and Try again isn't held behind it", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await signedIn(page, { projects: [{ id: "a1", name: "Smith main bath", design: "", info: {}, updated_at: DAY }] });
+  let hanging = true;
+  const seen = [];
+  await page.route(SUPABASE + "/rest/v1/businesses**", (route) => {
+    seen.push(Date.now());
+    if (hanging) return new Promise(() => {});
+    return route.fulfill({ json: { slug: "smith-bath" } });
+  });
+  await page.goto("/pt/projects.html");
+  await expect(page.locator("#projects-loading")).toBeVisible();
+  const failed = page.locator("#projects-failed");
+  await expect(failed).toBeVisible({ timeout: 20000 });
+  await expect(failed).toContainText("Não foi possível carregar o perfil da sua empresa");
+  await expect(page.locator("#projects-app")).toBeHidden();
+  // The hung request was aborted, so the retry is answered at once.
+  hanging = false;
+  const before = Date.now();
+  await failed.getByRole("button", { name: "Tentar de novo" }).click();
+  await expect(page.locator("#projects-app")).toBeVisible({ timeout: 5000 });
+  expect(Date.now() - before).toBeLessThan(5000);
+  expect(seen.length).toBe(2);
+
+  hanging = true;
+  await page.goto("/project.html?id=a1");
+  const error = page.locator("#project-error");
+  await expect(error).toBeVisible({ timeout: 20000 });
+  await expect(error).toContainText("Your business profile couldn't be loaded");
+  await expect(error.getByRole("link", { name: "Try again" })).toBeVisible();
+});
+
+test("a project's materials list is dated by when the design was saved, not by a later rename", async ({ page }) => {
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const summary = {
+    v: 1,
+    savedAt: "2026-09-12T15:00:00Z",
+    room: { w: 8, l: 5, h: 8 },
+    fixtures: [],
+    labor: [],
+    laborSubtotal: 0,
+    materials: [],
+    products: [],
+    materialsTotal: 0,
+    grandTotal: 0,
+    notes: [],
+  };
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Garcia bath", design, info: {}, summary, updated_at: DAY },
+      // An older row, saved before the stamp: falls back to when it was last updated.
+      {
+        id: "a2",
+        name: "Old row",
+        design,
+        info: {},
+        summary: Object.assign({}, summary, { savedAt: undefined }),
+        updated_at: DAY,
+      },
+    ],
+  });
+  await page.goto("/project.html?id=a1#materials");
+  await expect(page.locator("#project-materials")).toContainText("last saved (Sep 12, 2026)");
+  await expect(page.locator("#project-updated")).toHaveText("Updated Oct 1, 2026");
+  await page.goto("/project.html?id=a2#materials");
+  await expect(page.locator("#project-materials")).toContainText("last saved (Oct 1, 2026)");
+});
+
+test("a start date in an implausible year is refused at the field, in the browser and by the server's reason", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [{ id: "a1", name: "Garcia bath", design: "", info: { client: "Maria Garcia" }, updated_at: DAY }],
+  });
+  await page.route("**/api/projects**", (route) => {
+    const req = route.request();
+    if (req.method() !== "PATCH") return route.fallback();
+    return route.fulfill({ status: 400, json: { error: "info", field: "start", reason: "year" } });
+  });
+  await page.goto("/project.html?id=a1#info");
+  const start = page.locator("#panel-info").getByLabel("Target start date");
+  const year = new Date().getUTCFullYear() + 10;
+  await start.fill("1950-01-01");
+  await page.getByRole("button", { name: "Save info" }).click();
+  await expect(start).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#info-start-error")).toHaveText(`Pick a start date between 2000 and ${year}.`);
+  await expect(start).toBeFocused();
+  // The server's own refusal lands on the same field with the same words.
+  await start.fill("2030-01-01");
+  await page.getByRole("button", { name: "Save info" }).click();
+  await expect(start).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#info-start-error")).toHaveText(`Pick a start date between 2000 and ${year}.`);
 });

@@ -40,6 +40,24 @@
     return document.getElementById(id);
   }
 
+  // The same, for a field (its .value), a button (.disabled), a link (.href)
+  // or a dialog (.showModal/.close): says what the id names, for the type check.
+  function field(id) {
+    return /** @type {HTMLInputElement | HTMLSelectElement} */ ($(id));
+  }
+
+  function button(id) {
+    return /** @type {HTMLButtonElement} */ ($(id));
+  }
+
+  function link(id) {
+    return /** @type {HTMLAnchorElement} */ ($(id));
+  }
+
+  function dialogEl(id) {
+    return /** @type {HTMLDialogElement} */ ($(id));
+  }
+
   function show(el, on) {
     if (el) el.hidden = !on;
   }
@@ -352,6 +370,7 @@
   // Project details: the client, the job address and the job
   // ===================================================================
   // Grouped as they're asked for. Each field: [key, input type, extra].
+  /** @type {Array<[string, Array<[string, string, Record<string, any>]>]>} */
   var INFO_GROUPS = [
     [
       "proj.group.client",
@@ -526,9 +545,9 @@
   // Search, sort and status filter, as the controls have them.
   function listView() {
     return {
-      q: ($("projects-search").value || "").trim(),
-      sort: sortName($("projects-sort").value),
-      status: $("projects-filter").value || "",
+      q: (field("projects-search").value || "").trim(),
+      sort: sortName(field("projects-sort").value),
+      status: field("projects-filter").value || "",
     };
   }
 
@@ -538,9 +557,9 @@
     var q = params.get("q") || "";
     var sort = sortName(params.get("sort"));
     var status = STATUSES.indexOf(params.get("status")) >= 0 ? params.get("status") : "";
-    $("projects-search").value = q;
-    $("projects-sort").value = sort;
-    $("projects-filter").value = status;
+    field("projects-search").value = q;
+    field("projects-sort").value = sort;
+    field("projects-filter").value = status;
   }
 
   // Cards (the default) or a table, on screens wide enough for one
@@ -554,7 +573,7 @@
   }
 
   function applyListLayout() {
-    var layout = $("projects-view").value === "table" ? "table" : "cards";
+    var layout = field("projects-view").value === "table" ? "table" : "cards";
     try {
       if (layout === "table") localStorage.setItem(VIEW_KEY, layout);
       else localStorage.removeItem(VIEW_KEY);
@@ -568,9 +587,9 @@
   // "Clear filters" shows while a search or status filter narrows the list;
   // it puts the search, the status and the sort back to their defaults.
   function clearFilters() {
-    $("projects-search").value = "";
-    $("projects-sort").value = "updated";
-    $("projects-filter").value = "";
+    field("projects-search").value = "";
+    field("projects-sort").value = "updated";
+    field("projects-filter").value = "";
     renderList();
     $("projects-search").focus();
   }
@@ -590,7 +609,7 @@
   }
 
   function fillFilter() {
-    var select = $("projects-filter");
+    var select = /** @type {HTMLSelectElement} */ ($("projects-filter"));
     if (select.options.length) return;
     select.appendChild(el("option", { value: "", text: T("proj.filter.all") }));
     STATUSES.forEach(function (st) {
@@ -779,7 +798,7 @@
 
   function remove(p, btn) {
     var paid = state.plan !== "free";
-    var dialog = $("projects-delete-dialog");
+    var dialog = dialogEl("projects-delete-dialog");
     deleting = { p: p, btn: btn };
     $("projects-delete-text").textContent = T(paid ? "proj.deleteConfirm" : "proj.deleteConfirmFree", { name: p.name });
     if (typeof dialog.showModal === "function") dialog.showModal();
@@ -788,7 +807,7 @@
   }
 
   function closeDeleteDialog() {
-    var dialog = $("projects-delete-dialog");
+    var dialog = dialogEl("projects-delete-dialog");
     if (typeof dialog.close === "function" && dialog.open) dialog.close();
     else dialog.removeAttribute("open");
   }
@@ -835,7 +854,7 @@
         state.used = data.used;
         state.projects = data.projects || [];
         state.loaded = true;
-        $("project-new").href = designerBase(results[1]);
+        link("project-new").href = designerBase(results[1]);
         show($("projects-loading"), false);
         show($("projects-app"), true);
         renderUsage();
@@ -863,12 +882,12 @@
       readViewFromUrl();
       $("projects-search").addEventListener("input", renderList);
       $("projects-sort").addEventListener("change", renderList);
-      $("projects-view").value = readListLayout();
+      field("projects-view").value = readListLayout();
       $("projects-view").addEventListener("change", applyListLayout);
       // The table's headings sort too: the same sorts as the Sort by control.
       Array.prototype.forEach.call($("projects-table-head").querySelectorAll(".project-sort"), function (btn) {
         btn.addEventListener("click", function () {
-          $("projects-sort").value = sortName(btn.getAttribute("data-sort"));
+          field("projects-sort").value = sortName(btn.getAttribute("data-sort"));
           renderList();
         });
       });
@@ -924,7 +943,7 @@
 
   // The design in the designer, inside the page (embedded: no site header).
   function loadModel() {
-    var frame = $("project-model-frame");
+    var frame = /** @type {HTMLIFrameElement} */ ($("project-model-frame"));
     if (frame.getAttribute("src")) return;
     frame.src = withParams(withProject(designerUrl, project.id), "embed=1");
   }
@@ -972,8 +991,8 @@
     var form = $("project-info-form");
     var info = readInfo(form);
     if (!checkInfo(form, "info-", info)) return;
-    var name = nameFrom(info, $("info-name").value.trim());
-    var btn = form.querySelector("[type=submit]");
+    var name = nameFrom(info, field("info-name").value.trim());
+    var btn = /** @type {HTMLButtonElement} */ (form.querySelector("[type=submit]"));
     btn.disabled = true;
     status(out, "info", T("proj.saving"));
     var body = { id: project.id, name: name, info: info };
@@ -983,7 +1002,7 @@
     api("PATCH", "", body)
       .then(function (data) {
         Object.assign(project, data.project);
-        $("info-name").value = project.name;
+        field("info-name").value = project.name;
         infoDirty = false;
         renderHead();
         status(out, "success", T("proj.infoSaved"));
@@ -1150,7 +1169,7 @@
         .then(function (results) {
           project = results[0].project;
           designerUrl = designerBase(results[1]);
-          $("project-edit").href = withProject(designerUrl, project.id);
+          link("project-edit").href = withProject(designerUrl, project.id);
           show($("project-loading"), false);
           show($("project-app"), true);
           renderHead();
@@ -1213,6 +1232,7 @@
   var dirty = false; // the design differs from savedCode
   var opening = false; // the project named in the address is on its way in
   var barReady = Promise.resolve(); // the plan's counts, for the bar's wording
+  var savedTimer = null; // clears the "Saved" note after a while
 
   // The limit a new project would run into, from what the bar last heard.
   function barLimitHit() {
@@ -1322,9 +1342,9 @@
   }
 
   function busy(on) {
-    $("project-save").disabled = on;
-    $("project-save-new").disabled = on;
-    var dialogSave = document.querySelector("#project-dialog [type=submit]");
+    button("project-save").disabled = on;
+    button("project-save-new").disabled = on;
+    var dialogSave = /** @type {HTMLButtonElement | null} */ (document.querySelector("#project-dialog [type=submit]"));
     if (dialogSave) dialogSave.disabled = on;
   }
 
@@ -1346,8 +1366,8 @@
         : T("proj.saved", { name: data.project.name });
     status(out, "success", msg);
     // A success note steps aside after a while; errors stay.
-    clearTimeout(saved.timer);
-    saved.timer = setTimeout(function () {
+    clearTimeout(savedTimer);
+    savedTimer = setTimeout(function () {
       if (out.classList.contains("is-success")) status(out, "info", "");
     }, 8000);
   }
@@ -1395,7 +1415,7 @@
     // Say so now rather than after the client's details are typed in.
     var hit = barLimitHit();
     if (hit) return status($("project-status"), "error", errorText({ code: hit, data: { limits: barLimits } }));
-    var dialog = $("project-dialog");
+    var dialog = dialogEl("project-dialog");
     var box = $("project-dialog-fields");
     var mode = asCopy ? "copy" : "new";
     if (dialogMode !== mode) {
@@ -1410,7 +1430,7 @@
   }
 
   function closeDialog() {
-    var dialog = $("project-dialog");
+    var dialog = dialogEl("project-dialog");
     if (typeof dialog.close === "function") dialog.close();
     else dialog.removeAttribute("open");
   }
@@ -1426,7 +1446,7 @@
     busy(true);
     status(out, "info", T("proj.saving"));
     api("POST", "", {
-      name: nameFrom(info, $("new-name").value.trim()),
+      name: nameFrom(info, field("new-name").value.trim()),
       info: info,
       design: code,
       summary: studio("summary"),
@@ -1509,7 +1529,7 @@
       var line = panel.querySelector(".studio-loading-text") || panel;
       line.textContent = "";
       fillFailure(line, err, id);
-      var slow = panel.querySelector(".studio-loading-slow");
+      var slow = /** @type {HTMLElement | null} */ (panel.querySelector(".studio-loading-slow"));
       if (slow) slow.hidden = true;
     }
   }

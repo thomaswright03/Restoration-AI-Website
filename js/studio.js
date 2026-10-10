@@ -489,6 +489,7 @@
   // without re-picking what was saved. Before init() has run, it waits to
   // be the design init starts from.
   var pendingOpen = null;
+  var pendingOpenName = "";
 
   // designer.html?project=<id>: the studio starts only once js/projects.js
   // hands it the saved design (StudioDesign.open), or says it can't
@@ -511,6 +512,7 @@
     next.answered = Object.assign({}, answers(next), { stack: true });
     if (!design) {
       pendingOpen = next;
+      pendingOpenName = name || "";
       start();
       return true;
     }
@@ -5017,6 +5019,7 @@
 
     var linked = pendingOpen ? null : linkedDesign();
     var saved = linked || pendingOpen ? null : savedDesign();
+    var opened = pendingOpen ? pendingOpenName : "";
     design = pendingOpen || linked || saved || Plan.fromTemplate("full5x8", sizes);
     pendingOpen = null;
     if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
@@ -5083,7 +5086,8 @@
     window.addEventListener("load", fitStage);
     if (VIEW_ONLY) {
       /* the viewer: nothing to say about where the design came from */
-    } else if (linked) toast(T("studio.openedLink"));
+    } else if (opened) toast(T("studio.openedProject", { name: opened }));
+    else if (linked) toast(T("studio.openedLink"));
     else if (saved) toast(T("studio.welcomeBack"), { label: T("studio.startOver"), run: startOver });
 
     var configReady = window.SiteConfig ? window.SiteConfig.ready : Promise.resolve(null);

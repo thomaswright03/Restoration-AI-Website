@@ -39,8 +39,8 @@ async function wait3d(page) {
 }
 
 // Answers every step's questions the way a person clicking through would
-// (the plumbing wall, a product in every list, a finish for every
-// surface), so a test can go to any step. Loads it like a shared link.
+// (the plumbing wall, a finish for every surface; the product lists start
+// answered), so a test can go to any step. Loads it like a shared link.
 async function answerAll(page) {
   await page.waitForFunction(
     () => window.RoomStudio && window.BathroomRoom3D && window.BathroomRoom3D.available === true,

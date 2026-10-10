@@ -62,12 +62,21 @@ test("an unknown business shows the unavailable notice, not the demo", async ({ 
   await expect(page.locator(".designer-intro")).toBeHidden();
 });
 
-test("embedded, the designer has no product header or footer", async ({ page }) => {
+test("embedded, the designer is a read-only viewer with no product header or footer", async ({ page }) => {
   await page.goto("/designer.html?embed=1");
   await expect(page.locator(".site-header")).toBeHidden();
   await expect(page.locator(".site-footer")).toBeHidden();
   await expect(page.locator("#studio")).toBeVisible();
-  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator(".studio-status")).toBeVisible();
+  // The room and its views, and one way out; nothing to edit.
+  await expect(page.locator(".studio-view-btn[data-view]")).toHaveCount(3);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+  await expect(page.locator(".studio-action")).toHaveCount(0);
+  await expect(page.locator("#studio-panel")).toBeHidden();
+  await expect(page.locator("#studio-riley")).toBeHidden();
+  const open = page.getByRole("link", { name: "Open in designer" });
+  await expect(open).toHaveAttribute("href", "/designer.html");
+  await expect(open).toHaveAttribute("target", "_top");
 });
 
 test("with no account keys set, sign-up and account say accounts aren't on yet", async ({ page }) => {

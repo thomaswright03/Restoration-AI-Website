@@ -2,7 +2,7 @@
 //
 // The designer page is shared by every subscriber. Its address says whose it
 // is: designer.html?b=<business-slug>. This script sets window.DesignerBusiness
-// (name, initials, phone, email, labor prices, where leads go) before the
+// (name, initials, phone, email, labor prices) before the
 // studio's scripts load, so they speak for that business.
 //
 //   - No ?b= (or ?b=demo): the built-in sample business, for the public demo.
@@ -27,9 +27,9 @@
     phone: "(555) 010-0199",
     email: "hello@example.com",
     legalName: "",
-    leadEndpoint: "/api/leads",
     serviceName: "Room Designer 3D",
     demo: true,
+    ownPrices: false,
     unavailable: "",
   };
 
@@ -47,15 +47,20 @@
   }
 
   // Only known price keys with sensible numbers replace the defaults.
+  // Returns whether any did: until the owner sets a price, the estimate
+  // runs on the platform's sample rates and says so (js/studio.js).
   function applyPrices(prices) {
     var Pricing = window.BathroomPricing;
-    if (!Pricing || !prices || typeof prices !== "object") return;
+    if (!Pricing || !prices || typeof prices !== "object") return false;
+    var any = false;
     Object.keys(Pricing.DEFAULT_PRICES).forEach(function (key) {
       var n = Number(prices[key]);
       if (prices[key] !== undefined && prices[key] !== "" && isFinite(n) && n >= 0 && n <= 100000) {
         Pricing.DEFAULT_PRICES[key] = n;
+        any = true;
       }
     });
+    return any;
   }
 
   biz.load = function (data, reason) {
@@ -70,12 +75,11 @@
     biz.phone = clean(data.phone, 40);
     biz.email = clean(data.email, 120);
     biz.legalName = clean(data.legalName);
-    biz.leadEndpoint = "/api/leads";
     biz.demo = false;
     biz.unavailable = "";
     // The owner looking at their own designer before their plan is active.
     biz.preview = data.preview === true;
-    applyPrices(data.prices);
+    biz.ownPrices = applyPrices(data.prices);
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in

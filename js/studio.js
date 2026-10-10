@@ -32,7 +32,11 @@
   // it), and ?embed=1 shows it inside its project page. Neither touches the
   // design kept in this browser: the owner's unsaved work waits for them.
   var PAGE_PARAMS = new URLSearchParams(window.location.search);
-  var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && PAGE_PARAMS.get("embed") !== "1";
+  // ?embed=1 is the project page's "3D model" tab: a read-only view of the
+  // saved design (the room and its views, nothing to edit), with one way
+  // out, "Open in designer".
+  var VIEW_ONLY = PAGE_PARAMS.get("embed") === "1";
+  var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && !VIEW_ONLY;
   var HASH_KEY = "design";
   // Tile and plank floors are bought with extra for cuts and breakage;
   // walls take two coats of paint.
@@ -173,7 +177,6 @@
     drag: null,
     arrange: null, // { options: [...] } while "Arrange it for me" shows its choices
     isolate: false, // show the fixture being worked on by itself
-    messageEdited: false,
   };
   var els = {};
 
@@ -244,6 +247,7 @@
   // 3D view. Matches the stacked layout in css/studio.css.
   var STACKED = window.matchMedia ? window.matchMedia("(max-width: 900px)") : null;
   function placeRiley() {
+    if (!els.riley) return;
     var stage = els.body.querySelector(".studio-stage");
     var under = Boolean(STACKED && STACKED.matches);
     if (under && els.riley.parentNode !== els.body) els.body.insertBefore(els.riley, els.panel);
@@ -281,11 +285,29 @@
     }).length;
   }
 
-  // How many fit, but tighter than recommended.
-  function tightCount(list) {
+  // What fits, but tighter than recommended.
+  function tightIds(list) {
     return Object.keys(list).filter(function (id) {
       return (list[id] || []).length > 0 && !Plan.errorsOf(list, id).length;
-    }).length;
+    });
+  }
+
+  // The first problem's (or, failing that, the first tight spot's) sentence.
+  function statusWhy(list) {
+    var ids = Object.keys(list).filter(function (id) {
+      return (list[id] || []).length > 0;
+    });
+    ids.sort(function (a, b) {
+      return (Plan.errorsOf(list, b).length ? 1 : 0) - (Plan.errorsOf(list, a).length ? 1 : 0);
+    });
+    var id = ids[0];
+    if (!id) return "";
+    var item = findItem(id);
+    var point = item ? null : findPoint(id);
+    var x = Plan.errorsOf(list, id)[0] || list[id][0];
+    if (item) return itemName(item) + ": " + issueText(item, x);
+    if (point) return pointName(point) + ": " + pointIssueText(point, x);
+    return "";
   }
 
   // How a fixture is doing: "error", "warn" or "ok".
@@ -1178,7 +1200,7 @@
     if (plan) {
       planSvg(
         d,
-        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: true },
+        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: !VIEW_ONLY },
         els.planSvg,
       );
     } else {
@@ -1282,19 +1304,25 @@
       text = T("studio.status.drag." + kind);
     } else {
       var errors = errorCount(list);
-      var warns = tightCount(list);
-      kind = errors ? "error" : warns ? "warn" : "ok";
+      var tight = tightIds(list);
+      kind = errors ? "error" : tight.length ? "warn" : "ok";
       text = errors
         ? T(errors === 1 ? "studio.status.problem" : "studio.status.problems", { n: errors })
-        : warns
-          ? T(warns === 1 ? "studio.status.tight" : "studio.status.tights", { n: warns })
-          : T("studio.status.ok");
+        : tight.length === 1
+          ? T("studio.status.tightOne", { what: findItem(tight[0]) ? theName(tight[0]) : anyName(tight[0]) })
+          : tight.length
+            ? T("studio.status.tights", { n: tight.length })
+            : T("studio.status.ok");
     }
     chip.className = "studio-status is-" + kind;
     clear(chip);
     chip.insertAdjacentHTML("afterbegin", icon(kind === "ok" ? "check" : "alert"));
     chip.appendChild(h("span", { text: text }));
-    chip.disabled = !!previewing;
+    // Why, in a sentence (hover or screen reader); a click shows the thing.
+    var why = kind === "ok" || (previewing && ui.drag) ? "" : statusWhy(list);
+    if (why) chip.setAttribute("title", why);
+    else chip.removeAttribute("title");
+    chip.disabled = !!previewing || VIEW_ONLY;
   }
 
   // The first thing with a problem (or, failing that, a tight spot):
@@ -1591,6 +1619,7 @@
   }
 
   function wire3d() {
+    if (VIEW_ONLY) return;
     var wrap = els.canvasWrap;
     // Captured before OrbitControls sees it: a press on a fixture picks it
     // up instead of turning the room.
@@ -1678,6 +1707,7 @@
   }
 
   function wirePlan() {
+    if (VIEW_ONLY) return;
     var svg = els.planSvg;
     svg.addEventListener("pointerdown", function (e) {
       if (e.button !== 0) return;
@@ -1775,6 +1805,7 @@
   // Delete removes what's picked; Escape lets go. Ctrl/Cmd+Z undoes,
   // Ctrl/Cmd+Shift+Z or Ctrl+Y redoes.
   function onKey(e) {
+    if (VIEW_ONLY) return;
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     var mod = e.ctrlKey || e.metaKey;
     if (mod && !typing && (e.key === "z" || e.key === "Z")) {
@@ -1891,7 +1922,7 @@
   //   room         the plumbing wall picked, the sizes all lengths
   //   layout       at least one fixture, and everything fits
   //   electrical   no outlet, switch or light where it can't go
-  //   products     a product picked for every fixture
+  //   products     nothing: every list starts on the model shown in the room
   //   finishes     a product picked for every surface being done
   // missingFor() is what's left, as phrases for "To go on: ...".
   function answers(d) {
@@ -1906,18 +1937,6 @@
     if (slotId) next.products[slotId] = true;
     else next.stack = true;
     return Object.assign({}, d, { answered: next });
-  }
-
-  // The product slots on show, for the fixtures in the room.
-  function productSlots() {
-    if (!room3d) return [];
-    var out = [];
-    room3d.getProductGroups().forEach(function (group) {
-      group.slots.forEach(function (slot) {
-        out.push(slot);
-      });
-    });
-    return out;
   }
 
   // The surfaces a product is picked for: the ones being done that have
@@ -1978,23 +1997,6 @@
         return Plan.errorsOf(issues, p.id).length > 0;
       });
       if (wrong.length) out.push({ key: "points", text: T("studio.need.points") });
-    } else if (step === "products") {
-      var open = productSlots().filter(function (slot) {
-        return !answers(d).products[slot.id];
-      });
-      // A few are named; a long list is counted instead.
-      if (open.length > 3) out.push({ key: "products", text: T("studio.need.productsMany", { n: open.length }) });
-      else if (open.length)
-        out.push({
-          key: "products",
-          text: T("studio.need.products", {
-            list: open
-              .map(function (slot) {
-                return slot.label;
-              })
-              .join(", "),
-          }),
-        });
     } else if (step === "finishes") {
       var unpicked = surfaceCats(d).filter(function (cat) {
         return !surfacePicked(cat, d);
@@ -2090,6 +2092,7 @@
   }
 
   function renderBar() {
+    if (VIEW_ONLY) return;
     var stop = null;
     Array.prototype.forEach.call(els.steps.querySelectorAll("[data-step]"), function (btn) {
       var step = btn.getAttribute("data-step");
@@ -2179,6 +2182,7 @@
   var panelAgain = null;
 
   function renderPanel(opts) {
+    if (VIEW_ONLY) return;
     // A field losing focus as the old panel is taken down can change the
     // design (and ask for the panel again): that waits until this one is up.
     if (panelBusy) {
@@ -2202,12 +2206,7 @@
     var panel = els.panel;
     var active = document.activeElement;
     var key = active && panel.contains(active) ? active.getAttribute("data-key") : null;
-    var inForm = active && els.request.contains(active) ? active : null;
     var scroll = panel.scrollTop;
-    // The request form is kept, not rebuilt (what's typed in it stays): it
-    // waits, hidden, in its place on the page until the last step shows it.
-    els.request.hidden = true;
-    els.requestHome.appendChild(els.request);
     clear(panel);
     var body = h("div", { class: "studio-step is-" + ui.step });
     ({
@@ -2225,13 +2224,12 @@
       var again = panel.querySelector('[data-key="' + key + '"]');
       if (again && !again.disabled) again.focus({ preventScroll: true });
     }
-    if (inForm && document.body.contains(inForm)) inForm.focus({ preventScroll: true });
     renderSelChip();
   }
 
-  // Without the price estimator the last step only sends the design.
+  // Without the price estimator the last step only shows the design.
   function stepShort(step) {
-    return T("studio.step." + (step === "estimate" && !estimatorOn() ? "send" : step) + ".short");
+    return T("studio.step." + (step === "estimate" && !estimatorOn() ? "design" : step) + ".short");
   }
 
   function stepHead(step) {
@@ -2239,15 +2237,30 @@
     return h("header", { class: "studio-step-head" }, [
       h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
-      h("p", {
-        class: "studio-step-intro",
-        // The owner's own designer: the estimate is theirs to save or hand
-        // to the client, not something to "send" to themselves.
-        text: T(
-          step === "estimate" && !BIZ.demo ? "studio.step.estimate.introOwner" : "studio.step." + step + ".intro",
-        ),
-      }),
+      stepIntro(step),
     ]);
+  }
+
+  // The owner's own designer: the estimate is theirs to save or hand to
+  // the client, not something to "send" to themselves; and while they
+  // haven't set their prices, it says so and points to where they're set.
+  function stepIntro(step) {
+    if (step !== "estimate" || BIZ.demo) {
+      return h("p", { class: "studio-step-intro", text: T("studio.step." + step + ".intro") });
+    }
+    if (!onDefaultRates()) {
+      return h("p", { class: "studio-step-intro", text: T("studio.step.estimate.introOwner") });
+    }
+    return h("p", { class: "studio-step-intro" }, [
+      T("studio.step.estimate.introOwnerDefaults") + " ",
+      h("a", { href: pagePath("account.html"), text: T("studio.step.estimate.setPrices") }),
+    ]);
+  }
+
+  // Another page of the site in this language (the pages sit side by side:
+  // designer.html, es/designer.html, pt/designer.html).
+  function pagePath(file) {
+    return window.location.pathname.replace(/[^/]*$/, file);
   }
 
   function section(title, kids, cls) {
@@ -3454,23 +3467,20 @@
       ]);
       group.slots.forEach(function (slot) {
         var id = "studio-product-" + slot.id;
-        // Until the person picks, the room shows the first that fits and
-        // the list says to choose.
-        var picked = !!answers().products[slot.id];
+        // The list starts on the model the room shows (the first that
+        // fits), so nothing has to be picked to go on.
         var select = h(
           "select",
           { id: id, class: "studio-select", "data-key": "slot-" + slot.id },
-          (picked ? [] : [h("option", { value: "", disabled: true, text: T("studio.products.choose") })]).concat(
-            slot.options.map(function (opt) {
-              return h("option", {
-                value: opt.id,
-                disabled: opt.reason ? true : null,
-                text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
-              });
-            }),
-          ),
+          slot.options.map(function (opt) {
+            return h("option", {
+              value: opt.id,
+              disabled: opt.reason ? true : null,
+              text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
+            });
+          }),
         );
-        select.value = picked ? slot.value : "";
+        select.value = slot.value;
         select.addEventListener("change", function () {
           if (!select.value) return;
           room3d.setProductPick(slot.id, select.value);
@@ -3484,29 +3494,26 @@
           return it.slotId === slot.id && it.mmns.length;
         })[0];
         card.appendChild(
-          missingMark(
-            h("div", { class: "studio-field" }, [
-              h("label", { for: id, text: slot.label }),
-              select,
-              item
-                ? h(
-                    "button",
-                    {
-                      type: "button",
-                      class: "studio-link-btn studio-examples-btn",
-                      "data-key": "examples-" + slot.id,
-                      "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
-                      icon: "photo",
-                      onclick: function () {
-                        openPhotos(item);
-                      },
+          h("div", { class: "studio-field" }, [
+            h("label", { for: id, text: slot.label }),
+            select,
+            item
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    class: "studio-link-btn studio-examples-btn",
+                    "data-key": "examples-" + slot.id,
+                    "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
+                    icon: "photo",
+                    onclick: function () {
+                      openPhotos(item);
                     },
-                    [T("studio.photos.show")],
-                  )
-                : null,
-            ]),
-            !picked,
-          ),
+                  },
+                  [T("studio.photos.show")],
+                )
+              : null,
+          ]),
         );
       });
       if (standIn) {
@@ -3968,7 +3975,9 @@
 
   // Labor, the surface materials and the Kohler products for the design:
   // { labor, materials: [{ cat, label, product, quantityLabel, cost }],
-  //   products: [{ label, mmns, qty, url, cost (or null) }], ... totals }.
+  //   products: [{ label, mmns, qty, url, cost: null }], ... totals }.
+  // The products are listed, never priced (cost stays null, which the
+  // saved summary and the project page read as "not priced").
   function estimate(d) {
     d = d || design;
     var inputs = estimateInputs(d);
@@ -4018,27 +4027,10 @@
     var materialsTotal = Pricing.roundCents(
       materials.reduce(function (sum, m) {
         return sum + m.cost;
-      }, 0) +
-        products.reduce(function (sum, p) {
-          return sum + (p.cost || 0);
-        }, 0),
+      }, 0),
     );
     var notes = [];
-    var unpriced = products.filter(function (p) {
-      return p.cost === null;
-    });
-    if (products.length && unpriced.length === products.length) notes.push(T("studio.est.productsNotPriced"));
-    else if (unpriced.length) {
-      notes.push(
-        T("products.unpriced", {
-          items: unpriced
-            .map(function (p) {
-              return p.label;
-            })
-            .join("; "),
-        }),
-      );
-    }
+    if (products.length) notes.push(T("studio.est.productsNotPriced"));
     if (
       products.some(function (p) {
         return p.groupId === "vanity";
@@ -4065,11 +4057,7 @@
         }),
       );
     }
-    var hasMaterials =
-      materials.length > 0 ||
-      products.some(function (p) {
-        return p.cost !== null;
-      });
+    var hasMaterials = materials.length > 0;
     return {
       inputs: inputs,
       labor: labor,
@@ -4082,40 +4070,28 @@
     };
   }
 
-  // Plumbing for the fixtures is left out only in an estimate that doesn't
-  // price it (the labor's plumbingIncluded says).
-  function plumbingLeftOut(est) {
-    return est.labor.plumbingFixtureCount > 0 && !est.labor.plumbingIncluded;
-  }
-
   function totalLabel(est) {
-    var key = est.hasMaterials ? "card.totalMaterials" : "card.total";
-    return T(plumbingLeftOut(est) ? key + "BeforePlumbing" : key);
+    return T(est.hasMaterials ? "card.totalMaterials" : "card.total");
   }
 
+  // What the total leaves out, under the priced lines. The plumbing and
+  // electrical points are in the lines (estimate() prices every trade), so
+  // only the work beyond them is extra.
   function excludedLines(est) {
-    var n = plumbingLeftOut(est) ? est.labor.plumbingFixtureCount : 0;
-    var list = [];
-    if (n > 0)
-      list.push({
-        label: T("card.excluded.listedPlumbing", { n: Pricing.formatQty(n) }),
-        value: T("card.excluded.extra"),
-      });
-    list.push({
-      label: T(
-        n > 0
-          ? "card.excluded.otherTrades"
-          : est.labor.plumbingIncluded
-            ? "card.excluded.tradesPriced"
-            : "card.excluded.trades",
-      ),
-      value: T("card.excluded.extra"),
-    });
-    list.push({
-      label: T(est.hasMaterials ? "card.excluded.permits" : "card.excluded.materialsPermits"),
-      value: T("card.excluded.notIncluded"),
-    });
-    return list;
+    return [
+      { label: T("card.excluded.tradesPriced"), value: T("card.excluded.extra") },
+      {
+        label: T(est.hasMaterials ? "card.excluded.permits" : "card.excluded.materialsPermits"),
+        value: T("card.excluded.notIncluded"),
+      },
+    ];
+  }
+
+  // The business's own labor prices are in the estimate once it has set
+  // any on the account page (js/business.js); until then every line is at
+  // the platform's sample rates, and the estimate says so.
+  function onDefaultRates() {
+    return !BIZ.demo && !BIZ.ownPrices;
   }
 
   function assumptions(est) {
@@ -4124,10 +4100,11 @@
       list.push(T("studio.est.materialQty", { waste: Math.round((TILE_WASTE - 1) * 100), coats: PAINT_COATS }));
     list.push(T("card.plumbingNote"));
     list.push(T(est.hasMaterials ? "card.materialsNote" : "card.alsoNotIncluded"));
+    if (onDefaultRates()) list.push(T("card.defaultRates"));
     return list;
   }
 
-  // The design in words, for the request form and the PDF.
+  // The design in words, for the PDF.
   function designLines(d, est) {
     var out = [];
     out.push(T("studio.sum.room", { w: len(d.room.w), l: len(d.room.l), h: len(d.room.h) }));
@@ -4184,30 +4161,10 @@
     return parts.length ? " (" + parts.join(", ") + ")" : "";
   }
 
-  // What goes in the request form's "Project details".
-  function requestSummary(est) {
-    var out = [T("studio.sum.title")];
-    designLines(design, est).forEach(function (line) {
-      out.push("- " + line);
-    });
-    if (estimatorOn()) {
-      out.push("");
-      out.push(T("studio.sum.labor", { total: Pricing.money(est.labor.subtotal) }));
-      if (est.hasMaterials) out.push(T("studio.sum.materials", { total: Pricing.money(est.materialsTotal) }));
-      out.push(totalLabel(est) + ": " + Pricing.money(est.grandTotal));
-    }
-    var problems = errorCount(issues);
-    if (problems) out.push(T("studio.sum.problems", { n: problems }));
-    out.push("");
-    out.push(T("studio.sum.link"));
-    out.push(shareUrl());
-    return out.join("\n");
-  }
-
-  // ---------- Step 5: the estimate and the request ----------
+  // ---------- Step 6: the estimate ----------
   function estimateStep(body) {
     var priced = estimatorOn();
-    body.appendChild(stepHead(priced ? "estimate" : "send"));
+    body.appendChild(stepHead(priced ? "estimate" : "design"));
     var est = estimate();
     var problems = errorCount(issues);
     if (problems) {
@@ -4260,33 +4217,83 @@
       },
       [h("span", { icon: "download" }), T("studio.est.pdf")],
     );
-    body.appendChild(
-      h("div", { class: "studio-est-actions" }, [
-        pdfBtn,
-        h("button", { type: "button", class: "btn btn-secondary", "data-key": "share", onclick: copyLink }, [
-          h("span", { icon: "link" }),
-          T("studio.copyLink"),
-        ]),
+    var actions = [
+      pdfBtn,
+      h("button", { type: "button", class: "btn btn-secondary", "data-key": "share", onclick: copyLink }, [
+        h("span", { icon: "link" }),
+        T("studio.copyLink"),
       ]),
-    );
+    ];
+    // The owner's own designer: Save project sits with the other
+    // end-of-design actions. It presses the save bar's button (js/projects.js
+    // owns saving), and shows once that bar is up for a plan that saves.
+    var saveBtn = saveBarButton();
+    if (saveBtn) {
+      actions.unshift(
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-primary",
+            "data-key": "save",
+            onclick: function () {
+              saveBtn.click();
+            },
+          },
+          [h("span", { icon: "check" }), saveBtn.textContent.trim()],
+        ),
+      );
+    }
+    body.appendChild(h("div", { class: "studio-est-actions" }, actions));
     body.appendChild(pdfStatus);
 
-    // The request form, filled in with the design: only in the public demo.
-    // A business's designer is for its signed-in owner, who saves projects
-    // instead of sending requests to themselves.
+    // The public demo ends by saying what a business gets, and how to get
+    // it: there is no one to send a homeowner's request to.
     if (!BIZ.demo) return;
-    var message = document.getElementById("message");
-    if (message && !ui.messageEdited) message.value = requestSummary(est);
-    var service = document.getElementById("service");
-    if (service && !ui.serviceEdited) service.value = design.finishes.demolition ? "full-bathroom" : "partial-bathroom";
     body.appendChild(
       section(
-        T("studio.est.send", { business: BIZ.name }),
-        [h("p", { class: "studio-note", text: T("studio.est.sendHelp") }), els.request],
-        "studio-request-section",
+        T("studio.demo.title"),
+        [
+          h("p", { class: "studio-note", text: T("studio.demo.text") }),
+          h("a", {
+            class: "btn btn-primary",
+            href: pagePath("signup.html"),
+            "data-key": "signup",
+            text: T("studio.demo.signup"),
+          }),
+        ],
+        "studio-demo-end",
       ),
     );
-    els.request.hidden = false;
+  }
+
+  // The save bar's button (js/projects.js shows the bar for a signed-in
+  // owner whose plan saves), or null while there isn't one.
+  function saveBarButton() {
+    if (BIZ.demo) return null;
+    var form = document.getElementById("project-save-form");
+    var btn = document.getElementById("project-save");
+    return form && btn && !form.hidden && !form.closest("[hidden]") ? btn : null;
+  }
+
+  // The estimate step shows Save project as soon as the save bar appears
+  // (it loads after the studio), and follows its label (Save project / Save
+  // changes).
+  function watchSaveBar() {
+    var form = document.getElementById("project-save-form");
+    var bar = document.getElementById("project-bar");
+    if (!form || !bar || typeof MutationObserver === "undefined") return;
+    var again = function () {
+      if (ui.step === "estimate") renderPanel();
+    };
+    new MutationObserver(again).observe(form, {
+      attributes: true,
+      attributeFilter: ["hidden"],
+      subtree: true,
+      childList: true,
+      characterData: true,
+    });
+    new MutationObserver(again).observe(bar, { attributes: true, attributeFilter: ["hidden"] });
   }
 
   function lineEl(label, detail, amount, cls, image) {
@@ -4313,14 +4320,6 @@
           detail: m.quantityLabel + " · " + m.product.best.name,
           amount: Pricing.money(m.cost),
           image: m.product.imageUrl,
-        });
-      });
-      est.products.forEach(function (p) {
-        if (p.cost === null) return;
-        materials.push({
-          label: p.label,
-          detail: p.mmns.join(" + ") + (p.qty > 1 ? " × " + p.qty : ""),
-          amount: Pricing.money(p.cost),
         });
       });
     }
@@ -4367,14 +4366,6 @@
         h("strong", { "data-testid": "estimate-total", text: Pricing.money(est.grandTotal) }),
       ]),
     );
-    if (plumbingLeftOut(est)) {
-      card.appendChild(
-        h("p", {
-          class: "studio-note",
-          text: T("card.plumbingTotalNote", { n: Pricing.formatQty(est.labor.plumbingFixtureCount) }),
-        }),
-      );
-    }
     est.notes.forEach(function (n) {
       card.appendChild(h("p", { class: "studio-note", text: n }));
     });
@@ -4404,15 +4395,12 @@
   // The Kohler products in the room, with their model numbers and where to
   // look them up.
   function productsList(est) {
-    var unpriced = est.products.filter(function (p) {
-      return p.cost === null;
-    });
-    if (!unpriced.length) return null;
+    if (!est.products.length) return null;
     var wrap = h("div", { class: "studio-products" }, [
       h("p", { class: "studio-lines-title", text: T("studio.est.products") }),
     ]);
     var list = h("ul");
-    unpriced.forEach(function (p) {
+    est.products.forEach(function (p) {
       list.appendChild(
         h("li", {}, [
           h("span", { text: p.label + (p.qty > 1 ? " × " + p.qty : "") + " " }),
@@ -4490,17 +4478,12 @@
       var item = findItem(o.id, d);
       if (item.type === "door") return;
       var tone = toneOf(o.id, list);
+      var fill = tone === "error" ? [254, 226, 226] : [224, 242, 254];
       shapes.rects.push(
-        Object.assign(
-          {
-            fill: tone === "error" ? [254, 226, 226] : [224, 242, 254],
-            stroke: tone === "error" ? [220, 38, 38] : [37, 99, 235],
-          },
-          o.body,
-        ),
+        Object.assign({ fill: fill, stroke: tone === "error" ? [220, 38, 38] : [37, 99, 235] }, o.body),
       );
       var c = centerOf(item, d);
-      shapes.texts.push({ x: c.x, z: c.z, text: itemName(item, d), small: true });
+      shapes.texts.push({ x: c.x, z: c.z, text: itemName(item, d), small: true, halo: fill });
     });
     itemsOf("door", d).forEach(function (door) {
       if ((door.opts || {}).kind === "opening") return;
@@ -4532,8 +4515,8 @@
         stroke: [30, 41, 70],
       });
     });
-    shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w) });
-    shapes.texts.push({ x: -(WALL_T + 1.5), z: room.l / 2, text: len(room.l), vertical: true });
+    shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w), bold: true });
+    shapes.texts.push({ x: -(WALL_T + 1.6), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
     return shapes;
   }
 
@@ -4565,13 +4548,10 @@
             : [{ label: totalLabel(est), value: Pricing.money(est.grandTotal), strong: true }];
         }
         var sections = [];
-        var unpriced = est.products.filter(function (p) {
-          return p.cost === null;
-        });
-        if (unpriced.length) {
+        if (est.products.length) {
           sections.push({
             title: T("studio.est.products"),
-            items: unpriced.map(function (p) {
+            items: est.products.map(function (p) {
               return p.label + (p.qty > 1 ? " × " + p.qty : "") + " — " + p.mmns.join(" + ") + " — " + p.url;
             }),
           });
@@ -4584,19 +4564,14 @@
           picture: picture,
           plan: pdfPlan(design),
           planTitle: T("studio.pdf.plan"),
+          linesTitle: T(est.hasMaterials ? "studio.pdf.linesMaterials" : "studio.pdf.lines"),
           designTitle: T("studio.pdf.design"),
           design: designLines(design, est),
           lines: lines,
           excluded: priced ? excludedLines(est) : [],
           totals: totals,
           afterTotal: priced
-            ? est.notes
-                .concat(
-                  plumbingLeftOut(est)
-                    ? [T("card.plumbingTotalNote", { n: Pricing.formatQty(est.labor.plumbingFixtureCount) })]
-                    : [],
-                )
-                .concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer")])
+            ? est.notes.concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer")])
             : [],
           sections: sections,
           footer: {
@@ -4671,7 +4646,12 @@
       });
       return;
     }
-    var stepKey = ui.step === "estimate" && !BIZ.demo ? "riley.step.estimateOwner" : "riley.step." + ui.step;
+    var stepKey =
+      ui.step === "estimate" && !BIZ.demo
+        ? onDefaultRates()
+          ? "riley.step.estimateOwnerDefaults"
+          : "riley.step.estimateOwner"
+        : "riley.step." + ui.step;
     var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.
@@ -4792,54 +4772,6 @@
   // Start
   // ---------------------------------------------------------------------
   function buildChrome() {
-    els.steps = document.getElementById("studio-steps");
-    STEPS.forEach(function (step, i) {
-      els.steps.appendChild(
-        h(
-          "button",
-          {
-            type: "button",
-            class: "studio-step-btn",
-            "data-step": step,
-            onclick: function () {
-              goTo(step);
-            },
-          },
-          [
-            h("span", { class: "studio-step-num", text: String(i + 1) }),
-            h("span", { class: "studio-step-label", "data-label": step, text: T("studio.step." + step + ".short") }),
-          ],
-        ),
-      );
-    });
-    var actions = document.getElementById("studio-actions");
-    var action = function (name, labelKey, run) {
-      var btn = h(
-        "button",
-        { type: "button", class: "studio-action", "aria-label": T(labelKey), title: T(labelKey), onclick: run },
-        [h("span", { icon: name }), h("span", { class: "studio-action-label", text: T(labelKey) })],
-      );
-      actions.appendChild(btn);
-      return btn;
-    };
-    els.undo = action("undo", "studio.undo", undo);
-    els.redo = action("redo", "studio.redo", redo);
-    action("link", "studio.share", copyLink);
-    action("restart", "studio.startOver", startOver);
-    els.total = h(
-      "button",
-      {
-        type: "button",
-        class: "studio-total-chip",
-        hidden: true,
-        onclick: function () {
-          goTo("estimate");
-        },
-      },
-      [h("span", { class: "studio-total-chip-label", text: T("studio.estimateChip") }), (els.totalValue = h("strong"))],
-    );
-    actions.appendChild(els.total);
-
     var viewbar = els.viewbar;
     var views = h(
       "div",
@@ -4908,6 +4840,76 @@
     viewbar.appendChild(els.isoBtn);
     viewbar.appendChild(els.frameBtn);
     viewbar.appendChild(els.status);
+    if (VIEW_ONLY) {
+      // The project page's viewer: no steps, no undo, share or start over.
+      // Changing the design happens in the designer itself, in the top window.
+      document
+        .getElementById("studio-actions")
+        .appendChild(
+          h(
+            "a",
+            { class: "btn btn-primary studio-open-link", href: designerHref(), target: "_top", "data-key": "open" },
+            [h("span", { icon: "external" }), T("studio.openDesigner")],
+          ),
+        );
+      return;
+    }
+    els.steps = document.getElementById("studio-steps");
+    STEPS.forEach(function (step, i) {
+      els.steps.appendChild(
+        h(
+          "button",
+          {
+            type: "button",
+            class: "studio-step-btn",
+            "data-step": step,
+            onclick: function () {
+              goTo(step);
+            },
+          },
+          [
+            h("span", { class: "studio-step-num", text: String(i + 1) }),
+            h("span", { class: "studio-step-label", "data-label": step, text: T("studio.step." + step + ".short") }),
+          ],
+        ),
+      );
+    });
+    var actions = document.getElementById("studio-actions");
+    var action = function (name, labelKey, run) {
+      var btn = h(
+        "button",
+        { type: "button", class: "studio-action", "aria-label": T(labelKey), title: T(labelKey), onclick: run },
+        [h("span", { icon: name }), h("span", { class: "studio-action-label", text: T(labelKey) })],
+      );
+      actions.appendChild(btn);
+      return btn;
+    };
+    els.undo = action("undo", "studio.undo", undo);
+    els.redo = action("redo", "studio.redo", redo);
+    action("link", "studio.share", copyLink);
+    action("restart", "studio.startOver", startOver);
+    els.total = h(
+      "button",
+      {
+        type: "button",
+        class: "studio-total-chip",
+        hidden: true,
+        onclick: function () {
+          goTo("estimate");
+        },
+      },
+      [h("span", { class: "studio-total-chip-label", text: T("studio.estimateChip") }), (els.totalValue = h("strong"))],
+    );
+    actions.appendChild(els.total);
+  }
+
+  // This same design in the full designer: the page's address without the
+  // embed flag (the project id and business stay).
+  function designerHref() {
+    var params = new URLSearchParams(window.location.search);
+    params.delete("embed");
+    var q = params.toString();
+    return window.location.pathname + (q ? "?" + q : "");
   }
 
   // On wide screens the studio fills the window below the page header (and
@@ -4954,9 +4956,7 @@
     els.toast = document.getElementById("studio-toast");
     els.live = document.getElementById("studio-live");
     els.selChip = document.getElementById("studio-selchip");
-    els.riley = document.getElementById("studio-riley");
-    els.request = document.getElementById("studio-request");
-    els.requestHome = els.request.parentNode;
+    els.riley = VIEW_ONLY ? null : document.getElementById("studio-riley");
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
     placeRiley();
@@ -5002,32 +5002,14 @@
       if (!next) return;
       ui.selected = null;
       commit(next);
-      toast(T("studio.openedLink"));
+      if (!VIEW_ONLY) toast(T("studio.openedLink"));
       try {
         history.replaceState(null, "", window.location.href.split("#")[0]);
       } catch (e) {
         /* fine */
       }
     });
-    var message = document.getElementById("message");
-    if (message) {
-      message.addEventListener("input", function () {
-        ui.messageEdited = true;
-      });
-    }
-    var service = document.getElementById("service");
-    if (service) {
-      service.addEventListener("change", function () {
-        ui.serviceEdited = true;
-      });
-    }
-    var form = document.getElementById("lead-form");
-    if (form) {
-      form.addEventListener("reset", function () {
-        ui.messageEdited = false;
-        ui.serviceEdited = false;
-      });
-    }
+    watchSaveBar();
     els.linkDialog.addEventListener("click", function (e) {
       if (e.target.closest("[data-close]")) els.linkDialog.close();
     });
@@ -5057,7 +5039,9 @@
     // The demo note above the studio appears once the page has loaded.
     document.addEventListener("DOMContentLoaded", fitStage);
     window.addEventListener("load", fitStage);
-    if (linked) toast(T("studio.openedLink"));
+    if (VIEW_ONLY) {
+      /* the viewer: nothing to say about where the design came from */
+    } else if (linked) toast(T("studio.openedLink"));
     else if (saved) toast(T("studio.welcomeBack"), { label: T("studio.startOver"), run: startOver });
 
     var configReady = window.SiteConfig ? window.SiteConfig.ready : Promise.resolve(null);

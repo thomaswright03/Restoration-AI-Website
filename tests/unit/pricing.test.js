@@ -1,26 +1,41 @@
 "use strict";
 
+// The estimate math, on the path the studio runs: computeEstimate() with
+// includeTrade (every trade priced: plumbing points, electrical points,
+// drain line, surcharges when flagged) at the business's prices.
+
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const P = require("../../js/bathroom-pricing.js");
 
 const NOTHING = { demolition: false, floorFinish: "none", walls: "none", paintCeiling: false };
 const ROOM_5x8x8 = { Bathroom_Width_Ft: 5, Bathroom_Length_Ft: 8, Bathroom_Height_Ft: 8 };
+const TRADE_KEYS = ["plumbing", "noStack", "badValve", "electrical", "drainRun"];
 
 function line(result, key) {
   return result.lines.find((l) => l.key === key);
 }
 
-test("owner-stated published prices: $60 per cabinet, $5 per sq ft of flooring", () => {
+// The studio's call: every trade included, at the given prices (defaults
+// unless a business set its own).
+function studioEstimate(values, scope, prices) {
+  return P.computeEstimate(values, scope, { includeTrade: true, prices: prices || P.DEFAULT_PRICES });
+}
+
+test("owner-stated default prices: $60 per cabinet, $5 per sq ft of flooring", () => {
   assert.equal(P.DEFAULT_PRICES.Cabinet_Price, 60);
   assert.equal(P.DEFAULT_PRICES.Floor_Price_Per_SqFt, 5);
 });
 
-test("bathtub price is always 70% of the shower price", () => {
+test("bathtub price is 70% of the shower price unless the business sets its own", () => {
   assert.equal(P.bathtubPrice(P.DEFAULT_PRICES), 350);
   assert.equal(P.bathtubPrice({ Shower_Price: 1000 }), 700);
-  const r = P.computePublicEstimate({ Bathtub_Quantity: 2 }, NOTHING);
+  const r = studioEstimate({ Bathtub_Quantity: 2 }, NOTHING);
   assert.equal(line(r, "Bathtub_Quantity").cost, 700);
+  // Each tub also needs a plumbing point.
+  assert.equal(line(r, "plumbing").qty, 2);
+  assert.equal(line(r, "plumbing").cost, 600);
+  assert.equal(r.total, 1300);
 });
 
 test("area formulas: floor = W x L, walls = 2 x H x (W + L)", () => {
@@ -34,6 +49,10 @@ test("area formulas: floor = W x L, walls = 2 x H x (W + L)", () => {
   const a = P.areas({ Bathroom_Width_Ft: "4", Bathroom_Length_Ft: "8", Bathroom_Height_Ft: "" });
   assert.equal(a.floorSqFt, 32);
   assert.equal(a.wallSqFt, 0);
+  // The estimate reports the same areas it priced.
+  const r = studioEstimate(ROOM_5x8x8, { demolition: true, floorFinish: "none", walls: "paint", paintCeiling: false });
+  assert.equal(r.floorSqFt, 40);
+  assert.equal(r.wallSqFt, 208);
 });
 
 test("doorways come off the wall area; tile around the tub is priced on its own area", () => {
@@ -43,15 +62,16 @@ test("doorways come off the wall area; tile around the tub is priced on its own 
   assert.equal(a.wallSqFt, 188);
   assert.equal(a.wetWallSqFt, 60);
 
-  const painted = P.computePublicEstimate(values, Object.assign({}, NOTHING, { walls: "paint" }));
+  const painted = studioEstimate(values, Object.assign({}, NOTHING, { walls: "paint" }));
   assert.equal(line(painted, "wallPaint").qty, 188);
   assert.match(P.estimateAssumptions(values, { walls: "paint" }, painted).join(" "), /less 20 sq ft of doorways/);
 
-  const wet = P.computePublicEstimate(values, Object.assign({}, NOTHING, { walls: "tileWet" }));
+  const wet = studioEstimate(values, Object.assign({}, NOTHING, { walls: "tileWet" }));
   assert.equal(line(wet, "wallTile").qty, 60);
   assert.equal(line(wet, "wallTile").cost, 240);
   assert.equal(line(wet, "wallPaint").qty, 128);
   assert.equal(line(wet, "wallPaint").cost, 229.12);
+  assert.equal(wet.wetWallSqFt, 60);
   assert.match(P.estimateAssumptions(values, { walls: "tileWet" }, wet).join(" "), /Tile around the tub: 60 sq ft/);
 
   // Never more tile than wall, nor negative areas.
@@ -61,7 +81,7 @@ test("doorways come off the wall area; tile around the tub is priced on its own 
 });
 
 test("nothing is priced from dimensions alone", () => {
-  const r = P.computeEstimate(ROOM_5x8x8, NOTHING, { includeTrade: true });
+  const r = studioEstimate(ROOM_5x8x8, NOTHING);
   assert.equal(r.lines.length, 0);
   assert.equal(r.total, 0);
 });
@@ -69,18 +89,19 @@ test("nothing is priced from dimensions alone", () => {
 test("5 x 8 x 8 room, 3 cabinets, other flooring, everything else no = $380.00", () => {
   const values = Object.assign({ Cabinet_Quantity: 3 }, ROOM_5x8x8);
   const scope = Object.assign({}, NOTHING, { floorFinish: "flooring" });
-  const admin = P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
-  assert.equal(admin.total, 380);
-  assert.equal(line(admin, "flooring").cost, 200);
-  assert.equal(line(admin, "Cabinet_Quantity").cost, 180);
-  assert.equal(line(admin, "floorTile"), undefined);
-  assert.equal(P.computePublicEstimate(values, scope).subtotal, 380);
+  const r = studioEstimate(values, scope);
+  assert.equal(r.total, 380);
+  assert.equal(line(r, "flooring").cost, 200);
+  assert.equal(line(r, "Cabinet_Quantity").cost, 180);
+  assert.equal(line(r, "floorTile"), undefined);
+  // Cabinets need no plumbing, so no plumbing line appears.
+  assert.equal(line(r, "plumbing"), undefined);
 });
 
 test("switching the floor to tile replaces flooring with $160.00 of floor tile", () => {
   const values = Object.assign({ Cabinet_Quantity: 3 }, ROOM_5x8x8);
   const scope = Object.assign({}, NOTHING, { floorFinish: "tile" });
-  const r = P.computeEstimate(values, scope, { includeTrade: true });
+  const r = studioEstimate(values, scope);
   assert.equal(line(r, "flooring"), undefined);
   assert.equal(line(r, "floorTile").cost, 160);
   assert.equal(r.total, 340);
@@ -94,14 +115,14 @@ test("the floor is never charged twice and walls are never both tiled and painte
     }
   }
   for (const scope of scopes) {
-    const r = P.computeEstimate(ROOM_5x8x8, scope, { includeTrade: true });
+    const r = studioEstimate(ROOM_5x8x8, scope);
     const keys = r.lines.map((l) => l.key);
     assert.ok(!(keys.includes("floorTile") && keys.includes("flooring")), JSON.stringify(scope));
     assert.ok(!(keys.includes("wallTile") && keys.includes("wallPaint")), JSON.stringify(scope));
   }
 });
 
-test("admin and public totals match across a table of inputs (admin adds only plumbing, electrical, surcharges)", () => {
+test("across a table of inputs, the trade lines are exactly the plumbing points, surcharges, wiring and drain line", () => {
   const table = [
     [{}, NOTHING],
     [ROOM_5x8x8, { demolition: true, floorFinish: "tile", walls: "tile", paintCeiling: true }],
@@ -136,49 +157,38 @@ test("admin and public totals match across a table of inputs (admin adds only pl
       { demolition: true, floorFinish: "tile", walls: "paint", paintCeiling: true },
     ],
   ];
-  const tradeKeys = ["plumbing", "noStack", "badValve", "electrical"];
   for (const [values, scope] of table) {
-    const pub = P.computePublicEstimate(values, scope);
     const withTrade = Object.assign({}, values, {
       Electrical_Points: 3,
+      Drain_Run_Ft: 2,
       No_Stack_Surcharge_Included: true,
       Bad_Valve_Surcharge_Included: true,
     });
-    const admin = P.computeEstimate(withTrade, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
-    const adminWithoutTrade = admin.lines.filter((l) => !tradeKeys.includes(l.key)).reduce((s, l) => s + l.cost, 0);
-    assert.equal(P.roundCents(adminWithoutTrade), pub.subtotal, JSON.stringify(values));
+    const r = studioEstimate(withTrade, scope);
+    const fixtures = P.plumbingFixtureCount(values);
+    // One plumbing point per toilet, sink, tub, shower and vanity; none
+    // when there are no such fixtures.
+    if (fixtures) assert.equal(line(r, "plumbing").qty, fixtures, JSON.stringify(values));
+    else assert.equal(line(r, "plumbing"), undefined, JSON.stringify(values));
+    assert.equal(line(r, "electrical").cost, 300);
+    assert.equal(line(r, "drainRun").cost, 190);
+    assert.equal(line(r, "noStack").cost, 1000);
+    assert.equal(line(r, "badValve").cost, 400);
+    // The subtotal is exactly the sum of the lines, and the trade lines are
+    // the only lines a design's fixtures and finishes don't produce.
+    const sum = P.roundCents(r.lines.reduce((s, l) => s + l.cost, 0));
+    assert.equal(r.subtotal, sum);
+    const plain = studioEstimate(values, scope);
     assert.deepEqual(
-      admin.lines.filter((l) => !tradeKeys.includes(l.key)),
-      pub.lines,
+      r.lines.filter((l) => !TRADE_KEYS.includes(l.key)),
+      plain.lines.filter((l) => !TRADE_KEYS.includes(l.key)),
       "same lines, same order: " + JSON.stringify(values),
     );
-    // With no trade work at all, the totals are identical.
-    const plainAdmin = P.computeEstimate(
-      Object.assign({}, values, {
-        Toilet_Quantity: 0,
-        Sink_Quantity: 0,
-        Shower_Quantity: 0,
-        Bathtub_Quantity: 0,
-        Vanity_Quantity: 0,
-      }),
-      scope,
-      { includeTrade: true },
-    );
-    const plainPublic = P.computePublicEstimate(
-      Object.assign({}, values, {
-        Toilet_Quantity: 0,
-        Sink_Quantity: 0,
-        Shower_Quantity: 0,
-        Bathtub_Quantity: 0,
-        Vanity_Quantity: 0,
-      }),
-      scope,
-    );
-    assert.equal(plainAdmin.total, plainPublic.subtotal);
+    assert.ok(plain.lines.every((l) => !["noStack", "badValve", "electrical", "drainRun"].includes(l.key)));
   }
 });
 
-test("admin prices plumbing per point from toilets, sinks, showers and bathtubs, plus surcharges and electrical", () => {
+test("plumbing is one point per toilet, sink, shower and bathtub, plus surcharges only when flagged", () => {
   const values = {
     Toilet_Quantity: 1,
     Sink_Quantity: 2,
@@ -188,39 +198,38 @@ test("admin prices plumbing per point from toilets, sinks, showers and bathtubs,
     No_Stack_Surcharge_Included: true,
     Bad_Valve_Surcharge_Included: false,
   };
-  const r = P.computeEstimate(values, NOTHING, { includeTrade: true });
+  const r = studioEstimate(values, NOTHING);
   assert.equal(line(r, "plumbing").qty, 5);
   assert.equal(line(r, "plumbing").cost, 1500);
+  assert.equal(line(r, "plumbing").detail, "5 points × $300.00");
   assert.equal(line(r, "noStack").cost, 1000);
   assert.equal(line(r, "badValve"), undefined);
   assert.equal(line(r, "electrical").cost, 400);
-  // The public estimate prices the wiring, but not the per-fixture
-  // plumbing points or the surcharges.
-  const pub = P.computePublicEstimate(values, NOTHING);
-  assert.ok(!pub.lines.some((l) => ["plumbing", "noStack", "badValve"].includes(l.key)));
-  assert.equal(line(pub, "electrical").cost, 400);
-  assert.equal(pub.plumbingFixtureCount, 5);
+  assert.equal(r.plumbingFixtureCount, 5);
+  assert.equal(r.plumbingIncluded, true);
 });
 
-test("a drain line to the plumbing wall is priced by the foot, in the public estimate", () => {
-  const r = P.computePublicEstimate({ Drain_Run_Ft: 6.5 }, NOTHING);
+test("a drain line to the plumbing wall is priced by the foot, capped at a sane length", () => {
+  const r = studioEstimate({ Drain_Run_Ft: 6.5 }, NOTHING);
   assert.equal(line(r, "drainRun").qty, 6.5);
   assert.equal(line(r, "drainRun").cost, 617.5);
   // No run, no line.
-  assert.equal(line(P.computePublicEstimate({ Drain_Run_Ft: 0 }, NOTHING), "drainRun"), undefined);
+  assert.equal(line(studioEstimate({ Drain_Run_Ft: 0 }, NOTHING), "drainRun"), undefined);
+  assert.equal(line(studioEstimate({ Drain_Run_Ft: 5000 }, NOTHING), "drainRun").qty, 200);
 });
 
-test("tax only applies to admin quotes, at the saved rate", () => {
+test("tax is added only at the rate the business set; the default is 0", () => {
   const prices = Object.assign({}, P.DEFAULT_PRICES, { Labor_Tax_Rate_Percent: 10 });
-  const admin = P.computeEstimate({ Cabinet_Quantity: 1 }, NOTHING, { includeTrade: true, prices });
-  assert.equal(admin.taxAmount, 6);
-  assert.equal(admin.total, 66);
-  const pub = P.computePublicEstimate({ Cabinet_Quantity: 1 }, NOTHING);
-  assert.equal(pub.taxAmount, 0);
+  const taxed = studioEstimate({ Cabinet_Quantity: 1 }, NOTHING, prices);
+  assert.equal(taxed.taxAmount, 6);
+  assert.equal(taxed.total, 66);
+  const untaxed = studioEstimate({ Cabinet_Quantity: 1 }, NOTHING);
+  assert.equal(untaxed.taxAmount, 0);
+  assert.equal(untaxed.total, untaxed.subtotal);
 });
 
 test("painting uses $1.79 per sq ft of wall or ceiling", () => {
-  const r = P.computePublicEstimate(ROOM_5x8x8, {
+  const r = studioEstimate(ROOM_5x8x8, {
     demolition: false,
     floorFinish: "none",
     walls: "paint",
@@ -231,64 +240,13 @@ test("painting uses $1.79 per sq ft of wall or ceiling", () => {
   assert.equal(line(r, "wallPaint").detail, "208 sq ft × $1.79");
 });
 
-test("validation: area work needs a realistic width and length; wall work needs a height", () => {
-  const scope = { demolition: true, floorFinish: "none", walls: "none", paintCeiling: false };
-  let v = P.validateJob({}, scope);
-  assert.equal(v.valid, false);
-  assert.ok(v.errors.Bathroom_Width_Ft);
-  assert.ok(v.errors.Bathroom_Length_Ft);
-  assert.equal(v.errors.Bathroom_Height_Ft, undefined);
-
-  v = P.validateJob({ Bathroom_Width_Ft: "1e200", Bathroom_Length_Ft: "8" }, scope);
-  assert.ok(v.errors.Bathroom_Width_Ft);
-  v = P.validateJob({ Bathroom_Width_Ft: "51", Bathroom_Length_Ft: "8" }, scope);
-  assert.ok(v.errors.Bathroom_Width_Ft);
-  v = P.validateJob({ Bathroom_Width_Ft: "-3", Bathroom_Length_Ft: "8" }, scope);
-  assert.ok(v.errors.Bathroom_Width_Ft);
-  v = P.validateJob({ Bathroom_Width_Ft: "5", Bathroom_Length_Ft: "8" }, scope);
-  assert.equal(v.valid, true);
-
-  const walls = Object.assign({}, scope, { walls: "paint" });
-  v = P.validateJob({ Bathroom_Width_Ft: "5", Bathroom_Length_Ft: "8" }, walls);
-  assert.ok(v.errors.Bathroom_Height_Ft);
-  v = P.validateJob({ Bathroom_Width_Ft: "5", Bathroom_Length_Ft: "8", Bathroom_Height_Ft: "8" }, walls);
-  assert.equal(v.valid, true);
-});
-
-test("validation: dimensions are not required when no area work is chosen", () => {
-  assert.equal(P.validateJob({ Cabinet_Quantity: 2 }, NOTHING).valid, true);
-});
-
-test("validation: every work question must be answered", () => {
-  const v = P.validateJob({}, { demolition: true });
-  assert.ok(v.errors.floorFinish);
-  assert.ok(v.errors.walls);
-  assert.ok(v.errors.paintCeiling);
-});
-
-test("validation: fixture counts are whole numbers with a sensible maximum", () => {
-  assert.ok(P.validateJob({ Toilet_Quantity: "2.5" }, NOTHING).errors.Toilet_Quantity);
-  assert.ok(P.validateJob({ Toilet_Quantity: "21" }, NOTHING).errors.Toilet_Quantity);
-  assert.ok(P.validateJob({ Toilet_Quantity: "abc" }, NOTHING).errors.Toilet_Quantity);
-  assert.ok(P.validateJob({ Toilet_Quantity: "-1" }, NOTHING).errors.Toilet_Quantity);
-  assert.equal(P.validateJob({ Toilet_Quantity: "2" }, NOTHING).valid, true);
-  assert.ok(P.validateJob({ Electrical_Points: "1.5" }, NOTHING, { includeTrade: true }).errors.Electrical_Points);
-});
-
-test("old saved quotes are recognised so they can be flagged for review", () => {
-  assert.equal(P.isLegacyQuoteData({ jobValues: {}, totalPrice: 3315.92 }), true);
-  assert.equal(P.isLegacyQuoteData({ calcVersion: P.CALC_VERSION }), false);
-});
-
-test("estimate summary for the contact form lists room, work, fixtures and total", () => {
-  const values = Object.assign({ Cabinet_Quantity: 3, Toilet_Quantity: 1 }, ROOM_5x8x8);
-  const scope = Object.assign({}, NOTHING, { floorFinish: "flooring" });
-  const r = P.computePublicEstimate(values, scope);
-  const text = P.buildEstimateSummary(values, scope, r);
-  assert.match(text, /5 ft wide × 8 ft long/);
-  assert.match(text, /new floor: Other flooring/);
-  assert.match(text, /Toilets 1, Cabinets 3/);
-  assert.match(text, /\$580\.00 \(before plumbing\)/);
+test("bad numbers count as nothing, never as NaN in a price", () => {
+  const r = studioEstimate({ Toilet_Quantity: "abc", Electrical_Points: "", Drain_Run_Ft: null }, NOTHING);
+  assert.equal(r.lines.length, 0);
+  assert.equal(r.total, 0);
+  assert.equal(P.parseNumber("2.5"), 2.5);
+  assert.equal(P.parseNumber(""), null);
+  assert.ok(Number.isNaN(P.parseNumber("1e200")));
 });
 
 test("money formatting", () => {
@@ -297,9 +255,10 @@ test("money formatting", () => {
   assert.equal(P.shortMoney(37.5), "$37.50");
 });
 
-test("a vanity's sink counts toward the plumbing the estimate leaves out", () => {
-  const pub = P.computePublicEstimate({ Toilet_Quantity: 1, Vanity_Quantity: 1, Bathtub_Quantity: 1 }, NOTHING);
-  assert.equal(pub.plumbingFixtureCount, 3);
+test("a vanity's sink counts as a plumbing point", () => {
+  const r = studioEstimate({ Toilet_Quantity: 1, Vanity_Quantity: 1, Bathtub_Quantity: 1 }, NOTHING);
+  assert.equal(r.plumbingFixtureCount, 3);
+  assert.equal(line(r, "plumbing").qty, 3);
 });
 
 test("a business's own bathtub price replaces the 70%-of-shower rule; empty keeps the rule", () => {
@@ -308,14 +267,14 @@ test("a business's own bathtub price replaces the 70%-of-shower rule; empty keep
   assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: null }), 700);
   assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: "" }), 700);
   assert.equal(P.bathtubPrice({ Shower_Price: 1000, Bathtub_Price: "abc" }), 700);
-  const own = P.computeEstimate({ Bathtub_Quantity: 1 }, NOTHING, { prices: { Bathtub_Price: 450 } });
+  const own = studioEstimate({ Bathtub_Quantity: 1 }, NOTHING, { Bathtub_Price: 450 });
   assert.equal(line(own, "Bathtub_Quantity").cost, 450);
   // The account page lists Bathtub_Price with the other prices (js/business.js applies the same keys).
   assert.ok(Object.prototype.hasOwnProperty.call(P.DEFAULT_PRICES, "Bathtub_Price"));
   assert.equal(P.DEFAULT_PRICES.Bathtub_Price, null);
 });
 
-test("the designer's estimate (includeTrade) prices every line at the business's own rates", () => {
+test("the designer's estimate prices every line at the business's own rates", () => {
   // Every price the account page offers set to $1: nothing is left at a platform rate.
   const ones = {};
   for (const key of Object.keys(P.DEFAULT_PRICES)) ones[key] = 1;
@@ -328,14 +287,57 @@ test("the designer's estimate (includeTrade) prices every line at the business's
     Drain_Run_Ft: 4,
   });
   const scope = { demolition: true, floorFinish: "tile", walls: "paint", paintCeiling: true };
-  const r = P.computeEstimate(values, scope, { prices: ones, includeTrade: true });
+  const r = studioEstimate(values, scope, ones);
   for (const l of r.lines) assert.equal(l.rate, 1, l.key + " is charged at the business's rate");
   assert.equal(line(r, "plumbing").qty, 3, "one plumbing point per toilet, tub and vanity");
   assert.equal(line(r, "electrical").qty, 6);
   assert.equal(line(r, "drainRun").qty, 4);
   assert.equal(r.plumbingIncluded, true);
-  assert.equal(P.computePublicEstimate(values, scope).plumbingIncluded, false);
-  // The summary no longer says "before plumbing" when plumbing is in the lines.
-  assert.doesNotMatch(P.buildEstimateSummary(values, scope, r), /before plumbing/);
-  assert.match(P.buildEstimateSummary(values, scope, P.computePublicEstimate(values, scope)), /before plumbing/);
+});
+
+test("the estimate's words agree with its lines: plumbing and electrical are in, never 'excluded'", () => {
+  const I18n = require("../../js/i18n.js");
+  for (const lang of ["en", "es", "pt"]) {
+    I18n.setLang(lang);
+    try {
+      const words = [
+        I18n.t("card.plumbingNote"),
+        I18n.t("card.disclaimer"),
+        I18n.t("card.disclaimerMaterials"),
+        I18n.t("card.excluded.tradesPriced"),
+        I18n.t("card.alsoNotIncluded"),
+        I18n.t("card.materialsNote"),
+      ].join(" ");
+      assert.doesNotMatch(
+        words,
+        /excludes plumbing|not included\. Toilets|No incluye trabajo de plomería|Não inclui serviço de encanamento/i,
+        lang,
+      );
+      assert.doesNotMatch(words, /real current prices for the exact products/i, lang);
+    } finally {
+      I18n.setLang("en");
+    }
+  }
+  // The card's note names the point rule the lines follow.
+  assert.match(I18n.t("card.plumbingNote"), /one plumbing point for each toilet, sink, vanity, shower and bathtub/);
+  assert.match(I18n.t("card.disclaimer"), /includes the labor for the plumbing and electrical points listed/);
+  assert.match(I18n.t("card.disclaimerMaterials"), /includes the labor for the plumbing and electrical points listed/);
+});
+
+test("only code a page runs is exported", () => {
+  const exported = Object.keys(P).sort();
+  assert.deepEqual(exported, [
+    "DEFAULT_PRICES",
+    "areas",
+    "bathtubPrice",
+    "computeEstimate",
+    "describeScope",
+    "estimateAssumptions",
+    "formatQty",
+    "money",
+    "parseNumber",
+    "plumbingFixtureCount",
+    "roundCents",
+    "shortMoney",
+  ]);
 });

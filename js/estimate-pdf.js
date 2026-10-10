@@ -68,8 +68,10 @@
   //   title, subtitle, preparedFor?, intro?,
   //   picture?: a JPEG data URL of the 3D room,
   //   plan?: { w, l, rects, arcs, lines, texts } in room feet, planTitle,
+  //     (a text with `halo` sits on a patch of that colour, so a mark drawn
+  //     under it never crosses the letters),
   //   design?: [string], designTitle,
-  //   lines: [{ label, detail, amount }],
+  //   linesTitle?, lines: [{ label, detail, amount }],
   //   excluded: [{ label, value }],
   //   totals: [{ label, value, strong? }],
   //   afterTotal: [string], sections: [{ title, items: [string] }],
@@ -204,9 +206,13 @@
         } else {
           var lines = t.small ? doc.splitTextToSize(text, 80).slice(0, 2) : [text];
           lines.forEach(function (line, i) {
-            doc.text(line, X(t.x), Y(t.z) + size * 0.35 + (i - (lines.length - 1) / 2) * size * 1.1, {
-              align: "center",
-            });
+            var baseline = Y(t.z) + size * 0.35 + (i - (lines.length - 1) / 2) * size * 1.1;
+            if (t.halo) {
+              var w = doc.getTextWidth(line) + 4;
+              doc.setFillColor(t.halo[0], t.halo[1], t.halo[2]);
+              doc.rect(X(t.x) - w / 2, baseline - size * 0.8, w, size * 1.05, "F");
+            }
+            doc.text(line, X(t.x), baseline, { align: "center" });
           });
         }
       });
@@ -244,10 +250,14 @@
       if (spec.lines && spec.lines.length) rule(210);
     }
 
-    // Line items: label | quantity x rate | amount
+    // Line items: label | quantity x rate | amount, under their heading.
     var labelWidth = 170;
     var detailX = left + labelWidth + 10;
     var detailWidth = right - 90 - detailX;
+    if (spec.linesTitle && spec.lines && spec.lines.length) {
+      ensure(60);
+      paragraph(spec.linesTitle, 11, 30, "bold", 6);
+    }
     (spec.lines || []).forEach(function (l) {
       doc.setFontSize(11);
       var labelLines = doc.splitTextToSize(safe(l.label), labelWidth);
@@ -280,13 +290,21 @@
       });
     }
 
+    // The rule and the totals move to a new page together, never the
+    // total alone: it belongs with the lines above it.
+    var totalsHeight = 4 + 16;
+    (spec.totals || []).forEach(function (t) {
+      var size = t.strong ? 15 : 11;
+      doc.setFontSize(size);
+      totalsHeight += doc.splitTextToSize(safe(t.label), width - 150).length * (size + 4) + 4;
+    });
+    ensure(totalsHeight);
     y += 4;
     rule(210);
     (spec.totals || []).forEach(function (t) {
       var size = t.strong ? 15 : 11;
       doc.setFontSize(size);
       var labelLines = doc.splitTextToSize(safe(t.label), width - 150);
-      ensure(labelLines.length * (size + 4) + 4);
       doc.setFont("helvetica", t.strong ? "bold" : "normal");
       doc.setTextColor(20);
       doc.text(labelLines, left, y);

@@ -1,8 +1,8 @@
 "use strict";
 
-// api/leads.js (demo only, email check) and api/stripe-webhook.js (records
-// the subscription as Stripe has it now, not as an out-of-order event saw
-// it), against a stand-in fetch for Supabase and Stripe.
+// api/stripe-webhook.js records the subscription as Stripe has it now, not
+// as an out-of-order event saw it; against a stand-in fetch for Supabase
+// and Stripe.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -42,41 +42,6 @@ function setEnv() {
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
   delete process.env.RESEND_API_KEY;
 }
-
-async function postLead(body) {
-  const res = fakeRes();
-  await require("../../api/leads.js")({ method: "POST", headers: {}, body }, res);
-  return res;
-}
-
-test("leads: the demo's requests are checked and answered, never stored", async () => {
-  setEnv();
-  const calls = [];
-  global.fetch = async (url) => {
-    calls.push(url);
-    return reply(500, {});
-  };
-  const ok = await postLead({ name: "Ana", email: "ana@example.com", business: "demo" });
-  assert.equal(ok.statusCode, 200);
-  assert.equal(ok.json().demo, true);
-  const bad = await postLead({ name: "Ana", email: "not an email", business: "demo" });
-  assert.equal(bad.statusCode, 400);
-  assert.equal(bad.json().error, "email");
-  assert.equal(calls.length, 0);
-});
-
-test("leads: a business's designer takes no requests, whatever its plan", async () => {
-  setEnv();
-  const calls = [];
-  global.fetch = async (url) => {
-    calls.push(url);
-    return reply(200, [{ status: "active", plan: "max", website: true }]);
-  };
-  const res = await postLead({ name: "Ana", email: "ana@example.com", business: "smith" });
-  assert.equal(res.statusCode, 404);
-  assert.equal(res.json().error, "unavailable");
-  assert.equal(calls.length, 0);
-});
 
 test("webhook: a stale subscription event records the subscription as Stripe has it now", async () => {
   setEnv();

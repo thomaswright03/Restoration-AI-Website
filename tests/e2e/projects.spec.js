@@ -12,7 +12,7 @@ const { openStudio, answerAll } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", projects = [], used, limits } = {}) {
+async function signedIn(page, { plan = "starter", projects = [], used, limits, prices = {} } = {}) {
   const state = {
     plan,
     limits: limits || (plan === "free" ? { monthly: 0, total: 0 } : { monthly: 10, total: 50 }),
@@ -32,7 +32,7 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits } 
   await page.route("**/api/business?b=smith-bath*", (route) =>
     route.fulfill({
       contentType: "application/javascript",
-      body: 'window.DesignerBusiness.load({"slug":"smith-bath","name":"Smith Bath Co.","prices":{}});',
+      body: `window.DesignerBusiness.load(${JSON.stringify({ slug: "smith-bath", name: "Smith Bath Co.", prices })});`,
     }),
   );
   await page.route("**/api/projects**", async (route) => {
@@ -198,6 +198,16 @@ test("the designer saves a new project with the client's details, then saves cha
   await expect(page.locator("#project-status")).toContainText("Saved “Maria Garcia, 12 Elm St”.");
   const patch = state.calls.find((c) => c.method === "PATCH");
   expect(patch.body.summary.room.l).toBe(5);
+
+  // A second project with no details at all is named by the date and time,
+  // so two saves the same day don't look alike.
+  await page.locator("#project-save-new").click();
+  await dialog.getByLabel("Client name").fill("");
+  await dialog.getByLabel("Street address").fill("");
+  await dialog.getByRole("button", { name: "Save project" }).click();
+  await expect(dialog).toBeHidden();
+  const second = state.calls.filter((c) => c.method === "POST")[1];
+  expect(second.body.name).toMatch(/^Bathroom, [A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}/);
 });
 
 test("the designer opens a saved project from its link", async ({ page }) => {
@@ -313,6 +323,33 @@ test("a project's page shows its 3D model, edits its info, and lists its materia
   await expect(page.locator(".materials-totals")).toContainText("$732");
   const axe2 = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("#project-model-frame").analyze();
   expect(axe2.violations.map((v) => v.id)).toEqual([]);
+});
+
+test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, Open in designer", async ({
+  page,
+}) => {
+  test.setTimeout(90000); // two visits to the designer, both drawing the 3D room
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, { projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }] });
+  await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
+  await expect(page.locator(".studio-status")).toBeVisible();
+  await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
+  await expect(page.locator(".studio-step-btn")).toHaveCount(0);
+  await expect(page.locator(".studio-action")).toHaveCount(0);
+  await expect(page.locator(".studio-total-chip")).toHaveCount(0);
+  await expect(page.locator("#studio-panel")).toBeHidden();
+  await expect(page.locator("#studio-riley")).toBeHidden();
+  await expect(page.locator("#project-bar")).toBeHidden();
+  await expect(page.locator("#studio-toast")).toBeHidden();
+  await expect(page.locator(".studio-view-btn[data-view]")).toHaveCount(3);
+  await page.locator(".studio-view-btn[data-view='plan']").click();
+  await expect(page.locator("#studio-plan")).toBeVisible();
+  // Nothing on the plan can be picked up or moved.
+  await expect(page.locator(".plan-item[tabindex]")).toHaveCount(0);
+  const open = page.getByRole("link", { name: "Open in designer" });
+  await expect(open).toHaveAttribute("href", "/designer.html?b=smith-bath&project=a1");
+  await expect(open).toHaveAttribute("target", "_top");
 });
 
 test("a project's 3D model follows the page when the theme is switched", async ({ page }) => {
@@ -433,7 +470,7 @@ test("viewing a saved project never overwrites the owner's unsaved design", asyn
 
   // They look at an old project (as its page does, and as "Open in the designer" does).
   await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
-  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(page.locator(".studio-status")).toBeVisible();
   await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
   await page.waitForTimeout(600); // past the studio's save debounce
   expect(await stored()).toBe(10);
@@ -549,6 +586,32 @@ test("saving a project while offline says so, and the design is kept", async ({ 
   await context.setOffline(false);
 });
 
+test("an owner who hasn't set prices is told the estimate is at default rates, on screen and in the PDF text", async ({
+  page,
+}) => {
+  test.setTimeout(60000);
+  await signedIn(page);
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await answerAll(page);
+  await page.locator(".studio-step-btn[data-step='estimate']").click();
+  const stepEl = page.locator(".studio-step.is-estimate");
+  const intro = stepEl.locator(".studio-step-intro");
+  await expect(intro).toContainText("you haven't set your own labor prices yet");
+  await expect(intro).not.toContainText("at your prices");
+  await expect(intro.getByRole("link", { name: "Set your prices on the account page." })).toHaveAttribute(
+    "href",
+    /account\.html$/,
+  );
+  await expect(page.locator(".riley-text")).toContainText("at default sample prices for now");
+  // The card charges the plumbing and electrical points and says so; nothing calls them excluded.
+  const card = page.getByTestId("estimate-card");
+  await expect(card).toContainText("Plumbing points");
+  await expect(card).toContainText("Plumbing and electrical are priced per point");
+  await expect(card).toContainText("default sample rates");
+  await expect(card).not.toContainText("excludes plumbing");
+  await expect(card).not.toContainText("is not included. Toilets");
+});
+
 test("a project's info form asks before leaving with edits, and a stale save offers the newer version", async ({
   page,
 }) => {
@@ -603,22 +666,23 @@ test("rename cancels on Escape", async ({ page }) => {
 });
 
 test("in the owner's own designer the estimate step speaks to the business, not a homeowner", async ({ page }) => {
-  await signedIn(page);
+  test.setTimeout(60000);
+  await signedIn(page, { prices: { Toilet_Price: 250 } });
   await openStudio(page, "/designer.html?b=smith-bath");
   await answerAll(page);
   await page.locator(".studio-step-btn[data-step='estimate']").click();
   const intro = page.locator(".studio-step.is-estimate .studio-step-intro");
+  await expect(intro).toContainText("A rough, non-binding estimate at your prices.");
   await expect(intro).toContainText("Save it as a project, or download the PDF for your client.");
   await expect(page.locator(".riley-text")).toContainText("Save it as a project");
-  await expect(page.locator("#studio-request")).toBeHidden();
-  await expect(page.locator(".studio-step.is-estimate")).not.toContainText("Send your design to");
-
-  // The public demo keeps the homeowner's request flow.
-  await openStudio(page, "/designer.html");
-  await answerAll(page);
-  await page.locator(".studio-step-btn[data-step='estimate']").click();
-  await expect(page.locator(".studio-step.is-estimate .studio-step-intro")).toContainText("get a real quote");
-  await expect(page.locator(".studio-step.is-estimate")).toContainText("Send your design to Sample Remodeling Co.");
+  await expect(page.locator(".studio-demo-end")).toHaveCount(0);
+  // Save project sits with the end-of-design actions and presses the save bar's button.
+  const save = page.locator(".studio-est-actions [data-key='save']");
+  await expect(save).toHaveText("Save project");
+  await save.click();
+  await expect(page.locator("#project-dialog")).toBeVisible();
+  await page.locator("#project-dialog-close").click();
+  // (The public demo's ending is covered in studio.spec.js.)
 });
 
 test("My projects shows a dash for a missing client or status, and Clear filters puts the list back", async ({

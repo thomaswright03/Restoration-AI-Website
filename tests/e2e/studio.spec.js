@@ -23,10 +23,17 @@ test.describe("design studio", () => {
     await wait3d(page);
     await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
     // Everything fits; in a 5 x 8 the toilet only gets code's 15 in. beside
-    // it rather than the recommended 18, which is a note, not a problem.
-    await expect(studioStatus(page)).toHaveText("Fits, 1 is tight");
+    // it rather than the recommended 18, which is a note, not a problem. The
+    // chip names it and says why; a click shows it.
+    await expect(studioStatus(page)).toHaveText("Fits; the toilet is tight");
+    await expect(studioStatus(page)).toHaveAttribute("title", /^Toilet: .*15/);
+    await studioStatus(page).click();
+    await expect(page.locator(".studio-step.is-layout")).toBeVisible();
+    await expect(page.locator(".studio-step.is-layout")).toContainText("15");
     await expect(page.locator(".studio-total-chip strong")).toContainText("$");
     await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");
+    // The site header scrolls with the page here, so it never covers the steps.
+    await expect(page.locator(".site-header")).toHaveCSS("position", "relative");
     await expect(page.locator("#studio-labels .is-wall")).toHaveCount(4);
     await step(page, "layout").click();
     await expect(page.locator(".studio-item-btn")).toHaveCount(3);
@@ -283,7 +290,7 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("the estimate lists the work, fills in the request, downloads a PDF and shares a link", async ({
+  test("the demo's estimate ends with the PDF and a sign-up, never a homeowner's request form", async ({
     browser,
     page,
   }) => {
@@ -296,11 +303,14 @@ test.describe("design studio", () => {
     expect(total).toMatch(/^\$[\d,]+\.\d\d$/);
     await expect(page.locator(".studio-total-chip strong")).toHaveText(total);
 
-    const message = await page.locator("#message").inputValue();
-    expect(message).toContain("Room: 8′ × 5′");
-    expect(message).toContain("Toilet: wall A");
-    expect(message).toContain("#design=");
-    await expect(page.locator("#lead-form")).toBeVisible();
+    // The demo speaks to the business trying it, not to a homeowner.
+    const estimateStep = page.locator(".studio-step.is-estimate");
+    await expect(estimateStep.locator(".studio-step-intro")).toContainText("at a sample business's prices");
+    await expect(estimateStep).not.toContainText("Send");
+    await expect(page.locator("#lead-form, #studio-request")).toHaveCount(0);
+    await expect(estimateStep.locator(".studio-demo-end")).toContainText("What your business gets");
+    await expect(byKey(page, "signup")).toHaveAttribute("href", /signup\.html$/);
+    await expect(byKey(page, "save")).toHaveCount(0);
 
     const [download] = await Promise.all([page.waitForEvent("download"), byKey(page, "pdf").click()]);
     expect(download.suggestedFilename()).toMatch(/\.pdf$/);
@@ -336,15 +346,16 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("without the price estimator, the last step sends the design without prices", async ({ page }) => {
+  test("without the price estimator, the last step shows the design without prices", async ({ page }) => {
     await useConfig(page, { priceEstimator: { enabled: false } });
     const errors = await openStudio(page);
     await answerAll(page);
-    await expect(step(page, "estimate")).toContainText("Send");
+    await expect(step(page, "estimate")).toContainText("Design");
     await expect(page.locator(".studio-total-chip")).toBeHidden();
     await step(page, "estimate").click();
     await expect(page.getByTestId("estimate-total")).toHaveCount(0);
-    await expect(page.locator("#lead-form")).toBeVisible();
+    await expect(page.locator(".studio-step.is-estimate h2")).toHaveText("Your design");
+    await expect(byKey(page, "pdf")).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -610,14 +621,9 @@ test.describe("design studio", () => {
     await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    await byKey(page, "nav-next").click();
-    await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    await expect(need).toContainText("Choose one…");
-    const unpicked = page.locator('.studio-product-card select:has(option[value=""])');
-    while (await unpicked.count()) {
-      const list = unpicked.first();
-      await list.selectOption(await list.locator("option:not([disabled])").first().getAttribute("value"));
-    }
+    // Every product list starts on the model the room shows: nothing to pick before going on.
+    await expect(page.locator('.studio-product-card select option[value=""]')).toHaveCount(0);
+    await expect(need).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
     await expect(need).toHaveText("To go on: pick a finish for: floor tile, wall paint, ceiling paint.");
@@ -806,13 +812,13 @@ test.describe("design studio", () => {
       "es",
       "es",
       ["Baño", "Distribución", "Electricidad", "Productos", "Acabados", "Estimación"],
-      "Cabe, 1 queda justo",
+      "Cabe; el inodoro queda justo",
     ],
     [
       "pt",
       "pt",
       ["Banheiro", "Distribuição", "Elétrica", "Produtos", "Acabamentos", "Estimativa"],
-      "Cabe, 1 fica apertado",
+      "Cabe; o vaso sanitário fica apertado",
     ],
   ]) {
     test(`/${dir}/designer.html runs the studio in that language`, async ({ page }) => {
@@ -852,6 +858,25 @@ test.describe("design studio on a phone", () => {
     const stage = await page.locator(".studio-stage").boundingBox();
     const card = await riley.boundingBox();
     expect(card.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
+    expect(errors).toEqual([]);
+  });
+
+  test("every designer control is at least 44 px on a touch screen", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await expect(page.locator(".riley")).toBeVisible();
+    const controls = page.locator(
+      ".studio-step-btn, .studio-action, .studio-view-btn, .studio-status, .riley-mute, .riley-tool",
+    );
+    const n = await controls.count();
+    expect(n).toBeGreaterThan(10);
+    for (let i = 0; i < n; i++) {
+      const el = controls.nth(i);
+      if (!(await el.isVisible())) continue;
+      const box = await el.boundingBox();
+      expect(box.width, `control ${i} width`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `control ${i} height`).toBeGreaterThanOrEqual(44);
+    }
     expect(errors).toEqual([]);
   });
 });

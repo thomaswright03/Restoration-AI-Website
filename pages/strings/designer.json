@@ -42,45 +42,6 @@
   ],
   "designer.link.label": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
   "designer.link.done": ["Done", "Listo", "Pronto"],
-  "designer.form.demoNote": [
-    "Demo: requests sent from this page aren't delivered to anyone.",
-    "Demo: las solicitudes enviadas desde esta página no le llegan a nadie.",
-    "Demonstração: os pedidos enviados desta página não chegam a ninguém."
-  ],
-  "designer.form.name": ["Full Name", "Nombre completo", "Nome completo"],
-  "designer.form.phone": ["Phone Number", "Número de teléfono", "Telefone"],
-  "designer.form.email": ["Email Address", "Correo electrónico", "E-mail"],
-  "designer.form.service": ["Bathroom Work Needed", "Trabajo que necesita en el baño", "Serviço de banheiro desejado"],
-  "designer.form.full": ["Full bathroom remodel", "Remodelación completa del baño", "Reforma completa do banheiro"],
-  "designer.form.partial": [
-    "Part of a bathroom (e.g. fixtures, tile, or flooring)",
-    "Parte de un baño (p. ej., accesorios, azulejo o piso)",
-    "Parte de um banheiro (por exemplo, louças e metais, revestimento cerâmico ou piso)"
-  ],
-  "designer.form.other": [
-    "Other bathroom work / not sure yet",
-    "Otro trabajo en el baño / aún no estoy seguro",
-    "Outro serviço de banheiro / ainda não sei"
-  ],
-  "designer.form.message": ["Tell Us About Your Project", "Cuéntenos sobre su proyecto", "Conte sobre o seu projeto"],
-  "designer.form.messageHelp": [
-    "Your design and its link are filled in for you. Add anything else they should know, like your timeline.",
-    "Su diseño y su enlace ya están incluidos. Agregue cualquier otra cosa que deban saber, como su plazo.",
-    "O seu projeto e o link já estão incluídos. Acrescente o que mais eles devem saber, como o seu prazo."
-  ],
-  "designer.form.honeypot": ["Leave this empty", "Deje esto en blanco", "Deixe este campo vazio"],
-  "designer.form.consent": [
-    "<strong>How this form works:</strong> when you press Send Request, what you entered above is sent to <span data-biz=\"name\"></span> through Room Designer 3D, the service that runs this designer, which stores it for them. They use your details to respond to your request and prepare your quote. Nothing is sold.",
-    "<strong>Cómo funciona este formulario:</strong> al presionar Enviar solicitud, lo que escribió arriba se envía a <span data-biz=\"name\"></span> a través de Room Designer 3D, el servicio que hace funcionar este diseñador, que lo guarda para la empresa. La empresa usa sus datos para responder a su solicitud y preparar su cotización. No se vende nada.",
-    "<strong>Como este formulário funciona:</strong> quando você aperta Enviar solicitação, o que você preencheu acima é enviado para <span data-biz=\"name\"></span> por meio do Room Designer 3D, o serviço que faz este projetista funcionar, que guarda as informações para a empresa. A empresa usa os seus dados para responder ao seu pedido e preparar o seu orçamento. Nada é vendido."
-  ],
-  "designer.form.send": ["Send Request", "Enviar solicitud", "Enviar solicitação"],
-  "designer.form.talk": ["Prefer to talk? Call", "¿Prefiere hablar? Llame al", "Prefere conversar? Ligue para"],
-  "designer.poweredBy": [
-    "Powered by Room Designer 3D",
-    "Con la tecnología de Room Designer 3D",
-    "Desenvolvido com Room Designer 3D"
-  ],
   "designer.project.label": ["Your project", "Su proyecto", "Seu projeto"],
   "designer.project.save": ["Save project", "Guardar proyecto", "Salvar projeto"],
   "designer.project.saveNew": ["Save as new project", "Guardar como proyecto nuevo", "Salvar como projeto novo"],

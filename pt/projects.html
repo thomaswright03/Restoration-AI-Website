@@ -168,6 +168,9 @@
         </div>
 
         <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-paused" role="status" hidden>
+            <p id="projects-paused-text"></p>
+          </div>
           <div class="app-notice" id="projects-free" hidden>
             <p>
               <strong>Você está no plano grátis.</strong> Você pode usar o projetista à vontade, mas para salvar
@@ -207,6 +210,15 @@
                 <select id="projects-sort">
                   <option value="updated">Última atualização</option>
                   <option value="name">Nome (A a Z)</option>
+                  <option value="start">Data de início (a mais próxima primeiro)</option>
+                  <option value="status">Situação (de novo contato a concluído)</option>
+                </select>
+              </div>
+              <div class="form-group projects-view" id="projects-view-wrap" hidden>
+                <label for="projects-view">Exibição</label>
+                <select id="projects-view">
+                  <option value="cards">Cartões</option>
+                  <option value="table">Tabela</option>
                 </select>
               </div>
               <div class="form-group">
@@ -222,6 +234,14 @@
               <a class="btn btn-primary" href="../pt/designer.html">Abrir o projetista</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>Nenhum projeto corresponde a essa busca ou filtro.</p>
+            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
+              <span>Projeto</span>
+              <span>Cliente e endereço</span>
+              <span>Situação</span>
+              <span>Começa</span>
+              <span>Atualizado</span>
+              <span>Ações</span>
+            </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>

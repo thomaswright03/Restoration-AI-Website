@@ -115,6 +115,32 @@
     translated(f, "plural", "fixtures." + f.key);
   });
 
+  // The owner's price (DEFAULT_PRICES key) behind each estimate line, by the
+  // line's key. A bathtub is at the owner's bathtub price, or 70% of their
+  // shower price (bathtubPrice()), so either one set makes it theirs.
+  var LINE_PRICE_KEYS = {
+    demolition: ["Demo_Price_Per_SqFt"],
+    floorTile: ["Tile_Price_Per_SqFt"],
+    flooring: ["Floor_Price_Per_SqFt"],
+    wallTile: ["Tile_Price_Per_SqFt"],
+    wallPaint: ["Painting_Price_Per_SqFt"],
+    ceilingPaint: ["Painting_Price_Per_SqFt"],
+    drainRun: ["Drain_Run_Price_Per_Ft"],
+    electrical: ["Electrical_Price_Per_Point"],
+    plumbing: ["Plumbing_Price_Per_Point"],
+    noStack: ["No_Stack_Surcharge_Price"],
+    badValve: ["Bad_Valve_Surcharge_Price"],
+  };
+  FIXTURES.forEach(function (f) {
+    LINE_PRICE_KEYS[f.key] = f.priceKey ? [f.priceKey] : ["Bathtub_Price", "Shower_Price"];
+  });
+
+  // The DEFAULT_PRICES keys an estimate line's rate comes from ([] for a
+  // line this module doesn't know).
+  function linePriceKeys(lineKey) {
+    return LINE_PRICE_KEYS[lineKey] || [];
+  }
+
   function option(value, key) {
     return translated({ value: value }, "label", key);
   }
@@ -471,6 +497,7 @@
     plumbingFixtureCount: plumbingFixtureCount,
     areas: areas,
     computeEstimate: computeEstimate,
+    linePriceKeys: linePriceKeys,
     describeScope: describeScope,
     estimateAssumptions: estimateAssumptions,
   };

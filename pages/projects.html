@@ -35,6 +35,9 @@
         </div>
 
         <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-paused" role="status" hidden>
+            <p id="projects-paused-text"></p>
+          </div>
           <div class="app-notice" id="projects-free" hidden>
             <p><strong>{{projects.free.title}}</strong> {{projects.free.text}}</p>
             <p><a href="{{@root}}{{@dir}}account.html">{{projects.free.cta}}</a></p>
@@ -68,6 +71,15 @@
                 <select id="projects-sort">
                   <option value="updated">{{projects.sort.updated}}</option>
                   <option value="name">{{projects.sort.name}}</option>
+                  <option value="start">{{projects.sort.start}}</option>
+                  <option value="status">{{projects.sort.status}}</option>
+                </select>
+              </div>
+              <div class="form-group projects-view" id="projects-view-wrap" hidden>
+                <label for="projects-view">{{projects.view}}</label>
+                <select id="projects-view">
+                  <option value="cards">{{projects.view.cards}}</option>
+                  <option value="table">{{projects.view.table}}</option>
                 </select>
               </div>
               <div class="form-group">
@@ -83,6 +95,14 @@
               <a class="btn btn-primary" href="{{@root}}{{@dir}}designer.html">{{projects.list.emptyAction}}</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
+            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
+              <span>{{projects.col.name}}</span>
+              <span>{{projects.col.client}}</span>
+              <span>{{projects.col.status}}</span>
+              <span>{{projects.col.start}}</span>
+              <span>{{projects.col.updated}}</span>
+              <span>{{projects.col.actions}}</span>
+            </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>

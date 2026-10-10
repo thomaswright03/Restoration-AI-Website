@@ -34,6 +34,11 @@
     "Una vista previa en 3D hecha con sus medidas y elecciones; no es una imagen de su baño real. Los precios son una estimación aproximada y no vinculante hasta que la empresa le envíe una cotización real.",
     "Uma prévia em 3D feita com as suas medidas e escolhas, não uma imagem do seu banheiro real. Os preços são uma estimativa aproximada e sem compromisso até a empresa enviar um orçamento de verdade."
   ],
+  "designer.studio.disclosureOwner": [
+    "A 3D preview built from the measurements and picks entered, not a picture of the actual bathroom. Prices are a rough, non-binding estimate from your labor prices; your written quote sets the real price.",
+    "Una vista previa en 3D hecha con las medidas y elecciones ingresadas; no es una imagen del baño real. Los precios son una estimación aproximada y no vinculante según sus precios de mano de obra; su cotización por escrito fija el precio real.",
+    "Uma prévia em 3D feita com as medidas e escolhas informadas, não uma imagem do banheiro real. Os preços são uma estimativa aproximada e sem compromisso com base nos seus preços de mão de obra; o seu orçamento por escrito define o preço real."
+  ],
   "designer.link.title": ["Link to your design", "Enlace a su diseño", "Link do seu projeto"],
   "designer.link.text": [
     "Copy this link to come back to your design on another device. The design itself is in the link, not your contact details.",

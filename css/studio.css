@@ -2326,8 +2326,22 @@ main.studio-page.solid-header {
   .studio-steps {
     order: 3;
     flex: 1 1 100%;
+    min-width: 0;
     justify-content: space-between;
     margin: 0;
+    /* Six steps and the current one's name can outgrow a phone's width (the
+       Portuguese names are the longest): they scroll inside the bar, never
+       the page sideways. */
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .studio-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-step-btn {
+    flex: 0 0 auto;
   }
 
   .studio-body {

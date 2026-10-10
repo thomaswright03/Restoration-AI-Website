@@ -258,13 +258,32 @@
       ensure(60);
       paragraph(spec.linesTitle, 11, 30, "bold", 6);
     }
-    (spec.lines || []).forEach(function (l) {
+    // What follows the line items: the "not included" rows, the rule and the
+    // subtotals and total. Measured first, so the last line item moves to a
+    // new page with them when they wouldn't fit under it: the totals are
+    // never on a page by themselves.
+    var excludedHeight = 0;
+    if (spec.excluded && spec.excluded.length) {
+      excludedHeight = 2;
+      doc.setFontSize(10);
+      spec.excluded.forEach(function (x) {
+        excludedHeight += doc.splitTextToSize(safe(x.label), width - 150).length * 13 + 4;
+      });
+    }
+    var totalsHeight = 4 + 16;
+    (spec.totals || []).forEach(function (t) {
+      var size = t.strong ? 15 : 11;
+      doc.setFontSize(size);
+      totalsHeight += doc.splitTextToSize(safe(t.label), width - 150).length * (size + 4) + 4;
+    });
+    var tailHeight = excludedHeight + ((spec.totals || []).length ? totalsHeight : 0);
+    (spec.lines || []).forEach(function (l, i, all) {
       doc.setFontSize(11);
       var labelLines = doc.splitTextToSize(safe(l.label), labelWidth);
       doc.setFontSize(10);
       var detailLines = doc.splitTextToSize(safe(l.detail), detailWidth);
       var rowHeight = Math.max(labelLines.length * 14, detailLines.length * 13) + 6;
-      ensure(rowHeight);
+      ensure(i === all.length - 1 ? rowHeight + tailHeight : rowHeight);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       doc.setTextColor(30);
@@ -290,14 +309,8 @@
       });
     }
 
-    // The rule and the totals move to a new page together, never the
-    // total alone: it belongs with the lines above it.
-    var totalsHeight = 4 + 16;
-    (spec.totals || []).forEach(function (t) {
-      var size = t.strong ? 15 : 11;
-      doc.setFontSize(size);
-      totalsHeight += doc.splitTextToSize(safe(t.label), width - 150).length * (size + 4) + 4;
-    });
+    // The rule and the totals move together (and, measured above, with the
+    // last line item), never the total alone.
     ensure(totalsHeight);
     y += 4;
     rule(210);

@@ -173,6 +173,9 @@
         </div>
 
         <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-paused" role="status" hidden>
+            <p id="projects-paused-text"></p>
+          </div>
           <div class="app-notice" id="projects-free" hidden>
             <p>
               <strong>Tiene el plan gratis.</strong> Puede usar el diseñador todo lo que quiera, pero para guardar
@@ -213,6 +216,15 @@
                 <select id="projects-sort">
                   <option value="updated">Última actualización</option>
                   <option value="name">Nombre (A a Z)</option>
+                  <option value="start">Fecha de inicio (la más próxima primero)</option>
+                  <option value="status">Estado (de cliente nuevo a terminado)</option>
+                </select>
+              </div>
+              <div class="form-group projects-view" id="projects-view-wrap" hidden>
+                <label for="projects-view">Vista</label>
+                <select id="projects-view">
+                  <option value="cards">Tarjetas</option>
+                  <option value="table">Tabla</option>
                 </select>
               </div>
               <div class="form-group">
@@ -228,6 +240,14 @@
               <a class="btn btn-primary" href="../es/designer.html">Abrir el diseñador</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>Ningún proyecto coincide con esa búsqueda o filtro.</p>
+            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
+              <span>Proyecto</span>
+              <span>Cliente y dirección</span>
+              <span>Estado</span>
+              <span>Empieza</span>
+              <span>Actualizado</span>
+              <span>Acciones</span>
+            </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>

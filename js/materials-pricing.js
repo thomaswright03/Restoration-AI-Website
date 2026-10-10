@@ -5,9 +5,11 @@
 // entries were copied by hand from homedepot.com product listings in
 // October 2026 (id = "hd-" + the listing's item number, the listing's title,
 // its photo, and its price with the link). The site has no live retailer
-// feed, so these prices go stale; the estimate calls them "catalog prices"
-// for that reason. There is no generator script: to refresh a price, open
-// the listing at `url`, change `price`, and run `npm run test:unit`. To add
+// feed, so these prices go stale; the estimate and the PDF say "catalog
+// prices as of <PRICES_AS_OF>" for that reason, never "current". There is
+// no generator script: to refresh a price, open the listing at `url`, change
+// `price`, set PRICES_AS_OF to the day you did, and run `npm run test:unit`
+// (it warns when the date is more than six months old). To add
 // a product, copy an entry under the right category key (the same `key` the
 // labor estimate produces: js/bathroom-pricing.js FIXTURES keys, or
 // "floorTile" / "flooring" / "wallTile" / "wallPaint" / "ceilingPaint").
@@ -33,6 +35,24 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function (I18n, Pricing) {
   "use strict";
+
+  // The day the catalog's prices were last checked against the listings
+  // (ISO date). Shown with the estimate as "catalog prices as of October
+  // 2026"; asOfLabel() writes it in the page's language.
+  var PRICES_AS_OF = "2026-10-01";
+
+  function asOfLabel(locale) {
+    var parts = PRICES_AS_OF.split("-").map(Number);
+    var date = new Date(parts[0], parts[1] - 1, parts[2] || 1);
+    try {
+      return date.toLocaleDateString(locale || (I18n && I18n.locale ? I18n.locale() : "en-US"), {
+        month: "long",
+        year: "numeric",
+      });
+    } catch (e) {
+      return PRICES_AS_OF.slice(0, 7);
+    }
+  }
 
   // Categories priced by the gallon (coverage in sq ft per gallon) instead
   // of directly by quantity x price. Everything else in CATALOG is priced
@@ -819,6 +839,8 @@
 
   return {
     CATALOG: CATALOG,
+    PRICES_AS_OF: PRICES_AS_OF,
+    asOfLabel: asOfLabel,
     money: money,
     formatQty: formatQty,
     bestRetailer: bestRetailer,

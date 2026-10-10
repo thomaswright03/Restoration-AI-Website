@@ -388,6 +388,9 @@
     "studio.step.design.title": "Your design",
     "studio.step.design.intro": "Check the design, then download the PDF.",
     "studio.step.design.short": "Design",
+    "studio.est.settingsFailed": "The price settings couldn't be loaded, so this shows the design without an estimate.",
+    "studio.est.settingsRetry": "Try again",
+    "studio.est.settingsStillOff": "Still couldn't load the price settings. Check your connection and try again.",
     "studio.stepOf": "Step {n} of {total}",
     "studio.stepNav": "Steps",
     "studio.back": "Back to {step}",
@@ -945,6 +948,9 @@
       "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",
     "riley.step.estimateOwnerPartial":
       "Here's what it adds up to, at your prices where you've set them; the rest ({list}) is still at sample rates until you set those on the account page. Save it as a project, or download the PDF for your client.",
+    "riley.step.design":
+      "Here's your design in full. Download the PDF, or sign up and your own designer saves this as a project.",
+    "riley.step.designOwner": "Here's your design in full. Save it as a project, or download the PDF for your client.",
     "riley.step.estimateOwnerDefaults":
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
     "pdf.preparedFor": "Prepared for: {name}",

@@ -398,6 +398,11 @@
     "studio.step.design.title": "Su diseño",
     "studio.step.design.intro": "Revise el diseño y luego descargue el PDF.",
     "studio.step.design.short": "Diseño",
+    "studio.est.settingsFailed":
+      "No se pudo cargar la configuración de precios, así que esto muestra el diseño sin estimación.",
+    "studio.est.settingsRetry": "Intentar de nuevo",
+    "studio.est.settingsStillOff":
+      "Aún no se pudo cargar la configuración de precios. Revise su conexión e intente de nuevo.",
     "studio.stepOf": "Paso {n} de {total}",
     "studio.stepNav": "Pasos",
     "studio.back": "Volver a {step}",
@@ -961,6 +966,10 @@
       "Esto es lo que suma con sus precios. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "riley.step.estimateOwnerPartial":
       "Esto es lo que suma, con sus precios donde los ha definido; el resto ({list}) sigue con tarifas de ejemplo hasta que las defina en la página de la cuenta. Guárdelo como proyecto o descargue el PDF para su cliente.",
+    "riley.step.design":
+      "Aquí está su diseño completo. Descargue el PDF, o regístrese y su propio diseñador guardará esto como proyecto.",
+    "riley.step.designOwner":
+      "Aquí está su diseño completo. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "riley.step.estimateOwnerDefaults":
       "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "pdf.preparedFor": "Preparado para: {name}",

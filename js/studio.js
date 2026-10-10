@@ -2226,7 +2226,8 @@
   }
 
   function stepHead(step) {
-    var n = STEPS.indexOf(step) + 1;
+    // "design" is the last step without the price estimator: still 6 of 6.
+    var n = STEPS.indexOf(step === "design" ? "estimate" : step) + 1;
     return h("header", { class: "studio-step-head" }, [
       h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
@@ -4189,10 +4190,38 @@
     return parts.length ? " (" + parts.join(", ") + ")" : "";
   }
 
+  // The settings file (site-config.json) didn't load, so the estimate is
+  // off for no reason of the owner's: say so, with a way to try again.
+  function settingsFailedBanner() {
+    return h("div", { class: "studio-banner is-warn", role: "note", "data-testid": "settings-failed" }, [
+      h("span", { icon: "alert" }),
+      h("p", { text: T("studio.est.settingsFailed") }),
+      h("button", {
+        type: "button",
+        class: "btn btn-secondary btn-sm",
+        "data-key": "settings-retry",
+        text: T("studio.est.settingsRetry"),
+        onclick: function (e) {
+          var btn = e.currentTarget;
+          btn.disabled = true;
+          var reload = window.SiteConfig && window.SiteConfig.reload;
+          (reload ? reload() : Promise.resolve(null)).then(function (c) {
+            if (c) config = c;
+            renderBar();
+            renderPanel();
+            if (!c || c.loaded === false) toast(T("studio.est.settingsStillOff"));
+            else rileyTalk({ step: true });
+          });
+        },
+      }),
+    ]);
+  }
+
   // ---------- Step 6: the estimate ----------
   function estimateStep(body) {
     var priced = estimatorOn();
     body.appendChild(stepHead(priced ? "estimate" : "design"));
+    if (!priced && config && config.loaded === false) body.appendChild(settingsFailedBanner());
     var est = estimate();
     var problems = errorCount(issues);
     if (problems) {
@@ -4675,7 +4704,10 @@
       return;
     }
     var stepKey = "riley.step." + ui.step;
-    if (ui.step === "estimate" && !BIZ.demo) {
+    if (ui.step === "estimate" && !estimatorOn()) {
+      // Without the price estimator there's no total to talk about.
+      stepKey = BIZ.demo ? "riley.step.design" : "riley.step.designOwner";
+    } else if (ui.step === "estimate" && !BIZ.demo) {
       var mode = ratesMode();
       stepKey =
         mode === "sample"

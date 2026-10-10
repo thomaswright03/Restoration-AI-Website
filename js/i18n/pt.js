@@ -397,6 +397,11 @@
     "studio.step.design.title": "O seu projeto",
     "studio.step.design.intro": "Confira o projeto e depois baixe o PDF.",
     "studio.step.design.short": "Projeto",
+    "studio.est.settingsFailed":
+      "As configurações de preços não puderam ser carregadas, então isto mostra o projeto sem estimativa.",
+    "studio.est.settingsRetry": "Tentar de novo",
+    "studio.est.settingsStillOff":
+      "Ainda não foi possível carregar as configurações de preços. Verifique a sua conexão e tente de novo.",
     "studio.stepOf": "Etapa {n} de {total}",
     "studio.stepNav": "Etapas",
     "studio.back": "Voltar para {step}",
@@ -958,6 +963,9 @@
       "Isto é o total com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
     "riley.step.estimateOwnerPartial":
       "Isto é o total, com os seus preços onde você os definiu; o resto ({list}) ainda está com valores de exemplo até você defini-los na página da conta. Salve como projeto ou baixe o PDF para o seu cliente.",
+    "riley.step.design":
+      "Aqui está o seu projeto completo. Baixe o PDF, ou cadastre-se e o seu próprio projetista salva isto como projeto.",
+    "riley.step.designOwner": "Aqui está o seu projeto completo. Salve como projeto ou baixe o PDF para o seu cliente.",
     "riley.step.estimateOwnerDefaults":
       "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
     "pdf.preparedFor": "Preparado para: {name}",

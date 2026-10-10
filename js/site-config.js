@@ -8,8 +8,9 @@
 //   data-show-unless="owner.contactAddress"  shown only when it is NOT filled in
 //
 // Elements with data-show-if start out `hidden` in the HTML, so an unfilled
-// value never shows a placeholder. If the settings file can't be loaded, the
-// safe defaults below apply (price estimator off).
+// value never shows a placeholder. If the settings file can't be loaded
+// (three tries), the safe defaults below apply (price estimator off) with
+// `loaded: false`, so the page can say so; SiteConfig.reload() tries again.
 //
 // Other scripts use: SiteConfig.ready.then(function (config) { ... })
 
@@ -102,21 +103,61 @@
   var url = script && script.src ? new URL("../site-config.json", script.src).href : "site-config.json";
 
   // js/net.js (loaded first on every page) gives the read a time limit, so a
-  // stalled settings file can't hold the page; the defaults apply instead.
-  var loaded = (
-    window.Net
+  // stalled settings file can't hold the page.
+  function fetchOnce() {
+    return window.Net
       ? window.Net.fetchJson(url, { cache: "no-cache" }, 10000)
       : fetch(url, { cache: "no-cache" }).then(function (res) {
           if (!res.ok) throw new Error("HTTP " + res.status);
           return res.json();
-        })
-  )
-    .then(normalize)
-    .catch(function () {
-      var fallback = normalize(DEFAULTS);
-      fallback.loaded = false;
-      return fallback;
+        });
+  }
+
+  // A dropped request is tried again (three tries, a moment apart) before
+  // the defaults apply, so a flaky connection doesn't quietly hide the
+  // estimate.
+  function fetchConfig(tries) {
+    return fetchOnce().catch(function (err) {
+      if (tries <= 1) throw err;
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 600);
+      }).then(function () {
+        return fetchConfig(tries - 1);
+      });
     });
+  }
+
+  // The business's designer (js/business.js) may still be loading its
+  // profile; the settings wait for it so the legal name is the business's.
+  function business() {
+    var biz = typeof window !== "undefined" && window.DesignerBusiness;
+    return biz && biz.ready ? biz.ready : Promise.resolve(null);
+  }
+
+  function load(tries) {
+    return Promise.all([fetchConfig(tries), business()])
+      .then(function (results) {
+        return normalize(results[0]);
+      })
+      .catch(function () {
+        var fallback = normalize(DEFAULTS);
+        fallback.loaded = false;
+        return fallback;
+      });
+  }
+
+  var loaded = load(3);
+
+  // Asks for the settings again (the Try again button when they failed) and
+  // applies them to the page; resolves to the settings.
+  function reload() {
+    loaded = load(1).then(function (config) {
+      apply(config);
+      document.documentElement.setAttribute("data-config", config.loaded ? "loaded" : "defaults");
+      return config;
+    });
+    return loaded;
+  }
 
   var domReady = new Promise(function (resolve) {
     if (document.readyState === "loading") {
@@ -133,5 +174,5 @@
     return config;
   });
 
-  window.SiteConfig = { ready: ready, apply: apply };
+  window.SiteConfig = { ready: ready, apply: apply, reload: reload };
 })();

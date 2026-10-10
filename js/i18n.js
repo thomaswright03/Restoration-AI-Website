@@ -945,6 +945,18 @@
       "Confira o projeto e depois baixe o PDF.",
     ],
     "studio.step.design.short": ["Design", "Diseño", "Projeto"],
+    // The settings file didn't load, so the estimate is off for now.
+    "studio.est.settingsFailed": [
+      "The price settings couldn't be loaded, so this shows the design without an estimate.",
+      "No se pudo cargar la configuración de precios, así que esto muestra el diseño sin estimación.",
+      "As configurações de preços não puderam ser carregadas, então isto mostra o projeto sem estimativa.",
+    ],
+    "studio.est.settingsRetry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
+    "studio.est.settingsStillOff": [
+      "Still couldn't load the price settings. Check your connection and try again.",
+      "Aún no se pudo cargar la configuración de precios. Revise su conexión e intente de nuevo.",
+      "Ainda não foi possível carregar as configurações de preços. Verifique a sua conexão e tente de novo.",
+    ],
     "studio.stepOf": ["Step {n} of {total}", "Paso {n} de {total}", "Etapa {n} de {total}"],
     "studio.stepNav": ["Steps", "Pasos", "Etapas"],
     "studio.back": ["Back to {step}", "Volver a {step}", "Voltar para {step}"],
@@ -2443,6 +2455,17 @@
       "Here's what it adds up to, at your prices where you've set them; the rest ({list}) is still at sample rates until you set those on the account page. Save it as a project, or download the PDF for your client.",
       "Esto es lo que suma, con sus precios donde los ha definido; el resto ({list}) sigue con tarifas de ejemplo hasta que las defina en la página de la cuenta. Guárdelo como proyecto o descargue el PDF para su cliente.",
       "Isto é o total, com os seus preços onde você os definiu; o resto ({list}) ainda está com valores de exemplo até você defini-los na página da conta. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
+    // The last step without the price estimator: no total to talk about.
+    "riley.step.design": [
+      "Here's your design in full. Download the PDF, or sign up and your own designer saves this as a project.",
+      "Aquí está su diseño completo. Descargue el PDF, o regístrese y su propio diseñador guardará esto como proyecto.",
+      "Aqui está o seu projeto completo. Baixe o PDF, ou cadastre-se e o seu próprio projetista salva isto como projeto.",
+    ],
+    "riley.step.designOwner": [
+      "Here's your design in full. Save it as a project, or download the PDF for your client.",
+      "Aquí está su diseño completo. Guárdelo como proyecto o descargue el PDF para su cliente.",
+      "Aqui está o seu projeto completo. Salve como projeto ou baixe o PDF para o seu cliente.",
     ],
     "riley.step.estimateOwnerDefaults": [
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",

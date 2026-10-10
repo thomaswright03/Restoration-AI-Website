@@ -59,6 +59,14 @@ body:has(main.studio-page) .site-header {
   position: relative;
 }
 
+/* ...and keeps one height: the compact one it takes once scrolled, so the
+   studio below it never shifts while the page moves. */
+body:has(main.studio-page) .site-header .nav {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-3);
+  transition: none;
+}
+
 main.studio-page.solid-header {
   padding-top: 0;
 }

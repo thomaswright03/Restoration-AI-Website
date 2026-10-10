@@ -812,13 +812,13 @@ test.describe("design studio", () => {
       "es",
       "es",
       ["Baño", "Distribución", "Electricidad", "Productos", "Acabados", "Estimación"],
-      "Cabe, 1 queda justo",
+      "Cabe; el inodoro queda justo",
     ],
     [
       "pt",
       "pt",
       ["Banheiro", "Distribuição", "Elétrica", "Produtos", "Acabamentos", "Estimativa"],
-      "Cabe, 1 fica apertado",
+      "Cabe; o vaso sanitário fica apertado",
     ],
   ]) {
     test(`/${dir}/designer.html runs the studio in that language`, async ({ page }) => {

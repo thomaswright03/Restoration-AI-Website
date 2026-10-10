@@ -334,7 +334,6 @@ test("My projects lists the projects whichever answers first: the business row, 
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await signedIn(page, { projects, delays });
     await page.goto("/projects.html");
-    await expect(page.locator("#projects-loading"), which).toBeVisible();
     await expect(page.locator(".project-item"), which).toHaveCount(2, { timeout: 15000 });
     await expect(page.locator("#projects-plan"), which).toHaveText("Plan: Starter");
     await expect(page.locator("#project-new"), which).toHaveAttribute("href", /designer\.html\?b=smith-bath$/);

@@ -73,20 +73,30 @@ async function post(raw, headers, method) {
   return res;
 }
 
-// Stripe answers GET /v1/subscriptions/<id> with `subs[id]`; Supabase's
-// upsert of the subscriptions row answers `upsert` (a status, or a function
-// of the row). Records every call.
-function stubFetch({ subs = {}, upsert = 201 } = {}) {
-  const calls = { stripe: [], saved: [] };
+// Stripe answers GET /v1/subscriptions/<id> with `subs[id]` (a DELETE
+// cancels it: status canceled from then on); Supabase's read of the
+// account's row answers `rows`, and its upsert answers `upsert` (a status,
+// or a function of the row). Records every call.
+function stubFetch({ subs = {}, upsert = 201, rows = [] } = {}) {
+  const calls = { stripe: [], saved: [], cancelled: [] };
   global.fetch = async (url, opts = {}) => {
     const u = new URL(url);
+    const method = opts.method || "GET";
     if (u.host === "api.stripe.com") {
-      calls.stripe.push(u.pathname);
+      calls.stripe.push((method === "GET" ? "" : method + " ") + u.pathname);
       const m = /^\/v1\/subscriptions\/(.+)$/.exec(u.pathname);
       const sub = m && subs[decodeURIComponent(m[1])];
+      if (sub && method === "DELETE") {
+        calls.cancelled.push(sub.id);
+        sub.status = "canceled";
+        return reply(200, sub);
+      }
       return sub
         ? reply(200, sub)
         : reply(404, { error: { message: "No such subscription: " + (m ? m[1] : u.pathname) } });
+    }
+    if (u.host === "db.example" && u.pathname === "/rest/v1/subscriptions" && method === "GET") {
+      return reply(200, rows);
     }
     if (u.host === "db.example" && u.pathname === "/rest/v1/subscriptions") {
       const row = JSON.parse(opts.body);
@@ -279,8 +289,22 @@ test("webhook: a price that doesn't name its plan keeps the row's plan and recor
       },
     },
   });
-  const res = await post(event("customer.subscription.updated", { id: "sub_x" }));
+  const warned = [];
+  const realWarn = console.warn;
+  console.warn = (line) => warned.push(String(line));
+  let res;
+  try {
+    res = await post(event("customer.subscription.updated", { id: "sub_x" }));
+  } finally {
+    console.warn = realWarn;
+  }
   assert.equal(res.statusCode, 200);
+  // Never silent: one warning names the price, the owner and the subscription.
+  const warning = warned.map((l) => JSON.parse(l)).find((l) => l.error === "unmapped-price");
+  assert.ok(warning, "an unmapped-price warning was logged");
+  assert.equal(warning.priceId, "price_unknown");
+  assert.equal(warning.ownerId, OWNER);
+  assert.equal(warning.subscriptionId, "sub_x");
   const { row } = calls.saved[0];
   assert.equal(row.price_id, "price_unknown");
   // Not written at all, so a plan set by hand in the table isn't wiped
@@ -360,4 +384,109 @@ test("webhook: when Supabase or Stripe fails for any other reason the answer is 
     console.error = error;
   }
   assert.ok(errors.length >= 3, "each failure is logged");
+});
+
+// ------------------------------------------------- two Checkout tabs
+
+function quietWarn(fn) {
+  const warned = [];
+  const realWarn = console.warn;
+  console.warn = (line) => warned.push(String(line));
+  return fn().then(
+    (v) => {
+      console.warn = realWarn;
+      return { value: v, warned };
+    },
+    (e) => {
+      console.warn = realWarn;
+      throw e;
+    },
+  );
+}
+
+test("webhook: a second live subscription for the same account is cancelled (the newer one) and the older one kept", async () => {
+  setEnv();
+  const first = { ...PRO_SUB, id: "sub_first", created: 1000, customer: "cus_a" };
+  const second = { ...PRO_SUB, id: "sub_second", created: 2000, customer: "cus_b" };
+  // The first tab's webhook landed and was recorded; now the second tab's.
+  const calls = stubFetch({
+    subs: { sub_first: first, sub_second: second },
+    rows: [{ stripe_subscription_id: "sub_first", status: "active" }],
+  });
+  const { value: res, warned } = await quietWarn(() =>
+    post(
+      event("checkout.session.completed", {
+        mode: "subscription",
+        subscription: "sub_second",
+        client_reference_id: OWNER,
+      }),
+    ),
+  );
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls.cancelled, ["sub_second"]);
+  assert.ok(calls.stripe.includes("/v1/subscriptions/sub_first"), "the one on file was checked with Stripe");
+  // The account keeps the older one: that's what the row says.
+  assert.equal(calls.saved.length, 1);
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_first");
+  assert.equal(calls.saved[0].row.status, "active");
+  const line = warned.map((l) => JSON.parse(l)).find((l) => l.error === "duplicate-subscription");
+  assert.ok(line, "one log line names the duplicate");
+  assert.equal(line.kept, "sub_first");
+  assert.equal(line.cancelled, "sub_second");
+  assert.equal(line.ownerId, OWNER);
+});
+
+test("webhook: when the event is for the older subscription, the newer one on file is the one cancelled", async () => {
+  setEnv();
+  const first = { ...PRO_SUB, id: "sub_first", created: 1000 };
+  const second = { ...PRO_SUB, id: "sub_second", created: 2000 };
+  // Events out of order: the second tab's was recorded first.
+  const calls = stubFetch({
+    subs: { sub_first: first, sub_second: second },
+    rows: [{ stripe_subscription_id: "sub_second", status: "trialing" }],
+  });
+  const { value: res } = await quietWarn(() => post(event("customer.subscription.created", { id: "sub_first" })));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls.cancelled, ["sub_second"]);
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_first");
+});
+
+test("webhook: a different subscription on file that Stripe no longer runs (or never heard of) is no duplicate", async () => {
+  setEnv();
+  // Cancelled in Stripe, the row not yet updated: the new one is recorded, nothing cancelled.
+  let calls = stubFetch({
+    subs: { sub_old: { ...PRO_SUB, id: "sub_old", status: "canceled" }, sub_new: { ...PRO_SUB, id: "sub_new" } },
+    rows: [{ stripe_subscription_id: "sub_old", status: "active" }],
+  });
+  let res = await post(event("customer.subscription.created", { id: "sub_new" }));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls.cancelled, []);
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_new");
+  // Gone from Stripe altogether (404): the same.
+  calls = stubFetch({
+    subs: { sub_new: { ...PRO_SUB, id: "sub_new" } },
+    rows: [{ stripe_subscription_id: "sub_gone", status: "active" }],
+  });
+  res = await post(event("customer.subscription.created", { id: "sub_new" }));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls.cancelled, []);
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_new");
+  // The row's own status isn't live (a plan that ended, then a new purchase): no Stripe check at all.
+  calls = stubFetch({
+    subs: { sub_new: { ...PRO_SUB, id: "sub_new" } },
+    rows: [{ stripe_subscription_id: "sub_ended", status: "canceled" }],
+  });
+  res = await post(event("customer.subscription.created", { id: "sub_new" }));
+  assert.equal(res.statusCode, 200);
+  assert.ok(!calls.stripe.includes("/v1/subscriptions/sub_ended"));
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_new");
+  // The same subscription again (an update), or one that isn't live: recorded as is.
+  calls = stubFetch({
+    subs: { sub_pro: { ...PRO_SUB, status: "canceled" } },
+    rows: [{ stripe_subscription_id: "sub_other", status: "active" }],
+  });
+  res = await post(event("customer.subscription.deleted", { id: "sub_pro" }));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(calls.cancelled, []);
+  assert.equal(calls.saved[0].row.status, "canceled");
 });

@@ -52,6 +52,22 @@ async function saveSubscription(ownerId, sub) {
   // STRIPE_PRICE_* lists), so a plan set by hand isn't wiped.
   const price = item && item.price;
   const plan = planFromPrice(price) || planFromPriceId(price && price.id) || undefined;
+  if (price && price.id && !plan) {
+    // Kept quiet it would look like a plan change that never showed: the
+    // row keeps its plan, and the owner gets a line to act on.
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        error: "unmapped-price",
+        message:
+          "Subscription moved onto a price that names no plan (no lookup_key or metadata.plan, and not in " +
+          "STRIPE_PRICE_*): the stored plan is kept. Give the price a lookup key or set subscriptions.plan by hand.",
+        priceId: price.id,
+        ownerId,
+        subscriptionId: sub.id,
+      }),
+    );
+  }
   try {
     await db("subscriptions?on_conflict=owner_id", {
       method: "POST",

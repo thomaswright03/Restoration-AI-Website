@@ -490,12 +490,28 @@
   // be the design init starts from.
   var pendingOpen = null;
 
+  // designer.html?project=<id>: the studio starts only once js/projects.js
+  // hands it the saved design (StudioDesign.open), or says it can't
+  // (StudioDesign.start), so the sample room is never shown, edited or
+  // saved as if it were the project while it loads. The loading panel
+  // (#studio-loading) stays up until then.
+  var WAITS_FOR_PROJECT = !!PAGE_PARAMS.get("project");
+  var started = false;
+
+  function start() {
+    if (started) return;
+    started = true;
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+    else init();
+  }
+
   function openSaved(code, name) {
     var next = Plan.decode(code);
     if (!next) return false;
     next.answered = Object.assign({}, answers(next), { stack: true });
     if (!design) {
       pendingOpen = next;
+      start();
       return true;
     }
     ui.selected = null;
@@ -515,6 +531,9 @@
       return design ? Plan.encode(design) : "";
     },
     open: openSaved,
+    // Starts the studio without a project (the sample room): for ?project=
+    // when the project can't be opened, or nobody is signed in.
+    start: start,
     summary: function () {
       return design ? projectSummary() : null;
     },
@@ -5084,6 +5103,5 @@
     showExamples: openPhotos,
   };
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
+  if (!WAITS_FOR_PROJECT) start();
 })();

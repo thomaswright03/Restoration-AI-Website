@@ -255,10 +255,20 @@ test("projects: client and job details are checked field by field", async () => 
   const { parseInfo, parseName } = require("../../api/projects.js");
   assert.deepEqual(parseInfo({ status: "maybe" }), { field: "status", reason: "value" });
   assert.deepEqual(parseInfo({ start: "2026-02-30" }), { field: "start", reason: "date" });
-  assert.deepEqual(parseInfo({ start: "0999-01-01" }), { field: "start", reason: "date" });
-  assert.deepEqual(parseInfo({ start: "1949-12-31" }), { field: "start", reason: "date" });
-  assert.deepEqual(parseInfo({ start: "1950-01-01" }), { info: { start: "1950-01-01" } });
+  // A real day in an implausible year (a typo like 0226, 1950 or 2206) is
+  // refused as "year": 2000 up to ten years from now.
+  const thisYear = new Date().getUTCFullYear();
+  assert.deepEqual(parseInfo({ start: "0999-01-01" }), { field: "start", reason: "year" });
+  assert.deepEqual(parseInfo({ start: "1949-12-31" }), { field: "start", reason: "year" });
+  assert.deepEqual(parseInfo({ start: "1950-01-01" }), { field: "start", reason: "year" });
+  assert.deepEqual(parseInfo({ start: "1999-12-31" }), { field: "start", reason: "year" });
+  assert.deepEqual(parseInfo({ start: "2000-01-01" }), { info: { start: "2000-01-01" } });
+  assert.deepEqual(parseInfo({ start: thisYear + 10 + "-12-31" }), { info: { start: thisYear + 10 + "-12-31" } });
+  assert.deepEqual(parseInfo({ start: thisYear + 11 + "-01-01" }), { field: "start", reason: "year" });
   assert.deepEqual(parseInfo({ start: "2026-02-28" }), { info: { start: "2026-02-28" } });
+  const { plausibleYear } = require("../../api/projects.js");
+  assert.equal(plausibleYear("2036-01-01", new Date("2026-10-10T00:00:00Z")), true);
+  assert.equal(plausibleYear("2037-01-01", new Date("2026-10-10T00:00:00Z")), false);
   assert.deepEqual(parseInfo({ email: "not-an-email" }), { field: "email", reason: "email" });
   assert.deepEqual(parseInfo({ notes: "x".repeat(2001) }), { field: "notes", reason: "long" });
   assert.deepEqual(parseName("x".repeat(121)), { reason: "long" });
@@ -272,7 +282,32 @@ test("projects: client and job details are checked field by field", async () => 
   const sent = data.projects[0];
   assert.equal(sent.name, "Job");
   assert.deepEqual(sent.info, { client: "Lee" });
-  assert.deepEqual(sent.summary, summary);
+  // The summary is kept with the moment the design was saved, so its page
+  // can date the materials list by that, not by a later rename.
+  assert.equal(sent.summary.v, 1);
+  assert.equal(sent.summary.grandTotal, 1234);
+  assert.ok(Math.abs(Date.parse(sent.summary.savedAt) - Date.now()) < 5000, sent.summary.savedAt);
+  const savedAt = sent.summary.savedAt;
+  await new Promise((r) => setTimeout(r, 5));
+  const renamed = await call("PATCH", { body: { id: sent.id, name: "Job renamed" } });
+  assert.equal(renamed.statusCode, 200);
+  assert.equal(sent.summary.savedAt, savedAt, "a rename leaves the estimate's date alone");
+  assert.notEqual(sent.updated_at, savedAt);
+  const resaved = await call("PATCH", { body: { id: sent.id, design: DESIGN, summary: { v: 1, grandTotal: 99 } } });
+  assert.equal(resaved.statusCode, 200);
+  assert.equal(sent.summary.grandTotal, 99);
+  assert.ok(sent.summary.savedAt >= savedAt, "saving the design again moves it");
+  const { cleanSummary } = require("../../api/projects.js");
+  assert.deepEqual(cleanSummary({ v: 1 }, new Date("2026-10-10T12:00:00Z")), {
+    v: 1,
+    savedAt: "2026-10-10T12:00:00.000Z",
+  });
+  assert.equal(cleanSummary(null), null);
+  assert.equal(cleanSummary([1]), false);
+  assert.equal(cleanSummary({ big: "x".repeat(90000) }), false);
+  const badYear = await call("PATCH", { body: { id: sent.id, info: { start: "1950-01-01" } } });
+  assert.equal(badYear.statusCode, 400);
+  assert.deepEqual(badYear.json(), { error: "info", field: "start", reason: "year" });
   const bad = await call("POST", { body: { name: "Job", design: DESIGN, info: { status: "nope" } } });
   assert.equal(bad.statusCode, 400);
   assert.deepEqual(bad.json(), { error: "info", field: "status", reason: "value" });

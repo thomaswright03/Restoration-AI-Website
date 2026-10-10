@@ -769,6 +769,15 @@
       "Não foi possível verificar o seu login, então salvar nos seus projetos não está disponível agora.",
     ],
     "proj.pausedNotice": ["Notice: {notice}", "Aviso: {notice}", "Aviso: {notice}"],
+    "proj.bar.opening": ["Opening your project…", "Abriendo su proyecto…", "Abrindo o seu projeto…"],
+    "proj.bar.backToProjects": ["Back to My projects", "Volver a Mis proyectos", "Voltar para Meus projetos"],
+    "proj.bar.login": ["Log in", "Iniciar sesión", "Entrar"],
+    "proj.client.none": ["No client yet", "Sin cliente todavía", "Sem cliente ainda"],
+    "proj.err.field.year": [
+      "Pick a start date between 2000 and {year}.",
+      "Elija una fecha de inicio entre 2000 y {year}.",
+      "Escolha uma data de início entre 2000 e {year}.",
+    ],
     "acct.slugTaken": [
       "That web address is taken. Try another.",
       "Esa dirección web ya está en uso. Pruebe otra.",

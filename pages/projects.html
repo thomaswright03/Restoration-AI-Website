@@ -95,12 +95,30 @@
               <a class="btn btn-primary" href="{{@root}}{{@dir}}designer.html">{{projects.list.emptyAction}}</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>{{projects.noMatch}}</p>
-            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
-              <span>{{projects.col.name}}</span>
+            <div class="project-table-head" id="projects-table-head" hidden>
+              <button type="button" class="project-sort" data-sort="name" title="{{projects.sort}}: {{projects.sort.name}}">
+                {{projects.col.name}}
+              </button>
               <span>{{projects.col.client}}</span>
-              <span>{{projects.col.status}}</span>
-              <span>{{projects.col.start}}</span>
-              <span>{{projects.col.updated}}</span>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="status"
+                title="{{projects.sort}}: {{projects.sort.status}}"
+              >
+                {{projects.col.status}}
+              </button>
+              <button type="button" class="project-sort" data-sort="start" title="{{projects.sort}}: {{projects.sort.start}}">
+                {{projects.col.start}}
+              </button>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="updated"
+                title="{{projects.sort}}: {{projects.sort.updated}}"
+              >
+                {{projects.col.updated}}
+              </button>
               <span>{{projects.col.actions}}</span>
             </div>
             <ul class="project-list" id="projects-list"></ul>

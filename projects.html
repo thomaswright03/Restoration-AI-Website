@@ -186,8 +186,9 @@
               </div>
             </div>
             <p class="form-note">
-              Deleting a project frees a saved-project slot, but not this month's new projects; those start over with
-              each calendar month, counted in UTC (for US time zones, the evening of the month's last day).
+              Deleting a project frees a saved-project slot, but not this month's new projects; those start over on the
+              first of each month. The month turns over at the same moment everywhere, which in US time zones is the
+              evening of the last day.
             </p>
           </div>
 
@@ -228,12 +229,20 @@
               <a class="btn btn-primary" href="designer.html">Open the designer</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>No projects match that search or filter.</p>
-            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
-              <span>Project</span>
+            <div class="project-table-head" id="projects-table-head" hidden>
+              <button type="button" class="project-sort" data-sort="name" title="Sort by: Name (A to Z)">
+                Project
+              </button>
               <span>Client and address</span>
-              <span>Status</span>
-              <span>Starts</span>
-              <span>Updated</span>
+              <button type="button" class="project-sort" data-sort="status" title="Sort by: Status (new lead to done)">
+                Status
+              </button>
+              <button type="button" class="project-sort" data-sort="start" title="Sort by: Start date (soonest first)">
+                Starts
+              </button>
+              <button type="button" class="project-sort" data-sort="updated" title="Sort by: Last updated">
+                Updated
+              </button>
               <span>Actions</span>
             </div>
             <ul class="project-list" id="projects-list"></ul>

@@ -193,7 +193,8 @@
             </div>
             <p class="form-note">
               Excluir um projeto libera uma vaga de projetos salvos, mas não os projetos novos deste mês; esses
-              recomeçam a cada mês do calendário, contado em UTC (nos fusos dos EUA, a noite do último dia do mês).
+              recomeçam no dia 1º de cada mês. O mês vira no mesmo instante em todo o mundo, o que nos fusos dos EUA é a
+              noite do último dia.
             </p>
           </div>
 
@@ -234,12 +235,30 @@
               <a class="btn btn-primary" href="../pt/designer.html">Abrir o projetista</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>Nenhum projeto corresponde a essa busca ou filtro.</p>
-            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
-              <span>Projeto</span>
+            <div class="project-table-head" id="projects-table-head" hidden>
+              <button type="button" class="project-sort" data-sort="name" title="Ordenar por: Nome (A a Z)">
+                Projeto
+              </button>
               <span>Cliente e endereço</span>
-              <span>Situação</span>
-              <span>Começa</span>
-              <span>Atualizado</span>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="status"
+                title="Ordenar por: Situação (de novo contato a concluído)"
+              >
+                Situação
+              </button>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="start"
+                title="Ordenar por: Data de início (a mais próxima primeiro)"
+              >
+                Começa
+              </button>
+              <button type="button" class="project-sort" data-sort="updated" title="Ordenar por: Última atualização">
+                Atualizado
+              </button>
               <span>Ações</span>
             </div>
             <ul class="project-list" id="projects-list"></ul>

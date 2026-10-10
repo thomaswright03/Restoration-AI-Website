@@ -17,7 +17,8 @@
 //                             tab or on another device isn't silently undone.
 //
 // A field that doesn't fit answers 400 {error:"info"|"name", field, reason},
-// reason being "long", "date", "email", "value" or "empty". Text with a NUL
+// reason being "long", "date" (not a real day), "year" (a start date outside
+// 2000 to ten years from now), "email", "value" or "empty". Text with a NUL
 // or another control character (which Postgres refuses and no name needs)
 // is "value".
 //
@@ -67,14 +68,22 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/;
 
-// "YYYY-MM-DD" naming a day that exists (no February 30th), in a plausible
-// year for a job's start date (1950 to 2100: a typo like 0226 is refused).
+// "YYYY-MM-DD" naming a day that exists (no February 30th).
 function realDay(text) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text);
   if (!m) return false;
-  const y = Number(m[1]);
-  const d = new Date(Date.UTC(y, Number(m[2]) - 1, Number(m[3])));
-  return y >= 1950 && y <= 2100 && d.toISOString().slice(0, 10) === text;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.toISOString().slice(0, 10) === text;
+}
+
+// A plausible year for a job's start date: 2000 to ten years from now (a
+// typo like 0226, 1950 or 2206 is refused with reason "year"). The same
+// bounds are checked in the browser (js/projects.js).
+const START_YEAR_MIN = 2000;
+const START_YEARS_AHEAD = 10;
+function plausibleYear(text, now = new Date()) {
+  const y = Number(text.slice(0, 4));
+  return y >= START_YEAR_MIN && y <= now.getUTCFullYear() + START_YEARS_AHEAD;
 }
 
 // Only known fields, trimmed: { info } or, for the first field that doesn't
@@ -95,6 +104,8 @@ function parseInfo(value) {
       if (!rule.includes(text)) return { field: key, reason: "value" };
     } else if (text && !realDay(text)) {
       return { field: key, reason: "date" };
+    } else if (text && !plausibleYear(text)) {
+      return { field: key, reason: "year" };
     }
     if (text) out[key] = text;
   }
@@ -110,11 +121,15 @@ function infoError(res, problem) {
   return sendJson(res, 400, { error: "info", field: problem.field, reason: problem.reason });
 }
 
-// The designer's estimate snapshot: any plain object, within a size limit.
-function cleanSummary(value) {
+// The designer's estimate snapshot: any plain object, within a size limit,
+// stamped with when the design was saved (savedAt). The project's page dates
+// the materials list by it; updated_at also moves on a rename or an edit of
+// the details, which don't change the estimate.
+function cleanSummary(value, now = new Date()) {
   if (value === undefined || value === null) return null;
   if (typeof value !== "object" || Array.isArray(value)) return false;
-  return JSON.stringify(value).length <= 90000 ? value : false;
+  if (JSON.stringify(value).length > 90000) return false;
+  return Object.assign({}, value, { savedAt: now.toISOString() });
 }
 
 // A project's name: text, at most 120 characters. { name } or { reason }.
@@ -292,3 +307,5 @@ module.exports = async function handler(req, res) {
 module.exports.cleanInfo = cleanInfo;
 module.exports.parseInfo = parseInfo;
 module.exports.parseName = parseName;
+module.exports.cleanSummary = cleanSummary;
+module.exports.plausibleYear = plausibleYear;

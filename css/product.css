@@ -1064,9 +1064,33 @@ html[data-embed="1"] main.solid-header {
   display: none;
 }
 
-/* A row with no client or status says so with a dash, not a gap. */
+/* A row with no client, status or start date says so in words, muted, so it
+   reads as "nothing here yet" rather than as something that failed to load.
+   The empty status isn't a pill: there's no status to badge. */
+.project-client.is-none,
+.project-start.is-none,
 .project-status.is-none {
   color: var(--color-muted);
+}
+
+.project-status.is-none {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-weight: 400;
+}
+
+/* The designer's loading panel when the project named in the address
+   couldn't be opened (js/projects.js): the message, with its way out, in
+   place of the spinner and the "taking longer" line. */
+.studio-loading.is-failed .studio-loading-text {
+  display: block;
+  font-weight: 400;
+}
+
+.studio-loading.is-failed .studio-loading-text::before {
+  display: none;
 }
 
 .projects-tools .form-group {
@@ -1118,8 +1142,12 @@ html[data-embed="1"] main.solid-header {
 }
 
 /* ---------- The table view (My projects, wide screens) ---------- */
-/* The same rows laid out in columns: each fact a cell, under a heading row.
-   Narrow screens keep the cards whatever the pick, so the control hides. */
+/* The same rows laid out in columns: each fact a cell, under a heading row
+   that sticks below the site header while the list scrolls. The heading row
+   and every row share one column template, with a fixed-width last column
+   (the buttons), so the headings sit over their columns whatever a row
+   holds. Narrow screens keep the cards whatever the pick, so the control
+   hides. From 1280 px the page uses the width a table needs. */
 .projects-view,
 .project-table-head {
   display: none;
@@ -1136,14 +1164,19 @@ html[data-embed="1"] main.solid-header {
 
   .project-table-head,
   .project-list.is-table .project-item {
+    --project-columns: minmax(0, 1.5fr) minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 17rem;
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.9fr) auto;
+    grid-template-columns: var(--project-columns);
     align-items: center;
     gap: var(--space-2) var(--space-4);
   }
 
   .project-table-head {
+    position: sticky;
+    top: 64px; /* under the site header, at its scrolled height */
+    z-index: 1;
     padding: var(--space-2) 0;
+    background: var(--color-surface);
     color: var(--color-muted);
     font-size: var(--fs-sm);
     font-weight: 600;
@@ -1155,9 +1188,42 @@ html[data-embed="1"] main.solid-header {
     display: none;
   }
 
+  /* A heading that sorts the list: a button that looks like the others,
+     with an arrow on the one in use. */
+  .project-table-head .project-sort {
+    appearance: none;
+    border: 0;
+    padding: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .project-table-head .project-sort:hover,
+  .project-table-head .project-sort:focus-visible {
+    color: var(--color-ink);
+    text-decoration: underline;
+  }
+
+  .project-table-head .project-sort[aria-pressed="true"] {
+    color: var(--color-ink);
+  }
+
+  .project-table-head .project-sort[aria-pressed="true"]::after {
+    content: " ▾";
+  }
+
   .project-list.is-table .project-main,
   .project-list.is-table .project-meta {
     display: contents;
+  }
+
+  .project-list.is-table .project-name {
+    overflow-wrap: break-word;
   }
 
   .project-list.is-table .project-client,
@@ -1168,9 +1234,24 @@ html[data-embed="1"] main.solid-header {
     color: var(--color-ink-soft);
   }
 
+  .project-list.is-table .project-client.is-none,
+  .project-list.is-table .project-start.is-none {
+    color: var(--color-muted);
+  }
+
+  /* Dates and the status stay on one line; the name and the client wrap. */
+  .project-list.is-table .project-status,
+  .project-list.is-table .project-start,
+  .project-list.is-table .project-updated {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .project-list.is-table .project-status {
     margin-right: 0;
     justify-self: start;
+    max-width: 100%;
   }
 
   .project-list.is-table .project-updated::before {
@@ -1179,11 +1260,16 @@ html[data-embed="1"] main.solid-header {
 
   .project-list.is-table .project-actions {
     justify-content: flex-end;
-    flex-wrap: nowrap;
   }
 
   .project-list.is-table .project-rename {
     grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-wide:has(.project-list.is-table) {
+    max-width: 1200px;
   }
 }
 

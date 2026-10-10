@@ -298,34 +298,12 @@
   // must not re-type details that are safely saved.
   var planFailed = false;
 
-  // A Supabase read with a time limit: a hung database must not leave a card
-  // blank forever. Resolves with the data; rejects with the PostgREST error,
-  // or {kind: "timeout"} after READ_MS.
-  var READ_MS = 10000;
+  // A Supabase read with a time limit (js/net.js timedQuery, 10 s): a hung
+  // database must not leave a card blank forever, and the hung request is
+  // aborted so Try again doesn't queue behind it. Resolves with the data;
+  // rejects with the PostgREST error, or {kind: "timeout"}.
   function timedRead(query) {
-    return new Promise(function (resolve, reject) {
-      var done = false;
-      var timer = setTimeout(function () {
-        done = true;
-        var err = new Error("timeout");
-        err.kind = "timeout";
-        err.code = "timeout";
-        reject(err);
-      }, READ_MS);
-      Promise.resolve(query).then(
-        function (r) {
-          if (done) return;
-          clearTimeout(timer);
-          if (r && r.error) reject(r.error);
-          else resolve((r && r.data) || null);
-        },
-        function (err) {
-          if (done) return;
-          clearTimeout(timer);
-          reject(err);
-        },
-      );
-    });
+    return window.Net.timedQuery(query);
   }
 
   // js/net.js: a time limit, and err.kind tells offline, timeout and server

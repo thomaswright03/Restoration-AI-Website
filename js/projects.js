@@ -123,6 +123,7 @@
     if (err.code === "total-limit") return T("proj.err.total", { n: limits.total || 0 });
     if (err.code === "setup") return T("proj.err.setup");
     if (err.code === "signin") return T("proj.err.signin");
+    if (err.code === "signin-check") return T("proj.bar.signinFailed");
     if (err.code === "not-found") return T("proj.err.notFound");
     if (err.code === "business") return T("proj.err.business");
     if (err.code === "info" || err.code === "name") return fieldErrorText(d) || T("proj.err.info");
@@ -141,6 +142,7 @@
     if (!d || !d.field) return "";
     if (d.reason === "long") return T("proj.err.field.long");
     if (d.reason === "date") return T("proj.err.field.date");
+    if (d.reason === "year") return T("proj.err.field.year", { year: startYearMax() });
     if (d.reason === "email") return T("auth.emailInvalid");
     if (d.reason === "empty") return T("proj.err.name");
     return T("proj.err.field.value");
@@ -192,16 +194,28 @@
     if (!validEmail(info.email)) return !showFieldError(container, prefix, "email", T("auth.emailInvalid"));
     if (info.start && !realDay(info.start))
       return !showFieldError(container, prefix, "start", T("proj.err.field.date"));
+    if (info.start && !plausibleYear(info.start))
+      return !showFieldError(container, prefix, "start", T("proj.err.field.year", { year: startYearMax() }));
     return true;
   }
 
-  // "YYYY-MM-DD" naming a day that exists, in a plausible year for a job's
-  // start (1950 to 2100, the same bounds as api/projects.js).
+  // "YYYY-MM-DD" naming a day that exists (no February 30th).
   function realDay(text) {
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text || "");
     if (!m) return false;
     var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
-    return +m[1] >= 1950 && +m[1] <= 2100 && d.toISOString().slice(0, 10) === text;
+    return d.toISOString().slice(0, 10) === text;
+  }
+
+  // A plausible year for a job's start: 2000 to ten years from now, the
+  // same bounds as api/projects.js (a typo like 0226 or 2206 is refused).
+  var START_YEAR_MIN = 2000;
+  function startYearMax() {
+    return new Date().getUTCFullYear() + 10;
+  }
+  function plausibleYear(text) {
+    var y = +String(text).slice(0, 4);
+    return y >= START_YEAR_MIN && y <= startYearMax();
   }
 
   // Two tabs: the project changed since this one loaded it. Says so, with
@@ -303,28 +317,17 @@
   }
 
   // The owner's business (null while they haven't set one up). When it
-  // can't be read, that's an error the page shows with Try again: an owner's
-  // projects never quietly open in the demo designer at sample rates.
+  // can't be read, or doesn't answer in time (js/net.js timedQuery, which
+  // also aborts the hung request), that's an error the page shows with Try
+  // again: an owner's projects never quietly open in the demo designer at
+  // sample rates.
   function loadBusiness() {
-    return client
-      .from("businesses")
-      .select("slug")
-      .maybeSingle()
-      .then(
-        function (r) {
-          if (r.error) throw r.error;
-          return r.data || null;
-        },
-        function (e) {
-          throw e;
-        },
-      )
-      .catch(function (e) {
-        var err = new Error("business");
-        err.code = "business";
-        err.cause = e;
-        throw err;
-      });
+    return window.Net.timedQuery(client.from("businesses").select("slug").maybeSingle()).catch(function (e) {
+      var err = new Error("business");
+      err.code = "business";
+      err.cause = e;
+      throw err;
+    });
   }
 
   // Where projects open: the subscriber's own designer (their prices) once
@@ -640,6 +643,9 @@
     show($("projects-search-wrap"), state.projects.length > 1);
     show($("projects-view-wrap"), state.projects.length > 1);
     applyListLayout();
+    Array.prototype.forEach.call($("projects-table-head").querySelectorAll(".project-sort"), function (btn) {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-sort") === view.sort ? "true" : "false");
+    });
     show($("projects-clear-wrap"), !!(view.q || view.status || view.sort !== "updated"));
     show($("projects-no-match"), !!state.projects.length && !shown.length);
     $("projects-count").textContent = state.projects.length ? "(" + state.projects.length + ")" : "";
@@ -649,27 +655,22 @@
   function projectItem(p) {
     var info = p.info || {};
     var li = el("li", { class: "project-item", "data-project": p.id });
-    // A row with no client or no status says so with a dash, so the rows
-    // line up and nothing looks left out by mistake.
-    var meta = [info.client || "—"];
+    // A row with no client, status or start date says so in words ("No
+    // client yet"), so nothing looks as if it failed to load.
+    var meta = [info.client || T("proj.client.none")];
     if (addressOf(info)) meta.push(addressOf(info));
     // Each fact in its own element: the cards run them together, the table
     // view gives each a column (css/product.css).
     var main = el("div", { class: "project-main" }, [
       el("a", { class: "project-name", href: projectPage(p.id), text: p.name }),
-      el("p", { class: "project-client", text: meta.join(" · ") }),
+      el("p", { class: "project-client" + (info.client ? "" : " is-none"), text: meta.join(" · ") }),
       el("p", { class: "project-meta" }, [
         info.status
           ? el("span", { class: "project-status is-" + info.status, text: T("proj.status." + info.status) })
-          : el("span", {
-              class: "project-status is-none",
-              text: "—",
-              "aria-label": T("proj.status.none"),
-            }),
+          : el("span", { class: "project-status is-none", text: T("proj.status.none") }),
         el("span", {
-          class: "project-start",
-          text: info.start ? T("proj.starts", { date: formatDay(info.start) }) : "—",
-          "aria-label": info.start ? null : T("proj.noStart"),
+          class: "project-start" + (info.start ? "" : " is-none"),
+          text: info.start ? T("proj.starts", { date: formatDay(info.start) }) : T("proj.noStart"),
         }),
         el("span", { class: "project-updated", text: T("proj.updated", { date: formatDate(p.updated_at) }) }),
       ]),
@@ -864,6 +865,13 @@
       $("projects-sort").addEventListener("change", renderList);
       $("projects-view").value = readListLayout();
       $("projects-view").addEventListener("change", applyListLayout);
+      // The table's headings sort too: the same sorts as the Sort by control.
+      Array.prototype.forEach.call($("projects-table-head").querySelectorAll(".project-sort"), function (btn) {
+        btn.addEventListener("click", function () {
+          $("projects-sort").value = sortName(btn.getAttribute("data-sort"));
+          renderList();
+        });
+      });
       // Saving paused (the kill switch, /api/config): said here, before
       // anyone opens the designer to save.
       if (config.switches && config.switches.saving === false) {
@@ -1122,8 +1130,11 @@
     (s.notes || []).forEach(function (n) {
       box.appendChild(el("p", { class: "form-note", text: n }));
     });
+    // When the design (and so this list) was saved: api/projects.js stamps
+    // it in the summary. Renaming or editing the info moves updated_at but
+    // not this date. Older rows, saved before the stamp, have only updated_at.
     box.appendChild(
-      el("p", { class: "form-note", text: T("proj.mat.asOf", { date: formatDate(project.updated_at) }) }),
+      el("p", { class: "form-note", text: T("proj.mat.asOf", { date: formatDate(s.savedAt || project.updated_at) }) }),
     );
   }
 
@@ -1178,7 +1189,13 @@
           show($("project-loading"), false);
           var out = $("project-error");
           status(out, "error", errorText(err, "proj.err.openFailed") + " ");
-          out.appendChild(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
+          // A project that isn't there won't appear on a retry: the way out
+          // is the list. Anything else (connection, server) can be tried again.
+          if (err.code === "not-found") {
+            out.appendChild(el("a", { href: sitePath("projects.html"), text: T("proj.bar.backToProjects") }));
+          } else {
+            out.appendChild(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
+          }
         });
     });
   }
@@ -1194,6 +1211,8 @@
   var savedCode = null; // the design as last saved to (or opened from) the project
   var baselinePending = false; // the opened project's design is on its way into the studio
   var dirty = false; // the design differs from savedCode
+  var opening = false; // the project named in the address is on its way in
+  var barReady = Promise.resolve(); // the plan's counts, for the bar's wording
 
   // The limit a new project would run into, from what the bar last heard.
   function barLimitHit() {
@@ -1212,6 +1231,14 @@
     var paid = barPlan !== "free";
     var text = $("project-bar-text");
     text.textContent = "";
+    if (opening) {
+      // Never "not saved yet" or a Save that would make a second project
+      // while the project named in the address is still on its way.
+      text.textContent = T("proj.bar.opening");
+      show($("project-save-form"), false);
+      show($("project-save-new"), false);
+      return;
+    }
     if (barConfig && barConfig.switches && barConfig.switches.saving === false) {
       // Saving is paused (the kill switch): said up front, with the owner's
       // notice, instead of after the client's details are typed in.
@@ -1422,38 +1449,128 @@
   // (StudioDesign.open: no word about links, its answers counted). The
   // design as opened is the saved state edits are measured against, so the
   // bar says "unsaved changes" only once the owner changes something.
+  //
+  // While the project is on its way in, the bar says so and offers nothing
+  // to save: the studio hasn't started yet (js/studio.js waits for
+  // StudioDesign.open or .start when the address names a project), so the
+  // sample room is never shown, edited or saved as if it were the project.
+  // The plan's counts (barReady) load alongside, not before.
   function openProject(id) {
     var out = $("project-status");
-    status(out, "info", T("proj.loading"));
+    opening = true;
+    renderBar();
+    status(out, "info", "");
     return api("GET", "?id=" + encodeURIComponent(id))
       .then(function (data) {
-        setCurrent(data.project);
-        status(out, "info", "");
-        var S = window.StudioDesign;
-        if (!data.project.design) {
-          markSaved();
-        } else if (S && typeof S.open === "function" && S.open(data.project.design, data.project.name)) {
-          // The studio's change event on opening sets the baseline; when
-          // the design is already in place, this does.
-          baselinePending = true;
-          if (studio("encoded")) markSaved();
-        } else {
-          // An older studio: the design goes in through the address.
-          baselinePending = true;
-          window.location.hash = "design=" + data.project.design;
-        }
+        return barReady.then(function () {
+          opening = false;
+          setCurrent(data.project);
+          var S = window.StudioDesign;
+          if (!data.project.design) {
+            startStudio();
+            markSaved();
+          } else if (S && typeof S.open === "function" && S.open(data.project.design, data.project.name)) {
+            // The studio's change event on opening sets the baseline; when
+            // the design is already in place, this does.
+            baselinePending = true;
+            if (studio("encoded")) markSaved();
+          } else {
+            // An older studio: the design goes in through the address.
+            startStudio();
+            baselinePending = true;
+            window.location.hash = "design=" + data.project.design;
+          }
+        });
       })
       .catch(function (err) {
-        setCurrent(null);
-        status(out, "error", errorText(err, "proj.err.openFailed"));
+        return barReady.then(function () {
+          opening = false;
+          setCurrent(null);
+          openFailed(err, id);
+        });
       });
+  }
+
+  // The project couldn't be opened: the bar says why, with the way out that
+  // can help (Try again for a connection or server problem, Log in for an
+  // ended sign-in, and Back to My projects; a project that isn't there
+  // doesn't offer a retry that can't help). Nothing to save is offered.
+  // When the studio hasn't started (it waits for the project), its loading
+  // panel says the same instead of "Loading…" for good.
+  function openFailed(err, id) {
+    var text = $("project-bar-text");
+    text.textContent = "";
+    fillFailure(text, err, id);
+    show($("project-save-form"), false);
+    show($("project-save-new"), false);
+    var panel = document.getElementById("studio-loading");
+    if (panel && !studio("encoded")) {
+      panel.classList.add("is-failed");
+      var line = panel.querySelector(".studio-loading-text") || panel;
+      line.textContent = "";
+      fillFailure(line, err, id);
+      var slow = panel.querySelector(".studio-loading-slow");
+      if (slow) slow.hidden = true;
+    }
+  }
+
+  function fillFailure(box, err, id) {
+    box.appendChild(document.createTextNode(errorText(err, "proj.err.openFailed") + " "));
+    var links = [];
+    if (err.code === "signin") {
+      links.push(el("a", { href: loginPath(), target: embedded() ? "_top" : null, text: T("proj.bar.login") }));
+    } else if (err.code === "signin-check") {
+      // The sign-in itself couldn't be checked: a fresh page load tries that again.
+      links.push(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
+    } else if (err.code !== "not-found") {
+      links.push(
+        el("button", {
+          type: "button",
+          class: "link-button",
+          text: T("proj.bar.retry"),
+          onclick: function () {
+            openProject(id);
+          },
+        }),
+      );
+    }
+    links.push(
+      el("a", {
+        href: sitePath("projects.html"),
+        target: embedded() ? "_top" : null,
+        text: T("proj.bar.backToProjects"),
+      }),
+    );
+    links.forEach(function (link, i) {
+      if (i) box.appendChild(document.createTextNode(" · "));
+      box.appendChild(link);
+    });
+  }
+
+  // designer.html?embed=1: the project page's read-only viewer, in a frame.
+  function embedded() {
+    return params.get("embed") === "1";
+  }
+
+  // The studio without a project: when the address names one that can't be
+  // opened, or nobody is signed in to open it (js/studio.js StudioDesign.start).
+  function startStudio() {
+    var S = window.StudioDesign;
+    if (S && typeof S.start === "function") S.start();
   }
 
   function initBar(config) {
     var biz = window.DesignerBusiness || {};
     if (biz.unavailable && biz.unavailable !== "loading") return;
-    if (!config.accounts || !hasStoredSignIn()) return;
+    var id = params.get("project");
+    if (!config.accounts || !hasStoredSignIn()) return startStudio();
     barConfig = config;
+    if (id) {
+      // Say so from the first moment, before the sign-in check and the reads.
+      opening = true;
+      renderBar();
+      show($("project-bar"), true);
+    }
     var FAILED = { failed: true };
     signIn(config)
       .catch(function () {
@@ -1465,6 +1582,12 @@
           // There is a sign-in here, but it couldn't be checked (the auth
           // service didn't answer): say so, with a way to try again, rather
           // than quietly showing no bar at all.
+          opening = false;
+          if (id) {
+            var err = new Error("signin");
+            err.code = "signin-check";
+            return openFailed(err, id);
+          }
           var text = $("project-bar-text");
           text.textContent = "";
           text.appendChild(document.createTextNode(T("proj.bar.signinFailed") + " "));
@@ -1474,14 +1597,19 @@
           show($("project-bar"), true);
           return;
         }
-        if (!s) return;
+        if (!s) {
+          opening = false;
+          show($("project-bar"), false);
+          return startStudio();
+        }
         $("project-save-form").addEventListener("submit", function (e) {
           e.preventDefault();
+          if (opening) return;
           if (current) saveChanges();
           else openNewDialog(false);
         });
         $("project-save-new").addEventListener("click", function () {
-          openNewDialog(true);
+          if (!opening) openNewDialog(true);
         });
         $("project-dialog-form").addEventListener("submit", createProject);
         $("project-dialog-cancel").addEventListener("click", closeDialog);
@@ -1492,7 +1620,8 @@
           e.preventDefault();
           e.returnValue = T("proj.unsavedChanges");
         });
-        api("GET", "?counts=1")
+        // The counts and the project load side by side, not one after the other.
+        barReady = api("GET", "?counts=1")
           .then(function (data) {
             barPlan = data.plan;
             barLimits = data.limits || null;
@@ -1500,13 +1629,12 @@
           })
           .catch(function () {
             barPlan = "unknown";
-          })
-          .then(function () {
-            renderBar();
-            show($("project-bar"), true);
-            var id = params.get("project");
-            if (id) openProject(id);
           });
+        var opened = id ? openProject(id) : Promise.resolve();
+        Promise.all([barReady, opened]).then(function () {
+          if (!id) renderBar();
+          show($("project-bar"), true);
+        });
       });
   }
 

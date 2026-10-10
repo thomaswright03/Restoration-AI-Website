@@ -334,6 +334,11 @@
     "proj.bar.signinFailed":
       "Não foi possível verificar o seu login, então salvar nos seus projetos não está disponível agora.",
     "proj.pausedNotice": "Aviso: {notice}",
+    "proj.bar.opening": "Abrindo o seu projeto…",
+    "proj.bar.backToProjects": "Voltar para Meus projetos",
+    "proj.bar.login": "Entrar",
+    "proj.client.none": "Sem cliente ainda",
+    "proj.err.field.year": "Escolha uma data de início entre 2000 e {year}.",
     "acct.slugTaken": "Esse endereço já está em uso. Tente outro.",
     "acct.slugInvalid": "Use de 3 a 64 letras minúsculas, números e hifens.",
     "acct.nameRequired": "Informe o nome da sua empresa.",

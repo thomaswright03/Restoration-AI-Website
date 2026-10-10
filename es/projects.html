@@ -198,8 +198,8 @@
             </div>
             <p class="form-note">
               Eliminar un proyecto libera un espacio de proyectos guardados, pero no los proyectos nuevos de este mes;
-              esos vuelven a empezar con cada mes del calendario, contado en UTC (en los husos horarios de EE. UU., la
-              tarde-noche del último día del mes).
+              esos vuelven a empezar el día 1 de cada mes. El mes cambia en el mismo momento en todo el mundo, lo que en
+              los husos horarios de EE. UU. es la tarde-noche del último día.
             </p>
           </div>
 
@@ -240,12 +240,30 @@
               <a class="btn btn-primary" href="../es/designer.html">Abrir el diseñador</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>Ningún proyecto coincide con esa búsqueda o filtro.</p>
-            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
-              <span>Proyecto</span>
+            <div class="project-table-head" id="projects-table-head" hidden>
+              <button type="button" class="project-sort" data-sort="name" title="Ordenar por: Nombre (A a Z)">
+                Proyecto
+              </button>
               <span>Cliente y dirección</span>
-              <span>Estado</span>
-              <span>Empieza</span>
-              <span>Actualizado</span>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="status"
+                title="Ordenar por: Estado (de cliente nuevo a terminado)"
+              >
+                Estado
+              </button>
+              <button
+                type="button"
+                class="project-sort"
+                data-sort="start"
+                title="Ordenar por: Fecha de inicio (la más próxima primero)"
+              >
+                Empieza
+              </button>
+              <button type="button" class="project-sort" data-sort="updated" title="Ordenar por: Última actualización">
+                Actualizado
+              </button>
               <span>Acciones</span>
             </div>
             <ul class="project-list" id="projects-list"></ul>

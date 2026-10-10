@@ -10,6 +10,12 @@
 //       code   the API's own error word ({error: "..."}), else the kind
 //       data   the parsed body, or {}
 //   Net.errorKey(err) -> the js/i18n.js key that says what to do
+//   Net.timedQuery(query, timeoutMs) -> Promise<data>
+//     A supabase-js read with a time limit (READ_TIMEOUT by default): a hung
+//     database must never leave a page on "Loading…" for good. Resolves with
+//     the row(s); rejects with the PostgREST error, or with an Error of
+//     kind/code "timeout" after the limit. The hung request is aborted too,
+//     so a Try again right after doesn't queue behind it in the browser.
 //   Net.config(fresh) -> Promise<config>  /api/config (accounts, payments,
 //     the kill switches), with a time limit of its own; when it can't be read
 //     the answer is {accounts: false, payments: false, unreachable: true}, so
@@ -84,6 +90,40 @@
     return "net.server";
   }
 
+  // Browser-side Supabase reads (the account and projects pages).
+  var READ_TIMEOUT = 10000;
+
+  function timedQuery(query, timeoutMs) {
+    var controller = typeof AbortController === "function" ? new AbortController() : null;
+    // supabase-js: the request is cancelled when the signal fires, so a
+    // retry isn't held behind a request nobody is waiting for any more.
+    if (controller && query && typeof query.abortSignal === "function") query = query.abortSignal(controller.signal);
+    return new Promise(function (resolve, reject) {
+      var done = false;
+      var timer = setTimeout(function () {
+        done = true;
+        var err = new Error("timeout");
+        err.kind = "timeout";
+        err.code = "timeout";
+        reject(err);
+        if (controller) controller.abort();
+      }, timeoutMs || READ_TIMEOUT);
+      Promise.resolve(query).then(
+        function (r) {
+          if (done) return;
+          clearTimeout(timer);
+          if (r && r.error) reject(r.error);
+          else resolve((r && r.data) || null);
+        },
+        function (err) {
+          if (done) return;
+          clearTimeout(timer);
+          reject(err);
+        },
+      );
+    });
+  }
+
   function config(fresh) {
     var url = fresh ? "/api/config?fresh=1" : "/api/config";
     return fetchJson(url, { cache: "no-store" }, CONFIG_TIMEOUT).catch(function () {
@@ -94,8 +134,10 @@
   window.Net = {
     fetchJson: fetchJson,
     errorKey: errorKey,
+    timedQuery: timedQuery,
     config: config,
     TIMEOUT: TIMEOUT,
+    READ_TIMEOUT: READ_TIMEOUT,
     CONFIG_TIMEOUT: CONFIG_TIMEOUT,
   };
 })();

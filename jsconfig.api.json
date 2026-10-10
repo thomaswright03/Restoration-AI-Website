@@ -1,0 +1,8 @@
+{
+  "extends": "./jsconfig.json",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "checkJs": false
+  },
+  "include": ["types/**/*.d.ts", "api/**/*.js"]
+}

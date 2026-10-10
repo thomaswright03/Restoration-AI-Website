@@ -1,3 +1,4 @@
+// @ts-check
 // /api/projects: a subscriber's saved designs ("projects"), with the
 // signed-in user's Supabase access token as a Bearer token.
 //

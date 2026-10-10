@@ -1,3 +1,4 @@
+// @ts-check
 // The plans and how many projects each may save. A project is one saved
 // design in a subscriber's account (api/projects.js). The limits come from
 // site-config.json "plans" (newPerMonth, maxProjects), the same numbers the

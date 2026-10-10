@@ -1,3 +1,4 @@
+// @ts-check
 // The kill switch: a way to stop new sign-ups, buying a plan or saving
 // projects without a deploy. The site_switches table (supabase/schema.sql)
 // holds one row; flip a column to false in the Supabase Table Editor and

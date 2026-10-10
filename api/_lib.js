@@ -1,3 +1,4 @@
+// @ts-check
 // Shared helpers for the Vercel functions in api/. Files starting with "_"
 // are not routes. No npm packages: Stripe and Supabase are called over their
 // REST APIs with fetch (Node 20+).

@@ -1,3 +1,4 @@
+// @ts-check
 // POST /api/stripe-webhook: Stripe tells us when a subscription starts,
 // changes or ends, and we record its status in Supabase (subscriptions
 // table). An account can save projects while its status is active or

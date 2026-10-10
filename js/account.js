@@ -32,6 +32,20 @@
     return document.getElementById(id);
   }
 
+  // The same, for a field (its .value), a button (.disabled) or a dialog
+  // (.showModal/.close): says what the id names, for the type check.
+  function field(id) {
+    return /** @type {HTMLInputElement | HTMLSelectElement} */ ($(id));
+  }
+
+  function button(id) {
+    return /** @type {HTMLButtonElement} */ ($(id));
+  }
+
+  function dialogEl(id) {
+    return /** @type {HTMLDialogElement} */ ($(id));
+  }
+
   function show(el, on) {
     if (el) el.hidden = !on;
   }
@@ -195,7 +209,7 @@
   function initSignup() {
     var form = $("auth-form");
     var statusEl = $("auth-status");
-    var submit = $("auth-submit");
+    var submit = button("auth-submit");
     var signupsOff = switchedOff("signups");
     var mode = params.get("mode") === "login" || signupsOff ? "login" : "signup";
 
@@ -270,8 +284,8 @@
 
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var email = $("auth-email").value.trim();
-      var password = $("auth-password").value;
+      var email = field("auth-email").value.trim();
+      var password = field("auth-password").value;
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return status(statusEl, "error", T("auth.emailInvalid"));
       if (mode !== "reset" && password.length < 8) return status(statusEl, "error", T("auth.passwordShort"));
       if (mode === "signup" && signupsOff) return status(statusEl, "error", T("acct.paused.signups"));
@@ -306,7 +320,7 @@
             password: password,
             options: {
               // lang picks the language of Supabase's emails (supabase/emails/).
-              data: { business_name: $("auth-business").value.trim().slice(0, 120), lang: LANG },
+              data: { business_name: field("auth-business").value.trim().slice(0, 120), lang: LANG },
               emailRedirectTo: next(true),
             },
           })
@@ -401,7 +415,7 @@
     show($("plan-trial-note"), false);
     show($("plan-manage"), false);
     show($("plan-retry-row"), true);
-    $("plan-retry").disabled = false;
+    button("plan-retry").disabled = false;
   }
 
   function renderPlan() {
@@ -425,7 +439,7 @@
     var promo = canBuy && !!config.promo && !s.stripe_subscription_id;
     show($("plan-promo-row"), promo);
     show($("plan-trial-note"), promo);
-    if (promo && params.get("promo") && !$("plan-promo").value) $("plan-promo").value = params.get("promo");
+    if (promo && params.get("promo") && !field("plan-promo").value) field("plan-promo").value = params.get("promo");
     show($("plan-manage"), !!s.stripe_customer_id);
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
       b.hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
@@ -468,11 +482,11 @@
   function fillBusinessForm() {
     var b = business || {};
     var suggested = (session.user.user_metadata && session.user.user_metadata.business_name) || "";
-    $("biz-name").value = b.name || suggested;
-    $("biz-slug").value = b.slug || slugify(suggested);
-    $("biz-phone").value = b.phone || "";
-    $("biz-email").value = b.email || session.user.email || "";
-    $("biz-legal").value = b.legal_name || "";
+    field("biz-name").value = b.name || suggested;
+    field("biz-slug").value = b.slug || slugify(suggested);
+    field("biz-phone").value = b.phone || "";
+    field("biz-email").value = b.email || session.user.email || "";
+    field("biz-legal").value = b.legal_name || "";
     renderDesignerUrl();
   }
 
@@ -487,13 +501,13 @@
   function renderDesignerUrl() {
     var out = $("biz-url");
     if (!out) return;
-    var typed = $("biz-slug").value.trim().toLowerCase();
+    var typed = field("biz-slug").value.trim().toLowerCase();
     var saved = !!(business && business.slug && typed === business.slug);
     var url = typed ? designerUrl(typed) : "";
     out.textContent = url;
     show($("biz-url-row"), !!url);
     show($("biz-url-unsaved"), !!url && !saved);
-    $("biz-url-copy").disabled = !saved;
+    button("biz-url-copy").disabled = !saved;
     var open = $("biz-url-open");
     open.setAttribute("href", saved ? url : "#");
     open.setAttribute("aria-disabled", saved ? "false" : "true");
@@ -580,7 +594,7 @@
     show($("business-form"), false);
     show($("business-failed"), false);
     show($("business-loading"), true);
-    $("business-retry").disabled = true;
+    button("business-retry").disabled = true;
     return timedRead(client.from("businesses").select("*").maybeSingle()).then(
       function (data) {
         business = data;
@@ -597,7 +611,7 @@
         show($("business-loading"), false);
         $("business-failed-text").textContent = T("acct.biz.loadFailed") + " " + T(failReason(err));
         show($("business-failed"), true);
-        $("business-retry").disabled = false;
+        button("business-retry").disabled = false;
       },
     );
   }
@@ -633,10 +647,10 @@
   function saveBusiness(e) {
     e.preventDefault();
     var out = $("business-status");
-    var button = $("business-save");
-    if (button.disabled) return;
-    var name = $("biz-name").value.trim();
-    var slug = $("biz-slug").value.trim().toLowerCase();
+    var saveBtn = button("business-save");
+    if (saveBtn.disabled) return;
+    var name = field("biz-name").value.trim();
+    var slug = field("biz-slug").value.trim().toLowerCase();
     fieldError($("biz-name"), "");
     fieldError($("biz-slug"), "");
     if (!name) {
@@ -649,15 +663,15 @@
       $("biz-slug").focus();
       return status(out, "error", T("acct.saveFailed") + " " + T("acct.slugInvalid"));
     }
-    pending(button, true);
+    pending(saveBtn, true);
     status(out, "info", T("proj.saving"));
     var row = {
       owner_id: session.user.id,
       name: name,
       slug: slug,
-      phone: $("biz-phone").value.trim(),
-      email: $("biz-email").value.trim(),
-      legal_name: $("biz-legal").value.trim(),
+      phone: field("biz-phone").value.trim(),
+      email: field("biz-email").value.trim(),
+      legal_name: field("biz-legal").value.trim(),
       updated_at: new Date().toISOString(),
     };
     // One business per account (owner_id is unique). A known row is updated
@@ -688,7 +702,7 @@
         },
       )
       .then(function () {
-        pending(button, false);
+        pending(saveBtn, false);
       });
   }
 
@@ -715,7 +729,7 @@
       bad[0].focus();
       return status(out, "error", T("acct.saveFailed") + " " + T("acct.priceInvalid"));
     }
-    var buttons = [$("prices-save"), $("prices-reset")];
+    var buttons = [button("prices-save"), button("prices-reset")];
     if (buttons[0].disabled) return;
     pending(buttons[0], true);
     buttons[1].disabled = true;
@@ -804,7 +818,7 @@
   var deletingLead = null; // { lead, li, btn } while the dialog is up
 
   function askDeleteLead(lead, li, btn) {
-    var dialog = $("lead-delete-dialog");
+    var dialog = dialogEl("lead-delete-dialog");
     deletingLead = { lead: lead, li: li, btn: btn };
     $("lead-delete-text").textContent = T("acct.lead.deleteConfirm", { name: lead.name || "—" });
     if (typeof dialog.showModal === "function") dialog.showModal();
@@ -813,7 +827,7 @@
   }
 
   function closeLeadDialog() {
-    var dialog = $("lead-delete-dialog");
+    var dialog = dialogEl("lead-delete-dialog");
     if (typeof dialog.close === "function" && dialog.open) dialog.close();
     else dialog.removeAttribute("open");
   }
@@ -843,7 +857,7 @@
   }
 
   function initLeadDialog() {
-    var dialog = $("lead-delete-dialog");
+    var dialog = dialogEl("lead-delete-dialog");
     if (!dialog) return;
     $("lead-delete-cancel").addEventListener("click", closeLeadDialog);
     $("lead-delete-close").addEventListener("click", closeLeadDialog);
@@ -932,17 +946,17 @@
     $("delete-cancel").addEventListener("click", cancel);
     // Escape closes the form, like a dialog, unless the deletion is under way.
     form.addEventListener("keydown", function (e) {
-      if (e.key !== "Escape" || $("delete-submit").disabled) return;
+      if (e.key !== "Escape" || button("delete-submit").disabled) return;
       e.preventDefault();
       cancel();
     });
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var typed = $("delete-confirm").value.trim().toLowerCase();
+      var typed = field("delete-confirm").value.trim().toLowerCase();
       if (typed !== String(session.user.email || "").toLowerCase()) {
         return status(out, "error", T("acct.delete.mismatch"));
       }
-      $("delete-submit").disabled = true;
+      button("delete-submit").disabled = true;
       status(out, "info", T("acct.delete.working"));
       api("/api/account", { action: "delete", confirm: typed })
         .then(function () {
@@ -954,7 +968,7 @@
         })
         .catch(function (err) {
           status(out, "error", apiMessage(err, "acct.delete.stripe"));
-          $("delete-submit").disabled = false;
+          button("delete-submit").disabled = false;
         });
     });
   }
@@ -964,7 +978,7 @@
     if (!config.payments) return status(out, "error", T("acct.paymentsOff"));
     if (switchedOff("checkout")) return status(out, "error", T("acct.paused.checkout"));
     button.disabled = true;
-    var promo = $("plan-promo-row").hidden ? "" : $("plan-promo").value.trim();
+    var promo = $("plan-promo-row").hidden ? "" : field("plan-promo").value.trim();
     api("/api/checkout", { plan: plan, promo: promo, lang: LANG === "en" ? "" : LANG })
       .then(function (data) {
         window.location.href = data.url;
@@ -991,7 +1005,7 @@
 
     $("password-form").addEventListener("submit", function (e) {
       e.preventDefault();
-      var pw = $("new-password").value;
+      var pw = field("new-password").value;
       if (pw.length < 8) return status($("password-status"), "error", T("auth.passwordShort"));
       client.auth.updateUser({ password: pw }).then(function (r) {
         status(
@@ -1062,7 +1076,7 @@
     });
     $("business-form").addEventListener("submit", saveBusiness);
     $("biz-name").addEventListener("input", function () {
-      if (!business) $("biz-slug").value = slugify($("biz-name").value);
+      if (!business) field("biz-slug").value = slugify(field("biz-name").value);
       renderDesignerUrl();
     });
     $("biz-slug").addEventListener("input", renderDesignerUrl);
@@ -1080,7 +1094,7 @@
       });
     });
     $("plan-retry").addEventListener("click", function () {
-      $("plan-retry").disabled = true;
+      button("plan-retry").disabled = true;
       $("plan-status").textContent = T("proj.loading");
       loadSubscription();
     });
@@ -1098,7 +1112,7 @@
       });
     });
     $("manage-billing").addEventListener("click", function () {
-      var btn = $("manage-billing");
+      var btn = button("manage-billing");
       btn.disabled = true;
       api("/api/portal", { lang: LANG === "en" ? "" : LANG })
         .then(function (data) {

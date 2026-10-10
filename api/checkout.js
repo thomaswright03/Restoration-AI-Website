@@ -1,3 +1,4 @@
+// @ts-check
 // POST /api/checkout {plan: "starter"|"pro"|"max", promo: "", lang: ""|"es"|"pt"}
 // with the signed-in user's Supabase access token as a Bearer token.
 // Starts a Stripe Checkout subscription and answers {url} to send them to.

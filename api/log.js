@@ -1,3 +1,4 @@
+// @ts-check
 // POST /api/log: the browser reports an error it hit (js/net.js
 // Net.report, installed by js/script.js): an uncaught exception, an
 // unhandled promise rejection or a script that didn't load. One structured

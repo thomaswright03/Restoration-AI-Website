@@ -1,3 +1,4 @@
+// @ts-check
 // GET /api/config: what the browser needs to sign people in (the Supabase
 // project URL and its public anon key, both safe to share), whether
 // payments are switched on, and the kill switches (api/_switches.js): which

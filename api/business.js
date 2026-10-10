@@ -1,3 +1,4 @@
+// @ts-check
 // GET /api/business?b=<slug>&t=<sign-in token>: a tiny script the designer
 // page loads (see js/business.js). A business's designer opens only for its
 // own signed-in owner: they get the business's profile (with preview: true

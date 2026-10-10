@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run check:pages && npm run test:unit",
     "test": "npm run check && npm run test:e2e",
-    "typecheck": "tsc -p jsconfig.json"
+    "typecheck": "tsc -p jsconfig.json && tsc -p jsconfig.api.json"
   },
   "engines": {
     "node": ">=20"

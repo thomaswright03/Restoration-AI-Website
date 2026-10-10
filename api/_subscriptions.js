@@ -1,3 +1,4 @@
+// @ts-check
 // Recording a Stripe subscription in the subscriptions table (the webhook's
 // job, api/stripe-webhook.js; api/checkout.js also does it when it finds a
 // live subscription the webhook hasn't delivered yet), reading an account's

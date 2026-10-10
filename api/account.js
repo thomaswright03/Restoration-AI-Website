@@ -1,3 +1,4 @@
+// @ts-check
 // POST /api/account {action: "delete", confirm: "<their sign-in email>"}
 // with the signed-in user's Supabase access token as a Bearer token:
 // closes the account for good. Their Stripe subscription is cancelled first

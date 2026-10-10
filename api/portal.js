@@ -1,3 +1,4 @@
+// @ts-check
 // POST /api/portal {lang} with the signed-in user's Supabase access token:
 // opens Stripe's billing portal (change card, switch plan, cancel, invoices).
 // 404 {error: "no-customer"} for an account that never bought a plan. The

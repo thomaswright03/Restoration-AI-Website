@@ -196,7 +196,7 @@ test("the designer saves a new project with the client's details, then saves cha
     zip: "84601",
     status: "lead",
   });
-  expect(created.body.summary.room.w).toBe(8);
+  expect(created.body.summary.room.w).toBe(8.5);
   expect(created.body.summary.grandTotal).toBeGreaterThan(0);
 
   await expect(page.locator("#project-save")).toHaveText("Save changes");

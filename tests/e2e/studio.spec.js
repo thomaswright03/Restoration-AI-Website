@@ -14,6 +14,7 @@ const {
   byKey,
   studioStatus,
   studioToast,
+  expectNoPlaceholders,
 } = require("./helpers");
 
 test.describe("design studio", () => {
@@ -22,15 +23,21 @@ test.describe("design studio", () => {
     await answerAll(page);
     await wait3d(page);
     await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
-    // Everything fits; in a 5 x 8 the toilet only gets code's 15 in. beside
-    // it rather than the recommended 18, which is a note, not a problem. The
-    // chip names it and says why; a click shows it.
+    // The untouched sample (5 x 8½) opens with nothing to warn about.
+    await expect(studioStatus(page)).toHaveText("Everything fits");
+    await expect(page.locator(".studio-total-chip strong")).toContainText("$");
+    // The common "Full bath" is the classic 5 x 8, six inches narrower: its
+    // toilet only gets code's 15 in. beside it rather than the recommended
+    // 18, which is a note, not a problem. The chip names it and says why; a
+    // click shows it.
+    await byKey(page, "tpl-full5x8").click();
+    await confirmStack(page);
+    await expect(page.locator("#studio-size-w")).toHaveValue("8′");
     await expect(studioStatus(page)).toHaveText("Fits; the toilet is tight");
     await expect(studioStatus(page)).toHaveAttribute("title", /^Toilet: .*15/);
     await studioStatus(page).click();
     await expect(page.locator(".studio-step.is-layout")).toBeVisible();
     await expect(page.locator(".studio-step.is-layout")).toContainText("15");
-    await expect(page.locator(".studio-total-chip strong")).toContainText("$");
     await expect(page.locator(".studio-biz")).toHaveText("Sample Remodeling Co.");
     // The site header scrolls with the page here, so it never covers the steps.
     await expect(page.locator(".site-header")).toHaveCSS("position", "relative");
@@ -78,7 +85,7 @@ test.describe("design studio", () => {
     await expect(page.locator("#studio-size-w")).toHaveValue("11′");
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await studioToast(page).getByRole("button", { name: "Undo" }).click();
-    await expect(page.locator("#studio-size-w")).toHaveValue("8′");
+    await expect(page.locator("#studio-size-w")).toHaveValue("8′ 6″");
     await page.locator(".studio-action", { hasText: "Redo" }).click();
     await expect(page.locator("#studio-size-w")).toHaveValue("11′");
     expect(errors).toEqual([]);
@@ -164,15 +171,15 @@ test.describe("design studio", () => {
     await expect(page.locator("#studio-plan")).toBeVisible();
     await expect(page.locator("#room-3d")).toBeHidden();
     const toilet = page.locator('#studio-plan .plan-item[data-id="f3"]');
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 3″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 6″ from the left corner");
     await toilet.click();
     await expect(toilet).toBeFocused();
     await page.keyboard.press("Shift+ArrowRight");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 9″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 2′ from the left corner");
     await page.keyboard.press("ArrowLeft");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 8″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 11″ from the left corner");
     await page.keyboard.press("Control+z");
-    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 3″ from the left corner");
+    await expect(toilet).toHaveAttribute("aria-label", "Toilet on wall A, center 1′ 6″ from the left corner");
     await page.keyboard.press("Escape");
     await expect(page.locator("#studio-selchip")).toBeHidden();
     expect(errors).toEqual([]);
@@ -379,7 +386,7 @@ test.describe("design studio", () => {
     const other = await browser.newPage();
     await other.goto(link);
     await expect(other.locator("#studio-toast")).toContainText("Here's the design from your link.");
-    await expect(other.locator("#studio-size-w")).toHaveValue("8′");
+    await expect(other.locator("#studio-size-w")).toHaveValue("8′ 6″");
     await expect(other).not.toHaveURL(/#design=/);
     await other.close();
     expect(errors).toEqual([]);
@@ -395,7 +402,7 @@ test.describe("design studio", () => {
     await expect(page.locator("#studio-size-w")).toHaveValue("9′");
     await expect(studioToast(page)).toContainText("Here's the design you were working on.");
     await page.locator(".studio-action", { hasText: "Start over" }).click();
-    await expect(page.locator("#studio-size-w")).toHaveValue("8′");
+    await expect(page.locator("#studio-size-w")).toHaveValue("8′ 6″");
     expect(errors).toEqual([]);
   });
 
@@ -408,7 +415,85 @@ test.describe("design studio", () => {
     await step(page, "estimate").click();
     await expect(page.getByTestId("estimate-total")).toHaveCount(0);
     await expect(page.locator(".studio-step.is-estimate h2")).toHaveText("Your design");
+    // Still the sixth step, and Riley doesn't promise a total that isn't there.
+    await expect(page.locator(".studio-step.is-estimate .studio-step-count")).toHaveText("Step 6 of 6");
+    await expect(page.locator(".studio-riley .riley-text")).toContainText("Here's your design in full");
+    await expect(page.locator(".studio-riley .riley-text")).not.toContainText("adds up to");
+    // The estimator is off by choice here, not by a failed load: no notice.
+    await expect(page.getByTestId("settings-failed")).toHaveCount(0);
     await expect(byKey(page, "pdf")).toBeVisible();
+    await expectNoPlaceholders(page);
+    expect(errors).toEqual([]);
+  });
+
+  test("when the settings file won't load, the designer retries, then says so on the last step, and Try again brings the estimate back", async ({
+    page,
+  }) => {
+    let asked = 0;
+    let broken = true;
+    await page.route("**/site-config.json", (route) => {
+      asked++;
+      if (broken) return route.fulfill({ status: 502, contentType: "text/plain", body: "bad gateway" });
+      return route.continue();
+    });
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await expect(page.locator("html")).toHaveAttribute("data-config", "defaults");
+    expect(asked).toBe(3);
+    await expect(page.locator(".studio-total-chip")).toBeHidden();
+    await step(page, "estimate").click();
+    await expect(page.locator(".studio-step.is-estimate .studio-step-count")).toHaveText("Step 6 of 6");
+    const notice = page.getByTestId("settings-failed");
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText("price settings couldn't be loaded");
+    await expect(page.locator(".studio-riley .riley-text")).not.toContainText("adds up to");
+    // Still down: says so, stays on the design.
+    await byKey(page, "settings-retry").click();
+    await expect(studioToast(page)).toContainText("Still couldn't load");
+    await expect(notice).toBeVisible();
+    // Back up: the estimate appears without a reload.
+    broken = false;
+    await byKey(page, "settings-retry").click();
+    await expect(page.getByTestId("estimate-card")).toBeVisible();
+    await expect(page.locator(".studio-step.is-estimate .studio-step-count")).toHaveText("Step 6 of 6");
+    await expect(page.locator(".studio-total-chip strong")).toContainText("$");
+    await expect(page.getByTestId("settings-failed")).toHaveCount(0);
+    await expect(page.locator(".studio-riley .riley-text")).toContainText("adds up to");
+    await expectNoPlaceholders(page);
+    expect(errors).toEqual([]);
+  });
+
+  test("on a slow connection the studio starts on the floor plan before the 3D room arrives, then takes it up", async ({
+    page,
+  }) => {
+    // three.js itself is the big download: hold it back.
+    let release = null;
+    const held = new Promise((r) => (release = r));
+    await page.route("**/js/vendor/three-r186/three.module.js", async (route) => {
+      await held;
+      await route.continue();
+    });
+    // Not waiting for "load": the held module keeps that from firing.
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto("/designer.html", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+    // Usable on the plan: the room's size can be changed.
+    await expect(page.locator("#studio-plan")).toBeVisible();
+    const width = page.locator("#studio-size-w");
+    await width.fill("9");
+    await width.press("Enter");
+    await expect(page.locator(".studio-step.is-room")).toContainText("Floor area: 45 sq ft");
+    expect(await page.evaluate(() => !!(window.BathroomRoom3D && window.BathroomRoom3D.available))).toBe(false);
+    release();
+    await wait3d(page);
+    await answerAll(page);
+    await expect(page.locator("#room-3d-canvas canvas")).toBeVisible();
+    // The late room shows the design as it stands now, and the view is 3D.
+    await expect(page.locator(".studio-step.is-room")).toContainText("Floor area: 45 sq ft");
+    await expect(page.locator("#studio-labels .is-wall")).toHaveCount(4);
+    await step(page, "layout").click();
+    await expect(page.locator(".studio-item-btn")).toHaveCount(3);
     expect(errors).toEqual([]);
   });
 
@@ -439,7 +524,7 @@ test.describe("design studio", () => {
     // Back to the small bath: wall E (shown as B) is around the corner, so
     // it works, but it's priced.
     await step(page, "room").click();
-    await size("8'", "5'");
+    await size("8' 6\"", "5'");
     await expect(length).toHaveValue("5′");
     await byKey(page, "stack-E").click();
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
@@ -862,18 +947,8 @@ test.describe("design studio", () => {
   });
 
   for (const [dir, lang, labels, fits] of [
-    [
-      "es",
-      "es",
-      ["Baño", "Distribución", "Electricidad", "Productos", "Acabados", "Estimación"],
-      "Cabe; el inodoro queda justo",
-    ],
-    [
-      "pt",
-      "pt",
-      ["Banheiro", "Distribuição", "Elétrica", "Produtos", "Acabamentos", "Estimativa"],
-      "Cabe; o vaso sanitário fica apertado",
-    ],
+    ["es", "es", ["Baño", "Distribución", "Electricidad", "Productos", "Acabados", "Estimación"], "Todo cabe"],
+    ["pt", "pt", ["Banheiro", "Distribuição", "Elétrica", "Produtos", "Acabamentos", "Estimativa"], "Tudo cabe"],
   ]) {
     test(`/${dir}/designer.html runs the studio in that language`, async ({ page }) => {
       const errors = await openStudio(page, `/${dir}/designer.html?lang=${lang}`);

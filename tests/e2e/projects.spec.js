@@ -12,7 +12,7 @@ const { openStudio, answerAll, step } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", projects = [], used, limits, prices = {} } = {}) {
+async function signedIn(page, { plan = "starter", projects = [], used, limits, prices = {}, bizDelay = 0 } = {}) {
   const state = {
     plan,
     limits: limits || (plan === "free" ? { monthly: 0, total: 0 } : { monthly: 10, total: 50 }),
@@ -29,12 +29,13 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
   await page.route(SUPABASE + "/rest/v1/businesses**", (route) => route.fulfill({ json: { slug: "smith-bath" } }));
   // The business's designer profile, as api/business.js would send it.
-  await page.route("**/api/business?b=smith-bath*", (route) =>
-    route.fulfill({
+  await page.route("**/api/business?b=smith-bath*", async (route) => {
+    if (bizDelay) await new Promise((resolve) => setTimeout(resolve, bizDelay));
+    return route.fulfill({
       contentType: "application/javascript",
       body: `window.DesignerBusiness.load(${JSON.stringify({ slug: "smith-bath", name: "Smith Bath Co.", prices })});`,
-    }),
-  );
+    });
+  });
   await page.route("**/api/projects**", async (route) => {
     const req = route.request();
     const url = new URL(req.url());
@@ -248,6 +249,21 @@ test("the designer opens a saved project as that project: no link toast, its ans
   await page.locator("#studio-size-w").fill("9");
   await page.locator("#studio-size-w").press("Enter");
   await expect(page.locator("#project-status")).toContainText("Unsaved changes");
+});
+
+test("a business profile that answers after the sign-in check still opens the saved project and shows the save bar", async ({
+  page,
+}) => {
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, { projects: [{ id: "a1", name: "Late bath", design, updated_at: DAY }], bizDelay: 1500 });
+  await openStudio(page, "/designer.html?b=smith-bath&project=a1");
+  await expect(page.locator("#project-bar")).toContainText("Project: Late bath");
+  await expect(page.locator("#studio-loading")).toBeHidden();
+  // The owner's designer with no project keeps its save bar too.
+  await openStudio(page, "/designer.html?b=smith-bath");
+  await expect(page.locator("#project-bar")).toBeVisible();
+  await expect(page.locator("#project-save-form")).toBeVisible();
 });
 
 test("on the free plan the designer works but has no save button", async ({ page }) => {

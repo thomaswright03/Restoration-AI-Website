@@ -1612,6 +1612,17 @@
         return FAILED;
       })
       .then(function (s) {
+        // The business's profile may still be on its way (it loads without
+        // holding the page): wait for its answer before deciding anything.
+        var b = window.DesignerBusiness || {};
+        if (b.unavailable === "loading" && b.ready) {
+          return b.ready.then(function () {
+            return s;
+          });
+        }
+        return s;
+      })
+      .then(function (s) {
         if ((window.DesignerBusiness || {}).unavailable) {
           // The business's notice is up in place of the studio: nothing to open.
           opening = false;

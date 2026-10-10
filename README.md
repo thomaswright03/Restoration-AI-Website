@@ -21,7 +21,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 
 - Static pages (plain HTML/CSS/JS, Three.js for the 3D room), hosted on Vercel. No framework, no build step at deploy time.
 - Vercel functions in `api/` (Node 20, no npm packages; they call Stripe and Supabase over REST):
-  - `config.js`: tells the browser whether accounts and payments are on, the public Supabase keys, and which switches are off (see "Pausing the product")
+  - `config.js`: tells the browser whether accounts and payments are on, the public Supabase keys, and which switches are off (see "Pausing the product"); `?fresh=1` reads the switches past their 15-second cache, which the sign-up page uses to explain a refused sign-up
   - `business.js`: a business's public profile, loaded by the designer page as a script
   - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with an optional promo code) and the Stripe billing portal
   - `account.js`: deletes the signed-in user's account

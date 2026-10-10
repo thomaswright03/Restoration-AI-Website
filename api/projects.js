@@ -16,6 +16,8 @@
 //                             project changed since, so work done in another
 //                             tab or on another device isn't silently undone.
 //
+// A body that isn't a JSON object (malformed JSON, an array, plain text)
+// answers 400 {error:"json"}: a client bug, not a missing name.
 // A field that doesn't fit answers 400 {error:"info"|"name", field, reason},
 // reason being "long", "date" (not a real day), "year" (a start date outside
 // 2000 to ten years from now), "email", "value" or "empty". Text with a NUL
@@ -35,7 +37,7 @@
 // details, reading and deleting still work.
 "use strict";
 
-const { supabaseReady, sendJson, sendError, db, dbCount, requireUser, readForm } = require("./_lib.js");
+const { supabaseReady, sendJson, sendError, db, dbCount, requireUser, readForm, readRawBody } = require("./_lib.js");
 const { planOf, limitsOf } = require("./_plans.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
@@ -153,6 +155,28 @@ function validDesign(value) {
   return typeof value === "string" && /^[A-Za-z0-9_-]{1,20000}$/.test(value) && Plan.decode(value) !== null;
 }
 
+// The request's JSON body as a plain object, or null when it isn't one
+// (malformed JSON, an array, a number, plain text). A form post goes
+// through readForm like everywhere else.
+async function readBody(req) {
+  const type = String(req.headers["content-type"] || "");
+  if (!type.includes("application/json")) return readForm(req);
+  let raw;
+  if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
+    return Array.isArray(req.body) ? null : req.body;
+  }
+  if (Buffer.isBuffer(req.body)) raw = req.body.toString("utf8");
+  else raw = typeof req.body === "string" ? req.body : await readRawBody(req);
+  if (!raw.trim()) return {};
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+}
+
 function monthStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
@@ -205,7 +229,8 @@ module.exports = async function handler(req, res) {
       return sendJson(res, 200, { plan, limits, used, projects: projects || [] });
     }
 
-    const body = req.method === "DELETE" ? {} : await readForm(req);
+    const body = req.method === "DELETE" ? {} : await readBody(req);
+    if (!body) return sendJson(res, 400, { error: "json" });
 
     if (req.method === "POST") {
       const named = parseName(body.name);

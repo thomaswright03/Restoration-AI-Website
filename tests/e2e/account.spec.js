@@ -7,10 +7,14 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
+const { delayed, slowSignIn, orders } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 const DAY_LEAD = "2026-10-02T00:00:00Z";
 
+// delays (ms) hold each mocked answer, for the slow and out-of-order answers
+// live gives: signin (the sign-in library), subscription (the plan row),
+// business (the business row), projects (/api/projects).
 async function signedIn(
   page,
   {
@@ -22,9 +26,11 @@ async function signedIn(
     notice = "",
     periodEnd = "2026-11-01T00:00:00Z",
     prices = {},
+    delays = {},
   } = {},
 ) {
   const calls = [];
+  await slowSignIn(page, delays.signin);
   await page.route("**/api/config*", (route) =>
     route.fulfill({
       json: {
@@ -41,22 +47,25 @@ async function signedIn(
     }),
   );
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
-  await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) =>
-    route.fulfill({
+  await page.route(SUPABASE + "/rest/v1/subscriptions**", async (route) => {
+    await delayed(delays.subscription);
+    return route.fulfill({
       json: { owner_id: "u1", status, plan, current_period_end: periodEnd },
-    }),
-  );
-  await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
-    route.fulfill({
+    });
+  });
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    await delayed(delays.business);
+    return route.fulfill({
       json: { id: "b1", owner_id: "u1", slug: "smith-bath", name: "Smith Bath", phone: "", email: "", prices },
-    }),
-  );
+    });
+  });
   await page.route(SUPABASE + "/rest/v1/leads**", (route) => route.fulfill({ json: leads }));
-  await page.route("**/api/projects**", (route) =>
-    route.fulfill({
+  await page.route("**/api/projects**", async (route) => {
+    await delayed(delays.projects);
+    return route.fulfill({
       json: { plan, limits: { monthly: 10, total: 50 }, used: { month: 0, total: 0 }, projects: [] },
-    }),
-  );
+    });
+  });
   await page.route("**/api/checkout", async (route) => {
     calls.push(route.request().postDataJSON());
     return route.fulfill({ json: { ok: true } });
@@ -1076,4 +1085,36 @@ test("the account page shows the full designer address with Copy and Open; a cha
   await page.goto("/es/account.html");
   await expect(url).toHaveText(/\/es\/designer\.html\?b=smith-bath$/);
   await expect(page.locator("#biz-url-copy")).toHaveText("Copiar dirección");
+});
+
+// The account page's three reads (the plan, the business, the project
+// counts) and the sign-in check land in any order on live: every card must
+// end up right, and no card may read a "loading" state as an answer.
+test("the account page fills every card whichever answers first: the plan, the business, the projects or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(120000);
+  const runs = orders("subscription", "business").concat(
+    orders("signin", "subscription"),
+    orders("projects", "subscription"),
+    orders("signin", "business"),
+  );
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { plan: "pro", delays, prices: { Toilet_Price: 250 } });
+    await page.goto("/account.html");
+    await expect(page.locator("#account-app"), which).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("#plan-status"), which).toContainText("Active. Renews on November 1, 2026.", {
+      timeout: 15000,
+    });
+    await expect(page.locator("#plan-status"), which).not.toContainText(/couldn't be loaded|Loading/);
+    await expect(page.locator("#biz-name"), which).toHaveValue("Smith Bath", { timeout: 15000 });
+    await expect(page.locator("#business-failed"), which).toBeHidden();
+    await expect(page.locator("#projects-summary"), which).toContainText(
+      "Pro plan: 0 of 10 new projects this month, 0 of 50 saved.",
+      { timeout: 15000 },
+    );
+    await expect(page.locator("#biz-url"), which).toHaveText(/designer\.html\?b=smith-bath$/);
+  }
 });

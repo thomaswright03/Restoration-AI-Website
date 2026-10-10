@@ -822,7 +822,7 @@
   // page has its own Try again.
   function loadProjectsSummary() {
     var out = $("projects-summary");
-    window.Net.fetchJson("/api/projects", {
+    window.Net.fetchJson("/api/projects?counts=1", {
       headers: { Authorization: "Bearer " + session.access_token },
       cache: "no-store",
     })

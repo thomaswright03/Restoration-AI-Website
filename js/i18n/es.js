@@ -101,7 +101,7 @@
     "card.title": "Remodelación de baño",
     "card.lede": "Estimación aproximada y no vinculante de la mano de obra. Detalles abajo.",
     "card.ledeMaterials":
-      "Estimación aproximada y no vinculante: mano de obra más los precios actuales de Home Depot de los materiales que eligió.",
+      "Estimación aproximada y no vinculante: mano de obra más los precios de catálogo de Home Depot de {asOf} de los materiales que eligió.",
     "card.noWork": "No eligió ningún trabajo con precio",
     "card.laborSubtotal": "Subtotal de mano de obra",
     "card.materialsSubtotal": "Subtotal de materiales",
@@ -116,14 +116,16 @@
     "card.plumbingNote":
       "La plomería y la electricidad se cobran por punto: un punto de plomería por cada inodoro, lavabo, mueble de lavabo, ducha y bañera, y un punto eléctrico por cada tomacorriente, interruptor, luz y extractor del diseño, más cualquier línea de desagüe nueva por pie. El trabajo de plomería o electricidad más allá de esos puntos (por ejemplo, una bajante nueva o una válvula dañada) no está incluido y aumentaría el costo.",
     "card.materialsNote":
-      "Los materiales tienen los precios de Home Depot de la última actualización: confírmelos antes de comprar. Tampoco incluye permisos ni impuestos aplicables.",
+      "Los materiales tienen los precios de catálogo de Home Depot de {asOf}; pueden haber cambiado desde entonces: confírmelos antes de comprar. Tampoco incluye permisos ni impuestos aplicables.",
     "card.alsoNotIncluded": "Tampoco incluye materiales, permisos ni impuestos aplicables.",
+    "card.partialRates":
+      "La mano de obra está a los precios propios de esta empresa donde los ha definido; las tarifas de ejemplo de Room Designer 3D cubren el resto: {list}.",
     "card.defaultRates":
       "La mano de obra está a las tarifas de ejemplo predeterminadas de Room Designer 3D: esta empresa aún no ha definido sus propios precios de mano de obra.",
     "card.disclaimer":
       "Esta es una estimación automática y no vinculante solo de la mano de obra, basada únicamente en las medidas, cantidades y opciones indicadas y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los materiales, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios son los vigentes en la fecha en que se generó y pueden cambiar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
     "card.disclaimerMaterials":
-      "Esta es una estimación automática y no vinculante que combina la mano de obra según las tarifas actuales de la empresa con los precios actuales de Home Depot de los materiales que eligió, basada únicamente en lo indicado y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los productos Kohler y Sterling en sí, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios de los materiales eran los vigentes en su última actualización y pueden haber cambiado: confírmelos antes de comprar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
+      "Esta es una estimación automática y no vinculante que combina la mano de obra según las tarifas actuales de la empresa con los precios de catálogo de Home Depot de {asOf} de los materiales que eligió, basada únicamente en lo indicado y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los productos Kohler y Sterling en sí, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios de los materiales son los del catálogo de {asOf} y pueden haber cambiado desde entonces: confírmelos antes de comprar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
     "card.assumptions": "Qué supone esta estimación",
     "card.businessNamed": "{business} ({name})",
     "pdf.preparing": "Preparando el PDF…",
@@ -136,25 +138,6 @@
     "products.valveNotIncluded":
       "Los precios de las válvulas de la ducha y la bañera son solo del acabado visible; la válvula dentro de la pared es aparte.",
     "materials.cheaperThan": "Más barato que {others} por el mismo producto.",
-    "form.error.name": "Escriba su nombre.",
-    "form.error.phone": "Escriba un número de teléfono al que podamos llamarle.",
-    "form.error.phoneInvalid": "Escriba un número de teléfono válido, por ejemplo (385) 356-8733.",
-    "form.error.email": "Escriba su correo electrónico.",
-    "form.error.emailInvalid": "Escriba un correo electrónico válido, por ejemplo nombre@ejemplo.com.",
-    "form.subject": "Solicitud de cotización de baño de {name}",
-    "form.body.name": "Nombre",
-    "form.body.phone": "Teléfono",
-    "form.body.email": "Correo electrónico",
-    "form.body.service": "Servicio",
-    "form.body.details": "Detalles del proyecto",
-    "form.sending": "Enviando…",
-    "form.status.sending": "Enviando su solicitud…",
-    "form.status.mailto":
-      "Ahora debería abrirse su aplicación de correo con su solicitud ya escrita. [b:Presione Enviar en su aplicación de correo]: no recibimos nada hasta que lo haga. Si no se abrió nada, [again:vuelva a abrirla], escríbanos a [email] o llame al [phone].",
-    "form.status.sent":
-      "[b:Solicitud enviada.] Gracias: recibimos su solicitud y le responderemos lo antes posible. Si es urgente, llame al [phone].",
-    "form.status.failed":
-      "[b:Lo sentimos, su solicitud no se envió.] No se perdió nada de lo que escribió: inténtelo de nuevo, o llámenos al [phone] o escriba a [email].",
     "proj.plan.free": "Gratis",
     "proj.plan.starter": "Starter",
     "proj.plan.pro": "Pro",
@@ -227,6 +210,7 @@
     "proj.type.partial": "Remodelación parcial",
     "proj.type.other": "Otro",
     "proj.status.none": "Sin estado todavía",
+    "proj.noStart": "Sin fecha de inicio todavía",
     "proj.status.lead": "Cliente nuevo",
     "proj.status.estimate": "Estimación enviada",
     "proj.status.approved": "Aprobado",
@@ -282,6 +266,24 @@
       "Su plan está en pausa en Stripe, así que guardar proyectos también está pausado. Use Administrar pagos para reanudarlo.",
     "acct.status.canceled":
       "Su plan terminó. Sus proyectos siguen aquí para leerlos; empiece un plan nuevo para volver a guardar.",
+    "acct.status.canceledPaymentsOff":
+      "Su plan terminó. Sus proyectos siguen aquí para leerlos. Los planes de pago no están disponibles por ahora, así que todavía no se puede empezar un plan nuevo; los datos de su empresa y sus precios de mano de obra de abajo siguen funcionando.",
+    "acct.status.canceledPaused":
+      "Su plan terminó. Sus proyectos siguen aquí para leerlos. La compra de planes está pausada por ahora; vuelva pronto para empezar uno nuevo.",
+    "acct.status.incomplete_expiredPaymentsOff":
+      "Ese pago no se completó, así que no se cobró nada y tiene el plan gratis. Los planes de pago no están disponibles por ahora; vuelva pronto.",
+    "acct.status.incomplete_expiredPaused":
+      "Ese pago no se completó, así que no se cobró nada y tiene el plan gratis. La compra de planes está pausada por ahora; vuelva pronto para intentarlo de nuevo.",
+    "acct.plan.loadFailed":
+      "No se pudieron cargar los datos de su plan, así que esta página aún no puede decir qué plan tiene.",
+    "acct.biz.loadFailed": "No se pudieron cargar los datos de su empresa. No se cambió nada; lo que guardó sigue ahí.",
+    "acct.prices.default": "Predeterminado",
+    "acct.prices.yours": "Su precio",
+    "acct.prices.summaryNone":
+      "Aún no fijó precios: cada línea de la estimación usa el valor predeterminado que muestra su casilla.",
+    "acct.prices.summary":
+      "{set} de {total} precios fijados; las demás líneas usan los valores predeterminados en gris.",
+    "acct.prices.summaryAll": "Los {total} precios están fijados: cada línea de la estimación está a su precio.",
     "acct.status.other":
       "Su plan no está activo por ahora, así que guardar proyectos está pausado. Use Administrar pagos para resolverlo o escríbanos.",
     "acct.checkout.pending":
@@ -315,6 +317,8 @@
     "net.server": "Algo salió mal de nuestro lado. Inténtelo de nuevo en un minuto; si sigue pasando, avísenos.",
     "proj.loading": "Cargando…",
     "proj.err.loadFailed": "No se pudieron cargar sus proyectos.",
+    "proj.err.business":
+      "No se pudo cargar el perfil de su empresa, así que por ahora el diseñador no puede abrirse con sus precios.",
     "proj.err.openFailed": "No se pudo abrir el proyecto.",
     "proj.err.saveFailed": "No se pudo guardar el proyecto.",
     "proj.err.renameFailed": "No se pudo guardar el nombre.",
@@ -388,6 +392,8 @@
       "Una estimación aproximada y no vinculante con sus precios. Guárdela como proyecto o descargue el PDF para su cliente.",
     "studio.step.estimate.introOwnerDefaults":
       "Una estimación aproximada y no vinculante con precios de ejemplo predeterminados: aún no ha definido sus propios precios de mano de obra.",
+    "studio.step.estimate.introOwnerPartial":
+      "Una estimación aproximada y no vinculante con sus precios donde los ha definido; las tarifas de ejemplo cubren el resto ({list}).",
     "studio.step.estimate.setPrices": "Defina sus precios en la página de la cuenta.",
     "studio.step.design.title": "Su diseño",
     "studio.step.design.intro": "Revise el diseño y luego descargue el PDF.",
@@ -463,7 +469,6 @@
     "studio.redo": "Rehacer",
     "studio.undone": "Se deshizo.",
     "studio.redone": "Se rehízo.",
-    "studio.openDesigner": "Abrir en el diseñador",
     "studio.share": "Compartir",
     "studio.startOver": "Empezar de nuevo",
     "studio.startedOver": "Empezó de nuevo con un diseño nuevo.",
@@ -475,6 +480,7 @@
     "studio.newTab": "(se abre en una pestaña nueva)",
     "studio.copyLink": "Copiar el enlace de este diseño",
     "studio.linkCopied": "Enlace copiado.",
+    "studio.openedProject": "Se abrió “{name}”.",
     "studio.openedLink": "Aquí está el diseño de su enlace.",
     "studio.welcomeBack": "Aquí está el diseño en el que estaba trabajando.",
     "studio.templateUsed": "Diseño inicial: {name}.",
@@ -682,12 +688,6 @@
     "studio.need.fixture": "agregue al menos una pieza",
     "studio.need.fit": "mueva o quite lo que no cabe ({what})",
     "studio.need.points": "corrija la parte eléctrica marcada en rojo",
-    "studio.need.surfaces": "elija un acabado para: {list}",
-    "studio.need.surface.floorTile": "azulejo del piso",
-    "studio.need.surface.flooring": "piso vinílico",
-    "studio.need.surface.wallTile": "azulejo de pared",
-    "studio.need.surface.wallPaint": "pintura de paredes",
-    "studio.need.surface.ceilingPaint": "pintura del techo",
     "studio.room.plumbingNone": "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
     "studio.room.plumbingSet": "Pared de la plomería: {wall}",
     "studio.room.plumbingBroke": "Algunas piezas quedaron demasiado lejos de la plomería.",
@@ -951,17 +951,21 @@
       "Ya calculé dónde deberían ir los tomacorrientes, los interruptores, las luces y el extractor. Échele un ojo y mueva lo que quiera por su pared.",
     "riley.step.products":
       "El baño ya tiene un modelo en cada lugar, así que puede seguir directamente o elegir los que le gusten. Muestro cada uno solo, para que nada se le ponga delante, y lo que sea demasiado grande no se puede elegir.",
-    "riley.step.finishes": "Azulejo, pintura y pisos. El precio se actualiza mientras elige.",
+    "riley.step.finishes":
+      "Azulejo, pintura y pisos. Cada superficie empieza con un producto, y el precio se actualiza mientras elige.",
+    "riley.step.finishesNotPriced":
+      "Azulejo, pintura y pisos. Se ven en el baño mientras elige; esta empresa cotiza los materiales aparte, así que no están en la estimación.",
     "riley.step.estimate":
       "Esto es lo que suma, con los precios de la empresa de ejemplo. Descargue el PDF, o regístrese y su propio diseñador guardará esto como proyecto.",
     "riley.step.estimateOwner":
       "Esto es lo que suma con sus precios. Guárdelo como proyecto o descargue el PDF para su cliente.",
+    "riley.step.estimateOwnerPartial":
+      "Esto es lo que suma, con sus precios donde los ha definido; el resto ({list}) sigue con tarifas de ejemplo hasta que las defina en la página de la cuenta. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "riley.step.estimateOwnerDefaults":
       "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "pdf.preparedFor": "Preparado para: {name}",
     "pdf.generated": "Generado el {date}",
     "pdf.page": "Página {i} de {n}",
-    "config.formService": "nuestro proveedor de servicio de formularios",
     "config.period.day": "{n} día",
     "config.period.days": "{n} días",
     "config.period.businessDay": "{n} día hábil",

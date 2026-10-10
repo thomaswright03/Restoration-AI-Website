@@ -1492,7 +1492,7 @@
           e.preventDefault();
           e.returnValue = T("proj.unsavedChanges");
         });
-        api("GET")
+        api("GET", "?counts=1")
           .then(function (data) {
             barPlan = data.plan;
             barLimits = data.limits || null;

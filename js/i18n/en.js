@@ -100,7 +100,7 @@
     "card.title": "Bathroom Remodel",
     "card.lede": "Rough, non-binding labor estimate — details below.",
     "card.ledeMaterials":
-      "Rough, non-binding estimate — labor plus current Home Depot prices for the materials you picked.",
+      "Rough, non-binding estimate — labor plus Home Depot catalog prices as of {asOf} for the materials you picked.",
     "card.noWork": "No priced work selected",
     "card.laborSubtotal": "Labor Subtotal",
     "card.materialsSubtotal": "Materials Subtotal",
@@ -115,14 +115,16 @@
     "card.plumbingNote":
       "Plumbing and electrical are priced per point: one plumbing point for each toilet, sink, vanity, shower and bathtub, and one electrical point for each outlet, switch, light and fan in the design, plus any new drain line by the foot. Plumbing or electrical work beyond those points (for example a new plumbing stack or a bad valve) isn't included and would add to the cost.",
     "card.materialsNote":
-      "Materials shown are priced at current Home Depot rates as of when they were last refreshed — confirm before buying. Also not included: permits and any applicable taxes.",
+      "Materials are at Home Depot catalog prices as of {asOf}; they may have changed since — confirm before buying. Also not included: permits and any applicable taxes.",
     "card.alsoNotIncluded": "Also not included: materials, permits, and any applicable taxes.",
+    "card.partialRates":
+      "Labor is at this business's own prices where it has set them; Room Designer 3D's sample rates price the rest: {list}.",
     "card.defaultRates":
       "Labor is at Room Designer 3D's default sample rates: this business hasn't set its own labor prices yet.",
     "card.disclaimer":
       "This is an automated, non-binding estimate of labor only, based only on the measurements, counts and choices entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, materials, permits and any applicable taxes are not included and will add to the cost where the job needs them. Prices are current as of the date generated and may change. The actual price is set only in a written agreement after the project is reviewed in person.",
     "card.disclaimerMaterials":
-      "This is an automated, non-binding estimate combining labor at the business's current rates with current Home Depot prices for the materials you picked, based only on what was entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, the Kohler and Sterling products themselves, permits and any applicable taxes are not included and will add to the cost where the job needs them. Material prices were current as of when they were last refreshed and may have changed since — confirm before buying. The actual price is set only in a written agreement after the project is reviewed in person.",
+      "This is an automated, non-binding estimate combining labor at the business's current rates with Home Depot catalog prices as of {asOf} for the materials you picked, based only on what was entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, the Kohler and Sterling products themselves, permits and any applicable taxes are not included and will add to the cost where the job needs them. Material prices are the catalog's as of {asOf} and may have changed since — confirm before buying. The actual price is set only in a written agreement after the project is reviewed in person.",
     "card.assumptions": "What this estimate assumes",
     "card.businessNamed": "{business} ({name})",
     "pdf.preparing": "Preparing PDF…",
@@ -134,25 +136,6 @@
     "products.valveNotIncluded":
       "The shower and tub valve prices are for the visible trim only; the valve inside the wall is extra.",
     "materials.cheaperThan": "Cheaper than {others} for the same product.",
-    "form.error.name": "Enter your name.",
-    "form.error.phone": "Enter a phone number we can call you on.",
-    "form.error.phoneInvalid": "Enter a valid phone number, e.g. (385) 356-8733.",
-    "form.error.email": "Enter your email address.",
-    "form.error.emailInvalid": "Enter a valid email address, e.g. name@example.com.",
-    "form.subject": "Bathroom quote request from {name}",
-    "form.body.name": "Name",
-    "form.body.phone": "Phone",
-    "form.body.email": "Email",
-    "form.body.service": "Service",
-    "form.body.details": "Project details",
-    "form.sending": "Sending…",
-    "form.status.sending": "Sending your request…",
-    "form.status.mailto":
-      "Your email app should now open with your request filled in. [b:Please press Send in your email app] — we don't receive anything until you do. If nothing opened, [again:open it again], email us at [email] or call [phone].",
-    "form.status.sent":
-      "[b:Request sent.] Thank you — we've received your request and will get back to you as soon as we can. If it's urgent, call [phone].",
-    "form.status.failed":
-      "[b:Sorry, your request wasn't sent.] Nothing you entered has been lost — please try again, or call us at [phone] or email [email].",
     "proj.plan.free": "Free",
     "proj.plan.starter": "Starter",
     "proj.plan.pro": "Pro",
@@ -222,6 +205,7 @@
     "proj.type.partial": "Partial remodel",
     "proj.type.other": "Other",
     "proj.status.none": "No status yet",
+    "proj.noStart": "No start date yet",
     "proj.status.lead": "New lead",
     "proj.status.estimate": "Estimate sent",
     "proj.status.approved": "Approved",
@@ -277,6 +261,22 @@
       "Your plan is paused in Stripe, so saving projects is paused too. Use Manage billing to resume it.",
     "acct.status.canceled":
       "Your plan has ended. Your projects are still here to read; start a new plan to save again.",
+    "acct.status.canceledPaymentsOff":
+      "Your plan has ended. Your projects are still here to read. Paid plans aren't available right now, so a new plan can't be started yet; your business details and labor prices below still work.",
+    "acct.status.canceledPaused":
+      "Your plan has ended. Your projects are still here to read. Buying a plan is paused right now; please check back soon to start a new one.",
+    "acct.status.incomplete_expiredPaymentsOff":
+      "That checkout wasn't completed, so nothing was charged and you're on the free plan. Paid plans aren't available right now; please check back soon.",
+    "acct.status.incomplete_expiredPaused":
+      "That checkout wasn't completed, so nothing was charged and you're on the free plan. Buying a plan is paused right now; please check back soon to try again.",
+    "acct.plan.loadFailed": "Your plan details couldn't be loaded, so this page can't say which plan you're on yet.",
+    "acct.biz.loadFailed":
+      "Your business details couldn't be loaded. Nothing was changed; what you saved is still there.",
+    "acct.prices.default": "Default",
+    "acct.prices.yours": "Your price",
+    "acct.prices.summaryNone": "No prices set yet: every estimate line uses the default shown in its box.",
+    "acct.prices.summary": "{set} of {total} prices set; the other lines use the defaults shown in grey.",
+    "acct.prices.summaryAll": "All {total} prices set: every estimate line is at your price.",
     "acct.status.other":
       "Your plan isn't active right now, so saving projects is paused. Use Manage billing to sort it out, or email us.",
     "acct.checkout.pending": "Payment received. Stripe is confirming your plan; this page checks every few seconds.",
@@ -307,6 +307,8 @@
     "net.server": "Something went wrong on our side. Try again in a minute; if it keeps happening, let us know.",
     "proj.loading": "Loading…",
     "proj.err.loadFailed": "Couldn't load your projects.",
+    "proj.err.business":
+      "Your business profile couldn't be loaded, so the designer can't open at your prices right now.",
     "proj.err.openFailed": "Couldn't open the project.",
     "proj.err.saveFailed": "Couldn't save the project.",
     "proj.err.renameFailed": "Couldn't save the name.",
@@ -380,6 +382,8 @@
       "A rough, non-binding estimate at your prices. Save it as a project, or download the PDF for your client.",
     "studio.step.estimate.introOwnerDefaults":
       "A rough, non-binding estimate at default sample prices — you haven't set your own labor prices yet.",
+    "studio.step.estimate.introOwnerPartial":
+      "A rough, non-binding estimate at your prices where you've set them; sample rates price the rest ({list}).",
     "studio.step.estimate.setPrices": "Set your prices on the account page.",
     "studio.step.design.title": "Your design",
     "studio.step.design.intro": "Check the design, then download the PDF.",
@@ -455,7 +459,6 @@
     "studio.redo": "Redo",
     "studio.undone": "Undone.",
     "studio.redone": "Redone.",
-    "studio.openDesigner": "Open in designer",
     "studio.share": "Share",
     "studio.startOver": "Start over",
     "studio.startedOver": "Started over with a new design.",
@@ -467,6 +470,7 @@
     "studio.newTab": "(opens in a new tab)",
     "studio.copyLink": "Copy a link to this design",
     "studio.linkCopied": "Link copied.",
+    "studio.openedProject": "Opened “{name}”.",
     "studio.openedLink": "Here's the design from your link.",
     "studio.welcomeBack": "Here's the design you were working on.",
     "studio.templateUsed": "Started from: {name}.",
@@ -668,12 +672,6 @@
     "studio.need.fixture": "add at least one fixture",
     "studio.need.fit": "move or remove what doesn't fit ({what})",
     "studio.need.points": "fix the electrical marked in red",
-    "studio.need.surfaces": "pick a finish for: {list}",
-    "studio.need.surface.floorTile": "floor tile",
-    "studio.need.surface.flooring": "flooring",
-    "studio.need.surface.wallTile": "wall tile",
-    "studio.need.surface.wallPaint": "wall paint",
-    "studio.need.surface.ceilingPaint": "ceiling paint",
     "studio.room.plumbingNone": "Everything with a drain is on that wall, so there's no new pipe to run.",
     "studio.room.plumbingSet": "Plumbing wall: {wall}",
     "studio.room.plumbingBroke": "Some fixtures are now too far from the plumbing.",
@@ -937,17 +935,21 @@
       "I've worked out where the outlets, switches, lights and fan should go. Have a look, and move any of them along its wall if you'd rather.",
     "riley.step.products":
       "The room already has a model in every spot, so you can go straight on, or pick the ones you like. I'll show each one on its own so nothing stands in front of it, and anything too big for its spot can't be picked.",
-    "riley.step.finishes": "Tile, paint and floors. The price follows along as you choose.",
+    "riley.step.finishes":
+      "Tile, paint and floors. Each surface starts on a product, and the price follows along as you choose.",
+    "riley.step.finishesNotPriced":
+      "Tile, paint and floors. They show in the room as you choose; this business prices the materials in its quote, so they aren't in the estimate.",
     "riley.step.estimate":
       "Here's what it adds up to, at the sample business's prices. Download the PDF, or sign up and your own designer saves this as a project.",
     "riley.step.estimateOwner":
       "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",
+    "riley.step.estimateOwnerPartial":
+      "Here's what it adds up to, at your prices where you've set them; the rest ({list}) is still at sample rates until you set those on the account page. Save it as a project, or download the PDF for your client.",
     "riley.step.estimateOwnerDefaults":
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
     "pdf.preparedFor": "Prepared for: {name}",
     "pdf.generated": "Generated {date}",
     "pdf.page": "Page {i} of {n}",
-    "config.formService": "our form service provider",
     "config.period.day": "{n} day",
     "config.period.days": "{n} days",
     "config.period.businessDay": "{n} business day",

@@ -9,13 +9,8 @@
 "use strict";
 
 const { env, supabaseReady, stripeReady, sendJson } = require("./_lib.js");
-const { promoCodes } = require("./_plans.js");
+const { promoCodes, firstPriceId } = require("./_plans.js");
 const { switches } = require("./_switches.js");
-
-// STRIPE_PRICE_PRO / _MAX may list several price ids; checkout uses the first.
-function firstPrice(name) {
-  return env(name).split(",")[0].trim();
-}
 
 module.exports = async function handler(req, res) {
   const ready = supabaseReady();
@@ -26,10 +21,11 @@ module.exports = async function handler(req, res) {
     payments: ready && stripeReady(),
     supabaseUrl: ready ? env("SUPABASE_URL") : "",
     supabaseAnonKey: ready ? env("SUPABASE_ANON_KEY") : "",
+    // Which plans have a Stripe price to sell (api/_plans.js).
     plans: {
-      starter: !!env("STRIPE_PRICE_STARTER"),
-      pro: !!firstPrice("STRIPE_PRICE_PRO"),
-      max: !!firstPrice("STRIPE_PRICE_MAX"),
+      starter: !!firstPriceId("starter"),
+      pro: !!firstPriceId("pro"),
+      max: !!firstPriceId("max"),
     },
     trialDays: Number(env("TRIAL_DAYS")) || 0,
     // Whether checkout takes promo codes (the codes themselves stay private).

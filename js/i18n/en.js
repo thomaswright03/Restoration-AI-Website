@@ -292,7 +292,6 @@
       "The billing page couldn't be opened just now. Please try again; if it keeps happening, let us know.",
     "acct.projects.failed": "Your projects couldn't be counted right now.",
     "acct.saveFailed": "Couldn't save.",
-    "acct.unavailable": "We couldn't reach the server. Check your connection and try again in a moment.",
     "acct.checkout.success": "Thanks! Your plan will show as active in a moment.",
     "acct.checkout.cancelled": "Checkout was cancelled. Nothing was charged.",
     "acct.promo.invalid": "That promo code isn't valid. Check it, or leave the box empty to continue without one.",
@@ -301,10 +300,15 @@
     "acct.paymentsOff": "Payments aren't switched on yet. Please check back soon.",
     "acct.error": "Something went wrong. Please try again.",
     "acct.saved": "Saved.",
+    "acct.url.copied": "Address copied.",
+    "acct.url.copyFailed": "Couldn't copy automatically; the address is selected, so copy it with Ctrl+C or Cmd+C.",
     "net.offline": "You're offline. Check your connection, then try again.",
     "net.network": "The server couldn't be reached. Check your connection, then try again.",
     "net.timeout": "The server is taking too long to answer. Try again in a moment.",
     "net.server": "Something went wrong on our side. Try again in a minute; if it keeps happening, let us know.",
+    "net.offlineNotice":
+      "You're offline. You can keep looking around; saving and signing in wait until you're back online.",
+    "net.backOnline": "You're back online.",
     "proj.loading": "Loading…",
     "proj.err.loadFailed": "Couldn't load your projects.",
     "proj.err.business":

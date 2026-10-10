@@ -218,14 +218,11 @@ test("a drain line to the plumbing wall is priced by the foot, capped at a sane 
   assert.equal(line(studioEstimate({ Drain_Run_Ft: 5000 }, NOTHING), "drainRun").qty, 200);
 });
 
-test("tax is added only at the rate the business set; the default is 0", () => {
-  const prices = Object.assign({}, P.DEFAULT_PRICES, { Labor_Tax_Rate_Percent: 10 });
-  const taxed = studioEstimate({ Cabinet_Quantity: 1 }, NOTHING, prices);
-  assert.equal(taxed.taxAmount, 6);
-  assert.equal(taxed.total, 66);
-  const untaxed = studioEstimate({ Cabinet_Quantity: 1 }, NOTHING);
-  assert.equal(untaxed.taxAmount, 0);
-  assert.equal(untaxed.total, untaxed.subtotal);
+test("the total is the labor subtotal: no tax is added and no tax rate exists to set", () => {
+  const r = studioEstimate({ Cabinet_Quantity: 1 }, NOTHING);
+  assert.equal(r.total, r.subtotal);
+  assert.equal("taxAmount" in r, false);
+  assert.equal("Labor_Tax_Rate_Percent" in P.DEFAULT_PRICES, false);
 });
 
 test("painting uses $1.79 per sq ft of wall or ceiling", () => {
@@ -278,7 +275,6 @@ test("the designer's estimate prices every line at the business's own rates", ()
   // Every price the account page offers set to $1: nothing is left at a platform rate.
   const ones = {};
   for (const key of Object.keys(P.DEFAULT_PRICES)) ones[key] = 1;
-  ones.Labor_Tax_Rate_Percent = 0;
   const values = Object.assign({}, ROOM_5x8x8, {
     Toilet_Quantity: 1,
     Bathtub_Quantity: 1,

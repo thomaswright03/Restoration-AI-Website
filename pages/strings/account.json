@@ -62,9 +62,9 @@
     "Não conseguimos falar com o servidor."
   ],
   "account.down.text": [
-    "Check your internet connection, then try again.",
-    "Revise su conexión a internet y vuelva a intentarlo.",
-    "Verifique sua conexão com a internet e tente de novo."
+    "Check your internet connection, then try again. If you're online, the problem is on our side: try again in a minute.",
+    "Revise su conexión a internet y vuelva a intentarlo. Si tiene conexión, el problema es de nuestro lado: inténtelo de nuevo en un minuto.",
+    "Verifique sua conexão com a internet e tente de novo. Se você está conectado, o problema é do nosso lado: tente de novo em um minuto."
   ],
   "account.down.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
   "account.newPassword.title": ["Choose a new password", "Elija una contraseña nueva", "Escolha uma senha nova"],
@@ -105,9 +105,9 @@
   "account.biz.name": ["Business name", "Nombre de la empresa", "Nome da empresa"],
   "account.biz.slug": ["Your designer's web address", "Dirección web de su diseñador", "Endereço do seu projetista"],
   "account.biz.slugHelp": [
-    "Lowercase letters, numbers and dashes, e.g. smith-remodeling.",
-    "Letras minúsculas, números y guiones, p. ej., smith-remodeling.",
-    "Letras minúsculas, números e hifens, por exemplo smith-remodeling."
+    "Lowercase letters, numbers and dashes, e.g. smith-remodeling. It ends your designer's web address, shown below.",
+    "Letras minúsculas, números y guiones, p. ej., smith-remodeling. Es el final de la dirección web de su diseñador, que se muestra abajo.",
+    "Letras minúsculas, números e hifens, por exemplo smith-remodeling. É o fim do endereço web do seu projetista, mostrado abaixo."
   ],
   "account.biz.phone": [
     "Phone shown on estimates",
@@ -272,5 +272,13 @@
   "account.lead.delete.title": ["Delete request", "Eliminar solicitud", "Excluir pedido"],
   "account.lead.delete.cancel": ["Cancel", "Cancelar", "Cancelar"],
   "account.lead.delete.confirm": ["Delete request", "Eliminar solicitud", "Excluir pedido"],
-  "account.lead.delete.close": ["Close", "Cerrar", "Fechar"]
+  "account.lead.delete.close": ["Close", "Cerrar", "Fechar"],
+  "account.biz.urlLabel": ["Your designer opens at", "Su diseñador se abre en", "Seu projetista abre em"],
+  "account.biz.urlUnsaved": [
+    "Save your business details to make this address work.",
+    "Guarde los datos de su empresa para que esta dirección funcione.",
+    "Salve os dados da empresa para que este endereço funcione."
+  ],
+  "account.biz.copyUrl": ["Copy address", "Copiar dirección", "Copiar endereço"],
+  "account.biz.openUrl": ["Open my designer", "Abrir mi diseñador", "Abrir meu projetista"]
 }

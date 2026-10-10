@@ -542,7 +542,7 @@ test("the business and labor-prices Save buttons wait, say Saving…, then repor
   fail = true;
   await pricesSave.click();
   await expect(page.locator("#prices-status")).toContainText("Couldn't save.");
-  await expect(page.locator("#prices-status")).toContainText("couldn't reach the server");
+  await expect(page.locator("#prices-status")).toContainText("Something went wrong on our side");
   await expect(pricesSave).toHaveText("Save");
   await expect(pricesSave).toBeEnabled();
 });
@@ -553,7 +553,8 @@ test("when the projects can't be counted the account page says so, with the reas
   await page.goto("/account.html");
   await expect(page.locator("#projects-card")).toBeVisible();
   await expect(page.locator("#projects-summary")).toContainText("Your projects couldn't be counted right now.");
-  await expect(page.locator("#projects-summary")).toContainText("couldn't reach the server");
+  await expect(page.locator("#projects-summary")).toContainText("Something went wrong on our side");
+  await expect(page.locator("#projects-summary")).not.toContainText(/connection/i);
 });
 
 test("Escape closes the delete-account form; deleting a customer request asks in a dialog and reports the result", async ({
@@ -919,4 +920,120 @@ test("a sign-up refused within the switch cache window asks the server for a fre
   await expect(page.locator("#auth-status")).toContainText("New sign-ups are paused right now");
   await expect(page.locator("#auth-status")).not.toContainText(/service had a problem|went wrong/);
   expect(configUrls).toContain("?fresh=1");
+});
+
+// Every failure on the account page names its real cause: a server that
+// answered 5xx is a fault on our side (never "check your connection"), no
+// connection is "you're offline", a request that never comes back is "taking
+// too long".
+test("a server failure, being offline and a hung request each get their own words, on the account page", async ({
+  page,
+  context,
+}) => {
+  test.setTimeout(60000);
+  // No plan yet, so the buy buttons are there to try offline.
+  await signedIn(page, { payments: true, status: "none" });
+  // The server failed: the API's 5xx and Supabase's 5xx both say "our side".
+  await page.route("**/api/projects**", (route) => route.fulfill({ status: 500, json: { error: "server" } }));
+  await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
+    route.fulfill({ status: 503, json: { code: "PGRST001", message: "could not connect to the database" } }),
+  );
+  await page.goto("/account.html");
+  await expect(page.locator("#projects-summary")).toContainText("Something went wrong on our side");
+  // (The Supabase client tries a 503 three times over ~8 s before giving up.)
+  await expect(page.locator("#business-failed-text")).toContainText("Something went wrong on our side", {
+    timeout: 20000,
+  });
+  await expect(page.locator("#business-failed-text")).not.toContainText(/connection/i);
+
+  // The checkout answered by the server, but the browser is offline: offline.
+  await page.unroute(SUPABASE + "/rest/v1/businesses**");
+  await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
+    route.fulfill({ json: { id: "b1", owner_id: "u1", slug: "smith-bath", name: "Smith Bath", prices: {} } }),
+  );
+  await page.locator("#business-retry").click();
+  await expect(page.locator("#business-form")).toBeVisible();
+  // Offline: navigator.onLine says so, and every request fails to leave the browser.
+  await context.setOffline(true);
+  await page.route(SUPABASE + "/**", (route) => route.abort("internetdisconnected"));
+  await page.route("**/api/**", (route) => route.abort("internetdisconnected"));
+  await page.locator("#business-save").click();
+  await expect(page.locator("#business-status")).toContainText("You're offline. Check your connection");
+  await expect(page.locator("#business-status")).not.toContainText(/our side/);
+  await page.locator('[data-plan="starter"]').click();
+  await expect(page.locator("#plan-message")).toContainText("You're offline");
+  await context.setOffline(false);
+});
+
+test("a hung database read says it took too long, in the page's language", async ({ page }) => {
+  await signedIn(page);
+  await page.route(SUPABASE + "/rest/v1/businesses**", () => new Promise(() => {}));
+  await page.goto("/es/account.html");
+  await expect(page.locator("#business-failed-text")).toContainText("tardando demasiado", { timeout: 15000 });
+  await expect(page.locator("#business-failed-text")).not.toContainText(/conexión/i);
+});
+
+test("signing up or logging in offline says you're offline, not that the password is wrong or the service failed", async ({
+  page,
+  context,
+}) => {
+  await signupPage(page, {}, (route) => route.abort("internetdisconnected"));
+  await page.goto("/signup.html?mode=login");
+  await expect(page.locator("#auth-card")).toBeVisible();
+  await context.setOffline(true);
+  await page.getByLabel("Email").fill("owner@example.com");
+  await page.getByLabel("Password").fill("longenough1");
+  await page.locator("#auth-submit").click();
+  await expect(page.locator("#auth-status")).toContainText("You're offline");
+  await expect(page.locator("#auth-status")).not.toContainText(/don't match|service had a problem/);
+  await page.locator('[data-mode="signup"]').click();
+  await page.getByLabel("Password").fill("longenough1");
+  await page.locator("#auth-submit").click();
+  await expect(page.locator("#auth-status")).toContainText("You're offline");
+  await context.setOffline(false);
+});
+
+test("when /api/config fails the notice says why: the server, or the connection", async ({ page }) => {
+  await page.route("**/api/config*", (route) => route.fulfill({ status: 503, body: "upstream error" }));
+  await page.goto("/account.html");
+  await expect(page.locator("#server-down")).toBeVisible();
+  await expect(page.locator("#server-down")).toContainText("Something went wrong on our side");
+  await expect(page.locator("#server-down")).not.toContainText(/internet connection/);
+  await page.route("**/api/config*", (route) => route.abort("connectionrefused"));
+  await page.goto("/es/signup.html");
+  await expect(page.locator("#server-down")).toContainText("No se pudo conectar con el servidor");
+});
+
+// The account page shows the owner's full designer address, not only its
+// last part, with Copy and Open once it's the saved one.
+test("the account page shows the full designer address with Copy and Open; a changed slug waits for Save", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await signedIn(page);
+  await page.goto("/account.html");
+  const url = page.locator("#biz-url");
+  await expect(url).toHaveText(/^http:\/\/localhost:\d+\/designer\.html\?b=smith-bath$/);
+  await expect(page.locator("#biz-url-row")).toContainText("Your designer opens at");
+  const open = page.locator("#biz-url-open");
+  await expect(open).toHaveAttribute("href", /designer\.html\?b=smith-bath$/);
+  await expect(open).toHaveAttribute("target", "_blank");
+  await expect(open).toHaveAttribute("aria-disabled", "false");
+  await expect(page.locator("#biz-url-unsaved")).toBeHidden();
+  await page.locator("#biz-url-copy").click();
+  await expect(page.locator("#biz-url-status")).toHaveText("Address copied.");
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toMatch(/designer\.html\?b=smith-bath$/);
+
+  // A new slug shows the address it would have, but it isn't live until saved.
+  await page.locator("#biz-slug").fill("smith-remodeling");
+  await expect(url).toHaveText(/\?b=smith-remodeling$/);
+  await expect(page.locator("#biz-url-unsaved")).toContainText("Save your business details");
+  await expect(page.locator("#biz-url-copy")).toBeDisabled();
+  await expect(open).toHaveAttribute("aria-disabled", "true");
+
+  // Spanish: the address is the Spanish designer's.
+  await page.goto("/es/account.html");
+  await expect(url).toHaveText(/\/es\/designer\.html\?b=smith-bath$/);
+  await expect(page.locator("#biz-url-copy")).toHaveText("Copiar dirección");
 });

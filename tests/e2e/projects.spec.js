@@ -384,13 +384,13 @@ test("a project's 3D model follows the page when the theme is switched", async (
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
   await signedIn(page, { projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }] });
   await page.goto("/project.html?id=a1");
-  await page.locator("[data-theme-choice='dark']").click();
+  await page.locator(".theme-switch [data-theme-choice='dark']").click();
   await expect(page.locator("#project-model-frame")).toHaveAttribute("src", /embed=1$/);
   const model = page.frameLocator("#project-model-frame").locator("html");
   await expect(model).toHaveAttribute("data-theme", "dark");
-  await page.locator("[data-theme-choice='light']").click();
+  await page.locator(".theme-switch [data-theme-choice='light']").click();
   await expect(model).toHaveAttribute("data-theme", "light");
-  await page.locator("[data-theme-choice='system']").click();
+  await page.locator(".theme-switch [data-theme-choice='system']").click();
   await expect(model).not.toHaveAttribute("data-theme", /./);
 });
 

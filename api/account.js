@@ -18,6 +18,7 @@ const {
   stripe,
   readForm,
   fetchWithTimeout,
+  refuseMethod,
 } = require("./_lib.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 
@@ -43,10 +44,7 @@ async function deleteAuthUser(id) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return sendJson(res, 405, { error: "method" });
-  }
+  if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady()) return sendJson(res, 503, { error: "not-configured" });
 
   let user;

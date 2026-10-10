@@ -6,7 +6,8 @@
 // answer is never cached.
 "use strict";
 
-const { supabaseReady, activeBusiness, currentUser, logError } = require("./_lib.js");
+const { supabaseReady, currentUser, logError } = require("./_lib.js");
+const { activeBusiness } = require("./_subscriptions.js");
 
 function script(res, payload, reason, maxAge) {
   res.statusCode = 200;

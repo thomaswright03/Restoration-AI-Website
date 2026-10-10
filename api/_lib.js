@@ -142,37 +142,68 @@ function siteUrl(req) {
   return proto + "://" + host;
 }
 
-// A read (GET or HEAD) that failed in a way a second try may fix: the
-// connection dropped before an answer came (not a timeout, which has already
-// spent the request's budget), or the upstream answered 5xx. Writes are never
-// retried here: a create or a patch that may have landed must not run twice.
+// An upstream call that failed in a way a second try may fix: the connection
+// dropped before an answer came (not a timeout, which has already spent the
+// request's budget), or the upstream answered 5xx or 429. Only a call that
+// can't land twice is tried again: a read (GET or HEAD), or a Stripe create
+// sent with an idempotency key (Stripe answers the retry with the object the
+// first try made, if it made one). A plain write is never retried: a create
+// or a patch that may have landed must not run twice.
 const RETRY_DELAY_MS = 150;
-const RETRY_STATUSES = [500, 502, 503, 504];
+// The longest a Retry-After is honoured for; the function has ~10 s in all.
+const RETRY_DELAY_MAX_MS = 1000;
+const RETRY_STATUSES = [429, 500, 502, 503, 504];
 
-function retryableRead(method, e) {
-  if (method !== "GET" && method !== "HEAD") return false;
+function retryable(method, e, idempotent) {
+  if (method !== "GET" && method !== "HEAD" && !idempotent) return false;
   if (e && e.upstream) return !e.timedOut;
   return !!(e && RETRY_STATUSES.includes(e.status));
 }
 
-// Runs an idempotent upstream call, once more after a short pause when the
-// first try failed the way retryableRead() describes.
-async function withReadRetry(method, call) {
+// How long to wait before the retry: Retry-After when the upstream said
+// (a 429), within RETRY_DELAY_MAX_MS, else RETRY_DELAY_MS.
+function retryDelay(e) {
+  const asked = Number(e && e.retryAfterMs);
+  if (asked > 0) return Math.min(asked, RETRY_DELAY_MAX_MS);
+  return RETRY_DELAY_MS;
+}
+
+// Runs an upstream call, once more after a short pause when the first try
+// failed the way retryable() describes. idempotent: the call is safe to
+// repeat although it isn't a read (a keyed Stripe create).
+async function withRetry(method, call, idempotent = false) {
   try {
     return await call();
   } catch (e) {
-    if (!retryableRead(method, e)) throw e;
-    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    if (!retryable(method, e, idempotent)) throw e;
+    await new Promise((resolve) => setTimeout(resolve, retryDelay(e)));
     return call();
   }
 }
 
-// An error for an upstream answer that isn't ok, carrying its status so a
-// read can be retried on a 5xx.
-function statusError(message, status) {
+// An error for an upstream answer that isn't ok, carrying its status (and
+// its Retry-After, in ms) so the call can be retried on a 5xx or 429.
+function statusError(message, status, retryAfter) {
   const err = new Error(message);
   err.status = status;
+  const seconds = Number(retryAfter);
+  if (seconds > 0) err.retryAfterMs = seconds * 1000;
   return err;
+}
+
+// "" | "es/" | "pt/": the folder of the pages in the language the browser
+// said (api/checkout.js and api/portal.js send people back to account.html).
+function langDir(lang) {
+  return lang === "es" || lang === "pt" ? lang + "/" : "";
+}
+
+// Refuses any method but the one allowed with 405 and answers the request.
+// True when it did (the handler returns), false when the method is allowed.
+function refuseMethod(req, res, allowed) {
+  if (req.method === allowed) return false;
+  res.setHeader("Allow", allowed);
+  sendJson(res, 405, { error: "method" });
+  return true;
 }
 
 // One PostgREST request with the service role key: the Response, not yet read.
@@ -197,7 +228,7 @@ function dbRequest(path, options) {
 // A GET is retried once when the connection dropped or Supabase answered 5xx.
 async function db(path, options = {}) {
   const method = options.method || "GET";
-  return withReadRetry(method, async () => {
+  return withRetry(method, async () => {
     const res = await dbRequest(path, options);
     const text = await res.text();
     if (!res.ok) throw statusError("Supabase " + res.status + ": " + text.slice(0, 300), res.status);
@@ -210,7 +241,7 @@ async function db(path, options = {}) {
 // Content-Range "0-24/1234" or "*/0", and no rows travel. Use it wherever the
 // code only needs a count, so the cost stays flat as a table grows.
 async function dbCount(path) {
-  return withReadRetry("HEAD", async () => {
+  return withRetry("HEAD", async () => {
     const res = await dbRequest(path, { method: "HEAD", headers: { Prefer: "count=exact" } });
     if (!res.ok) throw statusError("Supabase " + res.status + " counting " + path.split("?")[0], res.status);
     const range = String((res.headers && res.headers.get && res.headers.get("content-range")) || "");
@@ -278,10 +309,11 @@ function formEncode(obj, prefix, out) {
 // A Stripe call. params: form fields (a GET with params puts them in the
 // query string). options.idempotencyKey: for a create call, so a retry of the
 // same request (a double click, a function retried) makes one object, not two.
-// A GET is retried once when the connection dropped or Stripe answered 5xx.
+// A GET, and a create sent with an idempotency key, are retried once when the
+// connection dropped or Stripe answered 5xx or 429 (Retry-After honoured).
 async function stripe(path, params, method, options = {}) {
   method = method || (params ? "POST" : "GET");
-  return withReadRetry(method, () => stripeOnce(path, params, method, options));
+  return withRetry(method, () => stripeOnce(path, params, method, options), !!options.idempotencyKey);
 }
 
 async function stripeOnce(path, params, method, options) {
@@ -305,7 +337,11 @@ async function stripeOnce(path, params, method, options) {
     data = {};
   }
   if (!res.ok) {
-    throw statusError("Stripe " + res.status + ": " + ((data.error && data.error.message) || ""), res.status);
+    throw statusError(
+      "Stripe " + res.status + ": " + ((data.error && data.error.message) || ""),
+      res.status,
+      res.headers && res.headers.get && res.headers.get("retry-after"),
+    );
   }
   return data;
 }
@@ -365,24 +401,6 @@ async function readForm(req) {
   return Object.fromEntries(new URLSearchParams(raw));
 }
 
-const ACTIVE_STATUSES = ["active", "trialing"];
-
-// A business by its slug, or null when there's no such business. One without
-// an active plan comes back as { inactive: true, business }: its owner sees
-// their designer as a preview (api/business.js).
-async function activeBusiness(slug) {
-  if (!/^[a-z0-9-]{1,64}$/.test(slug || "")) return null;
-  const rows = await db(
-    "businesses?slug=eq." + encodeURIComponent(slug) + "&select=id,owner_id,slug,name,phone,email,legal_name,prices",
-  );
-  const biz = rows && rows[0];
-  if (!biz) return null;
-  const subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(biz.owner_id) + "&select=status");
-  const sub = subs && subs[0];
-  if (!sub || !ACTIVE_STATUSES.includes(sub.status)) return { inactive: true, business: biz };
-  return biz;
-}
-
 module.exports = {
   env,
   UPSTREAM_TIMEOUT_MS,
@@ -398,6 +416,7 @@ module.exports = {
   db,
   dbCount,
   RETRY_DELAY_MS,
+  RETRY_DELAY_MAX_MS,
   currentUser,
   requireUser,
   formEncode,
@@ -406,5 +425,6 @@ module.exports = {
   verifyStripeSignature,
   readRawBody,
   readForm,
-  activeBusiness,
+  langDir,
+  refuseMethod,
 };

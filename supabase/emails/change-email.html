@@ -1,38 +1,55 @@
 <!-- Supabase > Authentication > Emails > Change Email. Paste this as the message body.
      The language comes from the account's sign-up language (user metadata "lang"). -->
-<div style="margin:0;padding:32px 16px;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dbe3f0;border-radius:16px;overflow:hidden">
+<!-- Dark-mode mail clients (Apple Mail, iOS Mail, Outlook apps) read the
+     media query below and show the navy-on-light card as light-on-navy; Gmail
+     ignores it and re-colours on its own, which the plain colours survive. -->
+<meta name="color-scheme" content="light dark" />
+<meta name="supported-color-schemes" content="light dark" />
+<style>
+  :root { color-scheme: light dark; supported-color-schemes: light dark; }
+  @media (prefers-color-scheme: dark) {
+    .em-bg { background: #0b1122 !important; }
+    .em-card { background: #121a30 !important; border-color: #24304f !important; }
+    .em-h { color: #eef2ff !important; }
+    .em-p { color: #cdd6ea !important; }
+    .em-muted { color: #9aa6c0 !important; }
+    .em-foot { color: #8a96b3 !important; }
+    .em-link { color: #8ea6ff !important; }
+  }
+</style>
+<div class="em-bg" style="margin:0;padding:32px 16px;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <table class="em-card" role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dbe3f0;border-radius:16px;overflow:hidden">
     <tr><td style="background:#0a1024;padding:20px 32px;color:#ffffff;font-size:18px;font-weight:700">
       <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#3355f0;background-image:linear-gradient(135deg,#5eead4,#3355f0);vertical-align:-1px;margin-right:8px"></span>Room Designer 3D
     </td></tr>
     <tr><td style="padding:32px">
 {{ if eq (printf "%v" .Data.lang) "es" }}
-      <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirme su nuevo correo</h1>
-      <p style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirme esta dirección para que sea el nuevo correo de su cuenta de Room Designer 3D.</p>
+      <h1 class="em-h" style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirme su nuevo correo</h1>
+      <p class="em-p" style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirme esta dirección para que sea el nuevo correo de su cuenta de Room Designer 3D.</p>
       <p style="margin:0 0 24px"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3355f0;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:12px 24px;border-radius:999px">Confirmar nuevo correo</a></p>
-      <p style="margin:0 0 8px;font-size:13px;color:#64748b">O pegue este enlace en su navegador:</p>
-      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
-      <p style="margin:0;font-size:13px;color:#64748b">Si usted no lo pidió, puede ignorar este correo y nada cambia.</p>
+      <p class="em-muted" style="margin:0 0 8px;font-size:13px;color:#64748b">O pegue este enlace en su navegador:</p>
+      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a class="em-link" href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
+      <p class="em-muted" style="margin:0;font-size:13px;color:#64748b">Si usted no lo pidió, puede ignorar este correo y nada cambia.</p>
     </td></tr>
-    <tr><td style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D es un producto de Wright AI Solutions, LLC.
+    <tr><td class="em-foot" style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D es un producto de Wright AI Solutions, LLC.
 {{ else if eq (printf "%v" .Data.lang) "pt" }}
-      <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirme seu novo e-mail</h1>
-      <p style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirme este endereço para que ele seja o novo e-mail da sua conta do Room Designer 3D.</p>
+      <h1 class="em-h" style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirme seu novo e-mail</h1>
+      <p class="em-p" style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirme este endereço para que ele seja o novo e-mail da sua conta do Room Designer 3D.</p>
       <p style="margin:0 0 24px"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3355f0;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:12px 24px;border-radius:999px">Confirmar novo e-mail</a></p>
-      <p style="margin:0 0 8px;font-size:13px;color:#64748b">Ou cole este link no navegador:</p>
-      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
-      <p style="margin:0;font-size:13px;color:#64748b">Se você não pediu isso, pode ignorar este e-mail e nada muda.</p>
+      <p class="em-muted" style="margin:0 0 8px;font-size:13px;color:#64748b">Ou cole este link no navegador:</p>
+      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a class="em-link" href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
+      <p class="em-muted" style="margin:0;font-size:13px;color:#64748b">Se você não pediu isso, pode ignorar este e-mail e nada muda.</p>
     </td></tr>
-    <tr><td style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D é um produto da Wright AI Solutions, LLC.
+    <tr><td class="em-foot" style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D é um produto da Wright AI Solutions, LLC.
 {{ else }}
-      <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirm your new email</h1>
-      <p style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirm this address to make it the new email for your Room Designer 3D account.</p>
+      <h1 class="em-h" style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#0f172a">Confirm your new email</h1>
+      <p class="em-p" style="margin:0 0 24px;font-size:16px;line-height:1.55;color:#334155">Confirm this address to make it the new email for your Room Designer 3D account.</p>
       <p style="margin:0 0 24px"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#3355f0;color:#ffffff;text-decoration:none;font-weight:600;font-size:16px;padding:12px 24px;border-radius:999px">Confirm new email</a></p>
-      <p style="margin:0 0 8px;font-size:13px;color:#64748b">Or paste this link into your browser:</p>
-      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
-      <p style="margin:0;font-size:13px;color:#64748b">If you didn't ask for this, you can ignore this email and nothing changes.</p>
+      <p class="em-muted" style="margin:0 0 8px;font-size:13px;color:#64748b">Or paste this link into your browser:</p>
+      <p style="margin:0 0 24px;font-size:13px;word-break:break-all"><a class="em-link" href="{{ .ConfirmationURL }}" style="color:#2445d6">{{ .ConfirmationURL }}</a></p>
+      <p class="em-muted" style="margin:0;font-size:13px;color:#64748b">If you didn't ask for this, you can ignore this email and nothing changes.</p>
     </td></tr>
-    <tr><td style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D is a product of Wright AI Solutions, LLC.
+    <tr><td class="em-foot" style="padding:16px 32px;font-size:12px;color:#94a3b8">Room Designer 3D is a product of Wright AI Solutions, LLC.
 {{ end }}
     </td></tr>
   </table>

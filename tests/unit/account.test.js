@@ -110,10 +110,70 @@ test("checkout: only the plan is sold; a website add-on is never added", async (
   assert.equal(res.statusCode, 200, res.body);
   const session = calls.find((c) => c.includes("/v1/checkout/sessions"));
   assert.doesNotMatch(session, /price_web|line_items%5B1%5D|website/);
-  // The old "add it to my plan" request just starts a plan checkout now.
+  // The old "add it to my plan" request names no plan: refused, nothing sold.
   const old = setup();
-  await post("checkout.js", { addon: "website" });
-  assert.ok(!old.some((c) => c.includes("/v1/subscription_items")));
+  const refused = await post("checkout.js", { addon: "website" });
+  assert.equal(refused.statusCode, 400);
+  assert.equal(refused.json().error, "plan");
+  assert.ok(!old.some((c) => c.includes("api.stripe.com")));
+});
+
+test("checkout: a plan that isn't starter, pro or max is refused with 400, never sold as Starter", async () => {
+  for (const plan of [undefined, "", "gold", "STARTER_PLUS", 1, { plan: "starter" }]) {
+    const calls = setup();
+    const res = await post("checkout.js", { plan });
+    assert.equal(res.statusCode, 400, JSON.stringify(plan));
+    assert.equal(res.json().error, "plan");
+    assert.ok(!calls.some((c) => c.includes("api.stripe.com")), "nothing reaches Stripe for " + JSON.stringify(plan));
+  }
+  // A known plan with no price configured is a 400 too, not another plan.
+  delete process.env.STRIPE_PRICE_PRO;
+  const calls = setup();
+  const noPrice = await post("checkout.js", { plan: "pro" });
+  assert.equal(noPrice.statusCode, 400);
+  assert.equal(noPrice.json().error, "plan");
+  assert.ok(!calls.some((c) => c.includes("api.stripe.com")));
+  // Case and spaces around a real plan name are forgiven, and the session
+  // sells that plan's price.
+  const okCalls = setup();
+  const ok = await post("checkout.js", { plan: " Starter " });
+  assert.equal(ok.statusCode, 200, ok.body);
+  assert.match(
+    okCalls.find((c) => c.includes("/v1/checkout/sessions")),
+    /line_items%5B0%5D%5Bprice%5D=price_s/,
+  );
+});
+
+test("checkout: an incomplete subscription (a first payment still confirming) counts as one already running", async () => {
+  // In our table.
+  let calls = setup({ sub: { owner_id: USER, status: "incomplete", stripe_subscription_id: "sub_i" } });
+  let res = await post("checkout.js", { plan: "starter" });
+  assert.equal(res.statusCode, 409);
+  assert.equal(res.json().error, "already-subscribed");
+  assert.ok(!calls.some((c) => c.includes("/v1/checkout/sessions")));
+
+  // Known only to Stripe so far (the webhook hasn't landed): found by email.
+  calls = setup();
+  const plain = global.fetch;
+  global.fetch = async (url, opts = {}) => {
+    const u = new URL(url);
+    if (u.host === "api.stripe.com" && u.pathname === "/v1/customers" && (opts.method || "GET") === "GET") {
+      calls.push("GET api.stripe.com/v1/customers");
+      return reply(200, {
+        data: [{ id: "cus_9", subscriptions: { data: [{ id: "sub_9", status: "incomplete", items: { data: [] } }] } }],
+      });
+    }
+    if (u.pathname === "/rest/v1/subscriptions" && opts.method === "POST") {
+      calls.push("POST db.example/rest/v1/subscriptions");
+      return reply(201, {});
+    }
+    return plain(url, opts);
+  };
+  res = await post("checkout.js", { plan: "starter" });
+  assert.equal(res.statusCode, 409, res.body);
+  assert.equal(res.json().error, "already-subscribed");
+  assert.ok(calls.includes("POST db.example/rest/v1/subscriptions"), "the found subscription is recorded");
+  assert.ok(!calls.some((c) => c.includes("/v1/checkout/sessions")));
 });
 
 test("checkout: a promo code makes the first week free, once per account; a wrong code is refused", async () => {

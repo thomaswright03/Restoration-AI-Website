@@ -301,7 +301,6 @@
       "No se pudo abrir la página de facturación en este momento. Inténtelo de nuevo; si sigue pasando, avísenos.",
     "acct.projects.failed": "No se pudieron contar sus proyectos en este momento.",
     "acct.saveFailed": "No se pudo guardar.",
-    "acct.unavailable": "No pudimos conectar con el servidor. Revise su conexión y vuelva a intentarlo en un momento.",
     "acct.checkout.success": "¡Gracias! Su plan aparecerá como activo en un momento.",
     "acct.checkout.cancelled": "Se canceló el pago. No se cobró nada.",
     "acct.promo.invalid":
@@ -311,10 +310,16 @@
     "acct.paymentsOff": "Los pagos aún no están activados. Vuelva pronto.",
     "acct.error": "Algo salió mal. Inténtelo de nuevo.",
     "acct.saved": "Guardado.",
+    "acct.url.copied": "Dirección copiada.",
+    "acct.url.copyFailed":
+      "No se pudo copiar automáticamente; la dirección está seleccionada, cópiela con Ctrl+C o Cmd+C.",
     "net.offline": "Está sin conexión. Revise su conexión e inténtelo de nuevo.",
     "net.network": "No se pudo conectar con el servidor. Revise su conexión e inténtelo de nuevo.",
     "net.timeout": "El servidor está tardando demasiado en responder. Inténtelo de nuevo en un momento.",
     "net.server": "Algo salió mal de nuestro lado. Inténtelo de nuevo en un minuto; si sigue pasando, avísenos.",
+    "net.offlineNotice":
+      "Está sin conexión. Puede seguir mirando; guardar e iniciar sesión esperan hasta que vuelva la conexión.",
+    "net.backOnline": "Volvió la conexión.",
     "proj.loading": "Cargando…",
     "proj.err.loadFailed": "No se pudieron cargar sus proyectos.",
     "proj.err.business":

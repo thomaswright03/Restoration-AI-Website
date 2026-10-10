@@ -55,6 +55,7 @@
   --color-on-dark-muted: #9fabc6;
   --color-on-dark-line: rgba(148, 170, 255, 0.18);
   --color-focus-on-dark: #5eead4;
+  --color-highlight-on-dark: #5eead4; /* teal accents on navy: eyebrows, current menu item, nav underline */
 
   /* Type scale (7 sizes; nothing smaller than 14px) */
   --fs-sm: 0.875rem; /* 14px — captions, labels, fine print */
@@ -86,6 +87,8 @@
   --shadow-soft: 0 12px 32px -16px rgba(15, 23, 42, 0.16);
   --max-width: 1180px;
   --content-width: 760px;
+  --app-width: 920px; /* the one column the signed-in pages share (account, My projects, a project) */
+  --header-height: 88px; /* the fixed header: what pages leave room for at the top */
   --tap: 44px;
   --font-display: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -158,7 +161,7 @@ body {
 }
 
 html {
-  scroll-padding-top: 88px;
+  scroll-padding-top: var(--header-height);
 }
 
 body {
@@ -335,6 +338,9 @@ p {
 }
 
 .nav-brand {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
   font-family: var(--font-display);
   font-size: var(--fs-lg);
   font-weight: 600;
@@ -485,6 +491,38 @@ p {
   color: var(--color-accent-bright);
 }
 
+/* The theme menu: the same drop-down, with buttons (js/theme.js) in place of links. */
+.theme-menu summary::after {
+  display: none;
+}
+
+.theme-menu-list {
+  display: grid;
+  min-width: 9rem;
+}
+
+.theme-menu-list button {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 0;
+  background: none;
+  color: var(--color-on-dark-soft);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.theme-menu-list button:hover {
+  color: var(--color-on-dark);
+}
+
+.theme-menu-list button[aria-pressed="true"] {
+  color: var(--color-highlight-on-dark);
+  font-weight: 600;
+}
+
 .nav-toggle {
   display: none;
   align-items: center;
@@ -528,7 +566,8 @@ p {
     margin-top: var(--space-2);
   }
 
-  .nav-lang {
+  .nav-lang,
+  .nav-theme {
     margin-top: var(--space-2);
   }
 
@@ -538,6 +577,32 @@ p {
     background: none;
     padding: 0 0 0 var(--space-5);
   }
+}
+
+/* Offline: a notice at the foot of the page (js/script.js) while the browser
+   has no connection, and "back online" for a moment when it returns. */
+.offline-notice {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-4);
+  z-index: 600;
+  transform: translateX(-50%);
+  width: calc(100% - 2 * var(--space-4));
+  max-width: 36rem;
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--color-notice-line);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--color-notice-bg);
+  color: var(--color-notice-ink);
+  font-size: var(--fs-sm);
+  box-shadow: var(--shadow-soft);
+}
+
+.offline-notice.is-back {
+  border-color: var(--color-success);
+  background: var(--color-surface);
+  color: var(--color-ink);
 }
 
 /* ---------- Hero ---------- */
@@ -775,13 +840,6 @@ p {
   margin-bottom: var(--space-1);
 }
 
-/* Gallery (kept for when real project photos are added) */
-.gallery-empty {
-  max-width: 640px;
-  margin: 0 auto;
-  text-align: center;
-}
-
 /* FAQ accordion */
 .faq-list {
   max-width: 820px;
@@ -858,35 +916,6 @@ p {
 
 .faq-item.open .faq-answer-inner {
   padding-bottom: var(--space-5);
-}
-
-.values-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr));
-  gap: var(--space-7);
-  max-width: var(--max-width);
-  margin: var(--space-9) auto 0;
-}
-
-.value-item {
-  text-align: center;
-}
-
-.value-item .value-rule {
-  width: 32px;
-  height: 1px;
-  background: var(--color-accent);
-  margin: 0 auto var(--space-5);
-}
-
-.value-item h3 {
-  font-size: var(--fs-md);
-  margin: 0 0 var(--space-2);
-}
-
-.value-item p {
-  color: var(--color-ink-soft);
-  margin: 0;
 }
 
 /* Dark band */
@@ -1017,6 +1046,16 @@ textarea {
   font-size: var(--fs-sm);
   color: var(--color-muted);
   margin: var(--space-4) 0 0;
+}
+
+/* A caption under its field sits as close as an error does; a card's own
+   helper line (right under its heading) stands clear of the first label. */
+.form-group .form-note {
+  margin-top: var(--space-2);
+}
+
+.app-card h2 + .form-note {
+  margin: calc(-1 * var(--space-2)) 0 var(--space-5);
 }
 
 .form-consent {

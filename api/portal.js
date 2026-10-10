@@ -1,5 +1,8 @@
 // POST /api/portal {lang} with the signed-in user's Supabase access token:
 // opens Stripe's billing portal (change card, switch plan, cancel, invoices).
+// 404 {error: "no-customer"} for an account that never bought a plan. The
+// portal session is created with an idempotency key, so a transient Stripe
+// failure is tried once more (api/_lib.js stripe()).
 "use strict";
 
 const {
@@ -12,14 +15,13 @@ const {
   stripe,
   idempotencyKey,
   readForm,
+  langDir,
+  refuseMethod,
 } = require("./_lib.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return sendJson(res, 405, { error: "method" });
-  }
+  if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
 
   let user;
@@ -27,7 +29,7 @@ module.exports = async function handler(req, res) {
     user = await requireUser(req, res);
     if (!user) return;
     const body = await readForm(req);
-    const dir = body.lang === "es" || body.lang === "pt" ? body.lang + "/" : "";
+    const dir = langDir(body.lang);
 
     let customer;
     try {

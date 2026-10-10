@@ -1,16 +1,18 @@
 // Room Designer 3D — the design studio (designer.html).
 //
-// A homeowner designs their bathroom here, one step at a time: the room
-// (its size and doorways), the layout (the fixtures, each against a wall
-// where it fits), the products (Kohler models at their real size), the
-// finishes (floor, walls, ceiling) and the estimate, which goes to the
-// business with the request form. Everything shows live in the 3D room
+// A business designs its customer's bathroom here, one step at a time: the
+// room (its size and doorways), the layout (the fixtures, each against a
+// wall where it fits), the electrical, the products (Kohler models at their
+// real size), the finishes (floor, walls, ceiling) and the estimate at the
+// business's own labor prices, with a PDF and, signed in, Save project
+// (js/projects.js). The public demo ends with what a business gets and a
+// link to sign up. Everything shows live in the 3D room
 // (js/bathroom-room-3d.js) and on a measured floor plan drawn here as SVG;
 // what fits where is js/room-plan.js's call.
 //
 // The design is kept in this browser as it changes, and travels in a link
-// (#design=...), so a homeowner can come back to it or send it on, and the
-// business opens exactly what was designed.
+// (#design=...), so a person can come back to it or send it on, and the
+// link opens exactly what was designed.
 (function () {
   "use strict";
 

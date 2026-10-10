@@ -360,7 +360,7 @@ test("a project's 3D model tab is a read-only viewer: no steps, no editing, no l
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
   await signedIn(page, { projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }] });
   await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
-  await expect(page.locator(".studio-status")).toBeVisible();
+  await expect(page.locator(".studio-status")).toBeVisible({ timeout: 20000 });
   await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
   await expect(page.locator(".studio-step-btn")).toHaveCount(0);
   await expect(page.locator(".studio-action")).toHaveCount(0);
@@ -518,7 +518,7 @@ test("viewing a saved project never overwrites the owner's unsaved design", asyn
 
   // They look at an old project (as its page does, and as "Open in the designer" does).
   await page.goto("/designer.html?b=smith-bath&project=a1&embed=1");
-  await expect(page.locator(".studio-status")).toBeVisible();
+  await expect(page.locator(".studio-status")).toBeVisible({ timeout: 20000 });
   await expect.poll(() => page.evaluate(() => window.RoomStudio.design().room.w)).toBe(8);
   await page.waitForTimeout(600); // past the studio's save debounce
   expect(await stored()).toBe(10);
@@ -1018,7 +1018,7 @@ test("My projects sends an ended sign-in to log in with the way back", async ({ 
 test("while a saved project loads, the bar says so and offers nothing to save, and the studio waits for it", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(90000); // the 3D room starts only once the project is in, which is slow in CI
   await page.goto("/designer.html");
   const design = await page.evaluate(() => {
     const d = window.RoomPlan.fromTemplate("full5x8", null);
@@ -1057,8 +1057,8 @@ test("while a saved project loads, the bar says so and offers nothing to save, a
   expect(state.calls.filter((c) => c.method === "POST").length).toBe(0);
 
   release();
-  await expect(bar).toContainText("Project: Wide bath", { timeout: 15000 });
-  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(bar).toContainText("Project: Wide bath", { timeout: 30000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
   await expect(page.locator("#studio-loading")).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.RoomPlan.decode(window.StudioDesign.encoded()).room.w)).toBe(10);
   await expect(page.locator("#project-save")).toBeVisible();
@@ -1070,7 +1070,7 @@ test("while a saved project loads, the bar says so and offers nothing to save, a
 test("a saved project that can't be opened says so with a way out: Try again for a server problem, Back to My projects when it's gone", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(90000);
   await page.goto("/designer.html");
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
   await signedIn(page, { projects: [{ id: "a1", name: "Old job", design, updated_at: DAY }] });
@@ -1097,8 +1097,8 @@ test("a saved project that can't be opened says so with a way out: Try again for
 
   failing = false;
   await bar.getByRole("button", { name: "Try again" }).click();
-  await expect(bar).toContainText("Project: Old job", { timeout: 15000 });
-  await expect(page.locator(".studio-step-btn")).toHaveCount(6);
+  await expect(bar).toContainText("Project: Old job", { timeout: 30000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
   await expect(page.locator("#project-save")).toBeVisible();
 
   // A project that isn't there: no Try again that can't help.

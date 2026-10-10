@@ -1612,7 +1612,12 @@
         return FAILED;
       })
       .then(function (s) {
-        if ((window.DesignerBusiness || {}).unavailable) return;
+        if ((window.DesignerBusiness || {}).unavailable) {
+          // The business's notice is up in place of the studio: nothing to open.
+          opening = false;
+          show($("project-bar"), false);
+          return;
+        }
         if (s === FAILED) {
           // There is a sign-in here, but it couldn't be checked (the auth
           // service didn't answer): say so, with a way to try again, rather

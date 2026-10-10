@@ -715,12 +715,18 @@ test("rename cancels on Escape", async ({ page }) => {
 
 test("in the owner's own designer the estimate step speaks to the business, not a homeowner", async ({ page }) => {
   test.setTimeout(60000);
-  await signedIn(page, { prices: { Toilet_Price: 250 } });
+  // Every labor price set: the estimate is at the owner's prices throughout.
+  // (Some set, and none set, are covered in business-profile.spec.js.)
+  const prices = {};
+  for (const key of Object.keys(require("../../js/bathroom-pricing.js").DEFAULT_PRICES)) prices[key] = 100;
+  prices.Labor_Tax_Rate_Percent = 0;
+  await signedIn(page, { prices });
   await openStudio(page, "/designer.html?b=smith-bath");
   await answerAll(page);
   await page.locator(".studio-step-btn[data-step='estimate']").click();
   const intro = page.locator(".studio-step.is-estimate .studio-step-intro");
   await expect(intro).toContainText("A rough, non-binding estimate at your prices.");
+  await expect(intro).not.toContainText("sample");
   await expect(intro).toContainText("Save it as a project, or download the PDF for your client.");
   await expect(page.locator(".riley-text")).toContainText("Save it as a project");
   await expect(page.locator(".studio-demo-end")).toHaveCount(0);

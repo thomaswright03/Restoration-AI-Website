@@ -68,15 +68,14 @@ test("embedded, the designer is a read-only viewer with no product header or foo
   await expect(page.locator(".site-footer")).toBeHidden();
   await expect(page.locator("#studio")).toBeVisible();
   await expect(page.locator(".studio-status")).toBeVisible();
-  // The room and its views, and one way out; nothing to edit.
+  // The room and its views; nothing to edit, and no button of its own (the
+  // project page that frames it has "Open in the designer").
   await expect(page.locator(".studio-view-btn[data-view]")).toHaveCount(3);
   await expect(page.locator(".studio-step-btn")).toHaveCount(0);
   await expect(page.locator(".studio-action")).toHaveCount(0);
   await expect(page.locator("#studio-panel")).toBeHidden();
   await expect(page.locator("#studio-riley")).toBeHidden();
-  const open = page.getByRole("link", { name: "Open in designer" });
-  await expect(open).toHaveAttribute("href", "/designer.html");
-  await expect(open).toHaveAttribute("target", "_top");
+  await expect(page.getByRole("link", { name: /Open in/ })).toHaveCount(0);
 });
 
 test("with no account keys set, sign-up and account say accounts aren't on yet", async ({ page }) => {

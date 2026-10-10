@@ -467,6 +467,18 @@
     "proj.mat.laborTotal": ["Labor", "Mano de obra", "Mão de obra"],
     "proj.mat.materialsTotal": ["Materials", "Materiales", "Materiais"],
     "proj.mat.total": ["Estimated total", "Total estimado", "Total estimado"],
+    // How the labor was priced when the design was saved (summary.rates,
+    // js/studio.js projectSummary): sample rates throughout, or named lines.
+    "proj.mat.ratesSample": [
+      "Labor was at Room Designer 3D's sample rates when this was saved.",
+      "La mano de obra estaba a las tarifas de ejemplo de Room Designer 3D cuando se guardó.",
+      "A mão de obra estava nos valores de exemplo do Room Designer 3D quando isto foi salvo.",
+    ],
+    "proj.mat.ratesPartial": [
+      "At save time these lines were at sample rates: {list}.",
+      "Al guardarse, estas líneas estaban a tarifas de ejemplo: {list}.",
+      "Ao salvar, estas linhas estavam em valores de exemplo: {list}.",
+    ],
     "proj.mat.asOf": [
       "As worked out when the design was last saved ({date}). Prices are estimates and may have changed.",
       "Según el diseño guardado por última vez ({date}). Los precios son estimados y pueden haber cambiado.",

@@ -1193,6 +1193,17 @@
     (s.notes || []).forEach(function (n) {
       box.appendChild(el("p", { class: "form-note", text: n }));
     });
+    // How the labor was priced at the time (summary.rates; rows saved
+    // before it was recorded have none): nothing when every line was at
+    // the business's own prices.
+    var rates = s.rates || {};
+    if (rates.mode === "sample") {
+      box.appendChild(el("p", { class: "form-note", text: T("proj.mat.ratesSample") }));
+    } else if (rates.mode === "partial" && Array.isArray(rates.sampleLines) && rates.sampleLines.length) {
+      box.appendChild(
+        el("p", { class: "form-note", text: T("proj.mat.ratesPartial", { list: rates.sampleLines.join(", ") }) }),
+      );
+    }
     // When the design (and so this list) was saved: api/projects.js stamps
     // it in the summary. Renaming or editing the info moves updated_at but
     // not this date. Older rows, saved before the stamp, have only updated_at.

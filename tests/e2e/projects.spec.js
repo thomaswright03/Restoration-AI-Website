@@ -364,8 +364,67 @@ test("a project's page shows its 3D model, edits its info, and lists its materia
   await expect(page.locator("#project-materials")).toContainText("44 sq ft");
   await expect(page.locator("#project-materials")).toContainText("Not priced");
   await expect(page.locator(".materials-totals")).toContainText("$732");
+  // An older row, saved before the rates were recorded: nothing about them.
+  await expect(page.locator("#project-materials")).not.toContainText(/sample rates/);
   const axe2 = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).exclude("#project-model-frame").analyze();
   expect(axe2.violations.map((v) => v.id)).toEqual([]);
+});
+
+// The materials list says how the labor was priced when the design was
+// saved (summary.rates): at sample rates throughout, some named lines, or
+// (the business's own prices) nothing.
+test("a project's materials list says which labor lines were at sample rates when it was saved, in en/es/pt", async ({
+  page,
+}) => {
+  const base = {
+    v: 1,
+    room: { w: 8, l: 5, h: 8 },
+    fixtures: [],
+    labor: [{ label: "Tile floor", detail: "40 sq ft", cost: 600 }],
+    laborSubtotal: 600,
+    materials: [],
+    products: [],
+    materialsTotal: 0,
+    grandTotal: 600,
+    notes: [],
+  };
+  await signedIn(page, {
+    projects: [
+      {
+        id: "s1",
+        name: "Sample",
+        summary: Object.assign({}, base, { rates: { mode: "sample", sampleLines: ["Tile floor"] } }),
+        updated_at: DAY,
+      },
+      {
+        id: "p1",
+        name: "Partial",
+        summary: Object.assign({}, base, { rates: { mode: "partial", sampleLines: ["Tile floor", "Toilet"] } }),
+        updated_at: DAY,
+      },
+      {
+        id: "o1",
+        name: "Own",
+        summary: Object.assign({}, base, { rates: { mode: "own", sampleLines: [] } }),
+        updated_at: DAY,
+      },
+    ],
+  });
+  const materials = page.locator("#project-materials");
+  await page.goto("/project.html?id=s1#materials");
+  await expect(materials).toContainText("Labor was at Room Designer 3D's sample rates when this was saved.");
+  await page.goto("/project.html?id=p1#materials");
+  await expect(materials).toContainText("At save time these lines were at sample rates: Tile floor, Toilet.");
+  await expect(materials).not.toContainText("Labor was at");
+  await page.goto("/project.html?id=o1#materials");
+  await expect(materials).toContainText("$600");
+  await expect(materials).not.toContainText(/sample rates/);
+  await page.goto("/es/project.html?id=p1#materials");
+  await expect(materials).toContainText("Al guardarse, estas líneas estaban a tarifas de ejemplo: Tile floor, Toilet.");
+  await page.goto("/pt/project.html?id=s1#materials");
+  await expect(materials).toContainText(
+    "A mão de obra estava nos valores de exemplo do Room Designer 3D quando isto foi salvo.",
+  );
 });
 
 test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, no second Open button", async ({

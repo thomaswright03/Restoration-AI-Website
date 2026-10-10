@@ -230,6 +230,8 @@
     "proj.mat.laborTotal": "Labor",
     "proj.mat.materialsTotal": "Materials",
     "proj.mat.total": "Estimated total",
+    "proj.mat.ratesSample": "Labor was at Room Designer 3D's sample rates when this was saved.",
+    "proj.mat.ratesPartial": "At save time these lines were at sample rates: {list}.",
     "proj.mat.asOf":
       "As worked out when the design was last saved ({date}). Prices are estimates and may have changed.",
     "proj.err.name": "Give the project a name.",

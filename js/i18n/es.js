@@ -235,6 +235,8 @@
     "proj.mat.laborTotal": "Mano de obra",
     "proj.mat.materialsTotal": "Materiales",
     "proj.mat.total": "Total estimado",
+    "proj.mat.ratesSample": "La mano de obra estaba a las tarifas de ejemplo de Room Designer 3D cuando se guardó.",
+    "proj.mat.ratesPartial": "Al guardarse, estas líneas estaban a tarifas de ejemplo: {list}.",
     "proj.mat.asOf":
       "Según el diseño guardado por última vez ({date}). Los precios son estimados y pueden haber cambiado.",
     "proj.err.name": "Póngale un nombre al proyecto.",

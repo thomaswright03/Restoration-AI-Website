@@ -146,30 +146,34 @@
     </header>
 
     <main id="main">
-      <section class="hero">
+      <section class="hero hero-landing">
         <div class="hero-inner">
-          <p class="eyebrow center">For remodeling and restoration businesses</p>
-          <h1><em>Design</em> your customer's bathroom in 3D</h1>
-          <p>
-            Lay out the room, pick fixtures and finishes, and see a rough estimate at your prices. Save each design as a
-            project, with your client's details and a materials list.
-          </p>
-          <div class="hero-actions">
-            <a href="signup.html" class="btn btn-primary">Get started</a>
-            <a href="designer.html" class="btn btn-outline">Try the live demo</a>
+          <div class="hero-words">
+            <p class="eyebrow center">For remodeling and restoration businesses</p>
+            <h1><em>Design</em> your customer's bathroom in 3D</h1>
+            <p>
+              Lay out the room, pick fixtures and finishes, and see a rough estimate at your prices. Save each design as
+              a project, with your client's details and a materials list.
+            </p>
+            <div class="hero-actions">
+              <a href="signup.html" class="btn btn-primary">Get started</a>
+              <a href="designer.html" class="btn btn-outline">Try the live demo</a>
+            </div>
+            <p class="hero-note">Have a promo code? Your first 7 days are free. Cancel any time.</p>
           </div>
-          <p class="hero-note">Have a promo code? Your first 7 days are free. Cancel any time.</p>
+          <!-- The designer itself, retaken with scripts/hero-shots.mjs (one image per language); phones get a tighter crop of the room. -->
           <figure class="hero-shot">
-            <img
-              src="images/designer-layout-3d.webp"
-              srcset="images/designer-layout-3d-720.webp 720w, images/designer-layout-3d.webp 1440w"
-              sizes="(min-width: 1040px) 960px, calc(100vw - 32px)"
-              width="1440"
-              height="743"
-              alt="The designer's layout step: a 5 by 8 foot bathroom in 3D with a vanity, toilet and bathtub placed along its walls, a small floor plan in the corner, the list of fixtures in the room, and the running estimate in the top right."
-              fetchpriority="high"
-              decoding="async"
-            />
+            <picture>
+              <source media="(max-width: 720px)" srcset="images/hero-designer-en-phone.webp" width="720" height="672" />
+              <img
+                src="images/hero-designer-en.webp"
+                width="1280"
+                height="760"
+                alt="The designer's layout step: a 5 by 8½ foot bathroom in 3D with a vanity, toilet and bathtub along its walls, the six steps across the top, Riley's note under the room, the fixtures to add on the right, and the running estimate in the top corner."
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <figcaption>
               The layout step: drag fixtures along the walls, see the plan at a glance, and watch the estimate follow.
             </figcaption>

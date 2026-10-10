@@ -7,12 +7,15 @@
 //
 //   - No ?b= (or ?b=demo): the built-in sample business, for the public demo.
 //   - ?b=<slug>: /api/business?b=<slug>&t=<sign-in token> is loaded as a
-//     script right here, so it runs before the next <script> on the page. A
-//     business's designer opens only for its own signed-in owner: it calls
-//     DesignerBusiness.load({...}) with the business's profile for them (with
-//     preview: true while the plan isn't active), or
-//     DesignerBusiness.load(null, reason) for anyone else, and the studio is
-//     replaced by a short notice.
+//     script without holding the page (the designer shows its loading state
+//     meanwhile; DesignerBusiness.ready resolves when the answer is in, and
+//     the studio starts then). A business's designer opens only for its own
+//     signed-in owner: the script calls DesignerBusiness.load({...}) with the
+//     business's profile for them (with preview: true while the plan isn't
+//     active), or DesignerBusiness.load(null, reason) for anyone else, and
+//     the studio is replaced by a short notice. If the answer doesn't come
+//     within LOAD_LIMIT_MS (a hung database), the notice says so and offers
+//     Try again.
 //
 // Must load after js/bathroom-pricing.js (so a business's own labor prices can
 // replace the defaults) and before js/script.js and js/studio.js.
@@ -35,8 +38,23 @@
     unavailable: "",
   };
 
+  // How long the profile may take before the page says it couldn't load it
+  // (the server gives up on a hung database after 8 s).
+  var LOAD_LIMIT_MS = 10000;
+
   var biz = Object.assign({}, DEMO);
   window.DesignerBusiness = biz;
+  // Resolves (always) once the profile is in, or has failed; the demo
+  // business is ready at once.
+  var readyResolve = null;
+  biz.ready = new Promise(function (resolve) {
+    readyResolve = resolve;
+  });
+  function settle() {
+    if (readyResolve) readyResolve(biz);
+    readyResolve = null;
+    fill();
+  }
 
   function clean(value, max) {
     return typeof value === "string" ? value.trim().slice(0, max || 120) : "";
@@ -77,6 +95,7 @@
   biz.load = function (data, reason) {
     if (!data) {
       biz.unavailable = reason || "unavailable";
+      settle();
       return;
     }
     var name = clean(data.name) || DEMO.name;
@@ -92,6 +111,7 @@
     biz.preview = data.preview === true;
     biz.priceSet = applyPrices(data.prices);
     biz.ownPrices = Object.keys(biz.priceSet).length > 0;
+    settle();
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in
@@ -131,18 +151,34 @@
     // or be blocked), so a broken link never shows the sample business.
     biz.unavailable = "loading";
     profileScript(signInToken());
+  } else {
+    settle();
   }
 
-  // Loads the business's profile as a script, so it runs before the next
-  // <script> on the page (also when called from inside that script).
+  // Loads the business's profile as a script (its answer calls biz.load).
+  // It doesn't hold the page: the designer paints its loading state at once,
+  // and if the answer hasn't come in LOAD_LIMIT_MS, or the request fails,
+  // the page says so ("error"/"timeout") with Try again.
   function profileScript(token) {
-    document.write(
-      '<script src="/api/business?b=' +
-        encodeURIComponent(biz.slug) +
-        (token ? "&t=" + encodeURIComponent(token) : "") +
-        '"></' +
-        "script>",
-    );
+    var el = document.createElement("script");
+    el.src = "/api/business?b=" + encodeURIComponent(biz.slug) + (token ? "&t=" + encodeURIComponent(token) : "");
+    el.async = true;
+    var timer = setTimeout(function () {
+      if (biz.unavailable === "loading") biz.load(null, "timeout");
+    }, LOAD_LIMIT_MS);
+    var done = function () {
+      clearTimeout(timer);
+    };
+    el.onload = function () {
+      done();
+      // A script that ran without calling load() (an unexpected answer).
+      if (biz.unavailable === "loading") biz.load(null, "error");
+    };
+    el.onerror = function () {
+      done();
+      if (biz.unavailable === "loading") biz.load(null, "error");
+    };
+    (document.head || document.documentElement).appendChild(el);
   }
 
   function fill() {
@@ -165,12 +201,24 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-preview]"), function (el) {
       el.hidden = !biz.preview;
     });
-    if (biz.unavailable) {
+    // Still loading: the designer keeps showing its loading state.
+    if (biz.unavailable && biz.unavailable !== "loading") {
       Array.prototype.forEach.call(document.querySelectorAll("[data-biz-live]"), function (el) {
         el.hidden = true;
       });
-      var notice = document.getElementById("designer-unavailable");
+      // A hung or failed lookup is a different message from "not yours":
+      // the designer may well be theirs, so it offers Try again.
+      var failed = biz.unavailable === "error" || biz.unavailable === "timeout";
+      var notice = document.getElementById(failed ? "designer-failed" : "designer-unavailable");
+      if (!notice) notice = document.getElementById("designer-unavailable");
       if (notice) notice.hidden = false;
+      var retry = document.getElementById("designer-failed-retry");
+      if (retry && !retry.hasAttribute("data-wired")) {
+        retry.setAttribute("data-wired", "1");
+        retry.addEventListener("click", function () {
+          window.location.reload();
+        });
+      }
     }
   }
 

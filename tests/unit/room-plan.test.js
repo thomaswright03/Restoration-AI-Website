@@ -613,3 +613,16 @@ test("electrical gaps are judged per basin and per doorway, by where the points 
     ["noSwitch:door2"],
   );
 });
+
+test("the sample room the designer opens with fits with nothing tight, and isn't offered as a common bathroom", () => {
+  const d = P.fromTemplate("sample", {});
+  assert.deepEqual([d.room.w, d.room.l], [8.5, 5]);
+  assert.deepEqual(d.items.map((it) => it.type).sort(), ["door", "toilet", "tub", "vanity"]);
+  const issues = P.validate(d, {});
+  for (const id of Object.keys(issues)) assert.deepEqual(issues[id], [], id + " has an issue on the untouched sample");
+  assert.equal(P.TEMPLATES.find((t) => t.id === "sample").hidden, true);
+  assert.equal(P.TEMPLATES.find((t) => t.id === "full5x8").hidden, undefined);
+  // The classic 5 x 8 still arranges with nothing broken (its toilet is tight, which is a note).
+  const classic = P.fromTemplate("full5x8", {});
+  assert.equal(P.hasErrors(P.validate(classic, {})), false);
+});

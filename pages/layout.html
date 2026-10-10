@@ -82,6 +82,9 @@
     <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/three.module.js" />
     <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/three.core.js" />
     <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/addons/controls/OrbitControls.js" />
+    <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/addons/loaders/GLTFLoader.js" />
+    <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/addons/environments/RoomEnvironment.js" />
+    <link rel="modulepreload" href="{{@root}}js/vendor/three-r186/addons/utils/BufferGeometryUtils.js" />
     <link rel="stylesheet" href="{{@root}}css/studio.css" />
     <!-- /if:designer -->
   </head>
@@ -200,10 +203,12 @@
     <script src="{{@root}}js/surface-finishes.js"></script>
     <script src="{{@root}}js/site-config.js"></script>
     <script src="{{@root}}js/theme.js"></script>
-    <script src="{{@root}}js/estimate-pdf.js"></script>
-    <script src="{{@root}}js/riley.js"></script>
-    <script src="{{@root}}js/script.js"></script>
-    <script type="module" src="{{@root}}js/bathroom-room-3d.js"></script>
+    <!-- Only needed once the page is up: the PDF (which fetches its library on demand), Riley, the page chrome. -->
+    <script src="{{@root}}js/estimate-pdf.js" defer></script>
+    <script src="{{@root}}js/riley.js" defer></script>
+    <script src="{{@root}}js/script.js" defer></script>
+    <!-- The 3D room (three.js) is the big download: async, so the studio starts on the floor plan as soon as its own scripts are in, and takes the room up when it lands (bathroomroom3d:loaded). -->
+    <script type="module" src="{{@root}}js/bathroom-room-3d.js" async></script>
     <script src="{{@root}}js/studio.js" defer></script>
     <script src="{{@root}}js/projects.js" defer></script>
     <!-- /if:designer -->

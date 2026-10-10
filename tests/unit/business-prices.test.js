@@ -18,9 +18,18 @@ function loadBusiness(search) {
     localStorage: { length: 0, key: () => null, getItem: () => null },
   };
   window.window = window;
-  const document = { readyState: "complete", querySelectorAll: () => [], getElementById: () => null, write() {} };
+  // The profile loads as a <script> element appended to <head>.
+  const scripts = [];
+  const document = {
+    readyState: "complete",
+    querySelectorAll: () => [],
+    getElementById: () => null,
+    createElement: () => ({}),
+    head: { appendChild: (el) => scripts.push(el) },
+  };
   const src = fs.readFileSync(path.join(__dirname, "..", "..", "js", "business.js"), "utf8");
-  vm.runInNewContext(src, { window, document });
+  vm.runInNewContext(src, { window, document, setTimeout: () => 0, clearTimeout() {} });
+  window.scripts = scripts;
   return window;
 }
 
@@ -51,4 +60,30 @@ test("no prices set: the estimate is on sample rates throughout", () => {
   const w2 = loadBusiness("?b=smith-bath");
   w2.DesignerBusiness.load({ slug: "smith-bath", name: "Smith", prices: { Toilet_Price: -1, Sink_Price: 1e9 } });
   assert.deepEqual(JSON.parse(JSON.stringify(w2.DesignerBusiness.priceSet)), {});
+});
+
+test("a business's profile is asked for once, as a script that doesn't hold the page, and the designer waits for it", async () => {
+  const w = loadBusiness("?b=smith-bath");
+  assert.equal(w.scripts.length, 1);
+  assert.match(w.scripts[0].src, /^\/api\/business\?b=smith-bath$/);
+  assert.equal(w.scripts[0].async, true);
+  assert.equal(w.DesignerBusiness.unavailable, "loading");
+  let ready = false;
+  w.DesignerBusiness.ready.then(() => (ready = true));
+  await Promise.resolve();
+  assert.equal(ready, false);
+  w.DesignerBusiness.load({ slug: "smith-bath", name: "Smith Bath Co.", prices: {} });
+  await w.DesignerBusiness.ready;
+  assert.equal(w.DesignerBusiness.unavailable, "");
+  assert.equal(w.DesignerBusiness.name, "Smith Bath Co.");
+});
+
+test("the demo business is ready at once, and a failed lookup settles as unavailable with its reason", async () => {
+  const demo = loadBusiness("");
+  assert.equal(demo.scripts.length, 0);
+  assert.equal((await demo.DesignerBusiness.ready).demo, true);
+  const w = loadBusiness("?b=smith-bath");
+  w.DesignerBusiness.load(null, "timeout");
+  await w.DesignerBusiness.ready;
+  assert.equal(w.DesignerBusiness.unavailable, "timeout");
 });

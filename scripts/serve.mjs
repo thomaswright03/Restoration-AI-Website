@@ -14,6 +14,7 @@ import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { brotliCompressSync, constants as zlib, gzipSync } from "node:zlib";
 import { loadEnvFile } from "./env-file.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -104,13 +105,51 @@ const server = createServer(async (req, res) => {
     res.end(body);
     return;
   }
-  const body = await readFile(file);
-  res.writeHead(200, {
+  let body = await readFile(file);
+  const headers = {
     "Content-Type": TYPES[extname(file)] || "application/octet-stream",
     "Cache-Control": "no-cache",
-  });
+  };
+  // Compressed on the wire like Vercel (brotli, else gzip), so a throttled
+  // browser sees the sizes the live site sends. Images and fonts are already
+  // compressed.
+  const encoding = compressionFor(req.headers["accept-encoding"], extname(file));
+  if (encoding) {
+    body = await compressed(file, body, encoding);
+    headers["Content-Encoding"] = encoding;
+    headers.Vary = "Accept-Encoding";
+  }
+  res.writeHead(200, headers);
   res.end(body);
 });
+
+const UNCOMPRESSED = new Set([".png", ".webp", ".ico", ".woff2"]);
+
+// Compressed once per file version (brotli at a quick setting: the default
+// one takes seconds on three.js and would stall every other request), and
+// kept until the file changes.
+const compressedCache = new Map();
+
+async function compressed(file, body, encoding) {
+  const { mtimeMs } = await stat(file);
+  const key = file + "|" + encoding;
+  const hit = compressedCache.get(key);
+  if (hit && hit.mtimeMs === mtimeMs) return hit.body;
+  const out =
+    encoding === "br"
+      ? brotliCompressSync(body, { params: { [zlib.BROTLI_PARAM_QUALITY]: 5 } })
+      : gzipSync(body, { level: 6 });
+  compressedCache.set(key, { mtimeMs, body: out });
+  return out;
+}
+
+function compressionFor(accept, ext) {
+  if (UNCOMPRESSED.has(ext)) return "";
+  const offered = String(accept || "");
+  if (/\bbr\b/.test(offered)) return "br";
+  if (/\bgzip\b/.test(offered)) return "gzip";
+  return "";
+}
 
 server.listen(port, () => {
   if (loaded.length) console.log(`Loaded ${loaded.length} settings from ${envFile}: ${loaded.join(", ")}`);

@@ -149,32 +149,41 @@
     </header>
 
     <main id="main">
-      <section class="hero">
+      <section class="hero hero-landing">
         <div class="hero-inner">
-          <p class="eyebrow center">Para empresas de reforma e restauração</p>
-          <h1><em>Projete</em> o banheiro do seu cliente em 3D</h1>
-          <p>
-            Monte o banheiro, escolha peças e acabamentos e veja uma estimativa aproximada com os seus preços. Salve
-            cada projeto com os dados do cliente e a lista de materiais.
-          </p>
-          <div class="hero-actions">
-            <a href="../pt/signup.html" class="btn btn-primary">Começar</a>
-            <a href="../pt/designer.html" class="btn btn-outline">Ver a demonstração</a>
+          <div class="hero-words">
+            <p class="eyebrow center">Para empresas de reforma e restauração</p>
+            <h1><em>Projete</em> o banheiro do seu cliente em 3D</h1>
+            <p>
+              Monte o banheiro, escolha peças e acabamentos e veja uma estimativa aproximada com os seus preços. Salve
+              cada projeto com os dados do cliente e a lista de materiais.
+            </p>
+            <div class="hero-actions">
+              <a href="../pt/signup.html" class="btn btn-primary">Começar</a>
+              <a href="../pt/designer.html" class="btn btn-outline">Ver a demonstração</a>
+            </div>
+            <p class="hero-note">
+              Tem um código promocional? Os seus primeiros 7 dias são grátis. Cancele quando quiser.
+            </p>
           </div>
-          <p class="hero-note">
-            Tem um código promocional? Os seus primeiros 7 dias são grátis. Cancele quando quiser.
-          </p>
+          <!-- The designer itself, retaken with scripts/hero-shots.mjs (one image per language); phones get a tighter crop of the room. -->
           <figure class="hero-shot">
-            <img
-              src="../images/designer-layout-3d.webp"
-              srcset="../images/designer-layout-3d-720.webp 720w, ../images/designer-layout-3d.webp 1440w"
-              sizes="(min-width: 1040px) 960px, calc(100vw - 32px)"
-              width="1440"
-              height="743"
-              alt="A etapa de layout do projetista: um banheiro de 5 por 8 pés em 3D com um gabinete de pia, um vaso sanitário e uma banheira junto às paredes, uma pequena planta no canto, a lista de peças no banheiro e a estimativa atualizada no canto superior direito."
-              fetchpriority="high"
-              decoding="async"
-            />
+            <picture>
+              <source
+                media="(max-width: 720px)"
+                srcset="../images/hero-designer-pt-phone.webp"
+                width="720"
+                height="672"
+              />
+              <img
+                src="../images/hero-designer-pt.webp"
+                width="1280"
+                height="760"
+                alt="A etapa de layout do projetista: um banheiro de 5 por 8½ pés em 3D com um gabinete de pia, um vaso sanitário e uma banheira junto às paredes, as seis etapas no alto, a nota da Riley sob o banheiro, as peças para adicionar à direita e a estimativa atualizada no canto superior."
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <figcaption>
               A etapa de layout: arraste as peças junto às paredes, veja a planta de relance e acompanhe a estimativa
               mudar.

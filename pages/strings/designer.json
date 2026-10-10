@@ -72,5 +72,16 @@
     "This is taking longer than usual. The designer is a big download the first time; on a slow connection it can take a minute.",
     "Está tardando más de lo normal. La primera vez el diseñador es una descarga grande; con una conexión lenta puede tardar un minuto.",
     "Está demorando mais que o normal. Na primeira vez o projetista é um download grande; em uma conexão lenta pode levar um minuto."
-  ]
+  ],
+  "designer.failed.title": [
+    "We couldn't open this designer",
+    "No pudimos abrir este diseñador",
+    "Não conseguimos abrir este projetista"
+  ],
+  "designer.failed.text": [
+    "The business's details didn't load. This is usually a brief connection problem on our side, not something you did.",
+    "Los datos de la empresa no se cargaron. Suele ser un problema breve de conexión de nuestro lado, no algo que usted hizo.",
+    "Os dados da empresa não carregaram. Costuma ser um problema breve de conexão do nosso lado, não algo que você fez."
+  ],
+  "designer.failed.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"]
 }

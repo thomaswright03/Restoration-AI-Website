@@ -458,6 +458,7 @@
     if (!KEEPS_DRAFT) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
+      saveTimer = null;
       try {
         localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
       } catch (e) {
@@ -465,6 +466,20 @@
       }
     }, 300);
   }
+
+  // Leaving the page (a reload, a link) writes a save that's still waiting
+  // for its debounce, so the last edit is there when the page comes back.
+  function flushSave() {
+    if (!KEEPS_DRAFT || !saveTimer || !design) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
+    } catch (e) {
+      /* storage blocked or full */
+    }
+  }
+  window.addEventListener("pagehide", flushSave);
 
   function savedDesign() {
     if (!KEEPS_DRAFT) return null;
@@ -579,6 +594,16 @@
       materialsTotal: est.materialsTotal,
       grandTotal: est.grandTotal,
       notes: est.notes,
+      // How the labor was priced when this was saved: "own" (the business's
+      // prices throughout), "partial" (sampleLines at the platform's sample
+      // rates), "sample" (no prices set), or "demo". The project page can
+      // say so later, whatever the prices are by then.
+      rates: {
+        mode: ratesMode(est),
+        sampleLines: sampleRateLines(est).map(function (l) {
+          return l.label;
+        }),
+      },
     };
   }
 
@@ -2249,7 +2274,8 @@
   }
 
   function stepHead(step) {
-    var n = STEPS.indexOf(step) + 1;
+    // "design" is the last step without the price estimator: still 6 of 6.
+    var n = STEPS.indexOf(step === "design" ? "estimate" : step) + 1;
     return h("header", { class: "studio-step-head" }, [
       h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
@@ -2469,11 +2495,19 @@
     return templateCache[id];
   }
 
+  // The common bathrooms offered on the Room step (the opening sample room
+  // itself isn't one of them).
+  function shownTemplates() {
+    return Plan.TEMPLATES.filter(function (tpl) {
+      return !tpl.hidden;
+    });
+  }
+
   function roomStep(body) {
     body.appendChild(stepHead("room"));
 
     var grid = h("div", { class: "studio-templates" });
-    Plan.TEMPLATES.forEach(function (tpl) {
+    shownTemplates().forEach(function (tpl) {
       var thumb = h("span", { class: "studio-template-thumb", "data-template": tpl.id });
       if (templateCache[tpl.id]) thumb.appendChild(planSvg(templateCache[tpl.id], { mini: true }));
       grid.appendChild(
@@ -2593,11 +2627,13 @@
 
   function fillTemplateThumbs() {
     if (thumbsPending) return;
-    var missing = Plan.TEMPLATES.filter(function (tpl) {
-      return !templateCache[tpl.id];
-    }).sort(function (a, b) {
-      return a.items.length - b.items.length;
-    });
+    var missing = shownTemplates()
+      .filter(function (tpl) {
+        return !templateCache[tpl.id];
+      })
+      .sort(function (a, b) {
+        return a.items.length - b.items.length;
+      });
     if (!missing.length) return;
     thumbsPending = true;
     setTimeout(function () {
@@ -4110,11 +4146,14 @@
   // it says which lines are still at sample rates.
 
   // The labor lines of this estimate priced at a sample rate because the
-  // owner hasn't set that price ([] in the demo, or with no prices set).
+  // owner hasn't set that price: every line while no prices are set, [] in
+  // the demo (whose sample business the rates belong to).
   function sampleRateLines(est) {
-    if (BIZ.demo || !BIZ.ownPrices) return [];
+    if (BIZ.demo) return [];
+    var lines = (est || estimate()).labor.lines;
+    if (!BIZ.ownPrices) return lines;
     var set = BIZ.priceSet || {};
-    return (est || estimate()).labor.lines.filter(function (line) {
+    return lines.filter(function (line) {
       return !Pricing.linePriceKeys(line.key).some(function (key) {
         return set[key];
       });
@@ -4212,10 +4251,38 @@
     return parts.length ? " (" + parts.join(", ") + ")" : "";
   }
 
+  // The settings file (site-config.json) didn't load, so the estimate is
+  // off for no reason of the owner's: say so, with a way to try again.
+  function settingsFailedBanner() {
+    return h("div", { class: "studio-banner is-warn", role: "note", "data-testid": "settings-failed" }, [
+      h("span", { icon: "alert" }),
+      h("p", { text: T("studio.est.settingsFailed") }),
+      h("button", {
+        type: "button",
+        class: "btn btn-secondary btn-sm",
+        "data-key": "settings-retry",
+        text: T("studio.est.settingsRetry"),
+        onclick: function (e) {
+          var btn = e.currentTarget;
+          btn.disabled = true;
+          var reload = window.SiteConfig && window.SiteConfig.reload;
+          (reload ? reload() : Promise.resolve(null)).then(function (c) {
+            if (c) config = c;
+            renderBar();
+            renderPanel();
+            if (!c || c.loaded === false) toast(T("studio.est.settingsStillOff"));
+            else rileyTalk({ step: true });
+          });
+        },
+      }),
+    ]);
+  }
+
   // ---------- Step 6: the estimate ----------
   function estimateStep(body) {
     var priced = estimatorOn();
     body.appendChild(stepHead(priced ? "estimate" : "design"));
+    if (!priced && config && config.loaded === false) body.appendChild(settingsFailedBanner());
     var est = estimate();
     var problems = errorCount(issues);
     if (problems) {
@@ -4698,7 +4765,10 @@
       return;
     }
     var stepKey = "riley.step." + ui.step;
-    if (ui.step === "estimate" && !BIZ.demo) {
+    if (ui.step === "estimate" && !estimatorOn()) {
+      // Without the price estimator there's no total to talk about.
+      stepKey = BIZ.demo ? "riley.step.design" : "riley.step.designOwner";
+    } else if (ui.step === "estimate" && !BIZ.demo) {
       var mode = ratesMode();
       stepKey =
         mode === "sample"
@@ -4710,7 +4780,9 @@
       // Without the materials estimator the price doesn't follow the picks.
       stepKey = "riley.step.finishesNotPriced";
     }
-    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
+    // The partial-prices line names the lines still at sample rates.
+    var vars = stepKey === "riley.step.estimateOwnerPartial" ? { list: sampleRateList() } : null;
+    var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey, vars);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.
     var gaps = ui.step === "electrical" || ui.step === "estimate" ? fillableGaps() : null;
@@ -4965,7 +5037,7 @@
   }
 
   function startOver() {
-    var fresh = Plan.fromTemplate("full5x8", sizes);
+    var fresh = Plan.fromTemplate("sample", sizes);
     fresh.products = copy(DEFAULT_PICKS);
     ui.selected = null;
     ui.step = "room";
@@ -4980,9 +5052,58 @@
     return errorCount(checkAll(design, nextSizes)) <= errorCount(issues);
   }
 
+  // The 3D module (js/bathroom-room-3d.js), once it has run.
+  function loaded3d() {
+    var r = window.BathroomRoom3D;
+    return r && typeof r.setPlan === "function" ? r : null;
+  }
+
+  function on3dUnavailable() {
+    has3d = false;
+    ui.view = "plan";
+    renderViewbar();
+    renderStage();
+    renderHint();
+    renderPanel();
+    toast(T("studio.no3d"));
+  }
+
+  function start3d() {
+    document.addEventListener("bathroomroom3d:unavailable", on3dUnavailable);
+    room3d.onFrame(positionLabels);
+    room3d.show();
+  }
+
+  // The 3D module arrived after the studio started on the floor plan: take
+  // it up, and show the room the way a fast connection would have.
+  function adopt3d() {
+    document.removeEventListener("bathroomroom3d:loaded", adopt3d);
+    if (room3d || !design) return;
+    room3d = loaded3d();
+    if (!room3d) return;
+    DEFAULT_PICKS = room3d.getProductPicks();
+    room3d.setFitCheck(fitsWith);
+    sizes = room3d.itemSizes();
+    if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
+    has3d = true;
+    wire3d();
+    document.addEventListener("bathroomroom3d:unavailable", on3dUnavailable);
+    room3d.onFrame(positionLabels);
+    refreshNow();
+    setView("3d");
+    fitStage();
+  }
+
   function init() {
     els.studio = document.getElementById("studio");
     if (!els.studio || !Plan || !Pricing) return;
+    if (BIZ.unavailable === "loading" && BIZ.ready) {
+      // The business's profile is still on its way: start once it's here.
+      BIZ.ready.then(function () {
+        if (!BIZ.unavailable) init();
+      });
+      return;
+    }
     if (BIZ.unavailable) return;
     els.panel = document.getElementById("studio-panel");
     els.viewbar = document.getElementById("studio-viewbar");
@@ -5008,21 +5129,23 @@
     });
     buildChrome();
 
-    room3d =
-      window.BathroomRoom3D && typeof window.BathroomRoom3D.setPlan === "function" ? window.BathroomRoom3D : null;
+    room3d = loaded3d();
     if (room3d) {
       DEFAULT_PICKS = room3d.getProductPicks();
       room3d.setFitCheck(fitsWith);
       has3d = true;
     } else {
+      // The 3D module is still on its way (it loads without holding the
+      // page): start on the floor plan and switch to the room when it lands.
       ui.view = "plan";
+      document.addEventListener("bathroomroom3d:loaded", adopt3d);
     }
     sizes = room3d ? room3d.itemSizes() : null;
 
     var linked = pendingOpen ? null : linkedDesign();
     var saved = linked || pendingOpen ? null : savedDesign();
     var opened = pendingOpen ? pendingOpenName : "";
-    design = pendingOpen || linked || saved || Plan.fromTemplate("full5x8", sizes);
+    design = pendingOpen || linked || saved || Plan.fromTemplate("sample", sizes);
     pendingOpen = null;
     if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
     if (linked) {
@@ -5061,19 +5184,7 @@
       if (!inside) els.linkDialog.close();
     });
 
-    if (room3d) {
-      document.addEventListener("bathroomroom3d:unavailable", function () {
-        has3d = false;
-        ui.view = "plan";
-        renderViewbar();
-        renderStage();
-        renderHint();
-        renderPanel();
-        toast(T("studio.no3d"));
-      });
-      room3d.onFrame(positionLabels);
-      room3d.show();
-    }
+    if (room3d) start3d();
 
     var loading = document.getElementById("studio-loading");
     if (loading) loading.remove();

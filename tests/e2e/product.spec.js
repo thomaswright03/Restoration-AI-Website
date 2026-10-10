@@ -49,24 +49,42 @@ test("the landing page shows the plan prices from site-config.json in each langu
   await expect(page.locator(".plan-price").first()).toContainText("US$ 49,99");
 });
 
-test("the landing page's hero shows the designer itself, described in the page's language", async ({ page }) => {
-  for (const [dir, word] of [
-    ["", "layout step"],
-    ["es/", "distribución"],
-    ["pt/", "layout"],
+test("the landing page's hero shows the designer itself, in the page's language, in the first screen", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  for (const [dir, lang, word] of [
+    ["", "en", "layout step"],
+    ["es/", "es", "distribución"],
+    ["pt/", "pt", "layout"],
   ]) {
-    await page.goto(`/${dir}index.html?lang=${dir ? dir.slice(0, 2) : "en"}`);
+    await page.goto(`/${dir}index.html?lang=${lang}`);
     const shot = page.locator(".hero .hero-shot img");
     await expect(shot).toBeVisible();
     await expect(shot).toHaveAttribute("alt", new RegExp(word, "i"));
-    await expect(shot).toHaveAttribute("width", "1440");
-    await expect(shot).toHaveAttribute("height", "743");
-    // A real, loaded image (not a broken one), served as WebP.
+    await expect(shot).toHaveAttribute("width", "1280");
+    await expect(shot).toHaveAttribute("height", "760");
+    // A real, loaded image (not a broken one), served as WebP, this
+    // language's own (scripts/hero-shots.mjs takes one per language).
     await expect
-      .poll(() => shot.evaluate((img) => img.complete && img.naturalWidth > 0 && /\.webp$/.test(img.currentSrc)))
-      .toBe(true);
+      .poll(() => shot.evaluate((img) => img.complete && img.naturalWidth > 0 && img.currentSrc))
+      .toMatch(new RegExp(`/images/hero-designer-${lang}\\.webp$`));
+    // Above the fold at 1440x900: the picture starts in the first screen.
+    const box = await shot.boundingBox();
+    expect(box.y).toBeLessThan(600);
+    expect(box.y + box.height).toBeLessThan(900 + box.height / 2);
     await expect(page.locator(".hero .hero-shot figcaption")).not.toBeEmpty();
   }
+  // On a phone the tighter crop of the room is used, wide enough to read.
+  await page.setViewportSize({ width: 390, height: 812 });
+  await page.goto("/index.html?lang=en");
+  const phone = page.locator(".hero .hero-shot img");
+  await expect
+    .poll(() => phone.evaluate((img) => img.complete && img.currentSrc))
+    .toMatch(/hero-designer-en-phone\.webp$/);
+  const box = await phone.boundingBox();
+  expect(box.width).toBeGreaterThan(340);
+  expect(await phone.evaluate((img) => img.naturalWidth / img.getBoundingClientRect().width)).toBeLessThan(2.1);
 });
 
 test("the demo designer speaks for the sample business", async ({ page }) => {

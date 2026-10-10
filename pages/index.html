@@ -1,25 +1,34 @@
     <main id="main">
-      <section class="hero">
+      <section class="hero hero-landing">
         <div class="hero-inner">
-          <p class="eyebrow center">{{index.eyebrow}}</p>
-          <h1>{{index.h1}}</h1>
-          <p>{{index.lede}}</p>
-          <div class="hero-actions">
-            <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{nav.cta}}</a>
-            <a href="{{@root}}{{@dir}}designer.html" class="btn btn-outline">{{index.tryDemo}}</a>
+          <div class="hero-words">
+            <p class="eyebrow center">{{index.eyebrow}}</p>
+            <h1>{{index.h1}}</h1>
+            <p>{{index.lede}}</p>
+            <div class="hero-actions">
+              <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{nav.cta}}</a>
+              <a href="{{@root}}{{@dir}}designer.html" class="btn btn-outline">{{index.tryDemo}}</a>
+            </div>
+            <p class="hero-note">{{index.heroNote}}</p>
           </div>
-          <p class="hero-note">{{index.heroNote}}</p>
+          <!-- The designer itself, retaken with scripts/hero-shots.mjs (one image per language); phones get a tighter crop of the room. -->
           <figure class="hero-shot">
-            <img
-              src="{{@root}}images/designer-layout-3d.webp"
-              srcset="{{@root}}images/designer-layout-3d-720.webp 720w, {{@root}}images/designer-layout-3d.webp 1440w"
-              sizes="(min-width: 1040px) 960px, calc(100vw - 32px)"
-              width="1440"
-              height="743"
-              alt="{{index.heroImageAlt}}"
-              fetchpriority="high"
-              decoding="async"
-            />
+            <picture>
+              <source
+                media="(max-width: 720px)"
+                srcset="{{@root}}images/hero-designer-{{@lang}}-phone.webp"
+                width="720"
+                height="672"
+              />
+              <img
+                src="{{@root}}images/hero-designer-{{@lang}}.webp"
+                width="1280"
+                height="760"
+                alt="{{index.heroImageAlt}}"
+                fetchpriority="high"
+                decoding="async"
+              />
+            </picture>
             <figcaption>{{index.heroImageCaption}}</figcaption>
           </figure>
         </div>

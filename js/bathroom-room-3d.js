@@ -4191,3 +4191,7 @@ window.BathroomRoom3D = {
     return url;
   },
 };
+
+// The studio may already be running on the floor plan (this module loads
+// without holding the page): tell it the room is ready to be taken up.
+document.dispatchEvent(new CustomEvent("bathroomroom3d:loaded"));

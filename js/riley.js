@@ -24,9 +24,15 @@
   var PREFERRED = {
     en: ["samantha", "ava", "allison", "serena", "karen", "moira", "tessa", "fiona", "victoria", "zira", "female"],
     es: ["monica", "mónica", "paulina", "marisol", "esperanza", "helena", "female"],
-    pt: ["luciana", "joana", "catarina", "fernanda", "female"],
+    // Brazilian voices first (Luciana and Francisca are pt-BR on Apple and
+    // Windows); Joana and Catarina speak European Portuguese.
+    pt: ["luciana", "francisca", "brasil", "brazil", "fernanda", "joana", "catarina", "female"],
   };
+  // The regional accent she speaks each language in: her lines are written
+  // in Brazilian Portuguese and Latin American Spanish, so a voice from that
+  // region (pt-BR before pt-PT, es-US/es-MX before es-ES) comes first.
   var LANG_TAGS = { en: "en-US", es: "es-US", pt: "pt-BR" };
+  var REGIONS = { en: ["en-us"], es: ["es-us", "es-mx", "es-419"], pt: ["pt-br"] };
 
   var speech = window.speechSynthesis || null;
   var muted = false;
@@ -113,11 +119,30 @@
     return autoVoice(mine);
   }
 
-  function autoVoice(mine) {
-    var want = lang();
+  // Voices from the region her lines are written for (REGIONS) come before
+  // the language's other accents, so a Brazilian voice reads her Portuguese
+  // whenever the device has one.
+  function byRegion(list, want) {
+    var regions = REGIONS[want] || [];
+    var regional = list.filter(function (v) {
+      var tag = String(v.lang || "")
+        .toLowerCase()
+        .replace("_", "-");
+      return regions.indexOf(tag) !== -1;
+    });
+    return regional.concat(
+      list.filter(function (v) {
+        return regional.indexOf(v) === -1;
+      }),
+    );
+  }
+
+  function autoVoice(mine, want) {
+    want = want || lang();
+    var ordered = byRegion(mine, want);
     var names = (defaultVoice[want] ? [String(defaultVoice[want]).toLowerCase()] : []).concat(PREFERRED[want] || []);
     for (var i = 0; i < names.length; i++) {
-      var hit = mine.filter(function (v) {
+      var hit = ordered.filter(function (v) {
         return (
           String(v.name || "")
             .toLowerCase()
@@ -128,9 +153,9 @@
     }
     // Failing a name we know, a local voice sounds better than a remote one.
     return (
-      mine.filter(function (v) {
+      ordered.filter(function (v) {
         return v.localService;
-      })[0] || mine[0]
+      })[0] || ordered[0]
     );
   }
 
@@ -467,6 +492,12 @@
     },
 
     stop: stop,
+
+    // The voice she would pick by herself from these voices for a language
+    // ("en", "es", "pt"); for the tests, since the voices come from the device.
+    autoVoiceFor: function (voices, want) {
+      return voices && voices.length ? autoVoice(voices, want) : null;
+    },
   };
 
   window.Riley = Riley;

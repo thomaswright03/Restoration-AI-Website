@@ -1001,7 +1001,47 @@ test("when /api/config fails the notice says why: the server, or the connection"
   await expect(page.locator("#server-down")).not.toContainText(/internet connection/);
   await page.route("**/api/config*", (route) => route.abort("connectionrefused"));
   await page.goto("/es/signup.html");
-  await expect(page.locator("#server-down")).toContainText("No se pudo conectar con el servidor");
+  await expect(page.locator("#server-down")).toContainText("No pudimos conectar con el servidor.");
+  // The heading already says the server couldn't be reached: the line under
+  // it says what to do, not the same thing again.
+  await expect(page.locator("#server-down")).not.toContainText("No se pudo conectar con el servidor");
+  await expect(page.locator("#server-down")).toContainText("Revise su conexión a internet");
+  await page.goto("/account.html");
+  await expect(page.locator("#server-down")).toContainText("We couldn't reach the server.");
+  await expect(page.locator("#server-down")).not.toContainText("The server couldn't be reached");
+  await expect(page.locator("#server-down")).toContainText("Check your internet connection, then try again.");
+});
+
+// When the plan can't be read, no card on the page names a plan: the Projects
+// card shows the counts alone until the plan card knows, then both agree.
+test("when the plan can't be loaded the Projects card doesn't claim one either, and both agree once it loads", async ({
+  page,
+}) => {
+  await signedIn(page, { plan: "starter" });
+  let failing = true;
+  await page.route(SUPABASE + "/rest/v1/subscriptions**", (route) => {
+    if (!failing) return route.fallback();
+    return route.fulfill({ status: 500, json: { code: "PGRST000", message: "db down" } });
+  });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("Your plan details couldn't be loaded", { timeout: 20000 });
+  const summary = page.locator("#projects-summary");
+  await expect(summary).toContainText("0 of 10 new projects this month, 0 of 50 saved.");
+  await expect(summary).not.toContainText(/Starter|plan/i);
+  failing = false;
+  await page.locator("#plan-retry").click();
+  await expect(page.locator("#plan-status")).not.toContainText("couldn't be loaded");
+  await expect(summary).toContainText("Starter plan: 0 of 10 new projects this month, 0 of 50 saved.");
+
+  // On the free plan (no counts to show) the card says the plan is still to come, in Portuguese too.
+  failing = true;
+  await page.route("**/api/projects**", (route) =>
+    route.fulfill({ json: { plan: "free", limits: { monthly: 0, total: 0 }, used: { month: 0, total: 0 } } }),
+  );
+  await page.goto("/pt/account.html");
+  await expect(page.locator("#plan-status")).toContainText("não puderam ser carregados", { timeout: 20000 });
+  await expect(summary).toContainText("O que o seu plano permite vai aparecer aqui");
+  await expect(summary).not.toContainText(/grátis/i);
 });
 
 // The account page shows the owner's full designer address, not only its

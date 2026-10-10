@@ -145,6 +145,8 @@
     "proj.usage.total": "Saved projects: {used} of {limit}",
     "proj.summary.free": "You're on the free plan: you can use the designer, but saving projects needs a paid plan.",
     "proj.summary.paid": "{plan} plan: {month} of {monthly} new projects this month, {total} of {limit} saved.",
+    "proj.summary.counts": "{month} of {monthly} new projects this month, {total} of {limit} saved.",
+    "proj.summary.planPending": "What your plan allows will show here once your plan details load.",
     "proj.updated": "Updated {date}",
     "proj.open": "Open",
     "proj.openNamed": "Open {name}",

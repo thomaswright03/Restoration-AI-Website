@@ -148,6 +148,8 @@
     "proj.summary.free":
       "Tiene el plan gratis: puede usar el diseñador, pero para guardar proyectos necesita un plan de pago.",
     "proj.summary.paid": "Plan {plan}: {month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+    "proj.summary.counts": "{month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+    "proj.summary.planPending": "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
     "proj.updated": "Actualizado el {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",

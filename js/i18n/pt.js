@@ -148,6 +148,8 @@
     "proj.summary.free":
       "Você está no plano grátis: pode usar o projetista, mas para salvar projetos precisa de um plano pago.",
     "proj.summary.paid": "Plano {plan}: {month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    "proj.summary.counts": "{month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    "proj.summary.planPending": "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
     "proj.updated": "Atualizado em {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",

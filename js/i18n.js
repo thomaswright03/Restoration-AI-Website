@@ -306,6 +306,18 @@
       "Plan {plan}: {month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
       "Plano {plan}: {month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
     ],
+    // The same two lines while the plan card can't say which plan this is:
+    // this card doesn't name one either.
+    "proj.summary.counts": [
+      "{month} of {monthly} new projects this month, {total} of {limit} saved.",
+      "{month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
+      "{month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
+    ],
+    "proj.summary.planPending": [
+      "What your plan allows will show here once your plan details load.",
+      "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
+      "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
+    ],
     "proj.updated": ["Updated {date}", "Actualizado el {date}", "Atualizado em {date}"],
     "proj.open": ["Open", "Abrir", "Abrir"],
     "proj.openNamed": ["Open {name}", "Abrir {name}", "Abrir {name}"],

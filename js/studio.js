@@ -456,6 +456,7 @@
     if (!KEEPS_DRAFT) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
+      saveTimer = null;
       try {
         localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
       } catch (e) {
@@ -463,6 +464,20 @@
       }
     }, 300);
   }
+
+  // Leaving the page (a reload, a link) writes a save that's still waiting
+  // for its debounce, so the last edit is there when the page comes back.
+  function flushSave() {
+    if (!KEEPS_DRAFT || !saveTimer || !design) return;
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
+    } catch (e) {
+      /* storage blocked or full */
+    }
+  }
+  window.addEventListener("pagehide", flushSave);
 
   function savedDesign() {
     if (!KEEPS_DRAFT) return null;

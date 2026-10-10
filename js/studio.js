@@ -2322,7 +2322,15 @@
     var next = STEPS[i + 1];
     var left = next ? missingFor(ui.step) : [];
     if (!left.length && ui.missing === ui.step) ui.missing = null;
+    var shown = ui.step === "estimate" && !estimatorOn() ? "design" : ui.step;
     return h("nav", { class: "studio-step-nav", "aria-label": T("studio.stepNav") }, [
+      // On a phone the bar is fixed to the bottom of the screen (css), so it
+      // names the step whose heading may be scrolled away.
+      h("p", {
+        class: "studio-step-nav-title",
+        "aria-hidden": "true",
+        text: T("studio.stepOf", { n: i + 1, total: STEPS.length }) + " \u00b7 " + T("studio.step." + shown + ".title"),
+      }),
       left.length
         ? h("p", {
             class: "studio-step-need" + (ui.missing === ui.step ? " is-missing" : ""),

@@ -101,6 +101,10 @@ test("while the database hangs, the owner's designer paints its loading state at
   await page.goto("/designer.html?b=smith-bath", { waitUntil: "commit" });
   await expect(page.locator("#studio-loading")).toBeVisible();
   expect(Date.now() - t0).toBeLessThan(2000);
+  // Nothing of the sample business shows while the owner's loads: no
+  // "Sample Remodeling Co." in the header for the whole wait.
+  await expect(page.locator(".studio-biz")).toBeHidden();
+  await expect(page.locator(".studio-biz")).toHaveText("");
   await expect(page.locator("#designer-failed")).toBeHidden();
   await expect(page.locator("#designer-unavailable")).toBeHidden();
   // The time limit: a clear message, not "only for its owner", with Try again.

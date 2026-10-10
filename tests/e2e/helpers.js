@@ -92,6 +92,38 @@ async function expectNoPlaceholders(page) {
   expect(live || "", "unfilled i18n placeholder in the live region").not.toMatch(/\{\w+\}/);
 }
 
+// A pause before a mocked answer, for the slow and out-of-order answers a
+// real server gives (the sign-in check, the business profile and the
+// projects API race on live; the instant mocks hid a race in round 4). A
+// mock awaits delayed(ms) before it fulfils.
+function delayed(ms) {
+  return ms ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
+// Holds the sign-in library (js/vendor/supabase/supabase.js) for ms, so the
+// sign-in check finishes after whatever else is on its way. One route per
+// page; call it before signedIn's routes or after, as the order of routes
+// doesn't matter for a different URL.
+async function slowSignIn(page, ms) {
+  if (!ms) return;
+  await page.route("**/js/vendor/supabase/supabase.js", async (route) => {
+    await delayed(ms);
+    return route.continue();
+  });
+}
+
+// The orders two async answers can arrive in, for a test that must pass in
+// both: [{ a: ms, b: 0 }, { a: 0, b: ms }] named by the keys given.
+function orders(first, second, ms = 1500) {
+  const a = {};
+  a[first] = ms;
+  a[second] = 0;
+  const b = {};
+  b[first] = 0;
+  b[second] = ms;
+  return [a, b];
+}
+
 const step = (page, name) => page.locator(`.studio-step-btn[data-step="${name}"]`);
 const byKey = (page, key) => page.locator(`[data-key="${key}"]`);
 const studioStatus = (page) => page.locator(".studio-status");
@@ -107,6 +139,9 @@ module.exports = {
   confirmStack,
   onScreen,
   expectNoPlaceholders,
+  delayed,
+  slowSignIn,
+  orders,
   step,
   byKey,
   studioStatus,

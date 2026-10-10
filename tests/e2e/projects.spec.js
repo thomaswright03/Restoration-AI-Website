@@ -8,11 +8,21 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
-const { openStudio, answerAll, step } = require("./helpers.js");
+const { openStudio, answerAll, step, delayed, slowSignIn, orders } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
-async function signedIn(page, { plan = "starter", projects = [], used, limits, prices = {}, bizDelay = 0 } = {}) {
+// delays (ms) hold each mocked answer, so a flow can be run with the slow and
+// out-of-order answers live gives: signin (the sign-in library, so the
+// sign-in check finishes late), business (the designer's /api/business
+// profile), businessRow (the businesses row My projects and the project page
+// read), projects (/api/projects). bizDelay is the old name of delays.business.
+async function signedIn(
+  page,
+  { plan = "starter", projects = [], used, limits, prices = {}, bizDelay = 0, delays = {} } = {},
+) {
+  delays = Object.assign({ business: bizDelay }, delays);
+  await slowSignIn(page, delays.signin);
   const state = {
     plan,
     limits: limits || (plan === "free" ? { monthly: 0, total: 0 } : { monthly: 10, total: 50 }),
@@ -27,10 +37,13 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
   );
   // Later routes win: anything else Supabase is asked gets an empty answer.
   await page.route(SUPABASE + "/**", (route) => route.fulfill({ json: {} }));
-  await page.route(SUPABASE + "/rest/v1/businesses**", (route) => route.fulfill({ json: { slug: "smith-bath" } }));
+  await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
+    await delayed(delays.businessRow);
+    return route.fulfill({ json: { slug: "smith-bath" } });
+  });
   // The business's designer profile, as api/business.js would send it.
   await page.route("**/api/business?b=smith-bath*", async (route) => {
-    if (bizDelay) await new Promise((resolve) => setTimeout(resolve, bizDelay));
+    await delayed(delays.business);
     return route.fulfill({
       contentType: "application/javascript",
       body: `window.DesignerBusiness.load(${JSON.stringify({ slug: "smith-bath", name: "Smith Bath Co.", prices })});`,
@@ -41,6 +54,7 @@ async function signedIn(page, { plan = "starter", projects = [], used, limits, p
     const url = new URL(req.url());
     const body = req.postData() ? JSON.parse(req.postData()) : null;
     state.calls.push({ method: req.method(), id: url.searchParams.get("id"), body });
+    await delayed(delays.projects);
     const find = (id) => state.projects.find((p) => p.id === id);
     if (req.method() === "GET" && url.searchParams.get("id")) {
       const p = find(url.searchParams.get("id"));
@@ -251,19 +265,112 @@ test("the designer opens a saved project as that project: no link toast, its ans
   await expect(page.locator("#project-status")).toContainText("Unsaved changes");
 });
 
-test("a business profile that answers after the sign-in check still opens the saved project and shows the save bar", async ({
+// The race round 4 shipped (9c0c220): the sign-in check and the business
+// profile load side by side, and on live the profile is the slower one. Both
+// orders must open the saved project and show the save bar, and nothing of
+// the sample business shows while the owner's profile is on its way.
+test("the owner's designer opens a saved project and shows the save bar whichever answers first: the business profile or the sign-in check", async ({
   page,
 }) => {
+  test.setTimeout(150000);
   await page.goto("/designer.html");
   const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
-  await signedIn(page, { projects: [{ id: "a1", name: "Late bath", design, updated_at: DAY }], bizDelay: 1500 });
-  await openStudio(page, "/designer.html?b=smith-bath&project=a1");
-  await expect(page.locator("#project-bar")).toContainText("Project: Late bath");
-  await expect(page.locator("#studio-loading")).toBeHidden();
-  // The owner's designer with no project keeps its save bar too.
-  await openStudio(page, "/designer.html?b=smith-bath");
-  await expect(page.locator("#project-bar")).toBeVisible();
-  await expect(page.locator("#project-save-form")).toBeVisible();
+  for (const delays of orders("business", "signin")) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { projects: [{ id: "a1", name: "Late bath", design, updated_at: DAY }], delays });
+    await page.goto("/designer.html?b=smith-bath&project=a1");
+    // The header never says "Sample Remodeling Co." while the business loads
+    // (the hung-lookup test in business-profile.spec.js watches the whole wait).
+    await expect(page.locator(".studio-biz"), which).not.toContainText("Sample");
+    await expect(page.locator(".studio-step-btn"), which).toHaveCount(6, { timeout: 30000 });
+    await expect(page.locator("#project-bar"), which).toContainText("Project: Late bath");
+    await expect(page.locator("#project-save"), which).toBeVisible();
+    await expect(page.locator("#studio-loading"), which).toBeHidden();
+    await expect(page.locator(".studio-biz"), which).toHaveText("Smith Bath Co.");
+    // The owner's designer with no project keeps its save bar too.
+    await page.goto("/designer.html?b=smith-bath");
+    await expect(page.locator(".studio-step-btn"), which).toHaveCount(6, { timeout: 30000 });
+    await expect(page.locator("#project-bar"), which).toBeVisible({ timeout: 15000 });
+    await expect(page.locator("#project-save-form"), which).toBeVisible();
+    await expect(page.locator("#project-bar"), which).toContainText("isn't saved");
+  }
+});
+
+// The same for the project API answering late: the bar waits ("Opening…")
+// and never offers a Save that would make a second project.
+test("the owner's designer with the projects API slower than the sign-in and the profile still opens the project", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  await signedIn(page, {
+    projects: [{ id: "a1", name: "Slow API bath", design, updated_at: DAY }],
+    delays: { projects: 2000 },
+  });
+  await page.goto("/designer.html?b=smith-bath&project=a1");
+  await expect(page.locator("#project-bar")).toContainText("Opening your project…", { timeout: 15000 });
+  await expect(page.locator("#project-save")).toBeHidden();
+  await expect(page.locator("#project-bar")).toContainText("Project: Slow API bath", { timeout: 30000 });
+  await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
+  await expect(page.locator("#project-save")).toBeVisible();
+});
+
+// My projects and a project's page read the projects API and the business
+// row side by side, after the sign-in check: every order must land on the
+// owner's designer, never the demo one, with the list or the 3D viewer in.
+test("My projects lists the projects whichever answers first: the business row, the projects API or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(90000);
+  const projects = [
+    { id: "a1", name: "Smith main bath", design: "", updated_at: DAY },
+    { id: "a2", name: "Lee guest bath", design: "", updated_at: DAY },
+  ];
+  const runs = orders("businessRow", "projects").concat(orders("signin", "businessRow"), orders("signin", "projects"));
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    await signedIn(page, { projects, delays });
+    await page.goto("/projects.html");
+    await expect(page.locator("#projects-loading"), which).toBeVisible();
+    await expect(page.locator(".project-item"), which).toHaveCount(2, { timeout: 15000 });
+    await expect(page.locator("#projects-plan"), which).toHaveText("Plan: Starter");
+    await expect(page.locator("#project-new"), which).toHaveAttribute("href", /designer\.html\?b=smith-bath$/);
+    await expect(page.locator("#projects-failed"), which).toBeHidden();
+  }
+});
+
+test("a project's page and its 3D model tab open whichever answers first: the business row, the projects API or the sign-in check", async ({
+  page,
+}) => {
+  test.setTimeout(240000);
+  await page.goto("/designer.html");
+  const design = await page.evaluate(() => window.RoomPlan.encode(window.RoomPlan.fromTemplate("full5x8", null)));
+  const runs = orders("businessRow", "projects").concat(orders("signin", "businessRow"));
+  for (const delays of runs) {
+    const which = JSON.stringify(delays);
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+    // The viewer in the frame loads the business profile and the project
+    // too, with the same delays.
+    await signedIn(page, {
+      projects: [{ id: "a1", name: "Garcia bath", design, info: {}, updated_at: DAY }],
+      delays: Object.assign({ business: delays.businessRow || 0 }, delays),
+    });
+    await page.goto("/project.html?id=a1");
+    await expect(page.locator("#project-title"), which).toHaveText("Garcia bath", { timeout: 15000 });
+    await expect(page.locator("#project-edit"), which).toHaveAttribute(
+      "href",
+      /designer\.html\?b=smith-bath&project=a1$/,
+    );
+    await expect(page.locator("#project-model-frame"), which).toHaveAttribute("src", /b=smith-bath.*embed=1$/);
+    const frame = page.frameLocator("#project-model-frame");
+    await expect(frame.locator("#studio-loading"), which).toBeHidden({ timeout: 40000 });
+    await expect(frame.locator("#room-3d-canvas canvas"), which).toBeVisible({ timeout: 40000 });
+    await expect(frame.locator(".studio-biz"), which).toHaveText("Smith Bath Co.");
+    await expect(frame.locator("#designer-failed"), which).toBeHidden();
+  }
 });
 
 test("on the free plan the designer works but has no save button", async ({ page }) => {
@@ -1186,9 +1293,14 @@ test("a saved project that can't be opened says so with a way out: Try again for
   await expect(panel).toContainText("Couldn't open the project.");
   await expect(panel.getByRole("button", { name: "Try again" })).toBeVisible();
   await expect(panel.locator(".studio-loading-slow")).toBeHidden();
+  // Nothing on the page still says it's loading: the canvas's words go too.
+  await expect(page.locator("#room-3d-canvas")).toHaveAttribute("data-loading", "");
+  await expect(page.locator("#studio")).not.toContainText("Loading the designer");
 
   failing = false;
   await bar.getByRole("button", { name: "Try again" }).click();
+  // While it tries again, the loading words are back.
+  await expect(page.locator("#room-3d-canvas")).toHaveAttribute("data-loading", "Loading the designer…");
   await expect(bar).toContainText("Project: Old job", { timeout: 30000 });
   await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 30000 });
   await expect(page.locator("#project-save")).toBeVisible();

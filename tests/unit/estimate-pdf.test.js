@@ -27,7 +27,9 @@ function fakeJsPdf() {
     line() {},
     rect() {},
     addImage() {},
-    textWithLink() {},
+    textWithLink(t, x, y, opts) {
+      texts.push({ text: String(t), page, y, link: opts && opts.url });
+    },
     getImageProperties: () => ({ width: 3, height: 2 }),
     getTextWidth: (t) => String(t).length * 5,
     // About 80 characters to a full-width line, like the real font at 11pt.
@@ -68,7 +70,7 @@ function build(spec) {
   return fake.texts;
 }
 
-function spec(lineCount) {
+function spec(lineCount, overrides) {
   const lines = [];
   for (let i = 1; i <= lineCount; i++)
     lines.push({ label: "Line " + i, detail: "1 unit × $100.00", amount: "$100.00" });
@@ -89,22 +91,54 @@ function spec(lineCount) {
     afterTotal: ["Non-binding."],
     sections: [],
     footer: { business: "Smith Bath Co.", date: "Oct 10, 2026" },
+    ...overrides,
   };
 }
 
 const pageOf = (texts, re) => texts.find((t) => re.test(t.text)).page;
 
-test("the subtotals and total share a page with at least the last line item, however many lines there are", () => {
+test("the subtotals and total share a page with the row before them, and the rows before that fill their pages", () => {
   // Every count from a few lines to several pages' worth: the totals are
-  // never on a page by themselves.
+  // never on a page by themselves, and the table never leaves a page half
+  // empty: at most the one row before the totals moves on with them.
   for (let n = 1; n <= 120; n++) {
     const texts = build(spec(n));
     const lastLine = pageOf(texts, new RegExp("^Line " + n + "$"));
+    const lastRow = pageOf(texts, /^Permits and taxes/);
     const total = pageOf(texts, /^Estimated Total/);
     const laborSubtotal = pageOf(texts, /^Labor Subtotal/);
-    assert.equal(total, lastLine, n + " lines: the total is on the last line item's page");
-    assert.equal(laborSubtotal, lastLine, n + " lines: the subtotals are on the last line item's page");
+    assert.equal(total, lastRow, n + " lines: the total is on the page of the row before it");
+    assert.equal(laborSubtotal, lastRow, n + " lines: the subtotals are on the page of the row before them");
+    assert.ok(lastLine >= total - 1, n + " lines: the line items run up to the totals' page");
+    // The line before the last never moves on with the totals: when the
+    // totals start a new page, only the row right before them came along.
+    if (n >= 2) {
+      const beforeLast = pageOf(texts, new RegExp("^Line " + (n - 1) + "$"));
+      const firstExcluded = pageOf(texts, /^Other work/);
+      assert.ok(firstExcluded <= total, n + " lines: the not-included rows come before the totals");
+      assert.ok(beforeLast >= firstExcluded - 1, n + " lines: the rows flow one after another");
+    }
   }
+});
+
+test("without not-included rows, the totals share a page with the last line item", () => {
+  for (let n = 1; n <= 120; n++) {
+    const texts = build(spec(n, { excluded: [] }));
+    const lastLine = pageOf(texts, new RegExp("^Line " + n + "$"));
+    assert.equal(pageOf(texts, /^Estimated Total/), lastLine, n + " lines");
+    assert.equal(pageOf(texts, /^Labor Subtotal/), lastLine, n + " lines");
+  }
+});
+
+test("a link item prints its address under the linked text, so it works on paper too", () => {
+  const url = "https://example.com/designer.html#design=abc";
+  const texts = build(spec(3, { sections: [{ title: "Open this design", items: [{ text: "Open in 3D at:", url }] }] }));
+  const label = texts.find((t) => t.text === "Open in 3D at:");
+  assert.ok(label && label.link === url, "the text is linked");
+  const address = texts.find((t) => t.text === url);
+  assert.ok(address && address.link === url, "the address is printed and linked");
+  assert.ok(address.page === label.page && address.y > label.y, "the address sits under the text");
+  assert.ok(!texts.some((t) => /click here/i.test(t.text)));
 });
 
 test("the footer is on every page, numbered", () => {

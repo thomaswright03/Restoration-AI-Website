@@ -17,6 +17,10 @@
   --studio-plan-body: #ffffff;
   --studio-plan-wall: #1e2946;
   --studio-stage-bg: #e8eef9;
+  /* Labels on the room keep their white text in both themes. */
+  --studio-label-warn: #b45309;
+  --studio-label-error: #c2283c;
+  --studio-white: #ffffff; /* stays white in both themes: a toggle's knob, the backing of product photos */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -99,16 +103,16 @@ main.studio-page.solid-header {
 .designer-intro-badge {
   display: inline-block;
   margin-right: var(--space-2);
-  padding: 2px 10px;
+  padding: var(--space-05) var(--space-3);
   border-radius: var(--radius-pill);
   background: rgba(94, 234, 212, 0.16);
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
   font-weight: 600;
 }
 
 .studio-page .designer-intro .btn {
   flex: none;
-  min-height: 40px;
+  min-height: var(--tap);
   padding: var(--space-2) var(--space-5);
   font-size: var(--fs-sm);
 }
@@ -212,13 +216,13 @@ main.studio-page.solid-header {
 
 .studio-step-btn[aria-current="step"] {
   background: var(--color-accent-bright);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-step-btn[aria-current="step"] .studio-step-num {
   border-color: transparent;
   background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-actions {
@@ -287,7 +291,7 @@ main.studio-page.solid-header {
 }
 
 .studio-total-chip-label {
-  font-size: 0.75rem;
+  font-size: var(--fs-2xs);
   color: var(--color-muted);
 }
 
@@ -422,7 +426,7 @@ main.studio-page.solid-header {
   left: 0;
   top: 0;
   white-space: nowrap;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1;
   will-change: transform;
@@ -439,31 +443,31 @@ main.studio-page.solid-header {
   height: 26px;
   border-radius: 50%;
   background: rgba(10, 16, 36, 0.78);
-  color: #fff;
+  color: var(--color-on-dark);
   font-family: var(--font-display);
 }
 
 .studio-label.is-name {
-  padding: 6px 10px;
+  padding: var(--space-15) var(--space-3);
   border-radius: var(--radius-pill);
   background: var(--studio-select);
-  color: #fff;
+  color: var(--color-on-dark);
   box-shadow: 0 6px 16px -6px rgba(10, 16, 36, 0.5);
 }
 
 .studio-label.is-name.is-warn {
-  background: #b45309;
+  background: var(--studio-label-warn);
 }
 
 .studio-label.is-name.is-error {
-  background: #c2283c;
+  background: var(--studio-label-error);
 }
 
 .studio-label.is-gap {
-  padding: 4px 7px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.92);
-  color: #0f172a;
+  color: var(--color-dark);
   box-shadow: 0 2px 8px -2px rgba(10, 16, 36, 0.35);
   font-variant-numeric: tabular-nums;
 }
@@ -488,7 +492,7 @@ main.studio-page.solid-header {
 
 .studio-views {
   display: inline-flex;
-  padding: 3px;
+  padding: var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
   box-shadow: var(--shadow-soft);
@@ -498,7 +502,7 @@ main.studio-page.solid-header {
 .studio-view-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-15);
   min-height: var(--tap);
   min-width: var(--tap);
   justify-content: center;
@@ -520,7 +524,7 @@ main.studio-page.solid-header {
 
 .studio-view-btn[aria-pressed="true"] {
   background: var(--color-dark);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-view-btn:disabled {
@@ -548,13 +552,13 @@ main.studio-page.solid-header {
 .studio-viewbar > .studio-view-btn[aria-pressed="true"] {
   border-color: var(--color-dark);
   background: var(--color-dark);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-status {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-15);
   min-height: 44px;
   margin-left: auto;
   padding: 0 var(--space-4) 0 var(--space-3);
@@ -630,7 +634,7 @@ main.studio-page.solid-header {
   padding: 4px 4px 4px var(--space-3);
   border-radius: var(--radius-pill);
   background: var(--color-dark);
-  color: #fff;
+  color: var(--color-on-dark);
   box-shadow: var(--shadow);
   font-size: var(--fs-sm);
 }
@@ -647,11 +651,11 @@ main.studio-page.solid-header {
 }
 
 .studio-selchip .studio-link-btn {
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
 }
 
 .studio-selchip .studio-icon-btn {
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-selchip :focus-visible,
@@ -673,7 +677,7 @@ main.studio-page.solid-header {
   padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
   border-radius: var(--radius);
   background: var(--color-dark);
-  color: #fff;
+  color: var(--color-on-dark);
   box-shadow: var(--shadow);
   font-size: var(--fs-sm);
   line-height: 1.4;
@@ -691,7 +695,7 @@ main.studio-page.solid-header {
   border: 0;
   border-radius: var(--radius-pill);
   background: rgba(94, 234, 212, 0.16);
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
@@ -710,7 +714,7 @@ main.studio-page.solid-header {
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #c9d3ea;
+  color: var(--color-on-dark-soft);
   cursor: pointer;
 }
 
@@ -743,11 +747,11 @@ main.studio-page.solid-header {
   bottom: var(--space-3);
   max-width: min(440px, calc(100% - 240px));
   margin: 0;
-  padding: 6px 10px;
+  padding: var(--space-15) var(--space-3);
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--color-surface) 82%, transparent);
   color: var(--color-ink-soft);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   line-height: 1.4;
   pointer-events: none;
 }
@@ -934,12 +938,14 @@ main.studio-page.solid-header {
   stroke: var(--studio-error);
 }
 
+/* Ink on surface: a dark disc with white letters in light mode, a light
+   disc with dark letters in dark mode, so A-D read on the mini plan too. */
 .plan-wall-tag circle {
-  fill: var(--color-dark);
+  fill: var(--color-ink);
 }
 
 .plan-wall-tag text {
-  fill: #fff;
+  fill: var(--color-surface);
   text-anchor: middle;
   font-weight: 700;
 }
@@ -1071,6 +1077,17 @@ main.studio-page.solid-header {
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* "Step 1 of 6 · Your room": shown in the bar on a phone only, where the
+   bar is fixed to the bottom and the step's heading may be off screen. */
+.studio-step-nav-title {
+  display: none;
+  flex: 1 0 100%;
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-accent-text);
+}
+
 .studio-step-nav .btn {
   min-height: 44px;
   padding: var(--space-2) var(--space-5);
@@ -1126,7 +1143,7 @@ main.studio-page.solid-header {
 
 .studio-selchip .studio-icon-btn:hover {
   background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-icon-btn .icon {
@@ -1148,7 +1165,7 @@ main.studio-page.solid-header {
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-15);
 }
 
 /* Choice buttons that work like radio buttons. */
@@ -1222,7 +1239,7 @@ main.studio-page.solid-header {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--studio-white);
   box-shadow: 0 1px 3px rgba(10, 16, 36, 0.35);
   transition: transform 0.2s var(--ease);
 }
@@ -1238,11 +1255,11 @@ main.studio-page.solid-header {
 .studio-toggle label {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-05);
   font-size: var(--fs-base);
   color: var(--color-ink);
   cursor: pointer;
-  padding-top: 3px;
+  padding-top: var(--space-1);
 }
 
 .studio-toggle small {
@@ -1254,7 +1271,7 @@ main.studio-page.solid-header {
 .studio-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-15);
 }
 
 .studio-field > label,
@@ -1363,7 +1380,7 @@ main.studio-page.solid-header {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 4px;
+  gap: var(--space-1);
   padding: var(--space-2);
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
@@ -1383,7 +1400,7 @@ main.studio-page.solid-header {
   display: grid;
   place-items: center;
   height: 74px;
-  padding: 6px;
+  padding: var(--space-15);
   border-radius: var(--radius-sm);
   background: var(--studio-plan-bg);
 }
@@ -1400,7 +1417,7 @@ main.studio-page.solid-header {
 }
 
 .studio-template-size {
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   color: var(--color-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -1458,7 +1475,7 @@ main.studio-page.solid-header {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-15);
   min-height: 78px;
   justify-content: center;
   padding: var(--space-2);
@@ -1467,7 +1484,7 @@ main.studio-page.solid-header {
   background: var(--color-surface);
   color: var(--color-ink);
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -1490,7 +1507,7 @@ main.studio-page.solid-header {
 
 .studio-add:hover:not(:disabled) .studio-add-icon {
   background: var(--color-accent-bright);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .studio-add:disabled {
@@ -1513,14 +1530,14 @@ main.studio-page.solid-header {
 .studio-arrangement {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   padding: var(--space-2);
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
   background: var(--studio-plan-bg);
   color: var(--color-ink);
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   text-align: left;
   cursor: pointer;
 }
@@ -1595,7 +1612,7 @@ main.studio-page.solid-header {
 
 .studio-issues li .studio-link-btn {
   flex: none;
-  margin: -6px -4px -6px 0;
+  margin: calc(-1 * var(--space-15)) calc(-1 * var(--space-1)) calc(-1 * var(--space-15)) 0;
 }
 
 .studio-issues.is-compact li {
@@ -1667,7 +1684,7 @@ main.studio-page.solid-header {
 
 .studio-item-text small {
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1773,8 +1790,8 @@ main.studio-page.solid-header {
 .studio-swatch {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 6px;
+  gap: var(--space-1);
+  padding: var(--space-15);
   border: 1px solid var(--color-line);
   border-radius: var(--radius);
   background: var(--color-surface);
@@ -1795,7 +1812,7 @@ main.studio-page.solid-header {
 }
 
 .studio-swatch-name {
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1805,7 +1822,7 @@ main.studio-page.solid-header {
 }
 
 .studio-swatch-price {
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--color-accent-text);
 }
@@ -1861,7 +1878,7 @@ main.studio-page.solid-header {
   border-radius: var(--radius-lg);
   background:
     linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
-    linear-gradient(135deg, #3355f0, #14b8a6) border-box;
+    linear-gradient(135deg, var(--color-accent-bright), var(--color-accent)) border-box;
   border-top: 4px solid transparent;
 }
 
@@ -1882,7 +1899,7 @@ main.studio-page.solid-header {
 
 .studio-lines-title {
   margin: var(--space-2) 0 var(--space-1);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1917,7 +1934,7 @@ main.studio-page.solid-header {
 
 .studio-line-label small {
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
 }
 
 .studio-line-amount {
@@ -1959,7 +1976,7 @@ main.studio-page.solid-header {
 .studio-total strong {
   font-family: var(--font-display);
   font-size: var(--fs-xl);
-  color: #5eead4;
+  color: var(--color-highlight-on-dark);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -1982,7 +1999,7 @@ main.studio-page.solid-header {
 .studio-ext-link {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: var(--space-1);
   color: var(--color-accent-text);
   font-weight: 600;
 }
@@ -2016,7 +2033,7 @@ main.studio-page.solid-header {
 
 .studio-disclaimer {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   line-height: 1.55;
   color: var(--color-muted);
 }
@@ -2055,7 +2072,7 @@ main.studio-page.solid-header {
 .studio-disclosure {
   margin: 0;
   padding: var(--space-3) var(--gutter);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   color: var(--color-muted);
   text-align: center;
 }
@@ -2103,7 +2120,7 @@ main.studio-page.solid-header {
 /* Show examples: a product's listing photos as a slideshow. */
 .studio-examples-btn {
   align-self: flex-start;
-  margin-top: 2px;
+  margin-top: var(--space-05);
   padding: 0;
 }
 
@@ -2133,9 +2150,9 @@ main.studio-page.solid-header {
 }
 
 .studio-dialog .studio-photos-model {
-  margin: 2px 0 0;
+  margin: var(--space-05) 0 0;
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
 }
 
 .studio-photos-stage {
@@ -2151,7 +2168,7 @@ main.studio-page.solid-header {
   width: 100%;
   height: min(62vh, 560px);
   object-fit: contain;
-  background: #fff;
+  background: var(--studio-white);
 }
 
 .studio-photos-nav {
@@ -2171,7 +2188,7 @@ main.studio-page.solid-header {
   border: 0;
   border-radius: 999px;
   background: rgba(10, 16, 36, 0.72);
-  color: #fff;
+  color: var(--color-on-dark);
   cursor: pointer;
   pointer-events: auto;
 }
@@ -2181,7 +2198,7 @@ main.studio-page.solid-header {
 }
 
 .studio-photos-arrow:focus-visible {
-  outline: 3px solid var(--color-focus-on-dark, #fff);
+  outline: 3px solid var(--color-focus-on-dark);
   outline-offset: 2px;
 }
 
@@ -2189,11 +2206,11 @@ main.studio-page.solid-header {
   position: absolute;
   right: var(--space-2);
   bottom: var(--space-2);
-  padding: 2px 10px;
+  padding: var(--space-05) var(--space-3);
   border-radius: 999px;
   background: rgba(10, 16, 36, 0.78);
-  color: #fff;
-  font-size: 0.8125rem;
+  color: var(--color-on-dark);
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 
@@ -2201,7 +2218,7 @@ main.studio-page.solid-header {
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-3);
-  padding-bottom: 4px;
+  padding-bottom: var(--space-1);
   overflow-x: auto;
 }
 
@@ -2213,7 +2230,7 @@ main.studio-page.solid-header {
   border: 2px solid transparent;
   border-radius: var(--radius);
   overflow: hidden;
-  background: #fff;
+  background: var(--studio-white);
   cursor: pointer;
   opacity: 0.7;
 }
@@ -2351,14 +2368,33 @@ main.studio-page.solid-header {
     max-height: none;
   }
 
+  /* The stage stacks: the view buttons and the fit check in a row of their
+     own, then the room under them, so no control ever covers the wall
+     letters or a fixture on a phone. */
   .studio-stage {
     position: sticky;
     top: 0;
     z-index: 5;
-    height: 46vh;
-    height: 46svh;
-    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    height: auto;
     border-bottom: 1px solid var(--color-line);
+  }
+
+  .studio-viewbar {
+    position: static;
+    flex: none;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .studio-room,
+  .studio-plan {
+    position: relative;
+    inset: auto;
+    flex: none;
+    height: 38vh;
+    height: 38svh;
+    min-height: 250px;
   }
 
   /* While filling in the request, the room steps aside. */
@@ -2372,15 +2408,40 @@ main.studio-page.solid-header {
     border-left: 0;
   }
 
+  /* Room at the bottom for the step bar, which is fixed there (below). */
   .studio-step {
-    padding: var(--space-5) var(--space-4) 0;
+    padding: var(--space-5) var(--space-4) calc(var(--tap) + 3 * var(--space-5) + 2 * var(--space-2));
   }
 
+  /* The step bar: the step's name, what it still needs and Next, fixed to
+     the bottom of the screen, so how to go on is always in reach however
+     long the step's panel is. */
   .studio-step-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    box-shadow: var(--shadow);
+  }
+
+  .studio-step-nav-title {
+    display: block;
+  }
+
+  /* The last step has no Next: its bar scrolls with it as on a desktop. */
+  .studio[data-step="estimate"] .studio-step {
+    padding-bottom: 0;
+  }
+
+  .studio[data-step="estimate"] .studio-step-nav {
+    position: sticky;
     margin-left: calc(-1 * var(--space-4));
     margin-right: calc(-1 * var(--space-4));
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
+    box-shadow: none;
   }
 
   .studio-total {
@@ -2415,7 +2476,7 @@ main.studio-page.solid-header {
 
   .studio-mini {
     width: 104px;
-    padding: 4px;
+    padding: var(--space-1);
   }
 
   .studio-toast {
@@ -2427,7 +2488,7 @@ main.studio-page.solid-header {
   }
 
   .studio-plan {
-    padding: 60px var(--space-3) var(--space-3);
+    padding: var(--space-3);
   }
 }
 
@@ -2445,7 +2506,7 @@ main.studio-page.solid-header {
 
   .designer-intro-text strong {
     display: block;
-    margin: 4px 0 0;
+    margin: var(--space-1) 0 0;
   }
 }
 
@@ -2570,7 +2631,7 @@ html[data-embed="1"] .studio-plan {
 .studio-add-icon.is-point,
 .studio-item-icon.is-point,
 .studio-selchip-icon.is-point {
-  font-size: 1.05rem;
+  font-size: var(--fs-base);
   font-weight: 700;
   line-height: 1;
 }
@@ -2643,16 +2704,16 @@ html[data-embed="1"] .studio-plan {
 .riley-name {
   margin: 0;
   color: var(--color-ink-soft);
-  font-size: 0.6875rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .riley-text {
-  margin: 2px 0 0;
+  margin: var(--space-05) 0 0;
   color: var(--color-ink);
-  font-size: 0.875rem;
+  font-size: var(--fs-sm);
   line-height: 1.45;
 }
 
@@ -2675,7 +2736,7 @@ html[data-embed="1"] .studio-plan {
   background: var(--color-surface-alt);
   color: var(--color-ink);
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   cursor: pointer;
 }
@@ -2683,7 +2744,7 @@ html[data-embed="1"] .studio-plan {
 .riley-action:first-child {
   border-color: transparent;
   background: var(--color-dark);
-  color: #fff;
+  color: var(--color-on-dark);
 }
 
 .riley-action:hover {
@@ -2730,13 +2791,13 @@ html[data-embed="1"] .studio-plan {
 .riley-voice-help {
   margin: 2px 0 var(--space-2);
   color: var(--color-ink-soft);
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   line-height: 1.4;
 }
 
 .riley-voice-list {
   display: grid;
-  gap: 4px;
+  gap: var(--space-1);
   max-height: 220px;
   margin: 0 0 var(--space-2);
   padding: 0;
@@ -2747,7 +2808,7 @@ html[data-embed="1"] .studio-plan {
 .riley-voice {
   display: flex;
   align-items: stretch;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .riley-voice-pick {
@@ -2763,7 +2824,7 @@ html[data-embed="1"] .studio-plan {
   background: var(--color-surface);
   color: var(--color-ink);
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: var(--fs-xs);
   text-align: left;
   cursor: pointer;
 }
@@ -2784,7 +2845,7 @@ html[data-embed="1"] .studio-plan {
 .riley-voice-note {
   margin: 0;
   color: var(--color-ink-soft);
-  font-size: 0.6875rem;
+  font-size: var(--fs-2xs);
   font-weight: 400;
 }
 
@@ -2796,7 +2857,7 @@ html[data-embed="1"] .studio-plan {
   background: var(--color-surface-alt);
   color: var(--color-ink);
   font: inherit;
-  font-size: 0.75rem;
+  font-size: var(--fs-2xs);
   font-weight: 600;
   cursor: pointer;
 }
@@ -2819,7 +2880,7 @@ html[data-embed="1"] .studio-plan {
   }
 
   .riley-text {
-    font-size: 0.8125rem;
+    font-size: var(--fs-xs);
   }
 }
 

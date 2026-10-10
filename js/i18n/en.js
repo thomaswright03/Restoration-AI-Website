@@ -711,7 +711,7 @@
     "studio.pdf.plan": "Floor plan",
     "studio.pdf.design": "Your design",
     "studio.pdf.link": "Open this design",
-    "studio.pdf.open": "Click here to open this design in 3D",
+    "studio.pdf.open": "Open this design in 3D in any browser, at this address:",
     "room3d.canvasLabel":
       "3D view of your bathroom. Drag a fixture to move it, or drag anywhere else to turn the view. Everything can also be done from the panel and the floor plan.",
     "room3d.tooBig": "Too big for this room",

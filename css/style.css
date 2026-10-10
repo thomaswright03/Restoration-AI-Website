@@ -57,7 +57,10 @@
   --color-focus-on-dark: #5eead4;
   --color-highlight-on-dark: #5eead4; /* teal accents on navy: eyebrows, current menu item, nav underline */
 
-  /* Type scale (7 sizes; nothing smaller than 14px) */
+  /* Type scale (9 sizes; nothing smaller than 12px, and the two below 14px
+     are for the designer's dense chips, badges and Riley's lines only) */
+  --fs-2xs: 0.75rem; /* 12px — tags, a chip's caption, Riley's name */
+  --fs-xs: 0.8125rem; /* 13px — labels on the 3D room, counts, Riley's lines */
   --fs-sm: 0.875rem; /* 14px — captions, labels, fine print */
   --fs-base: 1rem; /* 16px — body */
   --fs-md: 1.125rem; /* 18px — lead text, small headings */
@@ -65,8 +68,11 @@
   --fs-xl: 1.75rem; /* 28px — totals, page sub-titles */
   --fs-2xl: clamp(1.9rem, 3.2vw, 2.6rem); /* section titles */
   --fs-3xl: clamp(2.5rem, 5.5vw, 4.4rem); /* hero */
+  --fs-3xl-beside: clamp(2.5rem, 4.3vw, 3.9rem); /* the hero headline beside a picture */
 
-  /* Spacing scale */
+  /* Spacing scale (the two half steps are for the designer's dense chips) */
+  --space-05: 2px;
+  --space-15: 6px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -470,7 +476,7 @@ p {
   margin: 0;
   padding: var(--space-2) 0;
   list-style: none;
-  background: rgba(21, 19, 15, 0.97);
+  background: var(--color-dark); /* opaque: nothing on the page shows through the menu */
   border: 1px solid var(--color-on-dark-line);
   border-radius: var(--radius);
 }
@@ -492,6 +498,11 @@ p {
 }
 
 /* The theme menu: the same drop-down, with buttons (js/theme.js) in place of links. */
+.theme-menu summary {
+  justify-content: center;
+  min-width: var(--tap); /* a finger's width, not the 18px icon */
+}
+
 .theme-menu summary::after {
   display: none;
 }
@@ -549,7 +560,7 @@ p {
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(21, 19, 15, 0.97);
+    background: var(--color-dark);
     flex-direction: column;
     align-items: stretch;
     padding: var(--space-3) var(--gutter) var(--space-5);
@@ -685,7 +696,7 @@ p {
   /* A little smaller beside the picture, so the Spanish and Portuguese
      headlines stay to three lines. */
   .hero.hero-landing h1 {
-    font-size: clamp(2.5rem, 4.3vw, 3.9rem);
+    font-size: var(--fs-3xl-beside);
   }
 
   .hero.hero-landing .eyebrow.center {
@@ -781,7 +792,7 @@ p {
   box-shadow:
     0 24px 60px rgba(0, 0, 0, 0.45),
     0 0 0 1px rgba(255, 255, 255, 0.04);
-  background: #f3f5fb;
+  background: var(--color-bg);
 }
 
 .hero-shot figcaption {
@@ -889,7 +900,7 @@ p {
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
-  gap: 2px;
+  gap: var(--space-05);
   max-width: var(--max-width);
   margin: 0 auto;
   background: var(--color-line);

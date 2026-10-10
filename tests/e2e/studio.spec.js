@@ -273,11 +273,28 @@ test.describe("design studio", () => {
       lines: window.__pdfSpec.lines.map((l) => ({ label: l.label, detail: l.detail || null, amount: l.amount })),
       picture: Boolean(window.__pdfSpec.picture),
       plan: Boolean(window.__pdfSpec.plan),
+      design: window.__pdfSpec.design,
+      link: window.__pdfSpec.sections[window.__pdfSpec.sections.length - 1].items[0],
+      planTexts: window.__pdfSpec.plan.texts.filter((t) => t.bold).map((t) => ({ text: t.text, x: t.x, z: t.z })),
     }));
     expect(card.length).toBeGreaterThan(2);
     expect(pdf.lines).toEqual(card);
     expect(pdf.picture).toBe(true);
     expect(pdf.plan).toBe(true);
+    // "Your design" names every product in the room, the ones still on a
+    // stand-in (the sample's toilet) included, and never a panel aside.
+    expect(pdf.design).toContainEqual(expect.stringMatching(/^Toilet: /));
+    expect(pdf.design).toContainEqual(expect.stringMatching(/^Tub: .*K-/));
+    expect(pdf.design.join("\n")).not.toMatch(/\(pick /);
+    // The closing link reads on paper: no "click here", and its address is given.
+    expect(pdf.link.text).not.toMatch(/click/i);
+    expect(pdf.link.text).toMatch(/address/);
+    expect(pdf.link.url).toMatch(/designer\.html#design=/);
+    // On the plan, the room's length label stands clear of the wall letters
+    // (which sit 0.7 ft outside the walls): at least 1.5 ft further out.
+    const letterD = pdf.planTexts.find((t) => t.text === "D");
+    const length = pdf.planTexts.find((t) => /^5/.test(t.text));
+    expect(letterD.x - length.x).toBeGreaterThanOrEqual(1.5);
     expect(errors).toEqual([]);
   });
 
@@ -313,6 +330,56 @@ test.describe("design studio", () => {
       return cur.left >= nav.left - 1 && cur.right <= nav.right + 1;
     });
     expect(inView).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
+  test("a picked finish changes what the floor is made of, visibly", async ({ page }) => {
+    test.setTimeout(60000);
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "finishes").click();
+    await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
+    // The mean colour of a patch of bare floor near the C/D corner, where
+    // no fixture stands in the sample room.
+    const floorColor = async () => {
+      await page.waitForFunction(() => window.BathroomRoom3D.pendingModels() === 0);
+      await page.waitForTimeout(600);
+      const at = await onScreen(page, 1.0, 0, 3.8);
+      const png = await page.screenshot({ clip: { x: at.x - 4, y: at.y - 4, width: 9, height: 9 } });
+      return page.evaluate(
+        (b64) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const c = document.createElement("canvas");
+              c.width = img.width;
+              c.height = img.height;
+              const ctx = c.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+              const d = ctx.getImageData(0, 0, c.width, c.height).data;
+              const sum = [0, 0, 0];
+              for (let i = 0; i < d.length; i += 4) for (let k = 0; k < 3; k++) sum[k] += d[i + k];
+              resolve(sum.map((v) => Math.round(v / (d.length / 4))));
+            };
+            img.src = "data:image/png;base64," + b64;
+          }),
+        png.toString("base64"),
+      );
+    };
+    const floor = page.locator('.studio-swatch-group[data-cat="floorTile"] .studio-swatch');
+    await expect(floor.first()).toHaveAttribute("aria-pressed", "true");
+    const grey = await floorColor();
+    const before = await page.evaluate(() => window.BathroomRoom3D.getSurfaceFinishes());
+    expect(before.floor).toBe("hd-300126888"); // Vigo Gris, the grey stone-look tile
+    // The walnut wood-look tile: the floor's material changes, and so does
+    // its colour on screen, to a visibly browner, darker one.
+    await byKey(page, "sw-floorTile-hd-313050938").click();
+    await expect.poll(() => page.evaluate(() => window.BathroomRoom3D.getSurfaceFinishes().floor)).toBe("hd-313050938");
+    const walnut = await floorColor();
+    expect(walnut[0] - walnut[2], `walnut reads brown: ${walnut}`).toBeGreaterThan(25);
+    expect(grey[0] - grey[2], `grey reads grey: ${grey}`).toBeLessThan(20);
+    expect(grey[2] - walnut[2], `the floor got darker: ${grey} -> ${walnut}`).toBeGreaterThan(40);
     expect(errors).toEqual([]);
   });
 
@@ -976,6 +1043,44 @@ test.describe("design studio on a phone", () => {
     expect(stage.y).toBeGreaterThanOrEqual(0);
     expect(heading.y).toBeGreaterThanOrEqual(stage.y + stage.height - 1);
     expect(heading.y + heading.height).toBeLessThan(844);
+    expect(errors).toEqual([]);
+  });
+
+  test("on the first screen no control covers the room's wall letters, and the step bar with Next is in reach", async ({
+    page,
+  }) => {
+    test.setTimeout(60000);
+    const errors = await openStudio(page);
+    await wait3d(page);
+    for (const width of [390, 375]) {
+      await page.setViewportSize({ width, height: 812 });
+      await expect(page.locator(".studio-label.is-wall:not([hidden])")).toHaveCount(4);
+      await page.waitForTimeout(400);
+      const seen = await page.evaluate(() => {
+        const box = (el) => {
+          const b = el.getBoundingClientRect();
+          return { x: b.left, y: b.top, right: b.right, bottom: b.bottom };
+        };
+        return {
+          controls: [...document.querySelectorAll(".studio-views, .studio-view-btn, .studio-status")].map(box),
+          labels: [...document.querySelectorAll(".studio-label.is-wall:not([hidden])")].map(box),
+          next: box(document.querySelector('[data-key="nav-next"]')),
+          title: document.querySelector(".studio-step-nav-title").textContent,
+          titleShown: getComputedStyle(document.querySelector(".studio-step-nav-title")).display !== "none",
+          scrollWidth: document.documentElement.scrollWidth,
+        };
+      });
+      const overlap = (a, b) => a.x < b.right && b.x < a.right && a.y < b.bottom && b.y < a.bottom;
+      for (const control of seen.controls)
+        for (const label of seen.labels)
+          expect(overlap(control, label), `${width}px: a control over a wall letter`).toBe(false);
+      // Next is on screen before any scrolling, and the bar names the step.
+      expect(seen.next.y, `${width}px: Next in the first screen`).toBeGreaterThanOrEqual(0);
+      expect(seen.next.bottom, `${width}px: Next in the first screen`).toBeLessThanOrEqual(812);
+      expect(seen.titleShown).toBe(true);
+      expect(seen.title).toBe("Step 1 of 6 · Your room");
+      expect(seen.scrollWidth).toBeLessThanOrEqual(width);
+    }
     expect(errors).toEqual([]);
   });
 

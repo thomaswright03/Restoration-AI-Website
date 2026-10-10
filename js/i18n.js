@@ -1722,9 +1722,9 @@
     "studio.pdf.design": ["Your design", "Su diseño", "Seu projeto"],
     "studio.pdf.link": ["Open this design", "Abrir este diseño", "Abrir este projeto"],
     "studio.pdf.open": [
-      "Click here to open this design in 3D",
-      "Haga clic aquí para abrir este diseño en 3D",
-      "Clique aqui para abrir este projeto em 3D",
+      "Open this design in 3D in any browser, at this address:",
+      "Abra este diseño en 3D en cualquier navegador, en esta dirección:",
+      "Abra este projeto em 3D em qualquer navegador, neste endereço:",
     ],
 
     // ---------- 3D room (js/bathroom-room-3d.js) ----------

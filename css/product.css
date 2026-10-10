@@ -1371,7 +1371,16 @@ body:has(.studio-page) .nav {
 }
 
 .project-back {
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-2);
+}
+
+/* Plain text links on the app pages ("← My projects", "Open my projects")
+   are a finger's height on a phone, not a 20px line. */
+.project-back a,
+#projects-card > p > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
 }
 
 .project-tabs {

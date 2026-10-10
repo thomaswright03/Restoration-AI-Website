@@ -114,7 +114,8 @@
       y += 16;
     }
 
-    // Items are text, or { text, url } for a link.
+    // Items are text, or { text, url } for a link: the text, linked, with
+    // the address printed under it, so the line still works on paper.
     function bullets(items) {
       items.forEach(function (item) {
         doc.setFont("helvetica", "normal");
@@ -127,7 +128,15 @@
           doc.textWithLink(safe(item.text), left + 14, y, { url: item.url });
           doc.setDrawColor(36, 69, 214);
           doc.line(left + 14, y + 2, left + 14 + doc.getTextWidth(safe(item.text)), y + 2);
-          y += 16;
+          y += 14;
+          doc.setFontSize(8);
+          doc.setTextColor(95);
+          doc.splitTextToSize(item.url, width - 14).forEach(function (line) {
+            ensure(11);
+            doc.textWithLink(line, left + 14, y, { url: item.url });
+            y += 11;
+          });
+          y += 5;
           return;
         }
         var lines = doc.splitTextToSize(safe(item), width - 14);
@@ -258,32 +267,27 @@
       ensure(60);
       paragraph(spec.linesTitle, 11, 30, "bold", 6);
     }
-    // What follows the line items: the "not included" rows, the rule and the
-    // subtotals and total. Measured first, so the last line item moves to a
-    // new page with them when they wouldn't fit under it: the totals are
-    // never on a page by themselves.
-    var excludedHeight = 0;
-    if (spec.excluded && spec.excluded.length) {
-      excludedHeight = 2;
-      doc.setFontSize(10);
-      spec.excluded.forEach(function (x) {
-        excludedHeight += doc.splitTextToSize(safe(x.label), width - 150).length * 13 + 4;
-      });
-    }
+    // The rule, the subtotals and the total come after the rows (the line
+    // items, then the "not included" rows). Their height is measured first,
+    // so the row right before them moves to a new page with them when they
+    // wouldn't fit under it: the totals are never on a page by themselves.
+    // Every other row flows, filling each page to the bottom, so a split
+    // table never leaves half a page empty.
     var totalsHeight = 4 + 16;
     (spec.totals || []).forEach(function (t) {
       var size = t.strong ? 15 : 11;
       doc.setFontSize(size);
       totalsHeight += doc.splitTextToSize(safe(t.label), width - 150).length * (size + 4) + 4;
     });
-    var tailHeight = excludedHeight + ((spec.totals || []).length ? totalsHeight : 0);
+    var keepWithTotals = (spec.totals || []).length ? totalsHeight : 0;
+    var excludedCount = (spec.excluded || []).length;
     (spec.lines || []).forEach(function (l, i, all) {
       doc.setFontSize(11);
       var labelLines = doc.splitTextToSize(safe(l.label), labelWidth);
       doc.setFontSize(10);
       var detailLines = doc.splitTextToSize(safe(l.detail), detailWidth);
       var rowHeight = Math.max(labelLines.length * 14, detailLines.length * 13) + 6;
-      ensure(i === all.length - 1 ? rowHeight + tailHeight : rowHeight);
+      ensure(i === all.length - 1 && !excludedCount ? rowHeight + keepWithTotals : rowHeight);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(11);
       doc.setTextColor(30);
@@ -295,12 +299,13 @@
       y += rowHeight;
     });
 
-    if (spec.excluded && spec.excluded.length) {
+    if (excludedCount) {
       y += 2;
-      spec.excluded.forEach(function (x) {
+      spec.excluded.forEach(function (x, i) {
         doc.setFontSize(10);
         var labelLines = doc.splitTextToSize(safe(x.label), width - 150);
-        ensure(labelLines.length * 13 + 4);
+        var rowHeight = labelLines.length * 13 + 4;
+        ensure(i === excludedCount - 1 ? rowHeight + keepWithTotals : rowHeight);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(80);
         doc.text(labelLines, left, y);
@@ -310,7 +315,7 @@
     }
 
     // The rule and the totals move together (and, measured above, with the
-    // last line item), never the total alone.
+    // row before them), never the total alone.
     ensure(totalsHeight);
     y += 4;
     rule(210);

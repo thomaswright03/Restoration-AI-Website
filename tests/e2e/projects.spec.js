@@ -8,7 +8,7 @@
 
 const { test, expect } = require("@playwright/test");
 const AxeBuilder = require("@axe-core/playwright").default;
-const { openStudio, answerAll } = require("./helpers.js");
+const { openStudio, answerAll, step } = require("./helpers.js");
 
 const SUPABASE = "https://fakeproject.supabase.co";
 
@@ -124,6 +124,12 @@ test("My projects lists, renames and deletes, and shows the plan's limits", asyn
   expect(axe.violations.map((v) => v.id)).toEqual([]);
 
   await page.getByRole("button", { name: "Rename Lee guest bath" }).click();
+  // An empty name gets the page's own message in the row, not the browser's bubble.
+  await page.getByLabel("Project name").fill("   ");
+  await page.getByRole("button", { name: "Save name" }).click();
+  await expect(page.locator(".project-rename .field-error")).toHaveText("Give the project a name.");
+  await expect(page.getByLabel("Project name")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("Project name")).toBeFocused();
   await page.getByLabel("Project name").fill("Lee upstairs bath");
   await page.getByRole("button", { name: "Save name" }).click();
   await expect(page.locator(".project-name").nth(1)).toHaveText("Lee upstairs bath");
@@ -210,8 +216,11 @@ test("the designer saves a new project with the client's details, then saves cha
   expect(second.body.name).toMatch(/^Bathroom, [A-Z][a-z]{2} \d{1,2}, \d{4}, \d{1,2}:\d{2}/);
 });
 
-test("the designer opens a saved project from its link", async ({ page }) => {
-  // A saved design: the sample room resized to 10 ft wide.
+test("the designer opens a saved project as that project: no link toast, its answers counted, nothing unsaved", async ({
+  page,
+}) => {
+  // A saved design: the sample room resized to 10 ft wide, saved before any
+  // question was answered (as older projects were).
   await page.goto("/designer.html");
   const design = await page.evaluate(() => {
     const d = window.RoomPlan.fromTemplate("full5x8", null);
@@ -221,6 +230,24 @@ test("the designer opens a saved project from its link", async ({ page }) => {
   await openStudio(page, "/designer.html?b=smith-bath&project=a1");
   await expect(page.locator("#project-bar")).toContainText("Project: Wide bath");
   await expect.poll(() => page.evaluate(() => window.RoomPlan.decode(window.StudioDesign.encoded()).room.w)).toBe(10);
+  // It was opened from My projects, not a link, and it says which project.
+  await expect(page.locator("#studio-toast")).toContainText("Opened “Wide bath”.");
+  await expect(page.locator("#studio-toast")).not.toContainText("from your link");
+  // The saved project's questions count as answered: nothing to re-pick.
+  await expect(page.locator("#studio-step-need")).toHaveCount(0);
+  await expect(step(page, "layout")).not.toHaveAttribute("aria-disabled", "true");
+  await expect(step(page, "estimate")).not.toHaveAttribute("aria-disabled", "true");
+  // Nothing has changed yet, so nothing is unsaved.
+  await page.waitForTimeout(700);
+  await expect(page.locator("#project-status")).toBeHidden();
+  await step(page, "finishes").click();
+  await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
+  await expect(page.locator("#project-status")).toBeHidden();
+  // The first real change is.
+  await step(page, "room").click();
+  await page.locator("#studio-size-w").fill("9");
+  await page.locator("#studio-size-w").press("Enter");
+  await expect(page.locator("#project-status")).toContainText("Unsaved changes");
 });
 
 test("on the free plan the designer works but has no save button", async ({ page }) => {
@@ -325,7 +352,7 @@ test("a project's page shows its 3D model, edits its info, and lists its materia
   expect(axe2.violations.map((v) => v.id)).toEqual([]);
 });
 
-test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, Open in designer", async ({
+test("a project's 3D model tab is a read-only viewer: no steps, no editing, no link toast, no second Open button", async ({
   page,
 }) => {
   test.setTimeout(90000); // two visits to the designer, both drawing the 3D room
@@ -347,9 +374,9 @@ test("a project's 3D model tab is a read-only viewer: no steps, no editing, no l
   await expect(page.locator("#studio-plan")).toBeVisible();
   // Nothing on the plan can be picked up or moved.
   await expect(page.locator(".plan-item[tabindex]")).toHaveCount(0);
-  const open = page.getByRole("link", { name: "Open in designer" });
-  await expect(open).toHaveAttribute("href", "/designer.html?b=smith-bath&project=a1");
-  await expect(open).toHaveAttribute("target", "_top");
+  // The project page's own "Open in the designer" button is the one way in.
+  await expect(page.getByRole("link", { name: /Open in/ })).toHaveCount(0);
+  await expect(page.locator(".studio-open-link")).toHaveCount(0);
 });
 
 test("a project's 3D model follows the page when the theme is switched", async ({ page }) => {
@@ -372,14 +399,35 @@ test("My projects sorts, filters by status, searches status words, and keeps the
 }) => {
   await signedIn(page, {
     projects: [
-      { id: "a1", name: "Smith main bath", info: { status: "progress" }, updated_at: "2026-10-03T12:00:00Z" },
+      {
+        id: "a1",
+        name: "Smith main bath",
+        info: { status: "progress", start: "2026-12-01" },
+        updated_at: "2026-10-03T12:00:00Z",
+      },
       { id: "a2", name: "Lee guest bath", info: { status: "lead" }, updated_at: "2026-10-02T12:00:00Z" },
-      { id: "a3", name: "Alvarez powder room", info: { status: "progress" }, updated_at: "2026-10-01T12:00:00Z" },
+      {
+        id: "a3",
+        name: "Alvarez powder room",
+        info: { status: "progress", start: "2026-11-05" },
+        updated_at: "2026-10-01T12:00:00Z",
+      },
     ],
   });
   await page.goto("/projects.html");
   const names = page.locator(".project-name");
   await expect(names).toHaveText(["Smith main bath", "Lee guest bath", "Alvarez powder room"]);
+
+  // Soonest start first; a project with no start date last.
+  await page.getByLabel("Sort by").selectOption("start");
+  await expect(names).toHaveText(["Alvarez powder room", "Smith main bath", "Lee guest bath"]);
+  await expect(page).toHaveURL(/sort=start/);
+  // In the order a job goes through (new lead first), newest updated within a status.
+  await page.getByLabel("Sort by").selectOption("status");
+  await expect(names).toHaveText(["Lee guest bath", "Smith main bath", "Alvarez powder room"]);
+  await page.reload();
+  await expect(page.getByLabel("Sort by")).toHaveValue("status");
+  await expect(names).toHaveText(["Lee guest bath", "Smith main bath", "Alvarez powder room"]);
 
   await page.getByLabel("Sort by").selectOption("name");
   await expect(names).toHaveText(["Alvarez powder room", "Lee guest bath", "Smith main bath"]);
@@ -788,6 +836,124 @@ test("when the stored sign-in can't be checked, the save bar says so with Try ag
   await expect(bar).toContainText("Your sign-in couldn't be checked, so saving to your projects isn't available");
   await expect(bar.getByRole("link", { name: "Try again" })).toBeVisible();
   await expect(page.locator("#project-save")).toBeHidden();
+});
+
+test("when the business can't be read, My projects and the project page say so with Try again, never the demo designer", async ({
+  page,
+}) => {
+  await signedIn(page, {
+    projects: [{ id: "a1", name: "Smith main bath", design: "", info: {}, updated_at: DAY }],
+  });
+  let failing = true;
+  await page.route(SUPABASE + "/rest/v1/businesses**", (route) => {
+    if (!failing) return route.fulfill({ json: { slug: "smith-bath" } });
+    return route.fulfill({ status: 500, json: { message: "db down" } });
+  });
+  await page.goto("/projects.html");
+  const failed = page.locator("#projects-failed");
+  await expect(failed).toBeVisible();
+  await expect(failed).toContainText("Your business profile couldn't be loaded");
+  await expect(page.locator("#projects-app")).toBeHidden();
+  // Nothing points at the demo designer.
+  await expect(page.locator("#project-new")).toBeHidden();
+  failing = false;
+  await failed.getByRole("button", { name: "Try again" }).click();
+  await expect(page.locator("#projects-app")).toBeVisible();
+  await expect(page.locator("#project-new")).toHaveAttribute("href", /designer\.html\?b=smith-bath$/);
+
+  failing = true;
+  await page.goto("/project.html?id=a1");
+  const error = page.locator("#project-error");
+  await expect(error).toBeVisible();
+  await expect(error).toContainText("Your business profile couldn't be loaded");
+  await expect(error.getByRole("link", { name: "Try again" })).toBeVisible();
+  await expect(page.locator("#project-app")).toBeHidden();
+});
+
+test("saving paused (the kill switch): the designer's bar and My projects say so up front, with the owner's notice", async ({
+  page,
+}) => {
+  await signedIn(page);
+  await page.route("**/api/config", (route) =>
+    route.fulfill({
+      json: {
+        accounts: true,
+        payments: false,
+        supabaseUrl: SUPABASE,
+        supabaseAnonKey: "anon",
+        plans: {},
+        switches: { signups: true, checkout: true, saving: false },
+        notice: "Back Monday 9am.",
+      },
+    }),
+  );
+  await openStudio(page, "/designer.html?b=smith-bath");
+  const bar = page.locator("#project-bar");
+  await expect(bar).toBeVisible({ timeout: 15000 });
+  await expect(bar).toContainText("Saving projects is paused right now.");
+  await expect(bar).toContainText("Notice: Back Monday 9am.");
+  await expect(bar).not.toContainText("new projects left");
+  await expect(page.locator("#project-save")).toBeHidden();
+  // The estimate step has no Save button either.
+  await answerAll(page);
+  await step(page, "estimate").click();
+  await expect(page.getByTestId("estimate-card")).toBeVisible();
+  await expect(page.locator('[data-key="save"]')).toHaveCount(0);
+
+  await page.goto("/es/projects.html");
+  const paused = page.locator("#projects-paused");
+  await expect(paused).toBeVisible();
+  await expect(paused).toContainText("Guardar proyectos está pausado por ahora.");
+  await expect(paused).toContainText("Aviso: Back Monday 9am.");
+});
+
+test("at desktop width My projects can be a table, and the pick is kept in this browser", async ({ page }) => {
+  await signedIn(page, {
+    projects: [
+      { id: "a1", name: "Smith main bath", info: { status: "progress", start: "2026-12-01" }, updated_at: DAY },
+      { id: "a2", name: "Lee guest bath", info: {}, updated_at: DAY },
+    ],
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/projects.html");
+  const list = page.locator("#projects-list");
+  await expect(page.locator(".project-item")).toHaveCount(2);
+  await expect(list).not.toHaveClass(/is-table/);
+  await expect(page.locator("#projects-table-head")).toBeHidden();
+  await page.getByLabel("View").selectOption("table");
+  await expect(list).toHaveClass(/is-table/);
+  await expect(page.locator("#projects-table-head")).toBeVisible();
+  // Each fact is a cell in its own column, left to right.
+  const row = page.locator(".project-item").first();
+  const columns = await row.evaluate((li) => {
+    const lefts = [
+      ".project-name",
+      ".project-client",
+      ".project-status",
+      ".project-start",
+      ".project-updated",
+      ".project-actions",
+    ].map((sel) => li.querySelector(sel).getBoundingClientRect().left);
+    return lefts.every((x, i) => i === 0 || x > lefts[i - 1]);
+  });
+  expect(columns).toBe(true);
+  await expect(row.locator(".project-start")).toHaveText("Starts Dec 1, 2026");
+  await expect(page.locator(".project-item").nth(1).locator(".project-start")).toHaveText("—");
+  await page.reload();
+  await expect(list).toHaveClass(/is-table/);
+  await expect(page.getByLabel("View")).toHaveValue("table");
+  // Phones keep the cards whatever the pick, and don't offer it.
+  await page.setViewportSize({ width: 375, height: 800 });
+  await expect(page.getByLabel("View")).toBeHidden();
+  await expect(page.locator("#projects-table-head")).toBeHidden();
+  const stacked = await row.evaluate((li) => {
+    const a = li.querySelector(".project-name").getBoundingClientRect().top;
+    const b = li.querySelector(".project-updated").getBoundingClientRect().top;
+    return b > a;
+  });
+  expect(stacked).toBe(true);
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
 });
 
 test("My projects sends an ended sign-in to log in with the way back", async ({ page }) => {

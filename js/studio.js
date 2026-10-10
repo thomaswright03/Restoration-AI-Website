@@ -500,6 +500,10 @@
     }
     ui.selected = null;
     commit(next);
+    // Opening a project isn't an edit to undo.
+    past = [];
+    future = [];
+    renderBar();
     if (!VIEW_ONLY && name) toast(T("studio.openedProject", { name: name }));
     return true;
   }

@@ -556,6 +556,16 @@
       materialsTotal: est.materialsTotal,
       grandTotal: est.grandTotal,
       notes: est.notes,
+      // How the labor was priced when this was saved: "own" (the business's
+      // prices throughout), "partial" (sampleLines at the platform's sample
+      // rates), "sample" (no prices set), or "demo". The project page can
+      // say so later, whatever the prices are by then.
+      rates: {
+        mode: ratesMode(est),
+        sampleLines: sampleRateLines(est).map(function (l) {
+          return l.label;
+        }),
+      },
     };
   }
 
@@ -4098,11 +4108,14 @@
   // it says which lines are still at sample rates.
 
   // The labor lines of this estimate priced at a sample rate because the
-  // owner hasn't set that price ([] in the demo, or with no prices set).
+  // owner hasn't set that price: every line while no prices are set, [] in
+  // the demo (whose sample business the rates belong to).
   function sampleRateLines(est) {
-    if (BIZ.demo || !BIZ.ownPrices) return [];
+    if (BIZ.demo) return [];
+    var lines = (est || estimate()).labor.lines;
+    if (!BIZ.ownPrices) return lines;
     var set = BIZ.priceSet || {};
-    return (est || estimate()).labor.lines.filter(function (line) {
+    return lines.filter(function (line) {
       return !Pricing.linePriceKeys(line.key).some(function (key) {
         return set[key];
       });

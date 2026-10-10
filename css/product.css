@@ -1112,6 +1112,81 @@ html[data-embed="1"] main.solid-header {
   font-weight: 600;
 }
 
+/* In a card the start and updated dates run on from the status. */
+.project-updated::before {
+  content: " · ";
+}
+
+/* ---------- The table view (My projects, wide screens) ---------- */
+/* The same rows laid out in columns: each fact a cell, under a heading row.
+   Narrow screens keep the cards whatever the pick, so the control hides. */
+.projects-view,
+.project-table-head {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .projects-tools {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.7fr);
+  }
+
+  .projects-view {
+    display: block;
+  }
+
+  .project-table-head,
+  .project-list.is-table .project-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.9fr) minmax(0, 0.9fr) auto;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .project-table-head {
+    padding: var(--space-2) 0;
+    color: var(--color-muted);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .project-table-head[hidden] {
+    display: none;
+  }
+
+  .project-list.is-table .project-main,
+  .project-list.is-table .project-meta {
+    display: contents;
+  }
+
+  .project-list.is-table .project-client,
+  .project-list.is-table .project-start,
+  .project-list.is-table .project-updated {
+    margin: 0;
+    font-size: var(--fs-sm);
+    color: var(--color-ink-soft);
+  }
+
+  .project-list.is-table .project-status {
+    margin-right: 0;
+    justify-self: start;
+  }
+
+  .project-list.is-table .project-updated::before {
+    content: none;
+  }
+
+  .project-list.is-table .project-actions {
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
+  .project-list.is-table .project-rename {
+    grid-column: 1 / -1;
+  }
+}
+
 /* ---------- One project's page ---------- */
 /* The saved design uses the whole width, like the designer itself. */
 .app-wide.project-page {

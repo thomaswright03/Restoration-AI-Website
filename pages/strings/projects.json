@@ -72,6 +72,25 @@
   "projects.sort": ["Sort by", "Ordenar por", "Ordenar por"],
   "projects.sort.updated": ["Last updated", "Última actualización", "Última atualização"],
   "projects.sort.name": ["Name (A to Z)", "Nombre (A a Z)", "Nome (A a Z)"],
+  "projects.sort.start": [
+    "Start date (soonest first)",
+    "Fecha de inicio (la más próxima primero)",
+    "Data de início (a mais próxima primeiro)"
+  ],
+  "projects.sort.status": [
+    "Status (new lead to done)",
+    "Estado (de cliente nuevo a terminado)",
+    "Situação (de novo contato a concluído)"
+  ],
+  "projects.view": ["View", "Vista", "Exibição"],
+  "projects.view.cards": ["Cards", "Tarjetas", "Cartões"],
+  "projects.view.table": ["Table", "Tabla", "Tabela"],
+  "projects.col.name": ["Project", "Proyecto", "Projeto"],
+  "projects.col.client": ["Client and address", "Cliente y dirección", "Cliente e endereço"],
+  "projects.col.status": ["Status", "Estado", "Situação"],
+  "projects.col.start": ["Starts", "Empieza", "Começa"],
+  "projects.col.updated": ["Updated", "Actualizado", "Atualizado"],
+  "projects.col.actions": ["Actions", "Acciones", "Ações"],
   "projects.filter": ["Status", "Estado del proyecto", "Situação"],
   "projects.failed.retry": ["Try again", "Intentar de nuevo", "Tentar de novo"],
   "projects.signin.login": ["Log in", "Iniciar sesión", "Entrar"],

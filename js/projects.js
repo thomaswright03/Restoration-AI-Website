@@ -124,6 +124,7 @@
     if (err.code === "setup") return T("proj.err.setup");
     if (err.code === "signin") return T("proj.err.signin");
     if (err.code === "not-found") return T("proj.err.notFound");
+    if (err.code === "business") return T("proj.err.business");
     if (err.code === "info" || err.code === "name") return fieldErrorText(d) || T("proj.err.info");
     // The owner's notice, when there is one, on its own line (.form-status
     // keeps line breaks), marked as a notice rather than run into the sentence.
@@ -221,6 +222,13 @@
     return window.Net.config();
   }
 
+  // "Saving projects is paused right now…", with the owner's notice from
+  // /api/config when there is one.
+  function pausedText(config) {
+    var notice = config && typeof config.notice === "string" ? config.notice.trim() : "";
+    return T("proj.err.paused") + (notice ? " " + T("proj.pausedNotice", { notice: notice }) : "");
+  }
+
   // The sign-in page, with the way back to this page after logging in.
   function loginPath() {
     var query = new URLSearchParams({
@@ -294,16 +302,28 @@
       });
   }
 
+  // The owner's business (null while they haven't set one up). When it
+  // can't be read, that's an error the page shows with Try again: an owner's
+  // projects never quietly open in the demo designer at sample rates.
   function loadBusiness() {
     return client
       .from("businesses")
       .select("slug")
       .maybeSingle()
-      .then(function (r) {
-        return r.data || null;
-      })
-      .catch(function () {
-        return null;
+      .then(
+        function (r) {
+          if (r.error) throw r.error;
+          return r.data || null;
+        },
+        function (e) {
+          throw e;
+        },
+      )
+      .catch(function (e) {
+        var err = new Error("business");
+        err.code = "business";
+        err.cause = e;
+        throw err;
       });
   }
 
@@ -493,11 +513,18 @@
     return [p.name, i.client, i.phone, i.email, addressOf(i), statusWord].join(" ").toLowerCase();
   }
 
+  var SORTS = ["updated", "name", "start", "status"];
+  var VIEW_KEY = "rd3d_projects_view"; // "cards" or "table", this browser's pick
+
+  function sortName(value) {
+    return SORTS.indexOf(value) > 0 ? value : "updated";
+  }
+
   // Search, sort and status filter, as the controls have them.
   function listView() {
     return {
       q: ($("projects-search").value || "").trim(),
-      sort: $("projects-sort").value === "name" ? "name" : "updated",
+      sort: sortName($("projects-sort").value),
       status: $("projects-filter").value || "",
     };
   }
@@ -506,11 +533,33 @@
   // shared link keeps it; the defaults stay out of it.
   function readViewFromUrl() {
     var q = params.get("q") || "";
-    var sort = params.get("sort") === "name" ? "name" : "updated";
+    var sort = sortName(params.get("sort"));
     var status = STATUSES.indexOf(params.get("status")) >= 0 ? params.get("status") : "";
     $("projects-search").value = q;
     $("projects-sort").value = sort;
     $("projects-filter").value = status;
+  }
+
+  // Cards (the default) or a table, on screens wide enough for one
+  // (css/product.css); the pick is kept in this browser.
+  function readListLayout() {
+    try {
+      return localStorage.getItem(VIEW_KEY) === "table" ? "table" : "cards";
+    } catch (e) {
+      return "cards";
+    }
+  }
+
+  function applyListLayout() {
+    var layout = $("projects-view").value === "table" ? "table" : "cards";
+    try {
+      if (layout === "table") localStorage.setItem(VIEW_KEY, layout);
+      else localStorage.removeItem(VIEW_KEY);
+    } catch (e) {
+      /* storage blocked: the pick lasts for this visit */
+    }
+    $("projects-list").classList.toggle("is-table", layout === "table");
+    show($("projects-table-head"), layout === "table" && state.projects.length > 0);
   }
 
   // "Clear filters" shows while a search or status filter narrows the list;
@@ -546,11 +595,28 @@
     });
   }
 
+  // Last updated (newest first); name; start date (soonest first, projects
+  // without one last); status (in the order a job goes through, projects
+  // without one last). Ties fall back to last updated.
   function sortProjects(list, sort) {
     var collator = new Intl.Collator(window.I18n.locale(), { sensitivity: "base", numeric: true });
-    return list.slice().sort(function (a, b) {
-      if (sort === "name") return collator.compare(a.name || "", b.name || "");
+    var byUpdated = function (a, b) {
       return String(b.updated_at || "").localeCompare(String(a.updated_at || ""));
+    };
+    var rank = function (p) {
+      var i = STATUSES.indexOf((p.info || {}).status);
+      return i < 0 ? STATUSES.length : i;
+    };
+    return list.slice().sort(function (a, b) {
+      if (sort === "name") return collator.compare(a.name || "", b.name || "") || byUpdated(a, b);
+      if (sort === "start") {
+        var sa = (a.info || {}).start || "";
+        var sb = (b.info || {}).start || "";
+        if (sa !== sb) return !sa ? 1 : !sb ? -1 : sa.localeCompare(sb);
+        return byUpdated(a, b);
+      }
+      if (sort === "status") return rank(a) - rank(b) || byUpdated(a, b);
+      return byUpdated(a, b);
     });
   }
 
@@ -572,6 +638,8 @@
     // The empty state is only for a list that loaded with nothing in it.
     show($("projects-empty"), state.loaded && !state.projects.length);
     show($("projects-search-wrap"), state.projects.length > 1);
+    show($("projects-view-wrap"), state.projects.length > 1);
+    applyListLayout();
     show($("projects-clear-wrap"), !!(view.q || view.status || view.sort !== "updated"));
     show($("projects-no-match"), !!state.projects.length && !shown.length);
     $("projects-count").textContent = state.projects.length ? "(" + state.projects.length + ")" : "";
@@ -585,6 +653,8 @@
     // line up and nothing looks left out by mistake.
     var meta = [info.client || "—"];
     if (addressOf(info)) meta.push(addressOf(info));
+    // Each fact in its own element: the cards run them together, the table
+    // view gives each a column (css/product.css).
     var main = el("div", { class: "project-main" }, [
       el("a", { class: "project-name", href: projectPage(p.id), text: p.name }),
       el("p", { class: "project-client", text: meta.join(" · ") }),
@@ -596,8 +666,12 @@
               text: "—",
               "aria-label": T("proj.status.none"),
             }),
-        info.start ? T("proj.starts", { date: formatDay(info.start) }) + " · " : null,
-        T("proj.updated", { date: formatDate(p.updated_at) }),
+        el("span", {
+          class: "project-start",
+          text: info.start ? T("proj.starts", { date: formatDay(info.start) }) : "—",
+          "aria-label": info.start ? null : T("proj.noStart"),
+        }),
+        el("span", { class: "project-updated", text: T("proj.updated", { date: formatDate(p.updated_at) }) }),
       ]),
     ]);
     li.appendChild(main);
@@ -652,7 +726,7 @@
       li.replaceWith(fresh);
       fresh.querySelector(".project-actions button").focus();
     };
-    var form = el("form", { class: "project-rename" }, [
+    var form = el("form", { class: "project-rename", novalidate: true }, [
       el("label", { for: id, class: "visually-hidden", text: T("proj.nameLabel") }),
       input,
       save,
@@ -788,6 +862,14 @@
       readViewFromUrl();
       $("projects-search").addEventListener("input", renderList);
       $("projects-sort").addEventListener("change", renderList);
+      $("projects-view").value = readListLayout();
+      $("projects-view").addEventListener("change", applyListLayout);
+      // Saving paused (the kill switch, /api/config): said here, before
+      // anyone opens the designer to save.
+      if (config.switches && config.switches.saving === false) {
+        $("projects-paused-text").textContent = pausedText(config);
+        show($("projects-paused"), true);
+      }
       $("projects-filter").addEventListener("change", renderList);
       $("projects-retry").addEventListener("click", loadList);
       $("projects-clear").addEventListener("click", clearFilters);
@@ -1094,7 +1176,9 @@
         })
         .catch(function (err) {
           show($("project-loading"), false);
-          status($("project-error"), "error", errorText(err, "proj.err.openFailed"));
+          var out = $("project-error");
+          status(out, "error", errorText(err, "proj.err.openFailed") + " ");
+          out.appendChild(el("a", { href: window.location.href, text: T("proj.bar.retry") }));
         });
     });
   }
@@ -1104,6 +1188,7 @@
   // ===================================================================
   var current = null; // the open project: { id, name, info, updated_at }
   var barPlan = "free"; // or "unknown" when the plan couldn't be loaded
+  var barConfig = null; // /api/config, for the saving switch and its notice
   var barLimits = null; // { monthly, total }
   var barUsed = null; // { month, total }
   var savedCode = null; // the design as last saved to (or opened from) the project
@@ -1127,6 +1212,19 @@
     var paid = barPlan !== "free";
     var text = $("project-bar-text");
     text.textContent = "";
+    if (barConfig && barConfig.switches && barConfig.switches.saving === false) {
+      // Saving is paused (the kill switch): said up front, with the owner's
+      // notice, instead of after the client's details are typed in.
+      if (current) {
+        text.appendChild(document.createTextNode(T("proj.bar.project") + " "));
+        text.appendChild(el("a", { href: projectPage(current.id), text: current.name }));
+        text.appendChild(document.createTextNode(" · "));
+      }
+      text.appendChild(document.createTextNode(pausedText(barConfig)));
+      show($("project-save-form"), false);
+      show($("project-save-new"), false);
+      return;
+    }
     if (barPlan === "unknown") {
       // Saving still works if the plan allows it; the server decides.
       text.appendChild(document.createTextNode(T("proj.bar.down") + " "));
@@ -1320,8 +1418,10 @@
       });
   }
 
-  // Opens ?project=<id>: its design goes into the address as #design=...,
-  // which the studio picks up (on load, or as a link opened in place).
+  // Opens ?project=<id>: the studio takes its design as that project
+  // (StudioDesign.open: no word about links, its answers counted). The
+  // design as opened is the saved state edits are measured against, so the
+  // bar says "unsaved changes" only once the owner changes something.
   function openProject(id) {
     var out = $("project-status");
     status(out, "info", T("proj.loading"));
@@ -1329,13 +1429,18 @@
       .then(function (data) {
         setCurrent(data.project);
         status(out, "info", "");
-        if (data.project.design) {
-          // The studio takes the design from the hash; its first change
-          // event after that is the saved state to measure edits against.
+        var S = window.StudioDesign;
+        if (!data.project.design) {
+          markSaved();
+        } else if (S && typeof S.open === "function" && S.open(data.project.design, data.project.name)) {
+          // The studio's change event on opening sets the baseline; when
+          // the design is already in place, this does.
+          baselinePending = true;
+          if (studio("encoded")) markSaved();
+        } else {
+          // An older studio: the design goes in through the address.
           baselinePending = true;
           window.location.hash = "design=" + data.project.design;
-        } else {
-          markSaved();
         }
       })
       .catch(function (err) {
@@ -1348,6 +1453,7 @@
     var biz = window.DesignerBusiness || {};
     if (biz.unavailable && biz.unavailable !== "loading") return;
     if (!config.accounts || !hasStoredSignIn()) return;
+    barConfig = config;
     var FAILED = { failed: true };
     signIn(config)
       .catch(function () {

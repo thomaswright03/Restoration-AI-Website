@@ -50,7 +50,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 
 ## Settings (`site-config.json`)
 
-The one place for the owner's settings; edit, commit and push. `plans` (the prices the pages show and the project limits the server enforces; run `npm run pages` after changing them), `company.supportEmail` (the footer and the legal pages), `priceEstimator.enabled` (the estimate step prices the work at the business's labor rates; off shows the design only), `materialsEstimator.enabled` (the finishes step offers materials from the catalog in `js/materials-pricing.js`, added to the estimate), `leadForm` (left over from the retired request form; nothing reads it now), `owner` and `privacy` (the legal pages), and `riley.voice` (a default voice name per language). `js/site-config.js` reads it and applies the defaults when it can't be loaded.
+The one place for the owner's settings; edit, commit and push. `plans` (the prices the pages show and the project limits the server enforces; run `npm run pages` after changing them), `company.supportEmail` (the footer and the legal pages), `priceEstimator.enabled` (the estimate step prices the work at the business's labor rates; off shows the design only), `materialsEstimator.enabled` (the finishes step offers materials from the catalog in `js/materials-pricing.js`, added to the estimate), `owner` and `privacy` (the legal pages), and `riley.voice` (a default voice name per language). `js/site-config.js` reads it and applies the defaults when it can't be loaded.
 
 ## Going live (one-time setup)
 
@@ -86,7 +86,7 @@ Sign-ups, buying a plan and saving projects can each be stopped without a deploy
 3. Save the row. Within 15 seconds (the API caches it that long) every function refuses the switched-off action with `503 {"error":"paused"}`, and the pages explain it in the visitor's language:
    - `signups` off: the sign-up page shows "New sign-ups are paused" and offers only Log in; a trigger on `auth.users` refuses a new account even for a request made outside the page. Existing users can still log in.
    - `checkout` off: the account page's plan card says buying a plan is paused and shows no buy buttons; `/api/checkout` refuses. Existing subscriptions keep running, and Manage billing still works.
-   - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work.
+   - `saving` off: `/api/projects` refuses saving a design (new or again); reading, renaming, editing details and deleting still work. The designer's save bar and My projects read the switch from `/api/config` on load and say saving is paused (with the notice) before anyone fills in the save dialog.
 
 If the table doesn't exist yet (re-run `supabase/schema.sql`), every switch counts as on. The row is read with a 1.5 s limit so `/api/config` stays fast when the database is slow; if the read fails, the switches stay as they were last read (all on if they never were): the switch is for stopping the product on purpose, not for an outage. Every API error is logged as one JSON line with the route, a request id (also returned to the browser as `requestId`), the user id and the error word. Unit tests: `tests/unit/switches-robustness.test.js`.
 
@@ -111,7 +111,7 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
 - `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
 - `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The model can also add the flat surcharges (no stack, bad valve) and a labor tax rate, but the studio never sets the surcharge flags and its total is labor plus materials without the tax, so neither reaches an estimate today.
-- `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings (October 2026) and go stale; the file's header says how to refresh or add one (there is no generator script)
+- `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings and go stale, so the estimate and the PDF say "catalog prices as of <month>" from the file's `PRICES_AS_OF` date (set it when you refresh them; the unit tests warn once it's six months old); the file's header says how to refresh or add one (there is no generator script)
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
 - `js/script.js`: menu, language and FAQ (its request-form code is left over from the retired demo form; no page has one)

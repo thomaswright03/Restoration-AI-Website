@@ -484,11 +484,37 @@
     return url + "#" + HASH_KEY + "=" + Plan.encode(design);
   }
 
-  // js/projects.js saves the design to the signed-in subscriber's projects.
+  // A saved project's design, opened as that project (js/projects.js): no
+  // word about links, and its questions count as answered, so Next works
+  // without re-picking what was saved. Before init() has run, it waits to
+  // be the design init starts from.
+  var pendingOpen = null;
+
+  function openSaved(code, name) {
+    var next = Plan.decode(code);
+    if (!next) return false;
+    next.answered = Object.assign({}, answers(next), { stack: true });
+    if (!design) {
+      pendingOpen = next;
+      return true;
+    }
+    ui.selected = null;
+    commit(next);
+    // Opening a project isn't an edit to undo.
+    past = [];
+    future = [];
+    renderBar();
+    if (!VIEW_ONLY && name) toast(T("studio.openedProject", { name: name }));
+    return true;
+  }
+
+  // js/projects.js saves the design to the signed-in subscriber's projects,
+  // and opens a saved one here.
   window.StudioDesign = {
     encoded: function () {
       return design ? Plan.encode(design) : "";
     },
+    open: openSaved,
     summary: function () {
       return design ? projectSummary() : null;
     },
@@ -1923,7 +1949,8 @@
   //   layout       at least one fixture, and everything fits
   //   electrical   no outlet, switch or light where it can't go
   //   products     nothing: every list starts on the model shown in the room
-  //   finishes     a product picked for every surface being done
+  //   finishes     nothing: every surface starts on the first product for it
+  //                (the one the estimate prices), shown pressed
   // missingFor() is what's left, as phrases for "To go on: ...".
   function answers(d) {
     return (d || design).answered || { stack: false, products: {} };
@@ -1937,33 +1964,6 @@
     if (slotId) next.products[slotId] = true;
     else next.stack = true;
     return Object.assign({}, d, { answered: next });
-  }
-
-  // The surfaces a product is picked for: the ones being done that have
-  // products to pick from.
-  function surfaceCats(d) {
-    var f = d.finishes;
-    var walls = wallsOf(d);
-    return [
-      f.floor === "tile" ? "floorTile" : null,
-      f.floor === "flooring" ? "flooring" : null,
-      walls === "tileWet" || walls === "tile" ? "wallTile" : null,
-      walls === "tileWet" || walls === "paint" ? "wallPaint" : null,
-      f.ceiling ? "ceilingPaint" : null,
-    ].filter(function (cat) {
-      return cat && surfaceOptions(cat).length;
-    });
-  }
-
-  // A surface's product, only when the person picked it (and it's still
-  // on the list).
-  function surfacePicked(cat, d) {
-    var picked = (d || design).finishes.picks[cat];
-    return surfaceOptions(cat).some(function (o) {
-      return o.id === picked;
-    })
-      ? picked
-      : null;
   }
 
   function missingFor(step) {
@@ -1997,21 +1997,6 @@
         return Plan.errorsOf(issues, p.id).length > 0;
       });
       if (wrong.length) out.push({ key: "points", text: T("studio.need.points") });
-    } else if (step === "finishes") {
-      var unpicked = surfaceCats(d).filter(function (cat) {
-        return !surfacePicked(cat, d);
-      });
-      if (unpicked.length)
-        out.push({
-          key: "surfaces",
-          text: T("studio.need.surfaces", {
-            list: unpicked
-              .map(function (cat) {
-                return T("studio.need.surface." + cat);
-              })
-              .join(", "),
-          }),
-        });
     }
     return out;
   }
@@ -2107,6 +2092,14 @@
       if (!stop && missingFor(step).length) stop = step;
     });
     els.studio.setAttribute("data-step", ui.step);
+    // On a phone the steps scroll inside the bar: the current one stays in view.
+    var cur = els.steps.querySelector('[aria-current="step"]');
+    if (cur && els.steps.scrollWidth > els.steps.clientWidth) {
+      var bar = els.steps.getBoundingClientRect();
+      var box = cur.getBoundingClientRect();
+      if (box.left < bar.left) els.steps.scrollLeft += box.left - bar.left;
+      else if (box.right > bar.right) els.steps.scrollLeft += box.right - bar.right;
+    }
     var last = els.steps.querySelector('[data-label="estimate"]');
     if (last) last.textContent = stepShort("estimate");
     els.undo.disabled = !past.length;
@@ -2248,11 +2241,14 @@
     if (step !== "estimate" || BIZ.demo) {
       return h("p", { class: "studio-step-intro", text: T("studio.step." + step + ".intro") });
     }
-    if (!onDefaultRates()) {
+    var mode = ratesMode();
+    if (mode === "own") {
       return h("p", { class: "studio-step-intro", text: T("studio.step.estimate.introOwner") });
     }
     return h("p", { class: "studio-step-intro" }, [
-      T("studio.step.estimate.introOwnerDefaults") + " ",
+      T(mode === "partial" ? "studio.step.estimate.introOwnerPartial" : "studio.step.estimate.introOwnerDefaults", {
+        list: sampleRateList(),
+      }) + " ",
       h("a", { href: pagePath("account.html"), text: T("studio.step.estimate.setPrices") }),
     ]);
   }
@@ -3887,50 +3883,48 @@
     if (!materialsOn()) body.appendChild(h("p", { class: "studio-note", text: T("studio.finish.notPriced") }));
   }
 
-  // The products for a surface, as picture buttons with their price.
-  // Until one is picked, none is pressed (the estimate prices the first
-  // meanwhile).
+  // The products for a surface, as picture buttons with their price. The
+  // one in the estimate is pressed: the pick, or the first product until
+  // then, so the total in the bar is always for what's shown pressed.
   function swatches(cat, title) {
-    var current = surfacePicked(cat);
+    var picked = surfaceProduct(cat);
+    var current = picked ? picked.id : null;
     var options = surfaceOptions(cat);
     if (!options.length) return null;
     var priced = materialsOn();
-    return missingMark(
-      h("div", { class: "studio-swatch-group", "data-cat": cat }, [
-        title ? h("p", { class: "studio-swatch-title", text: title }) : null,
-        h(
-          "div",
-          { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
-          options.map(function (opt) {
-            var on = current === opt.id;
-            return h(
-              "button",
-              {
-                type: "button",
-                class: "studio-swatch",
-                "aria-pressed": on ? "true" : "false",
-                "data-key": "sw-" + cat + "-" + opt.id,
-                title: opt.name,
-                onclick: function () {
-                  if (on) return;
-                  var picks = Object.assign({}, design.finishes.picks);
-                  picks[cat] = opt.id;
-                  commit(withFinishes({ picks: picks }));
-                },
+    return h("div", { class: "studio-swatch-group", "data-cat": cat }, [
+      title ? h("p", { class: "studio-swatch-title", text: title }) : null,
+      h(
+        "div",
+        { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
+        options.map(function (opt) {
+          var on = current === opt.id;
+          return h(
+            "button",
+            {
+              type: "button",
+              class: "studio-swatch",
+              "aria-pressed": on ? "true" : "false",
+              "data-key": "sw-" + cat + "-" + opt.id,
+              title: opt.name,
+              onclick: function () {
+                if (on) return;
+                var picks = Object.assign({}, design.finishes.picks);
+                picks[cat] = opt.id;
+                commit(withFinishes({ picks: picks }));
               },
-              [
-                opt.imageUrl
-                  ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
-                  : null,
-                h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
-                priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
-              ],
-            );
-          }),
-        ),
-      ]),
-      !current,
-    );
+            },
+            [
+              opt.imageUrl
+                ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
+                : null,
+              h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
+              priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
+            ],
+          );
+        }),
+      ),
+    ]);
   }
 
   // Retail names are long: the brand-and-model part is enough on a button.
@@ -4089,9 +4083,41 @@
 
   // The business's own labor prices are in the estimate once it has set
   // any on the account page (js/business.js); until then every line is at
-  // the platform's sample rates, and the estimate says so.
-  function onDefaultRates() {
-    return !BIZ.demo && !BIZ.ownPrices;
+  // the platform's sample rates, and the estimate says so. With some set,
+  // it says which lines are still at sample rates.
+
+  // The labor lines of this estimate priced at a sample rate because the
+  // owner hasn't set that price ([] in the demo, or with no prices set).
+  function sampleRateLines(est) {
+    if (BIZ.demo || !BIZ.ownPrices) return [];
+    var set = BIZ.priceSet || {};
+    return (est || estimate()).labor.lines.filter(function (line) {
+      return !Pricing.linePriceKeys(line.key).some(function (key) {
+        return set[key];
+      });
+    });
+  }
+
+  // How the owner's estimate is priced: "own" (every line at their prices),
+  // "partial" (some lines at sample rates), "sample" (no prices set yet);
+  // "demo" in the public demo.
+  function ratesMode(est) {
+    if (BIZ.demo) return "demo";
+    if (!BIZ.ownPrices) return "sample";
+    return sampleRateLines(est).length ? "partial" : "own";
+  }
+
+  function sampleRateList(est) {
+    return sampleRateLines(est)
+      .map(function (line) {
+        return line.label;
+      })
+      .join(", ");
+  }
+
+  // "October 2026": when the materials catalog's prices were last checked.
+  function catalogAsOf() {
+    return { asOf: Materials ? Materials.asOfLabel(I18n.locale()) : "" };
   }
 
   function assumptions(est) {
@@ -4099,8 +4125,10 @@
     if (est.materials.length)
       list.push(T("studio.est.materialQty", { waste: Math.round((TILE_WASTE - 1) * 100), coats: PAINT_COATS }));
     list.push(T("card.plumbingNote"));
-    list.push(T(est.hasMaterials ? "card.materialsNote" : "card.alsoNotIncluded"));
-    if (onDefaultRates()) list.push(T("card.defaultRates"));
+    list.push(T(est.hasMaterials ? "card.materialsNote" : "card.alsoNotIncluded", catalogAsOf()));
+    var mode = ratesMode(est);
+    if (mode === "sample") list.push(T("card.defaultRates"));
+    else if (mode === "partial") list.push(T("card.partialRates", { list: sampleRateList(est) }));
     return list;
   }
 
@@ -4333,7 +4361,7 @@
       h("header", { class: "studio-estimate-head" }, [
         h("p", { class: "eyebrow", text: BIZ.name }),
         h("h3", { text: T("card.title") }),
-        h("p", { class: "studio-note", text: T(est.hasMaterials ? "card.ledeMaterials" : "card.lede") }),
+        h("p", { class: "studio-note", text: T(est.hasMaterials ? "card.ledeMaterials" : "card.lede", catalogAsOf()) }),
       ]),
     );
     var labor = h("div", { class: "studio-lines" }, [
@@ -4386,7 +4414,7 @@
     card.appendChild(
       h("p", {
         class: "studio-disclaimer",
-        text: T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer"),
+        text: T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer", catalogAsOf()),
       }),
     );
     return card;
@@ -4571,7 +4599,7 @@
           excluded: priced ? excludedLines(est) : [],
           totals: totals,
           afterTotal: priced
-            ? est.notes.concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer")])
+            ? est.notes.concat([T(est.hasMaterials ? "card.disclaimerMaterials" : "card.disclaimer", catalogAsOf())])
             : [],
           sections: sections,
           footer: {
@@ -4646,12 +4674,19 @@
       });
       return;
     }
-    var stepKey =
-      ui.step === "estimate" && !BIZ.demo
-        ? onDefaultRates()
+    var stepKey = "riley.step." + ui.step;
+    if (ui.step === "estimate" && !BIZ.demo) {
+      var mode = ratesMode();
+      stepKey =
+        mode === "sample"
           ? "riley.step.estimateOwnerDefaults"
-          : "riley.step.estimateOwner"
-        : "riley.step." + ui.step;
+          : mode === "partial"
+            ? "riley.step.estimateOwnerPartial"
+            : "riley.step.estimateOwner";
+    } else if (ui.step === "finishes" && !materialsOn()) {
+      // Without the materials estimator the price doesn't follow the picks.
+      stepKey = "riley.step.finishesNotPriced";
+    }
     var intro = (opts.greet ? T("riley.greeting") + " " : "") + T(stepKey);
     // On Electrical and Estimate she says what the rules still ask for,
     // and offers to add it.
@@ -4840,20 +4875,10 @@
     viewbar.appendChild(els.isoBtn);
     viewbar.appendChild(els.frameBtn);
     viewbar.appendChild(els.status);
-    if (VIEW_ONLY) {
-      // The project page's viewer: no steps, no undo, share or start over.
-      // Changing the design happens in the designer itself, in the top window.
-      document
-        .getElementById("studio-actions")
-        .appendChild(
-          h(
-            "a",
-            { class: "btn btn-primary studio-open-link", href: designerHref(), target: "_top", "data-key": "open" },
-            [h("span", { icon: "external" }), T("studio.openDesigner")],
-          ),
-        );
-      return;
-    }
+    // The project page's viewer: no steps, no undo, share or start over.
+    // Changing the design happens in the designer itself, which the project
+    // page's own "Open in the designer" button opens.
+    if (VIEW_ONLY) return;
     els.steps = document.getElementById("studio-steps");
     STEPS.forEach(function (step, i) {
       els.steps.appendChild(
@@ -4901,15 +4926,6 @@
       [h("span", { class: "studio-total-chip-label", text: T("studio.estimateChip") }), (els.totalValue = h("strong"))],
     );
     actions.appendChild(els.total);
-  }
-
-  // This same design in the full designer: the page's address without the
-  // embed flag (the project id and business stay).
-  function designerHref() {
-    var params = new URLSearchParams(window.location.search);
-    params.delete("embed");
-    var q = params.toString();
-    return window.location.pathname + (q ? "?" + q : "");
   }
 
   // On wide screens the studio fills the window below the page header (and
@@ -4980,9 +4996,10 @@
     }
     sizes = room3d ? room3d.itemSizes() : null;
 
-    var linked = linkedDesign();
-    var saved = linked ? null : savedDesign();
-    design = linked || saved || Plan.fromTemplate("full5x8", sizes);
+    var linked = pendingOpen ? null : linkedDesign();
+    var saved = linked || pendingOpen ? null : savedDesign();
+    design = pendingOpen || linked || saved || Plan.fromTemplate("full5x8", sizes);
+    pendingOpen = null;
     if (!design.products || !Object.keys(design.products).length) design.products = copy(DEFAULT_PICKS);
     if (linked) {
       // The link has done its job: from here on the design is this
@@ -5010,8 +5027,14 @@
       }
     });
     watchSaveBar();
+    // A click on the backdrop lands on the dialog element itself, outside
+    // its box (so does one on its padding, which is inside and keeps it).
     els.linkDialog.addEventListener("click", function (e) {
-      if (e.target.closest("[data-close]")) els.linkDialog.close();
+      if (e.target.closest("[data-close]")) return els.linkDialog.close();
+      if (e.target !== els.linkDialog) return;
+      var r = els.linkDialog.getBoundingClientRect();
+      var inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (!inside) els.linkDialog.close();
     });
 
     if (room3d) {

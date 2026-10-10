@@ -162,6 +162,9 @@
         </div>
 
         <div id="projects-app" hidden>
+          <div class="app-notice" id="projects-paused" role="status" hidden>
+            <p id="projects-paused-text"></p>
+          </div>
           <div class="app-notice" id="projects-free" hidden>
             <p>
               <strong>You're on the free plan.</strong> You can use the designer as much as you like, but saving
@@ -201,6 +204,15 @@
                 <select id="projects-sort">
                   <option value="updated">Last updated</option>
                   <option value="name">Name (A to Z)</option>
+                  <option value="start">Start date (soonest first)</option>
+                  <option value="status">Status (new lead to done)</option>
+                </select>
+              </div>
+              <div class="form-group projects-view" id="projects-view-wrap" hidden>
+                <label for="projects-view">View</label>
+                <select id="projects-view">
+                  <option value="cards">Cards</option>
+                  <option value="table">Table</option>
                 </select>
               </div>
               <div class="form-group">
@@ -216,6 +228,14 @@
               <a class="btn btn-primary" href="designer.html">Open the designer</a>
             </div>
             <p class="form-note" id="projects-no-match" hidden>No projects match that search or filter.</p>
+            <div class="project-table-head" id="projects-table-head" hidden aria-hidden="true">
+              <span>Project</span>
+              <span>Client and address</span>
+              <span>Status</span>
+              <span>Starts</span>
+              <span>Updated</span>
+              <span>Actions</span>
+            </div>
             <ul class="project-list" id="projects-list"></ul>
           </div>
         </div>

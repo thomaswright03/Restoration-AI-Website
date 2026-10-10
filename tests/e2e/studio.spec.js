@@ -274,6 +274,41 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("on a phone in Portuguese the page never scrolls sideways and every step is in the bar", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 800 });
+    const errors = await openStudio(page, "/pt/designer.html");
+    await expect(step(page, "estimate")).toHaveText(/6/);
+    const fit = await page.evaluate(() => {
+      const nav = document.querySelector(".studio-steps");
+      const last = nav.lastElementChild;
+      // Scrolled to the end, step 6 is fully inside the bar.
+      nav.scrollLeft = nav.scrollWidth;
+      const bar = nav.getBoundingClientRect();
+      const six = last.getBoundingClientRect();
+      nav.scrollLeft = 0;
+      return {
+        pageWidth: document.documentElement.scrollWidth,
+        navRight: Math.round(bar.right),
+        lastInNav: six.right <= bar.right + 1 && six.left >= bar.left - 1,
+        scrollable: nav.scrollWidth >= nav.clientWidth,
+      };
+    });
+    expect(fit.pageWidth).toBeLessThanOrEqual(375);
+    expect(fit.navRight).toBeLessThanOrEqual(375);
+    expect(fit.lastInNav).toBe(true);
+    expect(fit.scrollable).toBe(true);
+    // Going to a step brings it into view inside the bar.
+    await confirmStack(page);
+    await step(page, "layout").click();
+    const inView = await page.evaluate(() => {
+      const nav = document.querySelector(".studio-steps").getBoundingClientRect();
+      const cur = document.querySelector('.studio-step-btn[aria-current="step"]').getBoundingClientRect();
+      return cur.left >= nav.left - 1 && cur.right <= nav.right + 1;
+    });
+    expect(inView).toBe(true);
+    expect(errors).toEqual([]);
+  });
+
   test("finishes change the room and the price", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);
@@ -281,6 +316,14 @@ test.describe("design studio", () => {
     await expect(total).toContainText("$");
     await step(page, "finishes").click();
     const before = await total.innerText();
+    // Picking another product for a surface moves the price in the bar.
+    const floor = page.locator('.studio-swatch-group[data-cat="floorTile"] .studio-swatch');
+    await expect(floor.first()).toHaveAttribute("aria-pressed", "true");
+    await floor.nth(1).click();
+    await expect(floor.nth(1)).toHaveAttribute("aria-pressed", "true");
+    await expect(total).not.toHaveText(before);
+    await floor.first().click();
+    await expect(total).toHaveText(before);
     await byKey(page, "fin-walls-tile").click();
     await expect(byKey(page, "fin-walls-tile")).toHaveAttribute("aria-pressed", "true");
     await expect(total).not.toHaveText(before);
@@ -315,12 +358,22 @@ test.describe("design studio", () => {
     const [download] = await Promise.all([page.waitForEvent("download"), byKey(page, "pdf").click()]);
     expect(download.suggestedFilename()).toMatch(/\.pdf$/);
 
+    // The estimate names the day the catalog's prices were checked, never "current".
+    await expect(page.getByTestId("estimate-card")).toContainText("catalog prices as of October 2026");
+    await expect(page.getByTestId("estimate-card")).not.toContainText("current Home Depot");
+
     // No clipboard: the link shows in a box to copy by hand.
     await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { value: undefined, configurable: true }));
     await byKey(page, "share").click();
     await expect(page.locator("#studio-link-dialog")).toBeVisible();
     const link = await page.locator("#studio-link-input").inputValue();
     expect(link).toContain("/designer.html#design=");
+    // A click on the backdrop closes it, like the other dialogs; focus goes back to Share.
+    await page.mouse.click(4, 4);
+    await expect(page.locator("#studio-link-dialog")).toBeHidden();
+    await expect(byKey(page, "share")).toBeFocused();
+    await byKey(page, "share").click();
+    await expect(page.locator("#studio-link-dialog")).toBeVisible();
     await page.locator("#studio-link-dialog [data-close]").click();
 
     const other = await browser.newPage();
@@ -626,9 +679,10 @@ test.describe("design studio", () => {
     await expect(need).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
-    await expect(need).toHaveText("To go on: pick a finish for: floor tile, wall paint, ceiling paint.");
-    const open = page.locator(".studio-swatch-group:not(:has([aria-pressed='true']))");
-    while (await open.count()) await open.first().locator(".studio-swatch").first().click();
+    // Every surface starts on a product (the one the estimate prices), shown
+    // pressed: nothing to pick before going on.
+    await expect(need).toHaveCount(0);
+    await expect(page.locator(".studio-swatch-group:not(:has([aria-pressed='true']))")).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-estimate")).toBeVisible();
     await step(page, "room").click();

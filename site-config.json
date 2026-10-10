@@ -27,11 +27,6 @@
   "materialsEstimator": {
     "enabled": true
   },
-  "leadForm": {
-    "endpoint": "",
-    "serviceName": "",
-    "servicePrivacyUrl": ""
-  },
   "owner": {
     "legalName": "",
     "contactAddress": ""

@@ -324,6 +324,29 @@ test("the estimate's words agree with its lines: plumbing and electrical are in,
   assert.match(I18n.t("card.disclaimerMaterials"), /includes the labor for the plumbing and electrical points listed/);
 });
 
+test("every estimate line names the owner's price it is at (for 'sample rates for the rest')", () => {
+  const scope = { demolition: true, floorFinish: "tile", walls: "tileWet", paintCeiling: true };
+  const values = {
+    Bathroom_Width_Ft: 5,
+    Bathroom_Length_Ft: 8,
+    Bathroom_Height_Ft: 8,
+    Toilet_Quantity: 1,
+    Bathtub_Quantity: 1,
+    Electrical_Points: 2,
+    Drain_Run_Ft: 3,
+    No_Stack_Surcharge_Included: true,
+  };
+  const r = P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
+  for (const line of r.lines) {
+    const keys = P.linePriceKeys(line.key);
+    assert.ok(keys.length > 0, line.key + " has no price key");
+    for (const k of keys) assert.ok(k in P.DEFAULT_PRICES, k);
+  }
+  assert.deepEqual(P.linePriceKeys("Bathtub_Quantity"), ["Bathtub_Price", "Shower_Price"]);
+  assert.deepEqual(P.linePriceKeys("wallTile"), ["Tile_Price_Per_SqFt"]);
+  assert.deepEqual(P.linePriceKeys("no-such-line"), []);
+});
+
 test("only code a page runs is exported", () => {
   const exported = Object.keys(P).sort();
   assert.deepEqual(exported, [
@@ -334,6 +357,7 @@ test("only code a page runs is exported", () => {
     "describeScope",
     "estimateAssumptions",
     "formatQty",
+    "linePriceKeys",
     "money",
     "parseNumber",
     "plumbingFixtureCount",

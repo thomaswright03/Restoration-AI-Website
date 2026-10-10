@@ -30,6 +30,8 @@
     serviceName: "Room Designer 3D",
     demo: true,
     ownPrices: false,
+    // The owner's prices that are set, by DEFAULT_PRICES key ({} = none).
+    priceSet: {},
     unavailable: "",
   };
 
@@ -47,20 +49,29 @@
   }
 
   // Only known price keys with sensible numbers replace the defaults.
-  // Returns whether any did: until the owner sets a price, the estimate
-  // runs on the platform's sample rates and says so (js/studio.js).
+  // Returns the keys that did, as { key: true }: until the owner sets a
+  // price, the estimate runs on the platform's sample rates and says so, and
+  // with some set it says which lines are still at sample rates
+  // (js/studio.js).
   function applyPrices(prices) {
     var Pricing = window.BathroomPricing;
-    if (!Pricing || !prices || typeof prices !== "object") return false;
-    var any = false;
+    var set = {};
+    if (!Pricing || !prices || typeof prices !== "object") return set;
     Object.keys(Pricing.DEFAULT_PRICES).forEach(function (key) {
       var n = Number(prices[key]);
-      if (prices[key] !== undefined && prices[key] !== "" && isFinite(n) && n >= 0 && n <= 100000) {
+      if (
+        prices[key] !== undefined &&
+        prices[key] !== null &&
+        prices[key] !== "" &&
+        isFinite(n) &&
+        n >= 0 &&
+        n <= 100000
+      ) {
         Pricing.DEFAULT_PRICES[key] = n;
-        any = true;
+        set[key] = true;
       }
     });
-    return any;
+    return set;
   }
 
   biz.load = function (data, reason) {
@@ -79,7 +90,8 @@
     biz.unavailable = "";
     // The owner looking at their own designer before their plan is active.
     biz.preview = data.preview === true;
-    biz.ownPrices = applyPrices(data.prices);
+    biz.priceSet = applyPrices(data.prices);
+    biz.ownPrices = Object.keys(biz.priceSet).length > 0;
   };
 
   // The signed-in user's Supabase access token, if any (it's kept in
@@ -145,6 +157,10 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-demo]"), function (el) {
       el.hidden = !biz.demo;
+    });
+    // A business's own designer (its owner's, or their project page's viewer).
+    Array.prototype.forEach.call(document.querySelectorAll("[data-biz-owner]"), function (el) {
+      el.hidden = !!biz.demo;
     });
     Array.prototype.forEach.call(document.querySelectorAll("[data-biz-preview]"), function (el) {
       el.hidden = !biz.preview;

@@ -212,8 +212,7 @@ p {
 .hero :focus-visible,
 .section-dark :focus-visible,
 .cta-band :focus-visible,
-.site-footer :focus-visible,
-.contact-info-card :focus-visible {
+.site-footer :focus-visible {
   outline-color: var(--color-focus-on-dark);
 }
 
@@ -955,22 +954,7 @@ p {
   color: var(--color-on-dark-soft);
 }
 
-/* ---------- Contact / lead form ---------- */
-.contact-wrap {
-  display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
-  gap: var(--space-8);
-  max-width: var(--max-width);
-  margin: 0 auto;
-}
-
-@media (max-width: 860px) {
-  .contact-wrap {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-7);
-  }
-}
-
+/* ---------- Forms ---------- */
 .form-group {
   margin-bottom: var(--space-6);
 }
@@ -1029,14 +1013,6 @@ textarea {
   color: var(--color-danger);
 }
 
-.form-honeypot {
-  position: absolute;
-  left: -10000px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-
 .form-note {
   font-size: var(--fs-sm);
   color: var(--color-muted);
@@ -1047,14 +1023,6 @@ textarea {
   font-size: var(--fs-sm);
   color: var(--color-ink-soft);
   margin: 0 0 var(--space-5);
-}
-
-.form-prefill-note {
-  font-size: var(--fs-sm);
-  padding: var(--space-3) var(--space-4);
-  border-left: 3px solid var(--color-accent);
-  background: var(--color-surface-alt);
-  color: var(--color-ink);
 }
 
 .form-status {
@@ -1074,52 +1042,6 @@ textarea {
 
 .form-status.is-error {
   border-color: var(--color-danger);
-}
-
-.contact-info-card {
-  background: var(--color-dark);
-  color: var(--color-on-dark-soft);
-  padding: var(--space-7) var(--space-6);
-  height: fit-content;
-  box-shadow: var(--shadow-soft);
-  min-width: 0;
-}
-
-.contact-info-title {
-  color: var(--color-on-dark);
-  margin: 0 0 var(--space-5);
-  font-size: var(--fs-lg);
-}
-
-.contact-info-card a {
-  color: var(--color-on-dark);
-  font-weight: 500;
-  overflow-wrap: anywhere;
-}
-
-.contact-info-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-  padding-bottom: var(--space-5);
-  border-bottom: 1px solid var(--color-on-dark-line);
-  min-width: 0;
-}
-
-.contact-info-row:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.contact-info-row .icon {
-  color: var(--color-accent-bright);
-}
-
-.contact-info-card .note {
-  color: var(--color-on-dark-soft);
-  font-size: var(--fs-sm);
-  margin: var(--space-5) 0 0;
 }
 
 /* ---------- Footer ---------- */

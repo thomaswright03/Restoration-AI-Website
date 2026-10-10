@@ -179,9 +179,9 @@
       "Estimativa aproximada e sem compromisso da mão de obra. Detalhes abaixo.",
     ],
     "card.ledeMaterials": [
-      "Rough, non-binding estimate — labor plus current Home Depot prices for the materials you picked.",
-      "Estimación aproximada y no vinculante: mano de obra más los precios actuales de Home Depot de los materiales que eligió.",
-      "Estimativa aproximada e sem compromisso: mão de obra mais os preços atuais da Home Depot dos materiais que você escolheu.",
+      "Rough, non-binding estimate — labor plus Home Depot catalog prices as of {asOf} for the materials you picked.",
+      "Estimación aproximada y no vinculante: mano de obra más los precios de catálogo de Home Depot de {asOf} de los materiales que eligió.",
+      "Estimativa aproximada e sem compromisso: mão de obra mais os preços de catálogo da Home Depot de {asOf} dos materiais que você escolheu.",
     ],
     "card.noWork": [
       "No priced work selected",
@@ -219,14 +219,19 @@
       "Encanamento e elétrica são cobrados por ponto: um ponto hidráulico para cada vaso, pia, gabinete, chuveiro e banheira, e um ponto elétrico para cada tomada, interruptor, luz e exaustor do projeto, mais qualquer linha de esgoto nova por pé. Serviço de encanamento ou elétrica além desses pontos (por exemplo, uma prumada nova ou um registro com defeito) não está incluído e aumentaria o custo.",
     ],
     "card.materialsNote": [
-      "Materials shown are priced at current Home Depot rates as of when they were last refreshed — confirm before buying. Also not included: permits and any applicable taxes.",
-      "Los materiales tienen los precios de Home Depot de la última actualización: confírmelos antes de comprar. Tampoco incluye permisos ni impuestos aplicables.",
-      "Os materiais estão com os preços da Home Depot da última atualização: confirme antes de comprar. Também não inclui alvarás nem impostos aplicáveis.",
+      "Materials are at Home Depot catalog prices as of {asOf}; they may have changed since — confirm before buying. Also not included: permits and any applicable taxes.",
+      "Los materiales tienen los precios de catálogo de Home Depot de {asOf}; pueden haber cambiado desde entonces: confírmelos antes de comprar. Tampoco incluye permisos ni impuestos aplicables.",
+      "Os materiais estão com os preços de catálogo da Home Depot de {asOf}; eles podem ter mudado desde então: confirme antes de comprar. Também não inclui alvarás nem impostos aplicáveis.",
     ],
     "card.alsoNotIncluded": [
       "Also not included: materials, permits, and any applicable taxes.",
       "Tampoco incluye materiales, permisos ni impuestos aplicables.",
       "Também não inclui materiais, alvarás nem impostos aplicáveis.",
+    ],
+    "card.partialRates": [
+      "Labor is at this business's own prices where it has set them; Room Designer 3D's sample rates price the rest: {list}.",
+      "La mano de obra está a los precios propios de esta empresa donde los ha definido; las tarifas de ejemplo de Room Designer 3D cubren el resto: {list}.",
+      "A mão de obra está nos preços próprios desta empresa onde ela os definiu; os valores de exemplo do Room Designer 3D cobrem o resto: {list}.",
     ],
     "card.defaultRates": [
       "Labor is at Room Designer 3D's default sample rates: this business hasn't set its own labor prices yet.",
@@ -239,9 +244,9 @@
       "Esta é uma estimativa automática e sem compromisso somente da mão de obra, baseada apenas nas medidas, quantidades e escolhas informadas e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Inclui a mão de obra dos pontos hidráulicos e elétricos listados; outro serviço de encanamento ou elétrica, materiais, alvarás e impostos aplicáveis não estão incluídos e aumentarão o custo se o serviço precisar deles. Os preços são os vigentes na data em que foi gerada e podem mudar. O preço real só é definido em um acordo por escrito, depois que o projeto for avaliado pessoalmente.",
     ],
     "card.disclaimerMaterials": [
-      "This is an automated, non-binding estimate combining labor at the business's current rates with current Home Depot prices for the materials you picked, based only on what was entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, the Kohler and Sterling products themselves, permits and any applicable taxes are not included and will add to the cost where the job needs them. Material prices were current as of when they were last refreshed and may have changed since — confirm before buying. The actual price is set only in a written agreement after the project is reviewed in person.",
-      "Esta es una estimación automática y no vinculante que combina la mano de obra según las tarifas actuales de la empresa con los precios actuales de Home Depot de los materiales que eligió, basada únicamente en lo indicado y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los productos Kohler y Sterling en sí, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios de los materiales eran los vigentes en su última actualización y pueden haber cambiado: confírmelos antes de comprar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
-      "Esta é uma estimativa automática e sem compromisso que combina a mão de obra pelos valores atuais da empresa com os preços atuais da Home Depot dos materiais que você escolheu, baseada apenas no que foi informado e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Inclui a mão de obra dos pontos hidráulicos e elétricos listados; outro serviço de encanamento ou elétrica, os produtos Kohler e Sterling em si, alvarás e impostos aplicáveis não estão incluídos e aumentarão o custo se o serviço precisar deles. Os preços dos materiais eram os vigentes na última atualização e podem ter mudado: confirme antes de comprar. O preço real só é definido em um acordo por escrito, depois que o projeto for avaliado pessoalmente.",
+      "This is an automated, non-binding estimate combining labor at the business's current rates with Home Depot catalog prices as of {asOf} for the materials you picked, based only on what was entered and the assumptions listed with it. It is not a quote, offer or contract. It includes the labor for the plumbing and electrical points listed; other plumbing or electrical work, the Kohler and Sterling products themselves, permits and any applicable taxes are not included and will add to the cost where the job needs them. Material prices are the catalog's as of {asOf} and may have changed since — confirm before buying. The actual price is set only in a written agreement after the project is reviewed in person.",
+      "Esta es una estimación automática y no vinculante que combina la mano de obra según las tarifas actuales de la empresa con los precios de catálogo de Home Depot de {asOf} de los materiales que eligió, basada únicamente en lo indicado y en los supuestos que la acompañan. No es una cotización, oferta ni contrato. Incluye la mano de obra de los puntos de plomería y electricidad indicados; otro trabajo de plomería o electricidad, los productos Kohler y Sterling en sí, los permisos y los impuestos aplicables no están incluidos y aumentarán el costo si el trabajo los necesita. Los precios de los materiales son los del catálogo de {asOf} y pueden haber cambiado desde entonces: confírmelos antes de comprar. El precio real se fija solo en un acuerdo por escrito, después de revisar el proyecto en persona.",
+      "Esta é uma estimativa automática e sem compromisso que combina a mão de obra pelos valores atuais da empresa com os preços de catálogo da Home Depot de {asOf} dos materiais que você escolheu, baseada apenas no que foi informado e nas premissas que a acompanham. Não é um orçamento, oferta nem contrato. Inclui a mão de obra dos pontos hidráulicos e elétricos listados; outro serviço de encanamento ou elétrica, os produtos Kohler e Sterling em si, alvarás e impostos aplicáveis não estão incluídos e aumentarão o custo se o serviço precisar deles. Os preços dos materiais são os do catálogo de {asOf} e podem ter mudado desde então: confirme antes de comprar. O preço real só é definido em um acordo por escrito, depois que o projeto for avaliado pessoalmente.",
     ],
     "card.assumptions": ["What this estimate assumes", "Qué supone esta estimación", "O que esta estimativa considera"],
     "card.businessNamed": ["{business} ({name})", "{business} ({name})", "{business} ({name})"],
@@ -273,52 +278,6 @@
       "Cheaper than {others} for the same product.",
       "Más barato que {others} por el mismo producto.",
       "Mais barato que {others} pelo mesmo produto.",
-    ],
-
-    // ---------- Get a Quote form ----------
-    "form.error.name": ["Enter your name.", "Escriba su nombre.", "Informe seu nome."],
-    "form.error.phone": [
-      "Enter a phone number we can call you on.",
-      "Escriba un número de teléfono al que podamos llamarle.",
-      "Informe um telefone para podermos ligar para você.",
-    ],
-    "form.error.phoneInvalid": [
-      "Enter a valid phone number, e.g. (385) 356-8733.",
-      "Escriba un número de teléfono válido, por ejemplo (385) 356-8733.",
-      "Informe um telefone válido, por exemplo (385) 356-8733.",
-    ],
-    "form.error.email": ["Enter your email address.", "Escriba su correo electrónico.", "Informe seu e-mail."],
-    "form.error.emailInvalid": [
-      "Enter a valid email address, e.g. name@example.com.",
-      "Escriba un correo electrónico válido, por ejemplo nombre@ejemplo.com.",
-      "Informe um e-mail válido, por exemplo nome@exemplo.com.",
-    ],
-    "form.subject": [
-      "Bathroom quote request from {name}",
-      "Solicitud de cotización de baño de {name}",
-      "Pedido de orçamento de banheiro de {name}",
-    ],
-    "form.body.name": ["Name", "Nombre", "Nome"],
-    "form.body.phone": ["Phone", "Teléfono", "Telefone"],
-    "form.body.email": ["Email", "Correo electrónico", "E-mail"],
-    "form.body.service": ["Service", "Servicio", "Serviço"],
-    "form.body.details": ["Project details", "Detalles del proyecto", "Detalhes do projeto"],
-    "form.sending": ["Sending…", "Enviando…", "Enviando…"],
-    "form.status.sending": ["Sending your request…", "Enviando su solicitud…", "Enviando o seu pedido…"],
-    "form.status.mailto": [
-      "Your email app should now open with your request filled in. [b:Please press Send in your email app] — we don't receive anything until you do. If nothing opened, [again:open it again], email us at [email] or call [phone].",
-      "Ahora debería abrirse su aplicación de correo con su solicitud ya escrita. [b:Presione Enviar en su aplicación de correo]: no recibimos nada hasta que lo haga. Si no se abrió nada, [again:vuelva a abrirla], escríbanos a [email] o llame al [phone].",
-      "Agora o seu aplicativo de e-mail deve abrir com o pedido já preenchido. [b:Toque em Enviar no seu aplicativo de e-mail]: não recebemos nada até você fazer isso. Se nada abriu, [again:abra de novo], escreva para [email] ou ligue para [phone].",
-    ],
-    "form.status.sent": [
-      "[b:Request sent.] Thank you — we've received your request and will get back to you as soon as we can. If it's urgent, call [phone].",
-      "[b:Solicitud enviada.] Gracias: recibimos su solicitud y le responderemos lo antes posible. Si es urgente, llame al [phone].",
-      "[b:Pedido enviado.] Obrigado! Recebemos o seu pedido e responderemos o quanto antes. Se for urgente, ligue para [phone].",
-    ],
-    "form.status.failed": [
-      "[b:Sorry, your request wasn't sent.] Nothing you entered has been lost — please try again, or call us at [phone] or email [email].",
-      "[b:Lo sentimos, su solicitud no se envió.] No se perdió nada de lo que escribió: inténtelo de nuevo, o llámenos al [phone] o escriba a [email].",
-      "[b:Desculpe, o seu pedido não foi enviado.] Nada do que você digitou foi perdido: tente de novo, ou ligue para [phone] ou escreva para [email].",
     ],
 
     // ---------- projects: My projects page and the designer's save bar (js/projects.js) ----------
@@ -465,6 +424,7 @@
     "proj.type.partial": ["Partial remodel", "Remodelación parcial", "Reforma parcial"],
     "proj.type.other": ["Other", "Otro", "Outro"],
     "proj.status.none": ["No status yet", "Sin estado todavía", "Sem situação ainda"],
+    "proj.noStart": ["No start date yet", "Sin fecha de inicio todavía", "Sem data de início ainda"],
     "proj.status.lead": ["New lead", "Cliente nuevo", "Novo contato"],
     "proj.status.estimate": ["Estimate sent", "Estimación enviada", "Orçamento enviado"],
     "proj.status.approved": ["Approved", "Aprobado", "Aprovado"],
@@ -740,6 +700,11 @@
       "No se pudieron cargar sus proyectos.",
       "Não foi possível carregar os seus projetos.",
     ],
+    "proj.err.business": [
+      "Your business profile couldn't be loaded, so the designer can't open at your prices right now.",
+      "No se pudo cargar el perfil de su empresa, así que por ahora el diseñador no puede abrirse con sus precios.",
+      "Não foi possível carregar o perfil da sua empresa, então o projetista não pode abrir com os seus preços agora.",
+    ],
     "proj.err.openFailed": [
       "Couldn't open the project.",
       "No se pudo abrir el proyecto.",
@@ -963,6 +928,11 @@
       "Una estimación aproximada y no vinculante con precios de ejemplo predeterminados: aún no ha definido sus propios precios de mano de obra.",
       "Uma estimativa aproximada e sem compromisso com preços de exemplo padrão: você ainda não definiu os seus próprios preços de mão de obra.",
     ],
+    "studio.step.estimate.introOwnerPartial": [
+      "A rough, non-binding estimate at your prices where you've set them; sample rates price the rest ({list}).",
+      "Una estimación aproximada y no vinculante con sus precios donde los ha definido; las tarifas de ejemplo cubren el resto ({list}).",
+      "Uma estimativa aproximada e sem compromisso com os seus preços onde você os definiu; valores de exemplo cobrem o resto ({list}).",
+    ],
     "studio.step.estimate.setPrices": [
       "Set your prices on the account page.",
       "Defina sus precios en la página de la cuenta.",
@@ -1117,7 +1087,6 @@
     "studio.redo": ["Redo", "Rehacer", "Refazer"],
     "studio.undone": ["Undone.", "Se deshizo.", "Desfeito."],
     "studio.redone": ["Redone.", "Se rehízo.", "Refeito."],
-    "studio.openDesigner": ["Open in designer", "Abrir en el diseñador", "Abrir no projetista"],
     "studio.share": ["Share", "Compartir", "Compartilhar"],
     "studio.startOver": ["Start over", "Empezar de nuevo", "Recomeçar"],
     "studio.startedOver": [
@@ -1133,6 +1102,7 @@
     "studio.newTab": ["(opens in a new tab)", "(se abre en una pestaña nueva)", "(abre em uma nova aba)"],
     "studio.copyLink": ["Copy a link to this design", "Copiar el enlace de este diseño", "Copiar o link deste projeto"],
     "studio.linkCopied": ["Link copied.", "Enlace copiado.", "Link copiado."],
+    "studio.openedProject": ["Opened “{name}”.", "Se abrió “{name}”.", "“{name}” aberto."],
     "studio.openedLink": [
       "Here's the design from your link.",
       "Aquí está el diseño de su enlace.",
@@ -1638,16 +1608,6 @@
       "corrija la parte eléctrica marcada en rojo",
       "corrija a parte elétrica marcada em vermelho",
     ],
-    "studio.need.surfaces": [
-      "pick a finish for: {list}",
-      "elija un acabado para: {list}",
-      "escolha um acabamento para: {list}",
-    ],
-    "studio.need.surface.floorTile": ["floor tile", "azulejo del piso", "cerâmica do piso"],
-    "studio.need.surface.flooring": ["flooring", "piso vinílico", "piso vinílico"],
-    "studio.need.surface.wallTile": ["wall tile", "azulejo de pared", "revestimento de parede"],
-    "studio.need.surface.wallPaint": ["wall paint", "pintura de paredes", "tinta das paredes"],
-    "studio.need.surface.ceilingPaint": ["ceiling paint", "pintura del techo", "tinta do teto"],
     "studio.room.plumbingNone": [
       "Everything with a drain is on that wall, so there's no new pipe to run.",
       "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
@@ -2460,9 +2420,14 @@
       "O banheiro já tem um modelo em cada lugar, então você pode seguir direto ou escolher os que preferir. Mostro cada um sozinho, para nada ficar na frente, e o que for grande demais não pode ser escolhido.",
     ],
     "riley.step.finishes": [
-      "Tile, paint and floors. The price follows along as you choose.",
-      "Azulejo, pintura y pisos. El precio se actualiza mientras elige.",
-      "Azulejo, pintura e pisos. O preço acompanha enquanto você escolhe.",
+      "Tile, paint and floors. Each surface starts on a product, and the price follows along as you choose.",
+      "Azulejo, pintura y pisos. Cada superficie empieza con un producto, y el precio se actualiza mientras elige.",
+      "Azulejo, pintura e pisos. Cada superfície começa com um produto, e o preço acompanha enquanto você escolhe.",
+    ],
+    "riley.step.finishesNotPriced": [
+      "Tile, paint and floors. They show in the room as you choose; this business prices the materials in its quote, so they aren't in the estimate.",
+      "Azulejo, pintura y pisos. Se ven en el baño mientras elige; esta empresa cotiza los materiales aparte, así que no están en la estimación.",
+      "Azulejo, pintura e pisos. Eles aparecem no banheiro conforme você escolhe; esta empresa orça os materiais à parte, então eles não estão na estimativa.",
     ],
     "riley.step.estimate": [
       "Here's what it adds up to, at the sample business's prices. Download the PDF, or sign up and your own designer saves this as a project.",
@@ -2473,6 +2438,11 @@
       "Here's what it adds up to at your prices. Save it as a project, or download the PDF for your client.",
       "Esto es lo que suma con sus precios. Guárdelo como proyecto o descargue el PDF para su cliente.",
       "Isto é o total com os seus preços. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
+    "riley.step.estimateOwnerPartial": [
+      "Here's what it adds up to, at your prices where you've set them; the rest ({list}) is still at sample rates until you set those on the account page. Save it as a project, or download the PDF for your client.",
+      "Esto es lo que suma, con sus precios donde los ha definido; el resto ({list}) sigue con tarifas de ejemplo hasta que las defina en la página de la cuenta. Guárdelo como proyecto o descargue el PDF para su cliente.",
+      "Isto é o total, com os seus preços onde você os definiu; o resto ({list}) ainda está com valores de exemplo até você defini-los na página da conta. Salve como projeto ou baixe o PDF para o seu cliente.",
     ],
     "riley.step.estimateOwnerDefaults": [
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
@@ -2486,11 +2456,6 @@
     "pdf.page": ["Page {i} of {n}", "Página {i} de {n}", "Página {i} de {n}"],
 
     // ---------- settings shown on the page (js/site-config.js) ----------
-    "config.formService": [
-      "our form service provider",
-      "nuestro proveedor de servicio de formularios",
-      "nosso provedor de serviço de formulários",
-    ],
     "config.period.day": ["{n} day", "{n} día", "{n} dia"],
     "config.period.days": ["{n} days", "{n} días", "{n} dias"],
     "config.period.businessDay": ["{n} business day", "{n} día hábil", "{n} dia útil"],

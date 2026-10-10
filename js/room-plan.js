@@ -958,6 +958,11 @@
     out.sort(function (p, q) {
       return q.placed - p.placed || q.score - p.score;
     });
+    // Each layout settled: a fixture left closer to a neighbour than
+    // recommended slides over when the wall has the room (see settle()).
+    out = out.map(function (r) {
+      return Object.assign({}, r, { items: settle(Object.assign({}, design, { items: r.items }), sizes) });
+    });
     return out;
   }
 
@@ -1850,6 +1855,17 @@
   // wall; arrange() places them for real, so a template always fits. wet
   // is the wall the plumbing stack is in, opposite the door.
   var TEMPLATES = [
+    // The room the designer opens with: a full bath with six inches more
+    // than the classic 5 x 8, so the toilet gets the recommended 18 in.
+    // beside it and the sample starts with nothing to warn about. Not in
+    // the "common bathrooms" list (hidden).
+    {
+      id: "sample",
+      hidden: true,
+      room: { w: 8.5, l: 5, h: 8, wet: "N" },
+      door: { wall: "S", offset: 4.85 },
+      items: ["tub", "vanity", "toilet"],
+    },
     {
       id: "full5x8",
       room: { w: 8, l: 5, h: 8, wet: "N" },
@@ -1939,8 +1955,52 @@
         if (better(design, option.items, design.items, sizes)) design.items = option.items;
       });
       design.room.wet = suggestStack(design, sizes);
+      design.items = settle(design, sizes);
     }
     return suggestElectrical(design, sizes).design;
+  }
+
+  // arrange() puts each fixture at the first spot that works, which can
+  // leave a toilet closer to a neighbour than the recommended 18 in. while
+  // the slack sits on its other side. This slides each toilet along its
+  // wall, an inch at a time, to the nearest place with fewer tight spots and
+  // no new problems. Only toilets: the side rule is theirs, and sliding one
+  // changes nothing else's clear floor.
+  function settle(design, sizes) {
+    var items = design.items.slice();
+    var score = function (list) {
+      var issues = validate(Object.assign({}, design, { items: list, electrical: [] }), sizes);
+      var bad = 0;
+      var tight = 0;
+      Object.keys(issues).forEach(function (id) {
+        var errors = errorsOf(issues, id).length;
+        bad += errors;
+        tight += issues[id].length - errors;
+      });
+      return { bad: bad, tight: tight };
+    };
+    var base = score(items);
+    if (!base.tight) return items;
+    items.forEach(function (item, i) {
+      if (item.type !== "toilet") return;
+      var best = null;
+      for (var k = 1; k <= 24 && base.tight; k++) {
+        [k, -k].forEach(function (inches) {
+          var trial = items.slice();
+          trial[i] = Object.assign({}, item, { offset: item.offset + inches * IN });
+          var s = score(trial);
+          if (s.bad <= base.bad && s.tight < base.tight && (!best || s.tight < best.score.tight)) {
+            best = { items: trial, score: s };
+          }
+        });
+        if (best) break;
+      }
+      if (best) {
+        items = best.items;
+        base = best.score;
+      }
+    });
+    return items;
   }
 
   // -------------------------------------------------------------------

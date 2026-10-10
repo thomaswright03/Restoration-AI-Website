@@ -2447,11 +2447,19 @@
     return templateCache[id];
   }
 
+  // The common bathrooms offered on the Room step (the opening sample room
+  // itself isn't one of them).
+  function shownTemplates() {
+    return Plan.TEMPLATES.filter(function (tpl) {
+      return !tpl.hidden;
+    });
+  }
+
   function roomStep(body) {
     body.appendChild(stepHead("room"));
 
     var grid = h("div", { class: "studio-templates" });
-    Plan.TEMPLATES.forEach(function (tpl) {
+    shownTemplates().forEach(function (tpl) {
       var thumb = h("span", { class: "studio-template-thumb", "data-template": tpl.id });
       if (templateCache[tpl.id]) thumb.appendChild(planSvg(templateCache[tpl.id], { mini: true }));
       grid.appendChild(
@@ -2571,11 +2579,13 @@
 
   function fillTemplateThumbs() {
     if (thumbsPending) return;
-    var missing = Plan.TEMPLATES.filter(function (tpl) {
-      return !templateCache[tpl.id];
-    }).sort(function (a, b) {
-      return a.items.length - b.items.length;
-    });
+    var missing = shownTemplates()
+      .filter(function (tpl) {
+        return !templateCache[tpl.id];
+      })
+      .sort(function (a, b) {
+        return a.items.length - b.items.length;
+      });
     if (!missing.length) return;
     thumbsPending = true;
     setTimeout(function () {
@@ -4976,7 +4986,7 @@
   }
 
   function startOver() {
-    var fresh = Plan.fromTemplate("full5x8", sizes);
+    var fresh = Plan.fromTemplate("sample", sizes);
     fresh.products = copy(DEFAULT_PICKS);
     ui.selected = null;
     ui.step = "room";

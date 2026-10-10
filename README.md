@@ -23,12 +23,12 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 - Vercel functions in `api/` (Node 20, no npm packages; they call Stripe and Supabase over REST):
   - `config.js`: tells the browser whether accounts and payments are on, the public Supabase keys, and which switches are off (see "Pausing the product"); `?fresh=1` reads the switches past their 15-second cache, which the sign-up page uses to explain a refused sign-up
   - `business.js`: a business's public profile, loaded by the designer page as a script
-  - `checkout.js` / `portal.js`: Stripe Checkout (a plan, with an optional promo code) and the Stripe billing portal
+  - `checkout.js` / `portal.js`: Stripe Checkout (a plan named as `starter`, `pro` or `max`, with an optional promo code; any other plan is refused with `400 {error:"plan"}`) and the Stripe billing portal
   - `account.js`: deletes the signed-in user's account
   - `projects.js`: a subscriber's projects (list, open, save, rename, delete), within their plan's limits
   - `stripe-webhook.js`: records subscription status and which plan, in Supabase (an event for an account that was deleted is acknowledged and logged, not retried)
-  - `_switches.js`: the kill switch (below); `_subscriptions.js`: recording a subscription; `_plans.js`: plans and limits; `_lib.js`: shared helpers
-  - Every call to Supabase or Stripe has an 8-second timeout, and every answer is JSON: `401 {error:"signin"}` (no sign-in), `503 {error:"unavailable"}` (Supabase Auth didn't answer), `503 {error:"paused"}` (switched off), `502 {error:"server"}` or `{error:"stripe"}` (an upstream failed). Stripe calls are pinned to one API version (`STRIPE_API_VERSION` in `api/_lib.js`, overridable by the env var of the same name) and session creation carries idempotency keys. Before starting a checkout, the server asks Stripe whether the account already has a subscription that's running (by customer, or by email when the first webhook hasn't landed yet) and refuses a second one with `409 {error:"already-subscribed"}`.
+  - `_switches.js`: the kill switch (below); `_subscriptions.js`: reading and recording a subscription, which statuses count as running, and which business a designer link opens; `_plans.js`: plans, limits and the `STRIPE_PRICE_*` mapping (the plan follows the subscription's current price whenever that price maps to one, else the stored `plan`); `_lib.js`: shared helpers (timeouts, retries, JSON answers, Stripe and Supabase calls)
+  - Every call to Supabase or Stripe has an 8-second timeout, and every answer is JSON: `401 {error:"signin"}` (no sign-in), `503 {error:"unavailable"}` (Supabase Auth didn't answer), `503 {error:"paused"}` (switched off), `502 {error:"server"}` or `{error:"stripe"}` (an upstream failed). Stripe calls are pinned to one API version (`STRIPE_API_VERSION` in `api/_lib.js`, overridable by the env var of the same name) and session creation carries idempotency keys. Reads, and creates sent with an idempotency key (Checkout and portal sessions), are tried once more after a dropped connection, a 5xx or a 429 (Retry-After honoured, within the function's budget); plain writes and timeouts never are. Before starting a checkout, the server asks Stripe whether the account already has a subscription that's running or still confirming its first payment (`active`, `trialing`, `past_due`, `unpaid`, `paused` or `incomplete`; by customer, or by email when the first webhook hasn't landed yet) and refuses a second one with `409 {error:"already-subscribed"}`.
 - Supabase for accounts (Supabase Auth) and the database (`supabase/schema.sql`: businesses, subscriptions, leads, projects, with row-level security).
 - With no keys set, the site runs in demo mode: the demo designer works, and sign-up says accounts aren't switched on yet.
 
@@ -60,7 +60,7 @@ The one place for the owner's settings; edit, commit and push. `plans` (the pric
 3. **Vercel**: import this repo as a project (no build settings needed) and set the environment variables in `.env.example`.
 4. Keep the prices shown on the site equal to Stripe: edit `plans` in `site-config.json` (prices, and the project limits the server enforces), run `npm run pages`, commit.
 
-Start with Stripe test keys; switch to live keys once a test sign-up, checkout and request all work.
+Start with Stripe test keys; switch to live keys once a test sign-up, checkout and saved project all work.
 
 ## Deploying, rolling back and changing the schema
 
@@ -110,11 +110,11 @@ Riley (`js/riley.js`) talks the person through it: what each step is for, and, w
 - `js/room-plan.js`: the room engine, with no drawing (walls, fixture sizes, clearance rules, the plumbing stack and how far a drain can run from it, suggesting the electrical, finding spots, arranging the room, snapping a dragged fixture, share links). Also runs in Node for the unit tests.
 - `js/studio.js`: the studio: steps, panel, floor plan, dragging, undo/redo, estimate, PDF, saving the design in the browser
 - `js/bathroom-room-3d.js`: draws the room in 3D (Three.js) and reports what was clicked or dragged; `js/bathroom-room-layout.js` and `js/surface-finishes.js` feed it
-- `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The model can also add the flat surcharges (no stack, bad valve) and a labor tax rate, but the studio never sets the surcharge flags and its total is labor plus materials without the tax, so neither reaches an estimate today.
+- `js/bathroom-pricing.js`: the estimate math and default labor prices. The studio prices every line at the business's own rates (set on the account page): demolition, surfaces, each fixture (the bathtub at its own price, or 70% of the shower price when left empty), plumbing per point (one per toilet, sink, vanity, shower and bathtub), electrical per point and any new drain line per foot. The model can also add the flat surcharges (no stack, bad valve), but the studio never sets the surcharge flags, so they don't reach an estimate today. No tax is added: the estimate says taxes aren't included.
 - `js/materials-pricing.js`: the materials catalog the finishes step offers. Prices were copied by hand from Home Depot listings and go stale, so the estimate and the PDF say "catalog prices as of <month>" from the file's `PRICES_AS_OF` date (set it when you refresh them; the unit tests warn once it's six months old); the file's header says how to refresh or add one (there is no generator script)
 - `js/estimate-pdf.js`: the PDF
 - `js/riley.js`: Riley's bubble and her voice (the browser's own speech; no network, no key)
-- `js/script.js`: menu, language and FAQ (its request-form code is left over from the retired demo form; no page has one)
+- `js/script.js`: the header menu, the language menu, the offline notice, scroll reveal and the FAQ
 - `js/net.js`: the one way the signed-in pages call `/api/*`: a JSON fetch with a time limit that tells offline, timed out, a server failure and an HTTP error apart (also runs in Node for the unit tests)
 - `js/site-config.js`: loads `site-config.json` and applies it to the page (`data-fill`, `data-show-if`), with defaults when it can't be loaded
 - `js/theme.js`: the Light / Dark / System switch

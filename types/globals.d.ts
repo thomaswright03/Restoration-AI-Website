@@ -27,6 +27,7 @@ interface Error {
   timedOut?: boolean;
   kind?: string;
   status?: number;
+  retryAfterMs?: number;
   code?: string;
   data?: any;
 }

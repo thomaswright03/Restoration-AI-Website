@@ -11,14 +11,20 @@
 // days.
 "use strict";
 
-const { env, supabaseReady, sendJson, sendError, stripe, verifyStripeSignature, readRawBody } = require("./_lib.js");
+const {
+  env,
+  supabaseReady,
+  sendJson,
+  sendError,
+  stripe,
+  verifyStripeSignature,
+  readRawBody,
+  refuseMethod,
+} = require("./_lib.js");
 const { saveSubscription } = require("./_subscriptions.js");
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return sendJson(res, 405, { error: "method" });
-  }
+  if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady() || !env("STRIPE_WEBHOOK_SECRET")) return sendJson(res, 503, { error: "not-configured" });
 
   const raw = await readRawBody(req);

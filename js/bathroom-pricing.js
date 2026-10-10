@@ -75,11 +75,6 @@
     // Running a new drain line to a fixture away from the stack wall:
     // opening the floor, the pipe, the fall and patching after.
     Drain_Run_Price_Per_Ft: 95,
-
-    // Labor on real property may not be taxable. Defaults to 0% so no tax
-    // is added unless a tax adviser has confirmed it applies and the owner
-    // has set the rate deliberately on the account page.
-    Labor_Tax_Rate_Percent: 0,
   };
 
   // The bathtub install price: the business's own Bathtub_Price when set,
@@ -410,8 +405,6 @@
         return sum + l.cost;
       }, 0),
     );
-    var taxRatePercent = options.includeTrade ? Number(prices.Labor_Tax_Rate_Percent) || 0 : 0;
-    var taxAmount = roundCents(subtotal * (taxRatePercent / 100));
 
     return {
       lines: lines,
@@ -424,10 +417,9 @@
       // Whether the per-fixture plumbing is in the lines (includeTrade) or
       // left for a separate quote, so notes about it can say which.
       plumbingIncluded: !!options.includeTrade,
+      // Labor only: no tax is added (the estimate says taxes aren't included).
       subtotal: subtotal,
-      taxRatePercent: taxRatePercent,
-      taxAmount: taxAmount,
-      total: roundCents(subtotal + taxAmount),
+      total: subtotal,
     };
   }
 

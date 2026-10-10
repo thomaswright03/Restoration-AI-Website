@@ -1,15 +1,21 @@
 // POST /api/checkout {plan: "starter"|"pro"|"max", promo: "", lang: ""|"es"|"pt"}
 // with the signed-in user's Supabase access token as a Bearer token.
 // Starts a Stripe Checkout subscription and answers {url} to send them to.
+// 400 {error: "plan"} for a plan that isn't one of the three, or one with no
+// Stripe price set: nobody is sold a plan they didn't ask for.
 // A valid promo code (PROMO_CODES, see api/_plans.js) makes the first days
 // free as a Stripe trial, once per account: {error: "promo"} for a code that
 // isn't valid, {error: "promo-used"} when the account has had a plan before.
 //
 // One subscription per account: before a session is made, Stripe itself is
 // asked whether this account's customer already has a subscription that's
-// running (so a webhook that hasn't arrived yet, or a second tab, can't
-// buy a second one). If it has, the answer is 409 {error: "already-subscribed"}
-// and that subscription is recorded right away.
+// running or starting (so a webhook that hasn't arrived yet, or a second
+// tab, can't buy a second one). If it has, the answer is 409
+// {error: "already-subscribed"} and that subscription is recorded right away.
+//
+// The session is created with an idempotency key, so a transient Stripe
+// failure (5xx, 429, a dropped connection) is tried once more and a double
+// click makes one session (api/_lib.js stripe()).
 //
 // 503 {error: "paused"} while the checkout switch is off (api/_switches.js).
 "use strict";
@@ -21,23 +27,17 @@ const {
   sendJson,
   sendError,
   siteUrl,
-  db,
   requireUser,
   stripe,
   idempotencyKey,
   readForm,
   logError,
+  langDir,
+  refuseMethod,
 } = require("./_lib.js");
-const { promoDays } = require("./_plans.js");
+const { promoDays, firstPriceId } = require("./_plans.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
-const { LIVE_STATUSES, saveSubscription } = require("./_subscriptions.js");
-
-const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", max: "STRIPE_PRICE_MAX" };
-
-// The first id when the variable lists several (see api/_plans.js).
-function priceOf(name) {
-  return env(name).split(",")[0].trim();
-}
+const { LIVE_STATUSES, saveSubscription, subscriptionOf } = require("./_subscriptions.js");
 
 // A subscription of this account's that Stripe still runs, if any: on the
 // customer we have on file, or on any Stripe customer with their email (the
@@ -68,10 +68,7 @@ async function liveStripeSubscription(user, existing) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return sendJson(res, 405, { error: "method" });
-  }
+  if (refuseMethod(req, res, "POST")) return;
   if (!supabaseReady() || !stripeReady()) return sendJson(res, 503, { error: "not-configured" });
 
   let user;
@@ -81,23 +78,23 @@ module.exports = async function handler(req, res) {
     if (!user) return;
 
     const body = await readForm(req);
-    const plan = PRICE_ENV[body.plan] ? body.plan : "starter";
-    const price = priceOf(PRICE_ENV[plan]);
+    // Only a plan that was asked for by name and has a price: never a
+    // stand-in for a plan the page (or someone else's request) got wrong.
+    const plan = typeof body.plan === "string" ? body.plan.trim().toLowerCase() : "";
+    const price = firstPriceId(plan);
     if (!price) return sendJson(res, 400, { error: "plan" });
     const lineItems = { 0: { price, quantity: 1 } };
     const promo = String(body.promo || "").trim();
     const promoFree = promo ? promoDays(promo) : 0;
     if (promo && !promoFree) return sendJson(res, 400, { error: "promo" });
-    const dir = body.lang === "es" || body.lang === "pt" ? body.lang + "/" : "";
-    const base = siteUrl(req) + "/" + dir + "account.html";
+    const base = siteUrl(req) + "/" + langDir(body.lang) + "account.html";
 
-    let subs;
+    let existing;
     try {
-      subs = await db("subscriptions?owner_id=eq." + encodeURIComponent(user.id) + "&select=*");
+      existing = await subscriptionOf(user.id);
     } catch (e) {
       return sendError(req, res, 502, { error: "server" }, e, user);
     }
-    const existing = subs && subs[0];
     if (existing && LIVE_STATUSES.includes(existing.status)) {
       return sendJson(res, 409, { error: "already-subscribed" });
     }

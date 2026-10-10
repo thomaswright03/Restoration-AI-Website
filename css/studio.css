@@ -2047,7 +2047,7 @@ main.studio-page.solid-header {
   display: none;
 }
 
-/* The request form, inside the last step. */
+/* The demo's last step: what a business gets, and the sign-up button. */
 .studio-demo-end .btn {
   margin-top: var(--space-2);
 }

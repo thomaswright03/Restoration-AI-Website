@@ -5,11 +5,11 @@
 //
 //   data-fill="owner.legalName"       text is set to the value
 //   data-show-if="owner.legalName"    shown only when the value is filled in
-//   data-show-unless="leadForm.endpoint"  shown only when it is NOT filled in
+//   data-show-unless="owner.contactAddress"  shown only when it is NOT filled in
 //
 // Elements with data-show-if start out `hidden` in the HTML, so an unfilled
 // value never shows a placeholder. If the settings file can't be loaded, the
-// safe defaults below apply (price estimator off, email-app lead form).
+// safe defaults below apply (price estimator off).
 //
 // Other scripts use: SiteConfig.ready.then(function (config) { ... })
 
@@ -23,7 +23,6 @@
     // they can be out of date). Off here so the estimate never shows them
     // unless the owner turns them on in site-config.json.
     materialsEstimator: { enabled: false },
-    leadForm: { endpoint: "", serviceName: "", servicePrivacyUrl: "" },
     owner: { legalName: "", contactAddress: "" },
     privacy: { responsePeriod: "" },
     company: { supportEmail: "" },
@@ -51,12 +50,10 @@
     raw = raw || {};
     var pe = raw.priceEstimator || {};
     var me = raw.materialsEstimator || {};
-    var lf = raw.leadForm || {};
     var owner = raw.owner || {};
     var privacy = raw.privacy || {};
     var company = raw.company || {};
     var rv = (raw.riley && raw.riley.voice) || {};
-    var endpoint = clean(lf.endpoint);
     // The business using the designer (js/business.js) decides what legal
     // name its estimates carry.
     var biz = (typeof window !== "undefined" && window.DesignerBusiness) || null;
@@ -65,12 +62,6 @@
       loaded: true,
       priceEstimator: { enabled: pe.enabled === true },
       materialsEstimator: { enabled: me.enabled === true },
-      leadForm: {
-        // Only an https:// address is used; anything else keeps the email-app form.
-        endpoint: /^(https:\/\/[^\s]+|\/api\/[^\s]+)$/.test(endpoint) ? endpoint : "",
-        serviceName: clean(lf.serviceName) || T("config.formService"),
-        servicePrivacyUrl: /^https:\/\//.test(clean(lf.servicePrivacyUrl)) ? clean(lf.servicePrivacyUrl) : "",
-      },
       owner: { legalName: clean(owner.legalName), contactAddress: clean(owner.contactAddress) },
       privacy: { responsePeriod: localPeriod(clean(privacy.responsePeriod)) },
       riley: { voice: { en: clean(rv.en), es: clean(rv.es), pt: clean(rv.pt) } },

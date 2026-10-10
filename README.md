@@ -50,7 +50,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 
 ## Settings (`site-config.json`)
 
-The one place for the owner's settings; edit, commit and push. `plans` (the prices the pages show and the project limits the server enforces; run `npm run pages` after changing them), `company.supportEmail` (the footer and the legal pages), `priceEstimator.enabled` (the estimate step prices the work at the business's labor rates; off shows the design only), `materialsEstimator.enabled` (the finishes step offers materials from the catalog in `js/materials-pricing.js`, added to the estimate), `leadForm` (left over from the retired request form; nothing reads it now), `owner` and `privacy` (the legal pages), and `riley.voice` (a default voice name per language). `js/site-config.js` reads it and applies the defaults when it can't be loaded.
+The one place for the owner's settings; edit, commit and push. `plans` (the prices the pages show and the project limits the server enforces; run `npm run pages` after changing them), `company.supportEmail` (the footer and the legal pages), `priceEstimator.enabled` (the estimate step prices the work at the business's labor rates; off shows the design only), `materialsEstimator.enabled` (the finishes step offers materials from the catalog in `js/materials-pricing.js`, added to the estimate), `owner` and `privacy` (the legal pages), and `riley.voice` (a default voice name per language). `js/site-config.js` reads it and applies the defaults when it can't be loaded.
 
 ## Going live (one-time setup)
 

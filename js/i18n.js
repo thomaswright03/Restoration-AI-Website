@@ -275,52 +275,6 @@
       "Mais barato que {others} pelo mesmo produto.",
     ],
 
-    // ---------- Get a Quote form ----------
-    "form.error.name": ["Enter your name.", "Escriba su nombre.", "Informe seu nome."],
-    "form.error.phone": [
-      "Enter a phone number we can call you on.",
-      "Escriba un número de teléfono al que podamos llamarle.",
-      "Informe um telefone para podermos ligar para você.",
-    ],
-    "form.error.phoneInvalid": [
-      "Enter a valid phone number, e.g. (385) 356-8733.",
-      "Escriba un número de teléfono válido, por ejemplo (385) 356-8733.",
-      "Informe um telefone válido, por exemplo (385) 356-8733.",
-    ],
-    "form.error.email": ["Enter your email address.", "Escriba su correo electrónico.", "Informe seu e-mail."],
-    "form.error.emailInvalid": [
-      "Enter a valid email address, e.g. name@example.com.",
-      "Escriba un correo electrónico válido, por ejemplo nombre@ejemplo.com.",
-      "Informe um e-mail válido, por exemplo nome@exemplo.com.",
-    ],
-    "form.subject": [
-      "Bathroom quote request from {name}",
-      "Solicitud de cotización de baño de {name}",
-      "Pedido de orçamento de banheiro de {name}",
-    ],
-    "form.body.name": ["Name", "Nombre", "Nome"],
-    "form.body.phone": ["Phone", "Teléfono", "Telefone"],
-    "form.body.email": ["Email", "Correo electrónico", "E-mail"],
-    "form.body.service": ["Service", "Servicio", "Serviço"],
-    "form.body.details": ["Project details", "Detalles del proyecto", "Detalhes do projeto"],
-    "form.sending": ["Sending…", "Enviando…", "Enviando…"],
-    "form.status.sending": ["Sending your request…", "Enviando su solicitud…", "Enviando o seu pedido…"],
-    "form.status.mailto": [
-      "Your email app should now open with your request filled in. [b:Please press Send in your email app] — we don't receive anything until you do. If nothing opened, [again:open it again], email us at [email] or call [phone].",
-      "Ahora debería abrirse su aplicación de correo con su solicitud ya escrita. [b:Presione Enviar en su aplicación de correo]: no recibimos nada hasta que lo haga. Si no se abrió nada, [again:vuelva a abrirla], escríbanos a [email] o llame al [phone].",
-      "Agora o seu aplicativo de e-mail deve abrir com o pedido já preenchido. [b:Toque em Enviar no seu aplicativo de e-mail]: não recebemos nada até você fazer isso. Se nada abriu, [again:abra de novo], escreva para [email] ou ligue para [phone].",
-    ],
-    "form.status.sent": [
-      "[b:Request sent.] Thank you — we've received your request and will get back to you as soon as we can. If it's urgent, call [phone].",
-      "[b:Solicitud enviada.] Gracias: recibimos su solicitud y le responderemos lo antes posible. Si es urgente, llame al [phone].",
-      "[b:Pedido enviado.] Obrigado! Recebemos o seu pedido e responderemos o quanto antes. Se for urgente, ligue para [phone].",
-    ],
-    "form.status.failed": [
-      "[b:Sorry, your request wasn't sent.] Nothing you entered has been lost — please try again, or call us at [phone] or email [email].",
-      "[b:Lo sentimos, su solicitud no se envió.] No se perdió nada de lo que escribió: inténtelo de nuevo, o llámenos al [phone] o escriba a [email].",
-      "[b:Desculpe, o seu pedido não foi enviado.] Nada do que você digitou foi perdido: tente de novo, ou ligue para [phone] ou escreva para [email].",
-    ],
-
     // ---------- projects: My projects page and the designer's save bar (js/projects.js) ----------
     "proj.plan.free": ["Free", "Gratis", "Grátis"],
     "proj.plan.starter": ["Starter", "Starter", "Starter"],
@@ -2439,11 +2393,6 @@
     "pdf.page": ["Page {i} of {n}", "Página {i} de {n}", "Página {i} de {n}"],
 
     // ---------- settings shown on the page (js/site-config.js) ----------
-    "config.formService": [
-      "our form service provider",
-      "nuestro proveedor de servicio de formularios",
-      "nosso provedor de serviço de formulários",
-    ],
     "config.period.day": ["{n} day", "{n} día", "{n} dia"],
     "config.period.days": ["{n} days", "{n} días", "{n} dias"],
     "config.period.businessDay": ["{n} business day", "{n} día hábil", "{n} dia útil"],

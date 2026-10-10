@@ -85,11 +85,11 @@
       ]
     },
     {
-      "source": "/(js/[^/]+\\.js|css/.*\\.css)",
+      "source": "/(js/[^/]+\\.js|js/i18n/[^/]+\\.js|css/.*\\.css)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate, stale-while-revalidate=86400"
+          "value": "public, max-age=0, must-revalidate"
         }
       ]
     }

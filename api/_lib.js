@@ -42,6 +42,7 @@ async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
   const upstreamError = (e) => {
     const err = new Error("Upstream " + (timedOut ? "timeout" : "unreachable") + ": " + url);
     err.upstream = true;
+    err.timedOut = timedOut;
     err.cause = e;
     return err;
   };
@@ -141,11 +142,43 @@ function siteUrl(req) {
   return proto + "://" + host;
 }
 
-// Supabase PostgREST with the service role key (bypasses row-level security,
-// so only ever used server-side, with filters built from validated input).
-async function db(path, options = {}) {
+// A read (GET or HEAD) that failed in a way a second try may fix: the
+// connection dropped before an answer came (not a timeout, which has already
+// spent the request's budget), or the upstream answered 5xx. Writes are never
+// retried here: a create or a patch that may have landed must not run twice.
+const RETRY_DELAY_MS = 150;
+const RETRY_STATUSES = [500, 502, 503, 504];
+
+function retryableRead(method, e) {
+  if (method !== "GET" && method !== "HEAD") return false;
+  if (e && e.upstream) return !e.timedOut;
+  return !!(e && RETRY_STATUSES.includes(e.status));
+}
+
+// Runs an idempotent upstream call, once more after a short pause when the
+// first try failed the way retryableRead() describes.
+async function withReadRetry(method, call) {
+  try {
+    return await call();
+  } catch (e) {
+    if (!retryableRead(method, e)) throw e;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+    return call();
+  }
+}
+
+// An error for an upstream answer that isn't ok, carrying its status so a
+// read can be retried on a 5xx.
+function statusError(message, status) {
+  const err = new Error(message);
+  err.status = status;
+  return err;
+}
+
+// One PostgREST request with the service role key: the Response, not yet read.
+function dbRequest(path, options) {
   const key = env("SUPABASE_SERVICE_ROLE_KEY");
-  const res = await fetchWithTimeout(
+  return fetchWithTimeout(
     env("SUPABASE_URL") + "/rest/v1/" + path,
     {
       method: options.method || "GET",
@@ -157,9 +190,34 @@ async function db(path, options = {}) {
     },
     options.timeoutMs || UPSTREAM_TIMEOUT_MS,
   );
-  const text = await res.text();
-  if (!res.ok) throw new Error("Supabase " + res.status + ": " + text.slice(0, 300));
-  return text ? JSON.parse(text) : null;
+}
+
+// Supabase PostgREST with the service role key (bypasses row-level security,
+// so only ever used server-side, with filters built from validated input).
+// A GET is retried once when the connection dropped or Supabase answered 5xx.
+async function db(path, options = {}) {
+  const method = options.method || "GET";
+  return withReadRetry(method, async () => {
+    const res = await dbRequest(path, options);
+    const text = await res.text();
+    if (!res.ok) throw statusError("Supabase " + res.status + ": " + text.slice(0, 300), res.status);
+    return text ? JSON.parse(text) : null;
+  });
+}
+
+// How many rows match a PostgREST query (e.g. "projects?owner_id=eq.<id>"),
+// as a number the database counted: a HEAD with Prefer: count=exact answers
+// Content-Range "0-24/1234" or "*/0", and no rows travel. Use it wherever the
+// code only needs a count, so the cost stays flat as a table grows.
+async function dbCount(path) {
+  return withReadRetry("HEAD", async () => {
+    const res = await dbRequest(path, { method: "HEAD", headers: { Prefer: "count=exact" } });
+    if (!res.ok) throw statusError("Supabase " + res.status + " counting " + path.split("?")[0], res.status);
+    const range = String((res.headers && res.headers.get && res.headers.get("content-range")) || "");
+    const m = /\/(\d+)\s*$/.exec(range);
+    if (!m) throw new Error("Supabase count: no Content-Range for " + path.split("?")[0]);
+    return Number(m[1]);
+  });
 }
 
 // The signed-in user behind "Authorization: Bearer <Supabase access token>",
@@ -220,8 +278,13 @@ function formEncode(obj, prefix, out) {
 // A Stripe call. params: form fields (a GET with params puts them in the
 // query string). options.idempotencyKey: for a create call, so a retry of the
 // same request (a double click, a function retried) makes one object, not two.
+// A GET is retried once when the connection dropped or Stripe answered 5xx.
 async function stripe(path, params, method, options = {}) {
   method = method || (params ? "POST" : "GET");
+  return withReadRetry(method, () => stripeOnce(path, params, method, options));
+}
+
+async function stripeOnce(path, params, method, options) {
   const encoded = params ? formEncode(params).toString() : "";
   const url = "https://api.stripe.com/v1/" + path + (method === "GET" && encoded ? "?" + encoded : "");
   const headers = {
@@ -241,7 +304,9 @@ async function stripe(path, params, method, options = {}) {
   } catch {
     data = {};
   }
-  if (!res.ok) throw new Error("Stripe " + res.status + ": " + ((data.error && data.error.message) || ""));
+  if (!res.ok) {
+    throw statusError("Stripe " + res.status + ": " + ((data.error && data.error.message) || ""), res.status);
+  }
   return data;
 }
 
@@ -331,6 +396,8 @@ module.exports = {
   requestId,
   siteUrl,
   db,
+  dbCount,
+  RETRY_DELAY_MS,
   currentUser,
   requireUser,
   formEncode,

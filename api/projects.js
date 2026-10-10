@@ -2,6 +2,9 @@
 // signed-in user's Supabase access token as a Bearer token.
 //
 //   GET                       the plan, its limits, what's used, and the list
+//   GET    ?counts=1          the plan, its limits and what's used, without the
+//                             list (for screens that only show usage; the
+//                             counts come from the database as numbers)
 //   GET    ?id=<id>           one project, with its design
 //   POST   {name, design, info?, summary?}   save a new project (needs a paid
 //                             plan, within its limits)
@@ -14,7 +17,9 @@
 //                             tab or on another device isn't silently undone.
 //
 // A field that doesn't fit answers 400 {error:"info"|"name", field, reason},
-// reason being "long", "date", "email", "value" or "empty".
+// reason being "long", "date", "email", "value" or "empty". Text with a NUL
+// or another control character (which Postgres refuses and no name needs)
+// is "value".
 //
 // info is the client and the job (INFO below); summary is the estimate and
 // materials list the designer worked out when the design was saved.
@@ -29,7 +34,7 @@
 // details, reading and deleting still work.
 "use strict";
 
-const { supabaseReady, sendJson, sendError, db, requireUser, readForm } = require("./_lib.js");
+const { supabaseReady, sendJson, sendError, db, dbCount, requireUser, readForm } = require("./_lib.js");
 const { planOf, limitsOf } = require("./_plans.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
@@ -57,6 +62,11 @@ const INFO = {
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+// C0 and C1 control characters and DEL, apart from tab, newline and carriage
+// return (which a text field collapses to spaces and notes may keep).
+// eslint-disable-next-line no-control-regex
+const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/;
+
 // "YYYY-MM-DD" naming a day that exists (no February 30th), in a plausible
 // year for a job's start date (1950 to 2100: a typo like 0226 is refused).
 function realDay(text) {
@@ -76,7 +86,7 @@ function parseInfo(value) {
   for (const [key, rule] of Object.entries(INFO)) {
     const raw = value[key];
     if (raw === undefined || raw === null) continue;
-    if (typeof raw !== "string") return { field: key, reason: "value" };
+    if (typeof raw !== "string" || CONTROL.test(raw)) return { field: key, reason: "value" };
     const text = key === "notes" ? raw.trim() : raw.replace(/\s+/g, " ").trim();
     if (typeof rule === "number") {
       if (text.length > rule) return { field: key, reason: "long" };
@@ -110,6 +120,7 @@ function cleanSummary(value) {
 // A project's name: text, at most 120 characters. { name } or { reason }.
 function parseName(value) {
   if (value !== undefined && value !== null && typeof value !== "string") return { reason: "value" };
+  if (typeof value === "string" && CONTROL.test(value)) return { reason: "value" };
   const name = String(value || "")
     .replace(/\s+/g, " ")
     .trim();
@@ -136,13 +147,14 @@ async function planFor(userId) {
   return { plan, limits: limitsOf(plan) };
 }
 
+// What the account has used, counted by the database (no rows travel).
 async function usage(userId) {
   const owner = "owner_id=eq." + encodeURIComponent(userId);
   const [month, total] = await Promise.all([
-    db("project_creations?" + owner + "&created_at=gte." + encodeURIComponent(monthStart()) + "&select=id"),
-    db("projects?" + owner + "&select=id"),
+    dbCount("project_creations?" + owner + "&created_at=gte." + encodeURIComponent(monthStart())),
+    dbCount("projects?" + owner),
   ]);
-  return { month: (month || []).length, total: (total || []).length };
+  return { month, total };
 }
 
 // Supabase answers this way when supabase/schema.sql hasn't been re-run
@@ -168,11 +180,13 @@ module.exports = async function handler(req, res) {
         if (!rows || !rows[0]) return sendJson(res, 404, { error: "not-found" });
         return sendJson(res, 200, { project: rows[0] });
       }
+      const countsOnly = /^(1|true)$/.test(String((req.query && req.query.counts) || ""));
       const [{ plan, limits }, used, projects] = await Promise.all([
         planFor(user.id),
         usage(user.id),
-        db("projects?" + owner + "&select=" + LIST_FIELDS + "&order=updated_at.desc&limit=1000"),
+        countsOnly ? null : db("projects?" + owner + "&select=" + LIST_FIELDS + "&order=updated_at.desc&limit=1000"),
       ]);
+      if (countsOnly) return sendJson(res, 200, { plan, limits, used });
       return sendJson(res, 200, { plan, limits, used, projects: projects || [] });
     }
 

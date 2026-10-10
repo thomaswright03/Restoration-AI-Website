@@ -15,5 +15,15 @@
       "punycode": ["./node_modules/@types/node/punycode.d.ts"]
     }
   },
-  "include": ["types/**/*.d.ts", "api/**/*.js", "js/room-plan.js", "js/surface-finishes.js", "js/net.js", "js/i18n.js"]
+  "include": [
+    "types/**/*.d.ts",
+    "api/**/*.js",
+    "js/room-plan.js",
+    "js/surface-finishes.js",
+    "js/net.js",
+    "js/i18n.js",
+    "js/bathroom-pricing.js",
+    "js/materials-pricing.js",
+    "js/estimate-pdf.js"
+  ]
 }

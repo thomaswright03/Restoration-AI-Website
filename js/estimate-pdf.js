@@ -13,7 +13,7 @@
   "use strict";
 
   var T = window.I18n.t;
-  var script = document.currentScript;
+  var script = /** @type {HTMLScriptElement | null} */ (document.currentScript);
   var JSPDF_SRC =
     script && script.src ? new URL("vendor/jspdf.umd.min.js", script.src).href : "js/vendor/jspdf.umd.min.js";
   var loading = null;

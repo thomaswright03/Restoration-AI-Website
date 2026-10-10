@@ -9,6 +9,19 @@
             <a href="{{@root}}{{@dir}}designer.html" class="btn btn-outline">{{index.tryDemo}}</a>
           </div>
           <p class="hero-note">{{index.heroNote}}</p>
+          <figure class="hero-shot">
+            <img
+              src="{{@root}}images/designer-layout-3d.webp"
+              srcset="{{@root}}images/designer-layout-3d-720.webp 720w, {{@root}}images/designer-layout-3d.webp 1440w"
+              sizes="(min-width: 1040px) 960px, calc(100vw - 32px)"
+              width="1440"
+              height="743"
+              alt="{{index.heroImageAlt}}"
+              fetchpriority="high"
+              decoding="async"
+            />
+            <figcaption>{{index.heroImageCaption}}</figcaption>
+          </figure>
         </div>
       </section>
 

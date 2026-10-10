@@ -10,6 +10,10 @@
 //                          libraries, which are edited in place under the same
 //                          name: max-age=86400 with stale-while-revalidate, so
 //                          a changed file reaches returning browsers within a day
+//   checked every load     pages (Vercel's default) and first-party js/*.js,
+//                          js/i18n/*.js and css/*.css: max-age=0,
+//                          must-revalidate and no stale-while-revalidate, so a
+//                          page is never paired with the previous deploy's script
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -131,9 +135,24 @@ test("pages, first-party scripts, styles and settings are never served stale wit
   for (const p of ["/index.html", "/designer.html", "/es/designer.html", "/site-config.json", "/api/config"]) {
     assert.equal(headersFor(p)["cache-control"], undefined, p + " keeps Vercel's revalidate-every-time default");
   }
-  for (const p of ["/js/studio.js", "/js/i18n.js", "/css/studio.css"]) {
-    assert.match(headersFor(p)["cache-control"], /^public, max-age=0, must-revalidate/, p);
+  // No stale-while-revalidate here: with it, the browser may run the previous
+  // deploy's studio.js against the new designer.html for one load.
+  const FRESH = "public, max-age=0, must-revalidate";
+  for (const p of [
+    "/js/studio.js",
+    "/js/i18n.js",
+    "/js/i18n/es.js",
+    "/js/net.js",
+    "/css/studio.css",
+    "/css/style.css",
+  ]) {
+    assert.equal(headersFor(p)["cache-control"], FRESH, p);
   }
+  for (const p of filesUnder("js")) {
+    if (p.startsWith("/js/vendor/")) continue;
+    assert.equal(headersFor(p)["cache-control"], FRESH, p + " is a first-party script without a cache rule");
+  }
+  for (const p of filesUnder("css")) assert.equal(headersFor(p)["cache-control"], FRESH, p);
   // The models manifest is data read by tools, not the browser, but it must
   // not be frozen by the .glb rule either.
   assert.equal(headersFor("/models/products/kohler/manifest.json")["cache-control"], undefined);

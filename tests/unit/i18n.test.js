@@ -79,3 +79,42 @@ test("the estimate's work description, lines and assumptions follow the page's l
   inLang("es", () => assert.equal(studioEstimate(values, scope).total, en));
   inLang("pt", () => assert.equal(studioEstimate(values, scope).total, en));
 });
+
+// js/i18n/<lang>.js (scripts/build-i18n.mjs): what a page downloads is one
+// language's text, and it answers exactly as the full file does for that language.
+test("each generated js/i18n/<lang>.js carries one language and matches js/i18n.js key for key", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const root = path.join(__dirname, "..", "..");
+  for (const lang of I18n.LANGS) {
+    const file = path.join(root, "js", "i18n", lang + ".js");
+    const One = require(file);
+    assert.equal(One.lang(), lang);
+    assert.equal(One.locale(), I18n.locale(lang));
+    assert.equal(One.name(), I18n.name(lang));
+    assert.deepEqual(Object.keys(One.STRINGS).sort(), Object.keys(I18n.STRINGS).sort(), lang + ".js has every key");
+    for (const key of Object.keys(I18n.STRINGS)) {
+      assert.equal(One.t(key), I18n.t(key, null, lang), `${key} in ${lang}`);
+    }
+    assert.equal(One.t("pdf.page", { i: 1, n: 2 }), I18n.t("pdf.page", { i: 1, n: 2 }, lang));
+    assert.throws(() => One.t("no.such.key"));
+    // The other two languages' text isn't on board.
+    const text = fs.readFileSync(file, "utf8");
+    for (const other of I18n.LANGS.filter((l) => l !== lang)) {
+      const unique = I18n.STRINGS["fixture.Toilet_Quantity"][I18n.LANGS.indexOf(other)];
+      assert.ok(!text.includes(JSON.stringify(unique)), `${lang}.js carries ${other} text`);
+    }
+    // Smaller than the source by a wide margin.
+    assert.ok(text.length < fs.statSync(path.join(root, "js", "i18n.js")).size * 0.5, lang + ".js is a third");
+  }
+  // Every built page loads its own language's file, and only that one.
+  for (const [dir, lang] of [
+    ["", "en"],
+    ["es", "es"],
+    ["pt", "pt"],
+  ]) {
+    const html = fs.readFileSync(path.join(root, dir, "designer.html"), "utf8");
+    assert.match(html, new RegExp(`<script src="(\\.\\./)?js/i18n/${lang}\\.js"></script>`));
+    assert.ok(!/js\/i18n\.js"/.test(html), dir + "/designer.html loads the full file");
+  }
+});

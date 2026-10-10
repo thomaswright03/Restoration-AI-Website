@@ -16,14 +16,18 @@
 //                                    from site-config.json "plans"
 // Text values may use the same {{@name}} values.
 //
+// The build also writes js/i18n/<lang>.js, the JavaScript text of one language
+// each, from js/i18n.js (scripts/build-i18n.mjs); the pages load only theirs.
+//
 // The built pages are committed (Vercel serves them as plain files).
 //   node scripts/build-pages.mjs           rebuild
-//   node scripts/build-pages.mjs --check   exit 1 if a built page is stale or a text is missing (CI)
+//   node scripts/build-pages.mjs --check   exit 1 if a built page or js/i18n file is stale or a text is missing (CI)
 
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import * as prettier from "prettier";
+import { buildI18n } from "./build-i18n.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 
@@ -146,6 +150,7 @@ export async function buildAll() {
   }
   out.set("robots.txt", `User-agent: *\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`);
   out.set("sitemap.xml", sitemap());
+  for (const [file, text] of await buildI18n()) out.set(file, text);
   return { out, problems };
 }
 
@@ -194,5 +199,5 @@ if (isMain) {
     }
   }
   if (stale) process.exit(1);
-  if (check) console.log(`All ${out.size} pages are up to date.`);
+  if (check) console.log(`All ${out.size} pages and generated files are up to date.`);
 }

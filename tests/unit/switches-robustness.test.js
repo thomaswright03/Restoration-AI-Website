@@ -32,10 +32,11 @@ function fakeRes() {
   };
 }
 
-function reply(status, body) {
+function reply(status, body, headers = {}) {
   return {
     ok: status < 300,
     status,
+    headers: { get: (k) => headers[k.toLowerCase()] ?? null },
     text: async () => (body === undefined ? "" : JSON.stringify(body)),
     json: async () => body,
   };
@@ -86,7 +87,10 @@ function setup(opts = {}) {
       }
       return reply(201);
     }
-    if (u.pathname === "/rest/v1/project_creations" || u.pathname === "/rest/v1/projects") return reply(200, []);
+    if (u.pathname === "/rest/v1/project_creations" || u.pathname === "/rest/v1/projects") {
+      // A count (HEAD, Prefer: count=exact) answers in Content-Range; a list is empty.
+      return method === "HEAD" ? reply(200, undefined, { "content-range": "*/0" }) : reply(200, []);
+    }
     if (u.pathname === "/rest/v1/rpc/create_project") {
       return reply(200, { project: { id: "p1", name: "x" }, month: 1, total: 1 });
     }

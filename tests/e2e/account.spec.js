@@ -931,7 +931,8 @@ test("a server failure, being offline and a hung request each get their own word
   context,
 }) => {
   test.setTimeout(60000);
-  await signedIn(page, { payments: true });
+  // No plan yet, so the buy buttons are there to try offline.
+  await signedIn(page, { payments: true, status: "none" });
   // The server failed: the API's 5xx and Supabase's 5xx both say "our side".
   await page.route("**/api/projects**", (route) => route.fulfill({ status: 500, json: { error: "server" } }));
   await page.route(SUPABASE + "/rest/v1/businesses**", (route) =>
@@ -952,7 +953,10 @@ test("a server failure, being offline and a hung request each get their own word
   );
   await page.locator("#business-retry").click();
   await expect(page.locator("#business-form")).toBeVisible();
+  // Offline: navigator.onLine says so, and every request fails to leave the browser.
   await context.setOffline(true);
+  await page.route(SUPABASE + "/**", (route) => route.abort("internetdisconnected"));
+  await page.route("**/api/**", (route) => route.abort("internetdisconnected"));
   await page.locator("#business-save").click();
   await expect(page.locator("#business-status")).toContainText("You're offline. Check your connection");
   await expect(page.locator("#business-status")).not.toContainText(/our side/);

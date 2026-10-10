@@ -74,6 +74,8 @@ test("the theme can be switched from the header on every page, by keyboard, and 
 
 test("the header with its menus open has no accessibility violations and fits a phone", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 800 });
+  // No scroll-reveal fade: axe must not read half-faded cards as low contrast.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/es/index.html");
   await page.locator(".nav-toggle").click();
   await page.locator(".site-header .theme-menu summary").click();

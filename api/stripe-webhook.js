@@ -32,38 +32,50 @@ const {
 } = require("./_lib.js");
 const { LIVE_STATUSES, saveSubscription, subscriptionOf } = require("./_subscriptions.js");
 
+// Stripe's copy of a subscription on file, or null when Stripe no longer has
+// it (a test-mode object wiped) or it isn't live.
+async function liveSubscriptionOf(id) {
+  const other = await stripe("subscriptions/" + encodeURIComponent(id)).catch((e) => {
+    if (e && e.status === 404) return null;
+    throw e;
+  });
+  return other && !other.deleted && LIVE_STATUSES.includes(other.status) ? other : null;
+}
+
 // Records `sub` for its owner, unless the owner already has another
-// subscription Stripe still runs: then the newer of the two is cancelled and
-// the older one is recorded (as Stripe has it now). Resolves what
-// saveSubscription does (false when the owner's account is gone).
+// subscription Stripe still runs. Then:
+//   - both live: the newer of the two is cancelled and the older one is
+//     recorded (as Stripe has it now);
+//   - `sub` is not live (a cancelled duplicate, whose deletion event always
+//     arrives): the live one on file stays. Recording the cancelled one would
+//     drop a paying account to Free while the other keeps billing.
+// Resolves what saveSubscription does (false when the owner's account is gone).
 async function recordSubscription(ownerId, sub) {
   if (!ownerId || !sub) return false;
-  if (LIVE_STATUSES.includes(sub.status)) {
-    const existing = await subscriptionOf(ownerId, "stripe_subscription_id,status");
-    const otherId = existing && existing.stripe_subscription_id;
-    if (otherId && otherId !== sub.id && LIVE_STATUSES.includes(existing.status)) {
-      // Stripe's word, not the row's: the row may lag an event still on its
-      // way. One Stripe no longer knows (a test-mode object wiped) isn't live.
-      const other = await stripe("subscriptions/" + encodeURIComponent(otherId)).catch((e) => {
-        if (e && e.status === 404) return null;
-        throw e;
-      });
-      if (other && !other.deleted && LIVE_STATUSES.includes(other.status)) {
-        const newer = (sub.created || 0) >= (other.created || 0) ? sub : other;
-        const older = newer === sub ? other : sub;
-        console.warn(
-          JSON.stringify({
-            level: "warn",
-            error: "duplicate-subscription",
-            message: "Two live subscriptions for one account: cancelling the newer one.",
-            ownerId,
-            kept: older.id,
-            cancelled: newer.id,
-          }),
-        );
-        await stripe("subscriptions/" + encodeURIComponent(newer.id), undefined, "DELETE");
-        return saveSubscription(ownerId, older);
-      }
+  const existing = await subscriptionOf(ownerId, "stripe_subscription_id,status");
+  const otherId = existing && existing.stripe_subscription_id;
+  if (otherId && otherId !== sub.id && LIVE_STATUSES.includes(existing.status)) {
+    // Stripe's word, not the row's: the row may lag an event still on its way.
+    const other = await liveSubscriptionOf(otherId);
+    if (other && !LIVE_STATUSES.includes(sub.status)) {
+      // The account is still on a live subscription; this one is a dead duplicate.
+      return true;
+    }
+    if (other) {
+      const newer = (sub.created || 0) >= (other.created || 0) ? sub : other;
+      const older = newer === sub ? other : sub;
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          error: "duplicate-subscription",
+          message: "Two live subscriptions for one account: cancelling the newer one.",
+          ownerId,
+          kept: older.id,
+          cancelled: newer.id,
+        }),
+      );
+      await stripe("subscriptions/" + encodeURIComponent(newer.id), undefined, "DELETE");
+      return saveSubscription(ownerId, older);
     }
   }
   return saveSubscription(ownerId, sub);

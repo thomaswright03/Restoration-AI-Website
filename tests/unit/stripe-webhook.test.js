@@ -490,3 +490,36 @@ test("webhook: a different subscription on file that Stripe no longer runs (or n
   assert.deepEqual(calls.cancelled, []);
   assert.equal(calls.saved[0].row.status, "canceled");
 });
+
+test("webhook: a cancelled duplicate's event leaves the live subscription on file, so the account keeps its plan", async () => {
+  setEnv();
+  // The owner cancelled the duplicate in Stripe; its deletion event arrives
+  // after the row already points at the one still billing.
+  let calls = stubFetch({
+    subs: {
+      sub_kept: { ...PRO_SUB, id: "sub_kept", status: "active" },
+      sub_dup: { ...PRO_SUB, id: "sub_dup", status: "canceled" },
+    },
+    rows: [{ stripe_subscription_id: "sub_kept", status: "active" }],
+  });
+  let res = await post(event("customer.subscription.deleted", { id: "sub_dup" }));
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.json(), { received: true });
+  assert.deepEqual(calls.saved, [], "the row is not overwritten with the cancelled duplicate");
+  assert.deepEqual(calls.cancelled, []);
+
+  // The kept one has also ended in Stripe by now: then the cancelled one is
+  // what the account has, and it is recorded as Stripe has it.
+  calls = stubFetch({
+    subs: {
+      sub_kept: { ...PRO_SUB, id: "sub_kept", status: "canceled" },
+      sub_dup: { ...PRO_SUB, id: "sub_dup", status: "canceled" },
+    },
+    rows: [{ stripe_subscription_id: "sub_kept", status: "active" }],
+  });
+  res = await post(event("customer.subscription.deleted", { id: "sub_dup" }));
+  assert.equal(res.statusCode, 200);
+  assert.equal(calls.saved.length, 1);
+  assert.equal(calls.saved[0].row.stripe_subscription_id, "sub_dup");
+  assert.equal(calls.saved[0].row.status, "canceled");
+});

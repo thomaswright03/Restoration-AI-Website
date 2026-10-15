@@ -15,6 +15,11 @@ declare var Net: any;
 // the vendored jsPDF (js/vendor/jspdf.umd.min.js) on demand, which sets
 // window.jspdf.
 interface Window {
+  Riley?: any;
+  ProductPhotos?: any;
+  SiteConfig?: any;
+  BathroomRoom3D?: any;
+  RoomStudio?: any;
   jspdf?: any;
   EstimatePdf?: any;
   // js/vendor/supabase/supabase.js, loaded by the signed-in pages.

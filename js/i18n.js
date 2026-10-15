@@ -538,9 +538,9 @@
       "Cancelado ao fim deste período de cobrança. Até lá você pode continuar salvando projetos; depois, os projetos continuam legíveis e salvar exige um plano novo.",
     ],
     "acct.status.past_due": [
-      "Your last payment didn't go through, so saving projects is paused (your projects are safe and still open). Update your card under Manage billing; saving comes back as soon as the payment clears.",
-      "Su último pago no se procesó, así que guardar proyectos está pausado (sus proyectos están a salvo y siguen abriéndose). Actualice su tarjeta en Administrar pagos; podrá guardar de nuevo en cuanto se procese el pago.",
-      "O seu último pagamento não foi aprovado, então salvar projetos está pausado (os seus projetos estão seguros e continuam abrindo). Atualize o cartão em Gerenciar pagamentos; salvar volta assim que o pagamento for aprovado.",
+      "Payment failed: your last payment didn't go through. Update your card under Manage billing; you can keep saving while we retry, but if it keeps failing saving will pause (your projects stay safe and open).",
+      "Pago fallido: su último pago no se procesó. Actualice su tarjeta en Administrar pagos; puede seguir guardando mientras reintentamos, pero si sigue fallando se pausará el guardado (sus proyectos siguen a salvo y abiertos).",
+      "Pagamento falhou: o seu último pagamento não foi aprovado. Atualize o cartão em Gerenciar pagamentos; você pode continuar salvando enquanto tentamos de novo, mas se continuar falhando o salvamento será pausado (os seus projetos continuam seguros e abertos).",
     ],
     "acct.status.unpaid": [
       "Your payments have stopped going through, so saving projects is paused (your projects are safe and still open). Update your card under Manage billing to continue.",

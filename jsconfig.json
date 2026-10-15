@@ -26,6 +26,8 @@
     "js/i18n.js",
     "js/bathroom-pricing.js",
     "js/materials-pricing.js",
-    "js/estimate-pdf.js"
+    "js/estimate-pdf.js",
+    "js/studio.js",
+    "js/business.js"
   ]
 }

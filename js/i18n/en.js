@@ -254,7 +254,7 @@
     "acct.status.endingNoDate":
       "Cancelled at the end of this billing period. Until then you can keep saving projects; after that your projects stay readable, and saving needs a new plan.",
     "acct.status.past_due":
-      "Your last payment didn't go through, so saving projects is paused (your projects are safe and still open). Update your card under Manage billing; saving comes back as soon as the payment clears.",
+      "Payment failed: your last payment didn't go through. Update your card under Manage billing; you can keep saving while we retry, but if it keeps failing saving will pause (your projects stay safe and open).",
     "acct.status.unpaid":
       "Your payments have stopped going through, so saving projects is paused (your projects are safe and still open). Update your card under Manage billing to continue.",
     "acct.status.incomplete":

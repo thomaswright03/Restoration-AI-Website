@@ -48,8 +48,11 @@ const PLANS = {
 };
 
 // Statuses under which an account may save projects (and a business's
-// designer is live rather than a preview).
-const ACTIVE_STATUSES = ["active", "trialing"];
+// designer is live rather than a preview). past_due is a grace window: Stripe
+// is still retrying the card (Smart Retries, then it moves to unpaid or
+// canceled), so a paying subscriber keeps saving while the account page shows
+// a "payment failed, update your card" notice. unpaid and the rest drop to Free.
+const ACTIVE_STATUSES = ["active", "trialing", "past_due"];
 
 // The env variable that lists each plan's Stripe price id(s).
 const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", max: "STRIPE_PRICE_MAX" };

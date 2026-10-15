@@ -134,7 +134,9 @@ async function call(method, { body, query, token = "good", headers = {} } = {}) 
 test("plans: free unless active or trialing; plan column, then Pro/Max price ids, else Starter", () => {
   assert.equal(planOf(null), "free");
   assert.equal(planOf({ status: "canceled", plan: "max" }), "free");
-  assert.equal(planOf({ status: "past_due" }), "free");
+  assert.equal(planOf({ status: "unpaid", plan: "pro" }), "free");
+  // Grace window: Stripe is still retrying the card, so the plan is kept.
+  assert.equal(planOf({ status: "past_due", plan: "pro" }), "pro");
   assert.equal(planOf({ status: "active" }), "starter");
   assert.equal(planOf({ status: "trialing", plan: "pro" }), "pro");
   process.env.STRIPE_PRICE_MAX = "price_a, price_max";

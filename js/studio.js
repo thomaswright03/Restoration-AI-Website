@@ -975,7 +975,7 @@
     }
     var body = s("g", { transform: itemTransform(item, d) });
     body.appendChild(s("rect", { x: num(-w / 2), y: 0, width: num(w), height: num(dp), rx: 0.08, class: "plan-body" }));
-    symbolFor(item.type, w, dp, (item.opts || {}).count).forEach(function (el) {
+    symbolFor(item.type, w, dp).forEach(function (el) {
       body.appendChild(el);
     });
     g.appendChild(body);
@@ -3614,10 +3614,10 @@
   // in a home and the rest. The pictures load from Home Depot's image server.
   var PHOTO_CDN = "https://images.thdstatic.com/productImages/";
   // Beside this file; loaded the first time someone asks for photos.
-  var PHOTOS_SRC = ((document.currentScript && document.currentScript.src) || "js/studio.js").replace(
-    /studio\.js(\?.*)?$/,
-    "product-photos.js",
-  );
+  var PHOTOS_SRC = (
+    (document.currentScript && /** @type {HTMLScriptElement} */ (document.currentScript).src) ||
+    "js/studio.js"
+  ).replace(/studio\.js(\?.*)?$/, "product-photos.js");
   var photosLoading = null;
   var photos = { list: [], at: 0, item: null };
 

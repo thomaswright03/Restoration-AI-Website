@@ -37,7 +37,7 @@ Everything is in English, Spanish and Brazilian Portuguese (`es/`, `pt/`).
 **Request flow.** Every page is a static file Vercel serves from the repo as committed (`npm run pages` is run by hand and the result committed; nothing is built at deploy). The browser then talks to two kinds of things:
 
 1. `api/*` Vercel functions, same origin. `GET /api/config` says whether accounts and payments are on and hands out the public Supabase URL and anon key; the pages sign in with Supabase Auth directly from the browser (`js/vendor/supabase/supabase.js`, loaded only on signed-in pages) and send the access token as a bearer to `/api/projects`, `/api/account`, `/api/checkout` and `/api/portal`, which check it with Supabase (`api/_lib.js currentUser()`) and then read or write with the service-role key. `GET /api/business?b=<slug>` is public and is what `designer.html?b=` loads. `POST /api/stripe-webhook` is called by Stripe, verified by signature, and is the only writer of `subscriptions`.
-2. Static data the designer fetches itself: `site-config.json` (settings, below), `models/**/*.glb` (3D fixtures and products) and the vendored libraries in `js/vendor/`. No third-party request is made from a page except Stripe Checkout and the billing portal, which are redirects.
+2. Static data the designer fetches itself: `site-config.json` (settings, below), `models/**/*.glb` (3D fixtures and products) and the vendored libraries in `js/vendor/`. No other third-party request is made from a page except Stripe Checkout and the billing portal (redirects) and the Home Depot product photos in the designer's product picker, which load from `images.thdstatic.com` (Home Depot's image server; the browser sends its IP and user agent there).
 
 **Data stores.**
 

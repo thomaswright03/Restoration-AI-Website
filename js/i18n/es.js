@@ -259,7 +259,7 @@
     "acct.status.endingNoDate":
       "Se cancela al final de este período de facturación. Hasta entonces puede seguir guardando proyectos; después, sus proyectos siguen pudiendo leerse y guardar requiere un plan nuevo.",
     "acct.status.past_due":
-      "Su último pago no se procesó, así que guardar proyectos está pausado (sus proyectos están a salvo y siguen abriéndose). Actualice su tarjeta en Administrar pagos; podrá guardar de nuevo en cuanto se procese el pago.",
+      "Pago fallido: su último pago no se procesó. Actualice su tarjeta en Administrar pagos; puede seguir guardando mientras reintentamos, pero si sigue fallando se pausará el guardado (sus proyectos siguen a salvo y abiertos).",
     "acct.status.unpaid":
       "Sus pagos dejaron de procesarse, así que guardar proyectos está pausado (sus proyectos están a salvo y siguen abriéndose). Actualice su tarjeta en Administrar pagos para continuar.",
     "acct.status.incomplete":

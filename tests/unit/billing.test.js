@@ -324,7 +324,7 @@ test("the plan follows the subscription's current price whenever that price maps
   assert.equal(plans.planFromPriceId("price_m_old"), "max");
   assert.equal(plans.planFromPriceId(""), "");
   assert.deepEqual(plans.priceList("STRIPE_PRICE_MAX"), ["price_m", "price_m_old"]);
-  assert.deepEqual(plans.ACTIVE_STATUSES, ["active", "trialing"]);
+  assert.deepEqual(plans.ACTIVE_STATUSES, ["active", "trialing", "past_due"]);
   const { LIVE_STATUSES } = require("../../api/_subscriptions.js");
   assert.ok(LIVE_STATUSES.includes("incomplete"), "a payment still confirming blocks a second checkout");
   for (const s of plans.ACTIVE_STATUSES) assert.ok(LIVE_STATUSES.includes(s));

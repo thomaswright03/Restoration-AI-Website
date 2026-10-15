@@ -271,10 +271,10 @@ test("Stripe statuses are explained in the page's language, not shown raw", asyn
   await expect(page.locator("#plan-buy")).toBeHidden();
 });
 
-test("a failed card says what actually happens: saving is paused, projects stay open", async ({ page }) => {
+test("a failed card says what actually happens: saving continues while Stripe retries", async ({ page }) => {
   await signedIn(page, { status: "past_due", payments: true });
   await page.goto("/account.html");
-  await expect(page.locator("#plan-status")).toContainText("saving projects is paused");
+  await expect(page.locator("#plan-status")).toContainText("you can keep saving while we retry");
   await expect(page.locator("#plan-status")).not.toContainText(/live/);
   await expect(page.locator("#plan-buy")).toBeHidden();
 });

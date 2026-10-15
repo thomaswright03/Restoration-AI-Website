@@ -13,6 +13,7 @@
     "check:pages": "node scripts/build-pages.mjs --check",
     "test:unit": "node --test \"tests/unit/*.test.js\"",
     "test:e2e": "playwright test",
+    "test:e2e:smoke": "playwright test tests/e2e/site-chrome.spec.js tests/e2e/product.spec.js tests/e2e/business-profile.spec.js",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm run check:pages && npm run test:unit",
     "test": "npm run check && npm run test:e2e",
     "typecheck": "tsc -p jsconfig.json && tsc -p jsconfig.api.json"

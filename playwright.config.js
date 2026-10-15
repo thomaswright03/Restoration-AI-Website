@@ -18,7 +18,7 @@ module.exports = defineConfig({
   // runners get few cores to begin with, so serial execution is the
   // reliable choice there; local runs keep full parallelism since dev
   // machines have never shown this problem.
-  workers: process.env.CI ? 1 : undefined,
+  workers: Number(process.env.E2E_WORKERS) || (process.env.CI ? 1 : 3),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",

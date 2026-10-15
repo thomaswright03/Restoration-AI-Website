@@ -258,7 +258,7 @@
     "acct.status.endingNoDate":
       "Cancelado ao fim deste período de cobrança. Até lá você pode continuar salvando projetos; depois, os projetos continuam legíveis e salvar exige um plano novo.",
     "acct.status.past_due":
-      "O seu último pagamento não foi aprovado, então salvar projetos está pausado (os seus projetos estão seguros e continuam abrindo). Atualize o cartão em Gerenciar pagamentos; salvar volta assim que o pagamento for aprovado.",
+      "Pagamento falhou: o seu último pagamento não foi aprovado. Atualize o cartão em Gerenciar pagamentos; você pode continuar salvando enquanto tentamos de novo, mas se continuar falhando o salvamento será pausado (os seus projetos continuam seguros e abertos).",
     "acct.status.unpaid":
       "Os seus pagamentos deixaram de ser aprovados, então salvar projetos está pausado (os seus projetos estão seguros e continuam abrindo). Atualize o cartão em Gerenciar pagamentos para continuar.",
     "acct.status.incomplete":

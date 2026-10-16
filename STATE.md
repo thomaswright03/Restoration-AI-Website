@@ -12,6 +12,8 @@ Done this round:
 - Playwright: local workers default 3 (E2E_WORKERS overrides); added `npm run test:e2e:smoke` (3 small specs).
 - `npm run check`: lint, prettier, both tsc, pages, 271 unit tests all pass.
 
+- 2026-10-16: room shapes and windows (Thomas's ask). room.shape = L / T / U (notch) cut from the w x l box (js/room-plan.js "Room shapes"); shaped rooms' walls are w1..wN, lettered A.. clockwise; rectangles keep N/E/S/W. Windows live in design.windows (wall, offset, width, height, sill); they come off the wall area but have no install price.
+
 ## Not verified / still open
 
 - Full e2e (168 tests) passed in 14.0 min on a 4-core sandbox with `CI=1 E2E_WORKERS=2` (2026-10-16). On GitHub's 2-core runner (1 worker) it took 26.5 min in run 96, close to the 30 min job limit.

@@ -361,3 +361,26 @@ test("only code a page runs is exported", () => {
     "shortMoney",
   ]);
 });
+
+test("a room that isn't a rectangle is priced on its own floor area and every wall", () => {
+  // A 9 x 8 L-shaped room with a 3 x 3 cutout: 63 sq ft of floor, 34 ft of wall.
+  const values = {
+    Bathroom_Width_Ft: 9,
+    Bathroom_Length_Ft: 8,
+    Bathroom_Height_Ft: 8,
+    Floor_SqFt: 63,
+    Wall_Perimeter_Ft: 34,
+    Wall_Count: 6,
+    Wall_Openings_SqFt: 12,
+  };
+  const a = P.areas(values);
+  assert.equal(a.floorSqFt, 63);
+  assert.equal(a.grossWallSqFt, 272);
+  assert.equal(a.wallSqFt, 260);
+  const scope = { demolition: false, floorFinish: "tile", walls: "paint", paintCeiling: false };
+  const r = studioEstimate(values, scope);
+  assert.equal(line(r, "floorTile").qty, 63);
+  const said = P.estimateAssumptions(values, scope, r).join(" ");
+  assert.match(said, /63 sq ft for the 6-wall room/);
+  assert.match(said, /34 ft around all 6 walls = 272 sq ft, less 12 sq ft of doorways and windows/);
+});

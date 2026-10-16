@@ -270,14 +270,20 @@
     if (id === "wall") return T("studio.the.wall");
     if (id === "ceiling") return T("studio.the.ceiling");
     var item = findItem(id, d);
+    var wins = Plan.windows(d || design);
+    var win = wins.filter(function (w) {
+      return w.id === id;
+    })[0];
+    if (win) return T("studio.the.window") + (wins.length > 1 ? " " + (wins.indexOf(win) + 1) : "");
     if (!item) return T("studio.the.wall");
     var same = itemsOf(item.type, d);
     var base = T("studio.the." + item.type);
     return same.length > 1 ? base + " " + (same.indexOf(item) + 1) : base;
   }
 
-  function letter(wallId) {
-    return Plan.WALL_LETTERS[wallId];
+  // A wall's letter: A, B, C … going round the room.
+  function letter(wallId, d) {
+    return Plan.wallLetter((d || design).room, wallId);
   }
 
   // How many fixtures (and doors) don't fit where they are.
@@ -333,7 +339,7 @@
       return T(key, {
         run: len(x.have / 12),
         most: len(x.need / 12),
-        wall: letter(Plan.stackWall(d || design)),
+        wall: letter(Plan.stackWall(d || design), d),
       });
     }
     if (x.code === "side" && item.type !== "toilet") key = "studio.issue.sideGap";
@@ -665,27 +671,29 @@
   }
 
   // The wall to the left (prev) or right (next) of this one, going round
-  // the room A, B, C, D: one's right end is the next one's left end.
-  function neighborWall(wallId, dir) {
-    var i = Plan.WALL_IDS.indexOf(wallId);
-    return Plan.WALL_IDS[(i + (dir > 0 ? 1 : 3)) % 4];
+  // the room A, B, C …: one's right end is the next one's left end.
+  function neighborWall(wallId, dir, d) {
+    var ids = Plan.wallIds((d || design).room);
+    var i = ids.indexOf(wallId);
+    return ids[(i + (dir > 0 ? 1 : ids.length - 1)) % ids.length];
   }
 
   // The tile panels around each tub: the wall behind it and, where it
-  // fills a corner, the end wall beside it, up to 6 ft.
+  // fills an inside corner, the end wall beside it, up to 6 ft.
   function surroundPanels(d) {
     var out = [];
     itemsOf("tub", d).forEach(function (item) {
       var g = Plan.geometry(item, d.room, sizes);
       var span = g.wall.span;
       out.push({ wallId: item.wall, a0: g.a0, a1: g.a1, top: 6 });
-      if (g.a0 < 2 * IN) {
-        var left = neighborWall(item.wall, -1);
+      if (g.a0 < 2 * IN && g.wall.inStart !== false) {
+        var left = neighborWall(item.wall, -1, d);
         var leftSpan = Plan.wallSpan(d.room, left);
-        out.push({ wallId: left, a0: leftSpan - g.size.depth, a1: leftSpan, top: 6 });
+        out.push({ wallId: left, a0: Math.max(0, leftSpan - g.size.depth), a1: leftSpan, top: 6 });
       }
-      if (g.a1 > span - 2 * IN) {
-        out.push({ wallId: neighborWall(item.wall, 1), a0: 0, a1: g.size.depth, top: 6 });
+      if (g.a1 > span - 2 * IN && g.wall.inEnd !== false) {
+        var right = neighborWall(item.wall, 1, d);
+        out.push({ wallId: right, a0: 0, a1: Math.min(g.size.depth, Plan.wallSpan(d.room, right)), top: 6 });
       }
     });
     return out;
@@ -800,11 +808,8 @@
       );
     }
     svg.appendChild(
-      s("rect", {
-        x: 0,
-        y: 0,
-        width: room.w,
-        height: room.l,
+      s("path", {
+        d: outlinePath(room),
         class: "plan-floor",
         fill: mini ? null : "url(#" + id + "-grid)",
       }),
@@ -827,8 +832,8 @@
       svg.appendChild(fixtureEl(d, item, list, opts, fs));
     });
 
-    // Walls with their doorways cut out, then the doors.
-    Plan.WALL_IDS.forEach(function (wid) {
+    // Walls with their doorways cut out, then the doors and windows.
+    Plan.wallIds(room).forEach(function (wid) {
       var wall = wallOf(wid, d);
       var gaps = d.items
         .filter(function (it) {
@@ -841,15 +846,19 @@
         .sort(function (p, q) {
           return p[0] - q[0];
         });
-      var cursor = -WALL_T;
+      var ends = wallEnds(wall);
+      var cursor = ends[0];
       gaps.forEach(function (g) {
         if (g[0] > cursor) svg.appendChild(wallSegment(wall, cursor, g[0]));
         cursor = Math.max(cursor, g[1]);
       });
-      if (wall.span + WALL_T > cursor) svg.appendChild(wallSegment(wall, cursor, wall.span + WALL_T));
+      if (ends[1] > cursor) svg.appendChild(wallSegment(wall, cursor, ends[1]));
     });
     d.items.forEach(function (item) {
       if (item.type === "door") svg.appendChild(doorEl(d, item, list, opts, fs));
+    });
+    Plan.windows(d).forEach(function (win) {
+      svg.appendChild(windowEl(d, win, opts));
     });
 
     // Electrical points on the walls, and the fan in the middle.
@@ -874,24 +883,39 @@
       ]),
     );
 
-    // Wall letters and the room's size.
-    Plan.WALL_IDS.forEach(function (wid) {
+    // Wall letters and the room's size. A shaped room shows each wall's
+    // length beside its letter.
+    var shaped = !!Plan.shapeOf(room);
+    Plan.wallIds(room).forEach(function (wid) {
       var wall = wallOf(wid, d);
       var p = wallPoint(wall, wall.span / 2, -(WALL_T + fs * 1.05));
       svg.appendChild(
         s("g", { class: "plan-wall-tag" }, [
           s("circle", { cx: num(p.x), cy: num(p.z), r: num(fs * 0.78) }),
-          s("text", { x: num(p.x), y: num(p.z), "font-size": num(fs * 0.95), dy: "0.35em" }, [letter(wid)]),
+          s("text", { x: num(p.x), y: num(p.z), "font-size": num(fs * 0.95), dy: "0.35em" }, [letter(wid, d)]),
         ]),
       );
+      if (shaped && !mini) {
+        var q = wallPoint(wall, wall.span / 2, -(WALL_T + fs * 2.15));
+        svg.appendChild(
+          s(
+            "text",
+            { x: num(q.x), y: num(q.z), class: "plan-wall-length", "font-size": num(fs * 0.72), dy: "0.35em" },
+            [len(wall.span)],
+          ),
+        );
+      }
     });
     if (mini) return svg;
-    svg.appendChild(
-      dimension({ x: 0, z: -(WALL_T + fs * 2.6) }, { x: room.w, z: -(WALL_T + fs * 2.6) }, len(room.w), fs, false),
-    );
-    svg.appendChild(
-      dimension({ x: -(WALL_T + fs * 2.6), z: 0 }, { x: -(WALL_T + fs * 2.6), z: room.l }, len(room.l), fs, true),
-    );
+    // A shaped room has its walls' own lengths instead of the box's.
+    if (!shaped) {
+      svg.appendChild(
+        dimension({ x: 0, z: -(WALL_T + fs * 2.6) }, { x: room.w, z: -(WALL_T + fs * 2.6) }, len(room.w), fs, false),
+      );
+      svg.appendChild(
+        dimension({ x: -(WALL_T + fs * 2.6), z: 0 }, { x: -(WALL_T + fs * 2.6), z: room.l }, len(room.l), fs, true),
+      );
+    }
 
     // The selected fixture's gaps.
     var sel = opts.selected && findItem(opts.selected, d);
@@ -938,6 +962,42 @@
 
   function rectEl(r, cls) {
     return s("rect", { x: num(r.x0), y: num(r.z0), width: num(r.x1 - r.x0), height: num(r.z1 - r.z0), class: cls });
+  }
+
+  // How far a wall's drawn thickness runs past each end: round an inside
+  // corner to meet the next wall, but not at a cutout's outside corner,
+  // where it would poke into the room.
+  function wallEnds(wall) {
+    return [wall.inStart === false ? 0 : -WALL_T, wall.span + (wall.inEnd === false ? 0 : WALL_T)];
+  }
+
+  // The floor's outline as an SVG path.
+  function outlinePath(room) {
+    return (
+      Plan.outline(room)
+        .map(function (p, i) {
+          return (i ? "L" : "M") + num(p.x) + " " + num(p.z);
+        })
+        .join(" ") + " Z"
+    );
+  }
+
+  // A window on the plan: a pane drawn across the wall's thickness.
+  function windowEl(d, win, opts) {
+    var wall = wallOf(win.wall, d);
+    if (!wall) return s("g");
+    var p0 = wallPoint(wall, win.offset - win.width / 2, -WALL_T);
+    var p1 = wallPoint(wall, win.offset + win.width / 2, 0);
+    var m0 = wallPoint(wall, win.offset - win.width / 2, -WALL_T / 2);
+    var m1 = wallPoint(wall, win.offset + win.width / 2, -WALL_T / 2);
+    var tone = toneOf(win.id, opts.list || {});
+    return s("g", { class: "plan-window is-" + tone, "data-wid": win.id }, [
+      rectEl(
+        { x0: Math.min(p0.x, p1.x), x1: Math.max(p0.x, p1.x), z0: Math.min(p0.z, p1.z), z1: Math.max(p0.z, p1.z) },
+        "plan-window-frame",
+      ),
+      s("line", { x1: num(m0.x), y1: num(m0.z), x2: num(m1.x), y2: num(m1.z), class: "plan-window-pane" }),
+    ]);
   }
 
   function wallSegment(wall, a0, a1) {
@@ -1165,7 +1225,7 @@
 
   // "Toilet on wall B, center 2′ 3″ from the left corner."
   function itemLabel(item, d) {
-    return T("studio.itemAt", { name: itemName(item, d), wall: letter(item.wall), at: len(item.offset) });
+    return T("studio.itemAt", { name: itemName(item, d), wall: letter(item.wall, d), at: len(item.offset) });
   }
 
   // "Outlet, wall A at 3′, 3′ 6″ up", or "Exhaust fan, in the ceiling".
@@ -1174,7 +1234,7 @@
     if (point.kind === "fan") return T("studio.pointCeiling", { name: pointName(point, d) });
     return T("studio.pointAt", {
       name: pointName(point, d),
-      wall: letter(point.wall),
+      wall: letter(point.wall, d),
       at: len(point.offset),
       up: len(point.height),
     });
@@ -1186,7 +1246,19 @@
   function push3d() {
     if (!room3d) return;
     var f = design.finishes;
-    room3d.setRoomSize(design.room.w, design.room.l, design.room.h);
+    room3d.setRoomSize(
+      design.room.w,
+      design.room.l,
+      design.room.h,
+      Plan.shapeOf(design.room)
+        ? {
+            walls: Plan.wallList(design.room),
+            outline: Plan.outline(design.room),
+            middle: Plan.interiorPoint(design.room),
+          }
+        : null,
+    );
+    if (room3d.setWindows) room3d.setWindows(Plan.toWindowPlacements(design));
     room3d.setPlan(Plan.toPlacements(design, sizes));
     room3d.setScope("floorFinish", f.floor);
     // Around the tub is tiled (setSurround()); the rest is painted.
@@ -1300,7 +1372,7 @@
     var specs = [];
     // A wall's letter sits high on the wall when it's in view, or on the
     // floor's edge when the wall is cut away (positionLabels()).
-    Plan.WALL_IDS.forEach(function (wid) {
+    Plan.wallIds(room).forEach(function (wid) {
       var wall = wallOf(wid, d);
       var top = wallPoint(wall, wall.span / 2, 0.05);
       var base = wallPoint(wall, wall.span / 2, -0.55);
@@ -1360,7 +1432,7 @@
       var at = spec;
       if (spec.wall && cam) {
         var w = wallOf(spec.wall.id);
-        var inside = (cam.x - w.ox) * w.nx + (cam.z - w.oz) * w.nz > 0;
+        var inside = !!w && (cam.x - w.ox) * w.nx + (cam.z - w.oz) * w.nz > 0;
         if (inside) at = spec.wall.top;
       }
       var p = room3d.project(at.x, at.y, at.z);
@@ -2492,7 +2564,7 @@
   function wallChoice(current, onPick, key, label) {
     return choiceGroup(
       label || T("studio.wall"),
-      Plan.WALL_IDS.map(function (wid) {
+      Plan.wallIds(design.room).map(function (wid) {
         return { value: wid, label: T("studio.wallN", { letter: letter(wid) }) };
       }),
       current,
@@ -2640,6 +2712,8 @@
     fillTemplateThumbs();
 
     var room = design.room;
+    var shape = Plan.shapeOf(room);
+    body.appendChild(shapeSection(room, shape));
     var setDim = function (key) {
       return function (ft) {
         var lim = Plan.LIMITS;
@@ -2653,13 +2727,25 @@
     body.appendChild(
       section(T("studio.room.size"), [
         h("div", { class: "studio-size-grid" }, [
-          lengthField("size-w", T("studio.room.width"), room.w, setDim("w"), T("studio.room.widthHelp")),
-          lengthField("size-l", T("studio.room.length"), room.l, setDim("l"), T("studio.room.lengthHelp")),
+          lengthField(
+            "size-w",
+            T(shape ? "studio.room.widthOverall" : "studio.room.width"),
+            room.w,
+            setDim("w"),
+            T(shape ? "studio.room.widthOverallHelp" : "studio.room.widthHelp"),
+          ),
+          lengthField(
+            "size-l",
+            T(shape ? "studio.room.lengthOverall" : "studio.room.length"),
+            room.l,
+            setDim("l"),
+            T(shape ? "studio.room.lengthOverallHelp" : "studio.room.lengthHelp"),
+          ),
           lengthField("size-h", T("studio.room.height"), room.h, setDim("h"), T("studio.room.heightHelp")),
         ]),
         h("p", {
           class: "studio-note",
-          text: T("studio.room.area", { area: Pricing.formatQty(num(room.w * room.l, 1)) }),
+          text: T("studio.room.area", { area: Pricing.formatQty(num(Plan.floorArea(room), 1)) }),
         }),
       ]),
     );
@@ -2726,6 +2812,220 @@
       );
     }
     body.appendChild(section(T("studio.room.doors"), doorKids));
+    body.appendChild(windowsSection());
+  }
+
+  // The room's shape: a rectangle, or one with a piece out of it (an L,
+  // a T, a notch), and how big that piece is.
+  function shapeSection(room, shape) {
+    var kids = [
+      h("p", { class: "studio-note", text: T("studio.room.shapeHelp") }),
+      choiceGroup(
+        T("studio.room.shape"),
+        Plan.SHAPES.map(function (kind) {
+          return { value: kind, label: T("studio.shape." + kind) };
+        }),
+        shape ? shape.kind : "rect",
+        setShapeKind,
+        "shape",
+      ),
+    ];
+    if (shape) {
+      kids.push(
+        h("div", { class: "studio-field" }, [
+          h("span", { class: "studio-field-label", text: T("studio.room.cutoutAt") }),
+          choiceGroup(
+            T("studio.room.cutoutAt"),
+            Plan.SHAPE_AT[shape.kind].map(function (at) {
+              var fits = !!Plan.shapeLimits(room, shape.kind, at);
+              return { value: at, label: T("studio.shape.at." + at), disabled: !fits };
+            }),
+            shape.at,
+            function (at) {
+              setShape(Object.assign({}, shape, { at: at }));
+            },
+            "shape-at",
+          ),
+        ]),
+      );
+      var setCut = function (key) {
+        return function (ft) {
+          var lim = Plan.shapeLimits(room, shape.kind, shape.at);
+          var min = key === "w" ? lim.minW : lim.minL;
+          var max = key === "w" ? lim.maxW : lim.maxL;
+          if (ft < min - 1e-6 || ft > max + 1e-6) return T("studio.lengthRange", { min: len(min), max: len(max) });
+          var next = Object.assign({}, shape);
+          next[key] = num(ft, 4);
+          setShape(next);
+          return null;
+        };
+      };
+      kids.push(
+        h("div", { class: "studio-size-grid" }, [
+          lengthField("cut-w", T("studio.room.cutoutW"), shape.w, setCut("w"), T("studio.room.cutoutWHelp")),
+          lengthField("cut-l", T("studio.room.cutoutL"), shape.l, setCut("l"), T("studio.room.cutoutLHelp")),
+        ]),
+      );
+      kids.push(
+        h("p", {
+          class: "studio-note",
+          "data-key": "wall-lengths",
+          text: T("studio.room.wallLengths", {
+            list: Plan.wallList(room)
+              .map(function (wall) {
+                return wall.letter + " " + len(wall.span);
+              })
+              .join(" · "),
+          }),
+        }),
+      );
+    }
+    return section(T("studio.room.shape"), kids);
+  }
+
+  function setShapeKind(kind) {
+    if (kind === "rect") return setShape(null);
+    var shape = Plan.defaultShape(design.room, kind);
+    if (!shape) {
+      toast(T("studio.shape.tooSmall"));
+      return;
+    }
+    setShape(shape);
+  }
+
+  // Reshapes the room. The fixtures stay on the wall that's now where they
+  // stood; if that breaks something, the person is offered a new layout.
+  function setShape(shape) {
+    var room = Object.assign({}, design.room, { shape: shape });
+    var before = errorCount(issues);
+    var next = Plan.resize(design, room);
+    var kind = Plan.shapeOf(next.room) ? Plan.shapeOf(next.room).kind : "rect";
+    commit(next, { announce: T("studio.shape.changed", { shape: T("studio.shape." + kind) }) });
+    if (errorCount(issues) > before) {
+      toast(T("studio.resizeBroke"), { label: T("studio.rearrange"), run: arrangeNow });
+    }
+  }
+
+  // ---------- Windows ----------
+  function windowsSection() {
+    var wins = Plan.windows(design);
+    var problems = Plan.validateWindows(design, sizes);
+    var kids = wins.map(function (win, i) {
+      var name = T("studio.windowN", { n: i + 1 });
+      var span = Plan.wallSpan(design.room, win.wall);
+      var set = function (key, min, max) {
+        return function (ft) {
+          if (ft < min - 1e-6 || ft > max + 1e-6) return T("studio.lengthRange", { min: len(min), max: len(max) });
+          var change = {};
+          change[key] = num(ft, 4);
+          commit(Plan.moveWindow(design, win.id, change));
+          return null;
+        };
+      };
+      var W = Plan.WINDOW;
+      var mine = problems[win.id] || [];
+      var list = mine.length
+        ? [
+            h(
+              "ul",
+              { class: "studio-issues is-compact" },
+              mine.map(function (x) {
+                var code = x.code === "outside" ? (x.other === "ceiling" ? "outsideCeiling" : "outsideWall") : x.code;
+                return h("li", { class: "is-" + x.level }, [
+                  h("span", { class: "studio-issue-icon", icon: x.level === "error" ? "alert" : "info" }),
+                  h("span", {
+                    class: "studio-issue-text",
+                    text: sentence(T("studio.window.issue." + code, { other: theName(x.other) })),
+                  }),
+                ]);
+              }),
+            ),
+          ]
+        : [];
+      return h(
+        "div",
+        { class: "studio-card", "data-window": win.id },
+        [
+          h("div", { class: "studio-card-head" }, [
+            h("h4", { text: name }),
+            h("button", {
+              type: "button",
+              class: "studio-icon-btn",
+              "data-key": "window-remove-" + win.id,
+              "aria-label": T("studio.removeWhat", { what: name }),
+              title: T("studio.remove"),
+              icon: "trash",
+              onclick: function () {
+                commit(Plan.removeWindow(design, win.id));
+              },
+            }),
+          ]),
+          wallChoice(
+            win.wall,
+            function (wallId) {
+              var to = Plan.wallSpan(design.room, wallId);
+              var width = Math.min(win.width, to);
+              commit(Plan.moveWindow(design, win.id, { wall: wallId, width: width, offset: num(to / 2, 4) }));
+            },
+            "window-wall-" + win.id,
+          ),
+          h("div", { class: "studio-size-grid" }, [
+            lengthField(
+              "window-at-" + win.id,
+              T("studio.window.at"),
+              win.offset,
+              set("offset", win.width / 2, Math.max(win.width / 2, span - win.width / 2)),
+              T("studio.window.atHelp"),
+            ),
+            lengthField(
+              "window-w-" + win.id,
+              T("studio.window.width"),
+              win.width,
+              set("width", W.min, Math.min(W.maxWidth, span)),
+              T("studio.window.widthHelp"),
+            ),
+            lengthField(
+              "window-h-" + win.id,
+              T("studio.window.height"),
+              win.height,
+              set("height", W.min, Math.min(W.maxHeight, design.room.h - 0.25 - win.sill)),
+              T("studio.window.heightHelp"),
+            ),
+            lengthField(
+              "window-sill-" + win.id,
+              T("studio.window.sill"),
+              win.sill,
+              set("sill", W.minSill, Math.max(W.minSill, design.room.h - 0.25 - win.height)),
+              T("studio.window.sillHelp"),
+            ),
+          ]),
+        ].concat(list),
+      );
+    });
+    if (!wins.length) kids.push(h("p", { class: "studio-note", text: T("studio.room.noWindow") }));
+    if (wins.length < Plan.MAX_WINDOWS) {
+      kids.push(
+        h(
+          "button",
+          {
+            type: "button",
+            class: "btn btn-secondary studio-add-door",
+            "data-key": "window-add",
+            onclick: addWindow,
+          },
+          [h("span", { icon: "plus" }), T(wins.length ? "studio.room.addWindow" : "studio.room.addFirstWindow")],
+        ),
+      );
+    }
+    return section(T("studio.room.windows"), kids);
+  }
+
+  function addWindow() {
+    var res = Plan.addWindow(design, sizes);
+    var wall = letter(res.window.wall);
+    var text = res.placed ? T("studio.window.added", { wall: wall }) : T("studio.window.noSpot", { wall: wall });
+    commit(res.design, { announce: text });
+    if (!res.placed) toast(text);
   }
 
   // Template thumbnails are worked out a few at a time (arranging the
@@ -4204,6 +4504,12 @@
       },
       Plan.counts(d),
     );
+    // A room that isn't a rectangle: its own floor area and wall length.
+    if (Plan.shapeOf(d.room)) {
+      values.Floor_SqFt = areas.floorSqFt;
+      values.Wall_Perimeter_Ft = areas.perimeterFt;
+      values.Wall_Count = areas.walls;
+    }
     var f = d.finishes;
     var scope = { demolition: f.demolition, floorFinish: f.floor, walls: wallsOf(d), paintCeiling: f.ceiling };
     return { values: values, scope: scope };
@@ -4380,21 +4686,42 @@
   // The design in words, for the PDF.
   function designLines(d, est) {
     var out = [];
-    out.push(T("studio.sum.room", { w: len(d.room.w), l: len(d.room.l), h: len(d.room.h) }));
+    var shape = Plan.shapeOf(d.room);
+    out.push(
+      shape
+        ? T("studio.sum.roomShaped", {
+            shape: T("studio.shape." + shape.kind),
+            w: len(d.room.w),
+            l: len(d.room.l),
+            area: Pricing.formatQty(num(Plan.floorArea(d.room), 1)),
+            h: len(d.room.h),
+          })
+        : T("studio.sum.room", { w: len(d.room.w), l: len(d.room.l), h: len(d.room.h) }),
+    );
     var doors = itemsOf("door", d).map(function (door) {
       return T("studio.sum.door", {
-        wall: letter(door.wall),
+        wall: letter(door.wall, d),
         kind: T("studio.opt.door." + door.opts.kind).toLowerCase(),
       });
     });
     if (doors.length) out.push(doors.join("; "));
+    Plan.windows(d).forEach(function (win) {
+      out.push(
+        T("studio.sum.window", {
+          wall: letter(win.wall, d),
+          w: len(win.width),
+          h: len(win.height),
+          sill: len(win.sill),
+        }),
+      );
+    });
     d.items.forEach(function (it) {
       if (it.type === "door") return;
       out.push(
-        T("studio.sum.item", { name: itemName(it, d), wall: letter(it.wall), at: len(it.offset) }) + itemExtras(it),
+        T("studio.sum.item", { name: itemName(it, d), wall: letter(it.wall, d), at: len(it.offset) }) + itemExtras(it),
       );
     });
-    out.push(T("studio.sum.stack", { wall: letter(Plan.stackWall(d)) }));
+    out.push(T("studio.sum.stack", { wall: letter(Plan.stackWall(d), d) }));
     var run = Plan.drainRun(d, sizes);
     if (run > 0) out.push(T("studio.sum.drainRun", { run: len(run) }));
     var pts = points(d);
@@ -4406,7 +4733,7 @@
               return (
                 pointName(point, d) +
                 " (" +
-                (point.kind === "fan" ? T("studio.elec.inCeiling") : letter(point.wall) + " " + len(point.offset)) +
+                (point.kind === "fan" ? T("studio.elec.inCeiling") : letter(point.wall, d) + " " + len(point.offset)) +
                 ")"
               );
             })
@@ -4751,7 +5078,8 @@
   function pdfPlan(d) {
     var room = d.room;
     var shapes = { w: room.w, l: room.l, rects: [], arcs: [], texts: [], lines: [] };
-    Plan.WALL_IDS.forEach(function (wid) {
+    var shaped = !!Plan.shapeOf(room);
+    Plan.wallIds(room).forEach(function (wid) {
       var wall = wallOf(wid, d);
       var gaps = itemsOf("door", d)
         .filter(function (it) {
@@ -4764,7 +5092,8 @@
         .sort(function (p, q) {
           return p[0] - q[0];
         });
-      var cursor = -WALL_T;
+      var ends = wallEnds(wall);
+      var cursor = ends[0];
       var seg = function (a0, a1) {
         var p0 = wallPoint(wall, a0, -WALL_T);
         var p1 = wallPoint(wall, a1, 0);
@@ -4780,9 +5109,27 @@
         if (g[0] > cursor) seg(cursor, g[0]);
         cursor = Math.max(cursor, g[1]);
       });
-      if (wall.span + WALL_T > cursor) seg(cursor, wall.span + WALL_T);
+      if (ends[1] > cursor) seg(cursor, ends[1]);
       var tag = wallPoint(wall, wall.span / 2, -(WALL_T + 0.7));
-      shapes.texts.push({ x: tag.x, z: tag.z, text: letter(wid), bold: true });
+      shapes.texts.push({ x: tag.x, z: tag.z, text: letter(wid, d), bold: true });
+      if (shaped) {
+        var at = wallPoint(wall, wall.span / 2, -(WALL_T + 1.35));
+        shapes.texts.push({ x: at.x, z: at.z, text: len(wall.span), small: true });
+      }
+    });
+    Plan.windows(d).forEach(function (win) {
+      var wall = wallOf(win.wall, d);
+      if (!wall) return;
+      var p0 = wallPoint(wall, win.offset - win.width / 2, -WALL_T);
+      var p1 = wallPoint(wall, win.offset + win.width / 2, 0);
+      shapes.rects.push({
+        x0: Math.min(p0.x, p1.x),
+        x1: Math.max(p0.x, p1.x),
+        z0: Math.min(p0.z, p1.z),
+        z1: Math.max(p0.z, p1.z),
+        fill: [186, 230, 253],
+        stroke: [30, 41, 70],
+      });
     });
     var list = Plan.validate(d, sizes);
     Plan.outlines(d, sizes).forEach(function (o) {
@@ -4826,9 +5173,11 @@
         stroke: [30, 41, 70],
       });
     });
-    shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w), bold: true });
-    // Clear of the wall letters, which sit 0.7 ft outside the walls.
-    shapes.texts.push({ x: -(WALL_T + 2.3), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
+    if (!shaped) {
+      shapes.texts.push({ x: room.w / 2, z: -(WALL_T + 1.5), text: len(room.w), bold: true });
+      // Clear of the wall letters, which sit 0.7 ft outside the walls.
+      shapes.texts.push({ x: -(WALL_T + 2.3), z: room.l / 2, text: len(room.l), bold: true, vertical: true });
+    }
     return shapes;
   }
 

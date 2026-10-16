@@ -223,19 +223,23 @@
     }, 0);
   }
 
-  // Floor and wall areas. The design studio also passes the doorways'
-  // area (Wall_Openings_SqFt, taken off the walls) and the tile around a
-  // tub (Wet_Wall_SqFt, for walls: "tileWet").
+  // Floor and wall areas. The design studio also passes the doorways' and
+  // windows' area (Wall_Openings_SqFt, taken off the walls) and the tile
+  // around a tub (Wet_Wall_SqFt, for walls: "tileWet"). A room that isn't
+  // a rectangle comes with its own floor area (Floor_SqFt) and the length
+  // of all its walls (Wall_Perimeter_Ft).
   function areas(values) {
     var w = parseNumber(values.Bathroom_Width_Ft) || 0;
     var l = parseNumber(values.Bathroom_Length_Ft) || 0;
     var h = parseNumber(values.Bathroom_Height_Ft) || 0;
-    var gross = 2 * h * (w + l);
+    var floor = parseNumber(values.Floor_SqFt);
+    var around = parseNumber(values.Wall_Perimeter_Ft);
+    var gross = around > 0 ? h * around : 2 * h * (w + l);
     var openings = Math.min(Math.max(parseNumber(values.Wall_Openings_SqFt) || 0, 0), gross);
     var walls = gross - openings;
     var wet = Math.min(Math.max(parseNumber(values.Wet_Wall_SqFt) || 0, 0), walls);
     return {
-      floorSqFt: roundCents(w * l),
+      floorSqFt: roundCents(floor > 0 ? floor : w * l),
       grossWallSqFt: roundCents(gross),
       openingsSqFt: roundCents(openings),
       wallSqFt: roundCents(walls),
@@ -260,6 +264,7 @@
   // fixture counts in `values`.
   //
   // values: { Bathroom_Width_Ft, Bathroom_Length_Ft, Bathroom_Height_Ft,
+  //           (a shaped room: Floor_SqFt, Wall_Perimeter_Ft, Wall_Count),
   //           <fixture>_Quantity..., Electrical_Points, Drain_Run_Ft,
   //           and with includeTrade:
   //           No_Stack_Surcharge_Included, Bad_Valve_Surcharge_Included }
@@ -454,10 +459,28 @@
     var l = formatQty(parseNumber(values.Bathroom_Length_Ft) || 0);
     var h = formatQty(parseNumber(values.Bathroom_Height_Ft) || 0);
     var list = [T("assume.scope", { scope: describeScope(scope) })];
+    var around = parseNumber(values.Wall_Perimeter_Ft) || 0;
+    var count = parseNumber(values.Wall_Count) || 0;
+    var shaped = around > 0 && count > 4;
     if (needs.floorArea) {
-      list.push(T("assume.floorArea", { w: w, l: l, area: formatQty(result.floorSqFt) }));
+      list.push(
+        shaped
+          ? T("assume.floorAreaShaped", { walls: count, area: formatQty(result.floorSqFt) })
+          : T("assume.floorArea", { w: w, l: l, area: formatQty(result.floorSqFt) }),
+      );
     }
-    if (needs.height) {
+    if (needs.height && shaped) {
+      var shapedArgs = {
+        h: h,
+        around: formatQty(around),
+        walls: count,
+        gross: formatQty(result.grossWallSqFt),
+        doors: formatQty(result.openingsSqFt),
+        area: formatQty(result.wallSqFt),
+      };
+      list.push(T(result.openingsSqFt > 0 ? "assume.wallAreaShapedDoors" : "assume.wallAreaShaped", shapedArgs));
+      if (scope.walls === "tileWet") list.push(T("assume.wetArea", { area: formatQty(result.wetWallSqFt) }));
+    } else if (needs.height) {
       if (result.openingsSqFt > 0) {
         list.push(
           T("assume.wallAreaDoors", {

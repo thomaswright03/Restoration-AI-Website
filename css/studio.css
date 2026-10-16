@@ -814,6 +814,24 @@ main.studio-page.solid-header {
   fill: var(--studio-plan-wall);
 }
 
+/* A window: a pale pane across the wall's thickness. */
+.plan-window-frame {
+  fill: var(--studio-plan-bg);
+  stroke: var(--studio-plan-wall);
+  stroke-width: 0.03;
+}
+
+.plan-window-pane {
+  stroke: var(--studio-select);
+  stroke-width: 0.06;
+}
+
+.plan-wall-length {
+  fill: var(--color-ink);
+  text-anchor: middle;
+  font-weight: 600;
+}
+
 .plan-zone {
   fill: var(--studio-select);
   fill-opacity: 0.1;

@@ -8,10 +8,12 @@
 //
 // A design:
 //   { v: 3,
-//     room: { w, l, h, wet },       feet: width (x), length (z), ceiling,
-//                                  and the wall the plumbing stack is in
+//     room: { w, l, h, wet, shape }, feet: width (x), length (z), ceiling,
+//                                  the wall the plumbing stack is in, and
+//                                  any cutout (see Room shapes)
 //     items: [ { id, type, wall, offset, opts } ],
 //     electrical: [ { id, kind, wall, offset, height, for } ],
+//     windows: [ { id, wall, offset, width, height, sill } ],
 //     finishes: { demolition, floor, walls, ceiling, picks: {} },
 //     products: { <3D product slot id>: <option id> },
 //     answered: { stack, products: { <slot id>: true } } }
@@ -20,11 +22,13 @@
 // the suggestion: the plumbing wall, and each product. The studio won't go
 // on to the next step until that step's questions are answered.
 //
-// Every fixture stands against a wall, facing into the room. wall is
-// "N" (z = 0), "E" (x = w), "S" (z = l) or "W" (x = 0); offset is the
-// distance in feet from the wall's left end (as seen standing in the room
-// facing it) to the fixture's center. The people-facing names are the
-// letters A to D (WALL_LETTERS).
+// Every fixture stands against a wall, facing into the room. In a
+// rectangular room wall is "N" (z = 0), "E" (x = w), "S" (z = l) or "W"
+// (x = 0); a room with a cutout (room.shape, an L, T or notched room) has
+// walls "w1", "w2" … instead. offset is the distance in feet from the
+// wall's left end (as seen standing in the room facing it) to the
+// fixture's center. The people-facing names are the letters A, B, C …
+// (wallLetter()).
 //
 // Electrical points (outlets, switches, lights and an exhaust fan) are
 // suggested by suggestElectrical() from where the fixtures stand, and the
@@ -187,25 +191,391 @@
   }
 
   // -------------------------------------------------------------------
+  // Room shapes
+  // -------------------------------------------------------------------
+  // A room is a w x l box unless room.shape takes a rectangle (or two) out
+  // of it, which is how most bathrooms that aren't rectangles look:
+  //   { kind: "L", at: "NE", w, l }  a w x l piece missing from one corner
+  //                                  (six walls)
+  //   { kind: "T", at: "S", w, l }   a w x l piece missing from both corners
+  //                                  of one side (eight walls)
+  //   { kind: "U", at: "N", w, l }   a w x l notch in the middle of one side,
+  //                                  a closet or a chase (eight walls)
+  // w and l are always across (x) and along (z), the same as the room's.
+  // A rectangle's walls keep their compass ids N, E, S and W; a shaped
+  // room's are "w1", "w2" … going round clockwise from the top wall's left
+  // end, lettered A, B, C … the same way.
+  var SHAPES = ["rect", "L", "T", "U"];
+  var SHAPE_AT = { L: ["NW", "NE", "SE", "SW"], T: ["N", "E", "S", "W"], U: ["N", "E", "S", "W"] };
+  var SHAPE_DEFAULT = { L: { at: "NE" }, T: { at: "S" }, U: { at: "N" } };
+  var MIN_ARM = 2; // feet of room kept beside or past a cutout
+  var MIN_CUT = 1; // the smallest cutout, feet
+
+  function shapeOf(room) {
+    var s = room && room.shape;
+    if (!s || !SHAPE_AT[s.kind] || SHAPE_AT[s.kind].indexOf(s.at) === -1) return null;
+    if (!(s.w > 0) || !(s.l > 0)) return null;
+    return s;
+  }
+
+  // How big a cutout can be in this room: { minW, maxW, minL, maxL }, or
+  // null when the room is too small for that shape at all.
+  function shapeLimits(room, kind, at) {
+    if (!SHAPE_AT[kind]) return null;
+    var across = at === "N" || at === "S";
+    var maxW = room.w - MIN_ARM;
+    var maxL = room.l - MIN_ARM;
+    if (kind === "T") {
+      if (across) maxW = (room.w - MIN_ARM) / 2;
+      else maxL = (room.l - MIN_ARM) / 2;
+    }
+    if (kind === "U") {
+      if (across) maxW = room.w - 2 * MIN_ARM;
+      else maxL = room.l - 2 * MIN_ARM;
+    }
+    maxW = round(maxW, 4);
+    maxL = round(maxL, 4);
+    if (maxW < MIN_CUT - EPS || maxL < MIN_CUT - EPS) return null;
+    return { minW: MIN_CUT, maxW: maxW, minL: MIN_CUT, maxL: maxL };
+  }
+
+  // A shape that fits the room: its cutout clamped to shapeLimits(), or
+  // null for a rectangle (or a shape this room is too small for).
+  function fitShape(room, shape) {
+    if (!shape || typeof shape !== "object" || !SHAPE_AT[shape.kind]) return null;
+    var at = SHAPE_AT[shape.kind].indexOf(shape.at) !== -1 ? shape.at : SHAPE_DEFAULT[shape.kind].at;
+    var lim = shapeLimits(room, shape.kind, at);
+    if (!lim) return null;
+    var w = Number(shape.w);
+    var l = Number(shape.l);
+    return {
+      kind: shape.kind,
+      at: at,
+      w: round(clamp(isFinite(w) ? w : lim.maxW / 2, lim.minW, lim.maxW), 4),
+      l: round(clamp(isFinite(l) ? l : lim.maxL / 2, lim.minL, lim.maxL), 4),
+    };
+  }
+
+  // A sensible first cutout for a shape: about a third of the room.
+  function defaultShape(room, kind, at) {
+    if (!SHAPE_AT[kind]) return null;
+    at = at || SHAPE_DEFAULT[kind].at;
+    var lim = shapeLimits(room, kind, at);
+    if (!lim) return null;
+    var third = function (n, lo, hi) {
+      return clamp(Math.round(n / 3), lo, hi);
+    };
+    var w = kind === "T" && (at === "N" || at === "S") ? lim.maxW / 2 : third(room.w, lim.minW, lim.maxW);
+    var l = kind === "T" && (at === "E" || at === "W") ? lim.maxL / 2 : third(room.l, lim.minL, lim.maxL);
+    return fitShape(room, { kind: kind, at: at, w: w, l: l });
+  }
+
+  // The pieces a shape takes out of the box, as room rectangles.
+  function cutsOf(room) {
+    var s = shapeOf(room);
+    if (!s) return [];
+    var w = room.w;
+    var l = room.l;
+    var box = function (x0, z0) {
+      return { x0: x0, x1: x0 + s.w, z0: z0, z1: z0 + s.l };
+    };
+    if (s.kind === "L") return [box(s.at.charAt(1) === "E" ? w - s.w : 0, s.at.charAt(0) === "S" ? l - s.l : 0)];
+    var across = s.at === "N" || s.at === "S";
+    var x = s.at === "E" ? w - s.w : 0;
+    var z = s.at === "S" ? l - s.l : 0;
+    if (s.kind === "T") return across ? [box(0, z), box(w - s.w, z)] : [box(x, 0), box(x, l - s.l)];
+    return across ? [box((w - s.w) / 2, z)] : [box(x, (l - s.l) / 2)];
+  }
+
+  // The floor's corners, clockwise (as seen on the plan, wall A on top)
+  // from the top wall's left end.
+  function outline(room) {
+    var cuts = cutsOf(room);
+    if (!cuts.length) {
+      return [
+        { x: 0, z: 0 },
+        { x: room.w, z: 0 },
+        { x: room.w, z: room.l },
+        { x: 0, z: room.l },
+      ];
+    }
+    var uniq = function (list) {
+      return list
+        .map(function (n) {
+          return round(n, 6);
+        })
+        .sort(function (a, b) {
+          return a - b;
+        })
+        .filter(function (n, i, all) {
+          return i === 0 || n - all[i - 1] > EPS;
+        });
+    };
+    var xs = [0, room.w];
+    var zs = [0, room.l];
+    cuts.forEach(function (c) {
+      xs.push(c.x0, c.x1);
+      zs.push(c.z0, c.z1);
+    });
+    xs = uniq(xs);
+    zs = uniq(zs);
+    var filled = function (i, j) {
+      if (i < 0 || j < 0 || i >= xs.length - 1 || j >= zs.length - 1) return false;
+      var cx = (xs[i] + xs[i + 1]) / 2;
+      var cz = (zs[j] + zs[j + 1]) / 2;
+      return !cuts.some(function (c) {
+        return cx > c.x0 && cx < c.x1 && cz > c.z0 && cz < c.z1;
+      });
+    };
+    // Each cell's sides that face out, as edges running clockwise; then
+    // followed head to tail.
+    /** @type {Object<string, { x: number, z: number }>} */
+    var next = {};
+    var key = function (x, z) {
+      return x + "," + z;
+    };
+    var edge = function (x0, z0, x1, z1) {
+      next[key(x0, z0)] = { x: x1, z: z1 };
+    };
+    for (var i = 0; i < xs.length - 1; i++) {
+      for (var j = 0; j < zs.length - 1; j++) {
+        if (!filled(i, j)) continue;
+        if (!filled(i, j - 1)) edge(xs[i], zs[j], xs[i + 1], zs[j]);
+        if (!filled(i + 1, j)) edge(xs[i + 1], zs[j], xs[i + 1], zs[j + 1]);
+        if (!filled(i, j + 1)) edge(xs[i + 1], zs[j + 1], xs[i], zs[j + 1]);
+        if (!filled(i - 1, j)) edge(xs[i], zs[j + 1], xs[i], zs[j]);
+      }
+    }
+    /** @type {{ x: number, z: number } | null} */
+    var start = null;
+    Object.keys(next).forEach(function (k) {
+      var p = k.split(",").map(Number);
+      var to = next[k];
+      if (to.z !== p[1]) return;
+      if (!start || p[1] < start.z - EPS || (Math.abs(p[1] - start.z) < EPS && p[0] < start.x)) {
+        start = { x: p[0], z: p[1] };
+      }
+    });
+    var pts = [];
+    var at = start;
+    for (var guard = 0; at && guard < 200; guard++) {
+      pts.push(at);
+      at = next[key(at.x, at.z)];
+      if (at && start && Math.abs(at.x - start.x) < EPS && Math.abs(at.z - start.z) < EPS) break;
+    }
+    // Only the corners: drop the points partway along a straight wall.
+    return pts.filter(function (p, k) {
+      var a = pts[(k + pts.length - 1) % pts.length];
+      var b = pts[(k + 1) % pts.length];
+      return Math.abs((p.x - a.x) * (b.z - p.z) - (p.z - a.z) * (b.x - p.x)) > EPS;
+    });
+  }
+
+  function floorArea(room) {
+    return cutsOf(room).reduce(function (sum, c) {
+      return sum - (c.x1 - c.x0) * (c.z1 - c.z0);
+    }, room.w * room.l);
+  }
+
+  function perimeter(room) {
+    return wallList(room).reduce(function (sum, wall) {
+      return sum + wall.span;
+    }, 0);
+  }
+
+  // -------------------------------------------------------------------
   // Walls and rectangles
   // -------------------------------------------------------------------
   // Each wall: where its left end is (ox, oz), which way it runs (dx, dz),
   // which way is into the room (nx, nz), how long it is and how deep the
   // room is in front of it. rotY turns a fixture modeled facing +z to face
-  // into the room from this wall.
-  function walls(room) {
+  // into the room from this wall. index is its place going round (A is 0),
+  // start the distance round the room to its left end, and inStart / inEnd
+  // whether its ends are inside corners (a fixture can tuck into one) or
+  // the outside corner of a cutout.
+  var wallCache = {};
+  var wallCacheSize = 0;
+
+  function wallList(room) {
+    var s = shapeOf(room);
+    var cacheKey = [room.w, room.l, s ? s.kind + s.at + s.w + "x" + s.l : ""].join("|");
+    if (wallCache[cacheKey]) return wallCache[cacheKey];
     var w = room.w;
     var l = room.l;
-    return {
-      N: { id: "N", ox: 0, oz: 0, dx: 1, dz: 0, nx: 0, nz: 1, span: w, deep: l, rotY: 0 },
-      E: { id: "E", ox: w, oz: 0, dx: 0, dz: 1, nx: -1, nz: 0, span: l, deep: w, rotY: -Math.PI / 2 },
-      S: { id: "S", ox: w, oz: l, dx: -1, dz: 0, nx: 0, nz: -1, span: w, deep: l, rotY: Math.PI },
-      W: { id: "W", ox: 0, oz: l, dx: 0, dz: -1, nx: 1, nz: 0, span: l, deep: w, rotY: Math.PI / 2 },
-    };
+    /** @type {any[]} */
+    var list;
+    if (!s) {
+      list = [
+        { id: "N", ox: 0, oz: 0, dx: 1, dz: 0, nx: 0, nz: 1, span: w, deep: l, rotY: 0 },
+        { id: "E", ox: w, oz: 0, dx: 0, dz: 1, nx: -1, nz: 0, span: l, deep: w, rotY: -Math.PI / 2 },
+        { id: "S", ox: w, oz: l, dx: -1, dz: 0, nx: 0, nz: -1, span: w, deep: l, rotY: Math.PI },
+        { id: "W", ox: 0, oz: l, dx: 0, dz: -1, nx: 1, nz: 0, span: l, deep: w, rotY: Math.PI / 2 },
+      ];
+    } else {
+      var pts = outline(room);
+      list = pts.map(function (p, i) {
+        var q = pts[(i + 1) % pts.length];
+        var span = Math.abs(q.x - p.x) + Math.abs(q.z - p.z);
+        var dx = Math.sign(q.x - p.x);
+        var dz = Math.sign(q.z - p.z);
+        var nx = -dz || 0;
+        var nz = dx || 0;
+        return {
+          id: "w" + (i + 1),
+          ox: p.x,
+          oz: p.z,
+          dx: dx || 0,
+          dz: dz || 0,
+          nx: nx,
+          nz: nz,
+          span: round(span, 6),
+          deep: 0,
+          rotY: Math.atan2(nx, nz),
+        };
+      });
+    }
+    var run = 0;
+    list.forEach(function (wall, i) {
+      var prev = list[(i + list.length - 1) % list.length];
+      var after = list[(i + 1) % list.length];
+      wall.index = i;
+      wall.letter = String.fromCharCode(65 + i);
+      wall.start = run;
+      run += wall.span;
+      // Turning right (clockwise) at a corner makes it an inside corner.
+      wall.inStart = prev.dx * wall.dz - prev.dz * wall.dx > 0;
+      wall.inEnd = wall.dx * after.dz - wall.dz * after.dx > 0;
+    });
+    if (s) {
+      list.forEach(function (wall) {
+        wall.deep = depthAcross(list, wall, 0, wall.span);
+      });
+    }
+    if (wallCacheSize > 200) {
+      wallCache = {};
+      wallCacheSize = 0;
+    }
+    wallCache[cacheKey] = list;
+    wallCacheSize++;
+    return list;
+  }
+
+  function walls(room) {
+    var out = {};
+    wallList(room).forEach(function (wall) {
+      out[wall.id] = wall;
+    });
+    return out;
+  }
+
+  function wallIds(room) {
+    return wallList(room).map(function (wall) {
+      return wall.id;
+    });
+  }
+
+  function isWall(room, wallId) {
+    return wallIds(room).indexOf(wallId) !== -1;
+  }
+
+  // The letter people know a wall by: A, B, C … going round.
+  function wallLetter(room, wallId) {
+    var wall = walls(room)[wallId];
+    return wall ? wall.letter : WALL_LETTERS[wallId] || "?";
   }
 
   function wallSpan(room, wallId) {
-    return wallId === "N" || wallId === "S" ? room.w : room.l;
+    var wall = walls(room)[wallId];
+    return wall ? wall.span : 0;
+  }
+
+  // How far the floor runs straight out from a wall across a stretch of it
+  // (a0..a1 along it) before another wall: the room's depth there.
+  function depthAcross(list, wall, a0, a1) {
+    var best = Infinity;
+    list.forEach(function (o) {
+      if (o === wall) return;
+      var along0 = (o.ox - wall.ox) * wall.dx + (o.oz - wall.oz) * wall.dz;
+      var d0 = (o.ox - wall.ox) * wall.nx + (o.oz - wall.oz) * wall.nz;
+      var along1 = along0 + (o.dx * wall.dx + o.dz * wall.dz) * o.span;
+      var d1 = d0 + (o.dx * wall.nx + o.dz * wall.nz) * o.span;
+      if (Math.max(along0, along1) <= a0 + EPS || Math.min(along0, along1) >= a1 - EPS) return;
+      if (Math.max(d0, d1) <= EPS) return;
+      best = Math.min(best, Math.max(0, Math.min(d0, d1)));
+    });
+    return best === Infinity ? 0 : best;
+  }
+
+  function frontDepth(room, wall, a0, a1) {
+    if (!shapeOf(room)) return wall.deep;
+    return depthAcross(wallList(room), wall, a0, a1);
+  }
+
+  // The wall straight across the room from a point a along this one:
+  // { wall, offset } or null.
+  function acrossFrom(room, wall, a) {
+    var x = wall.ox + wall.dx * a;
+    var z = wall.oz + wall.dz * a;
+    /** @type {{ wall: any, offset: number, d: number } | null} */
+    var best = null;
+    wallList(room).forEach(function (o) {
+      if (o.nx !== -wall.nx || o.nz !== -wall.nz) return;
+      var d = (o.ox - x) * wall.nx + (o.oz - z) * wall.nz;
+      var along = (x - o.ox) * o.dx + (z - o.oz) * o.dz;
+      if (d <= EPS || along < -EPS || along > o.span + EPS) return;
+      if (!best || d < best.d) best = { wall: o, offset: along, d: d };
+    });
+    return best ? { wall: best.wall, offset: best.offset } : null;
+  }
+
+  // Which of `list`'s walls a room point (x, z) is up against, for
+  // something whose middle is `depth` out from the wall: the one whose face
+  // is nearest that far out, in front of it and within its ends.
+  // { wall, along, dist }.
+  function nearestWall(list, x, z, depth) {
+    /** @type {{ wall: any, along: number, dist: number, cost: number } | null} */
+    var best = null;
+    list.forEach(function (wall) {
+      var along = (x - wall.ox) * wall.dx + (z - wall.oz) * wall.dz;
+      var dist = (x - wall.ox) * wall.nx + (z - wall.oz) * wall.nz;
+      var off = Math.max(0, -along, along - wall.span);
+      var cost = Math.abs(dist - depth) + 2 * off + (dist < -0.1 ? 10 - dist : 0);
+      if (!best || cost < best.cost - EPS) best = { wall: wall, along: along, dist: dist, cost: cost };
+    });
+    return best;
+  }
+
+  // A point inside the floor: its middle when that's in the room, else
+  // the middle of the biggest piece of it.
+  function interiorPoint(room) {
+    var mid = { x: room.w / 2, z: room.l / 2 };
+    var cuts = cutsOf(room);
+    var inCut = function (p) {
+      return cuts.some(function (c) {
+        return p.x > c.x0 - EPS && p.x < c.x1 + EPS && p.z > c.z0 - EPS && p.z < c.z1 + EPS;
+      });
+    };
+    if (!inCut(mid)) return mid;
+    var pts = outline(room);
+    /** @type {{ x: number, z: number, area: number } | null} */
+    var best = null;
+    pts.forEach(function (a) {
+      pts.forEach(function (b) {
+        var p = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+        var area = Math.abs(a.x - b.x) * Math.abs(a.z - b.z);
+        if (area > EPS && !inCut(p) && !insideHole(p, a, b, cuts) && (!best || area > best.area)) {
+          best = { x: p.x, z: p.z, area: area };
+        }
+      });
+    });
+    return best ? { x: best.x, z: best.z } : mid;
+  }
+
+  function insideHole(p, a, b, cuts) {
+    var r = { x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z) };
+    return cuts.some(function (c) {
+      return overlaps(r, c);
+    });
   }
 
   // A rectangle in a wall's own terms (a0..a1 along it, d0..d1 into the
@@ -250,7 +620,10 @@
   }
 
   function inside(r, room) {
-    return r.x0 >= -EPS && r.z0 >= -EPS && r.x1 <= room.w + EPS && r.z1 <= room.l + EPS;
+    if (r.x0 < -EPS || r.z0 < -EPS || r.x1 > room.w + EPS || r.z1 > room.l + EPS) return false;
+    return !cutsOf(room).some(function (c) {
+      return overlaps(r, c);
+    });
   }
 
   // -------------------------------------------------------------------
@@ -281,6 +654,7 @@
     var a = item.offset;
     var g = {
       item: item,
+      room: room,
       wall: wall,
       size: size,
       a0: a - half,
@@ -327,7 +701,7 @@
     var wall = g.wall;
     var strip = toWall(wall, g.step.rect);
     // The strip must fit in the room to count at all.
-    if (strip.d1 > wall.deep + EPS) return 0;
+    if (strip.d1 > frontDepth(g.room, wall, strip.a0, strip.a1) + EPS) return 0;
     var blocked = [];
     others.forEach(function (o) {
       if (o.item.type === "door" || !overlaps(o.body, g.step.rect)) return;
@@ -374,7 +748,7 @@
     var t = TYPES[g.item.type];
     var half = t.front && t.front.width ? Math.max(t.front.width * IN, g.size.span) / 2 : g.size.span / 2;
     var a = g.item.offset;
-    var dist = wall.deep - g.size.depth;
+    var dist = frontDepth(g.room, wall, a - half, a + half) - g.size.depth;
     var what = "wall";
     others.forEach(function (o) {
       // A doorway in front of a fixture is a way out, not in the way.
@@ -425,7 +799,7 @@
         return j !== i;
       });
       var t = TYPES[g.item.type];
-      if (!inside(g.body, room) || g.size.depth > g.wall.deep + EPS) {
+      if (!inside(g.body, room) || g.size.depth > frontDepth(room, g.wall, g.a0, g.a1) + EPS) {
         list.push(issue("error", "outside", { other: "wall" }));
       }
       if (g.size.height > room.h + EPS) {
@@ -592,8 +966,10 @@
     });
   }
 
+  // Whether a fixture fills the inside corner at either end of its wall
+  // (the outside corner of a cutout is no corner to tuck into).
   function nearCorner(wall, a0, a1) {
-    return { left: a0 < 2 * IN, right: a1 > wall.span - 2 * IN };
+    return { left: wall.inStart !== false && a0 < 2 * IN, right: wall.inEnd !== false && a1 > wall.span - 2 * IN };
   }
 
   // How good a spot is for a fixture (higher is better). Hard rules are
@@ -621,7 +997,7 @@
       if (corner.left && corner.right) score += 60;
       else if (corner.left || corner.right) score += 25;
       // A tub on a short wall reads as the classic alcove.
-      if (g.wall.span <= g.wall.deep) score += 8;
+      if (g.wall.span <= frontDepth(room, g.wall, 0, g.wall.span)) score += 8;
     }
     if (item.type === "shower") {
       if (corner.left && corner.right) score += 30;
@@ -660,13 +1036,13 @@
     }
     doors.forEach(function (d) {
       if (d.wall.id === g.wall.id) score -= item.type === "toilet" ? 8 : 3;
-      var opposite = { N: "S", S: "N", E: "W", W: "E" }[d.wall.id] === g.wall.id;
+      var opposite = d.wall.nx === -g.wall.nx && d.wall.nz === -g.wall.nz;
       if (opposite) {
         var center = (d.body.x0 + d.body.x1) / 2;
         var cz = (d.body.z0 + d.body.z1) / 2;
         var mine = (g.body.x0 + g.body.x1) / 2;
         var mz = (g.body.z0 + g.body.z1) / 2;
-        var lined = g.wall.id === "N" || g.wall.id === "S" ? Math.abs(center - mine) < 1.5 : Math.abs(cz - mz) < 1.5;
+        var lined = g.wall.dz === 0 ? Math.abs(center - mine) < 1.5 : Math.abs(cz - mz) < 1.5;
         if (lined && item.type === "toilet") score -= 12;
         if (lined && (item.type === "vanity" || item.type === "sink")) score += 6;
       }
@@ -721,8 +1097,8 @@
     var size = sizeOf(item, sizes);
     var step = opts.step || IN;
     var out = [];
-    var wallList = opts.walls || WALL_IDS;
-    wallList.forEach(function (wid) {
+    var ids = opts.walls || wallIds(room);
+    ids.forEach(function (wid) {
       var span = wallSpan(room, wid);
       var half = size.span / 2;
       if (span < size.span - EPS) return;
@@ -756,7 +1132,7 @@
       });
     });
     out.sort(function (p, q) {
-      return q.score - p.score || WALL_IDS.indexOf(p.wall) - WALL_IDS.indexOf(q.wall) || p.offset - q.offset;
+      return q.score - p.score || ids.indexOf(p.wall) - ids.indexOf(q.wall) || p.offset - q.offset;
     });
     return out;
   }
@@ -782,7 +1158,7 @@
     var item = {
       id: newId(design),
       type: type,
-      wall: "N",
+      wall: wallIds(design.room)[0],
       offset: 0,
       opts: Object.assign(defaultOpts(type), opts || {}),
     };
@@ -809,7 +1185,7 @@
     var base = validate(design, sizes);
     /** @type {{ wall: string, offset: number, errs: number, span: number } | null} */
     var best = null;
-    WALL_IDS.forEach(function (wid) {
+    wallIds(room).forEach(function (wid) {
       var span = wallSpan(room, wid);
       var half = Math.min(size.span / 2, span / 2);
       [half, span / 2, span - half].forEach(function (a) {
@@ -982,18 +1358,12 @@
     z = clamp(z, 0, room.l);
     // The pointer is roughly on the fixture's middle, half its depth out
     // from the wall: measure to the walls from there.
-    var cands = [
-      { wall: "N", dist: z, along: x },
-      { wall: "E", dist: room.w - x, along: z },
-      { wall: "S", dist: room.l - z, along: room.w - x },
-      { wall: "W", dist: x, along: room.l - z },
-    ].filter(function (c) {
-      return wallSpan(room, c.wall) >= size.span - EPS;
+    var fits = wallList(room).filter(function (wall) {
+      return wall.span >= size.span - EPS;
     });
-    if (!cands.length) return { wall: item.wall, offset: item.offset, valid: false, snapped: false };
-    var best = cands.reduce(function (p, q) {
-      return Math.abs(q.dist - size.depth / 2) < Math.abs(p.dist - size.depth / 2) ? q : p;
-    });
+    if (!fits.length) return { wall: item.wall, offset: item.offset, valid: false, snapped: false };
+    var near = nearestWall(fits, x, z, size.depth / 2);
+    var best = { wall: near.wall.id, along: near.along };
     var span = wallSpan(room, best.wall);
     var half = size.span / 2;
     var want = clamp(best.along, half, span - half);
@@ -1171,22 +1541,22 @@
   var FREE_RUN = 3;
 
   function stackWall(design) {
-    var wall = design && design.room ? design.room.wet : null;
-    return WALL_IDS.indexOf(wall) === -1 ? "N" : wall;
+    if (!design || !design.room) return "N";
+    var wall = design.room.wet;
+    return isWall(design.room, wall) ? wall : wallIds(design.room)[0];
   }
 
   // Whether the design says where the stack is. A design being arranged
   // from scratch doesn't yet: the layout decides, and the stack follows.
   function hasStack(design) {
-    return !!design && !!design.room && WALL_IDS.indexOf(design.room.wet) !== -1;
+    return !!design && !!design.room && isWall(design.room, design.room.wet);
   }
 
-  // Distance around the room's perimeter from its NW corner, clockwise.
-  // walls() chains head to tail (N ends where E starts, and so on), so a
-  // wall's own offset adds straight onto where that wall begins.
+  // Distance around the room's perimeter from wall A's left end,
+  // clockwise. The walls chain head to tail (A ends where B starts, and so
+  // on), so a wall's own offset adds straight onto where that wall begins.
   function perimeterAt(room, wallId, a) {
-    var base = { N: 0, E: room.w, S: room.w + room.l, W: 2 * room.w + room.l };
-    return base[wallId] + a;
+    return walls(room)[wallId].start + a;
   }
 
   function aroundTo(from, to, total) {
@@ -1204,7 +1574,7 @@
     var room = design.room;
     var stack = stackWall(design);
     if (item.wall === stack) return 0;
-    var total = 2 * (room.w + room.l);
+    var total = perimeter(room);
     var start = perimeterAt(room, stack, 0);
     var end = start + wallSpan(room, stack);
     var span = wallSpan(room, item.wall);
@@ -1261,18 +1631,18 @@
   function suggestStack(design, sizes) {
     /** @type {{ wall: string, total: number } | null} */
     var best = null;
-    WALL_IDS.forEach(function (wid) {
+    wallIds(design.room).forEach(function (wid) {
       var trial = setStack(design, wid);
       var total = trial.items.reduce(function (sum, it) {
         return sum + stackRun(trial, it, sizes) * (it.type === "toilet" ? 2.5 : 1);
       }, 0);
       if (!best || total < best.total) best = { wall: wid, total: total };
     });
-    return best ? best.wall : "N";
+    return best ? best.wall : wallIds(design.room)[0];
   }
 
   function setStack(design, wallId) {
-    if (WALL_IDS.indexOf(wallId) === -1) return design;
+    if (!isWall(design.room, wallId)) return design;
     return Object.assign({}, design, { room: Object.assign({}, design.room, { wet: wallId }) });
   }
 
@@ -1318,7 +1688,7 @@
       var spot = fanSpot(design, sizes);
       return { x: spot.x, z: spot.z, y: room.h, rotY: 0, ceiling: true };
     }
-    var wall = walls(room)[p.wall] || walls(room).N;
+    var wall = walls(room)[p.wall] || wallList(room)[0];
     var at = wallPointOf(wall, p.offset, 0.02);
     return { x: at.x, z: at.z, y: clamp(p.height, 0.3, room.h - 0.2), rotY: wall.rotY, ceiling: false };
   }
@@ -1332,7 +1702,7 @@
     var wet = design.items.filter(function (it) {
       return it.type === "tub" || it.type === "shower";
     });
-    if (!wet.length) return { x: room.w / 2, z: room.l / 2 };
+    if (!wet.length) return interiorPoint(room);
     var sx = 0;
     var sz = 0;
     wet.forEach(function (it) {
@@ -1370,8 +1740,20 @@
           y0: mid - tall / 2,
           y1: mid + tall / 2,
           id: item.id,
+          mirror: true,
         });
       }
+    });
+    windowsOf(design).forEach(function (w) {
+      out.push({
+        wall: w.wall,
+        a0: w.offset - w.width / 2,
+        a1: w.offset + w.width / 2,
+        y0: w.sill,
+        y1: w.sill + w.height,
+        id: w.id,
+        window: true,
+      });
     });
     return out;
   }
@@ -1560,10 +1942,11 @@
   }
 
   // The wall round the corner from this one: dir +1 past its right end,
-  // -1 past its left end (the walls run A, B, C, D around the room).
-  function neighbor(wallId, dir) {
-    var i = WALL_IDS.indexOf(wallId);
-    return WALL_IDS[(i + (dir > 0 ? 1 : 3)) % 4];
+  // -1 past its left end (the walls run A, B, C … around the room).
+  function neighbor(room, wallId, dir) {
+    var ids = wallIds(room);
+    var i = ids.indexOf(wallId);
+    return ids[(i + (dir > 0 ? 1 : ids.length - 1)) % ids.length];
   }
 
   var elecCounter = 0;
@@ -1642,8 +2025,8 @@
         var spots = [
           { wall: basin.wall, want: basin.offset + half + 0.75 },
           { wall: basin.wall, want: basin.offset - half - 0.75 },
-          { wall: neighbor(basin.wall, 1), want: 0 },
-          { wall: neighbor(basin.wall, -1), want: wallSpan(room, neighbor(basin.wall, -1)) },
+          { wall: neighbor(room, basin.wall, 1), want: 0 },
+          { wall: neighbor(room, basin.wall, -1), want: wallSpan(room, neighbor(room, basin.wall, -1)) },
         ];
         /** @type {{ wall: string, offset: number, away: number } | null} */
         var best = null;
@@ -1664,7 +2047,9 @@
     if (!basins.length && !have("light")) {
       // No vanity: a light on the wall across from the first doorway.
       var door0 = itemsOfType(design, "door")[0];
-      var wall = door0 ? { N: "S", S: "N", E: "W", W: "E" }[door0.wall] : "N";
+      var doorWall = door0 && walls(room)[door0.wall];
+      var across = doorWall ? acrossFrom(room, doorWall, door0.offset) : null;
+      var wall = across ? across.wall.id : wallIds(room)[0];
       add("light", wall, wallSpan(room, wall) / 2, lightHeight, "room");
     }
 
@@ -1721,8 +2106,9 @@
       );
       if (at !== null) spot = { wall: door.wall, offset: at };
     }
-    for (var i = 0; !spot && i < WALL_IDS.length; i++) {
-      var wid = WALL_IDS[i];
+    var ids = wallIds(room);
+    for (var i = 0; !spot && i < ids.length; i++) {
+      var wid = ids[i];
       var mid = freeOffset(design, sizes, "switch", wid, wallSpan(room, wid) / 2, height, forId, coverings, list);
       if (mid !== null) spot = { wall: wid, offset: mid };
     }
@@ -1797,16 +2183,9 @@
     if (!point || point.kind === "fan") return null;
     var room = design.room;
     var kind = ELECTRICAL_KINDS[point.kind];
-    var cands = [
-      { wall: "N", dist: z, along: x },
-      { wall: "E", dist: room.w - x, along: z },
-      { wall: "S", dist: room.l - z, along: room.w - x },
-      { wall: "W", dist: x, along: room.l - z },
-    ];
-    var best = cands.reduce(function (p, q) {
-      return q.dist < p.dist ? q : p;
-    });
-    var span = wallSpan(room, best.wall);
+    var near = nearestWall(wallList(room), x, z, 0);
+    var best = { wall: near.wall.id, along: near.along };
+    var span = near.wall.span;
     var half = kind.plate.w / 2;
     var offset = round(clamp(best.along, half, span - half), 4);
     var height = round(clamp(y, Math.max(kind.minHeight, 0.3), room.h - 0.4), 3);
@@ -1861,11 +2240,12 @@
     var coverings = wallCoverings(design, sizes);
     var height = Math.min(ELECTRICAL_KINDS[kind].height, room.h - 1.1);
     var best = null;
-    WALL_IDS.forEach(function (wid) {
+    wallIds(room).forEach(function (wid) {
       var at = freeOffset(design, sizes, kind, wid, wallSpan(room, wid) / 2, height, "room", coverings, list);
       if (at !== null && !best) best = { wall: wid, offset: at };
     });
-    var spot = best || { wall: "N", offset: wallSpan(room, "N") / 2 };
+    var first = wallList(room)[0];
+    var spot = best || { wall: first.id, offset: first.span / 2 };
     var p = {
       id: newElectricalId(list),
       kind: kind,
@@ -1922,6 +2302,216 @@
   }
 
   // -------------------------------------------------------------------
+  // Windows
+  // -------------------------------------------------------------------
+  // A window is a hole in a wall: { id, wall, offset (feet from the wall's
+  // left end to its middle), width, height, sill (floor to its bottom) }.
+  // It takes no floor, so fixtures may stand under it (a vanity under a
+  // window is a classic), but not in front of it, and nothing electrical
+  // goes on it.
+  var WINDOW = { width: 3, height: 4, sill: 3, min: 1, maxWidth: 8, maxHeight: 7, minSill: 0.5, topGap: 0.5 };
+  var MAX_WINDOWS = 6;
+
+  function windowsOf(design) {
+    return Array.isArray(design.windows) ? design.windows : [];
+  }
+
+  function withWindows(design, list) {
+    return Object.assign({}, design, { windows: list });
+  }
+
+  // What's wrong with one window where it is:
+  //   outside   past the end of its wall, or into the floor or ceiling
+  //   door      over a doorway on the same wall
+  //   overlap   on top of another window
+  //   behind    a fixture or mirror covers part of it
+  //   inShower  in a shower's walls: it needs tempered, wet-rated glass (warn)
+  function windowIssues(design, sizes, win, coverings) {
+    var room = design.room;
+    var list = [];
+    var a0 = win.offset - win.width / 2;
+    var a1 = win.offset + win.width / 2;
+    var y1 = win.sill + win.height;
+    if (!isWall(room, win.wall) || a0 < -EPS || a1 > wallSpan(room, win.wall) + EPS) {
+      list.push(issue("error", "outside", { other: "wall" }));
+    }
+    if (win.sill < WINDOW.minSill - EPS || y1 > room.h - 0.25 + EPS) {
+      list.push(issue("error", "outside", { other: "ceiling" }));
+    }
+    design.items.forEach(function (it) {
+      if (it.type !== "door" || it.wall !== win.wall) return;
+      var half = sizeOf(it, sizes).span / 2;
+      if (a1 > it.offset - half + EPS && a0 < it.offset + half - EPS && win.sill < DOOR_OPENING.h - EPS) {
+        list.push(issue("error", "door", { other: it.id }));
+      }
+    });
+    windowsOf(design).forEach(function (o) {
+      if (o.id === win.id || o.wall !== win.wall) return;
+      var along = a1 > o.offset - o.width / 2 + EPS && a0 < o.offset + o.width / 2 - EPS;
+      var up = y1 > o.sill + EPS && win.sill < o.sill + o.height - EPS;
+      if (along && up) list.push(issue("error", "overlap", { other: o.id }));
+    });
+    (coverings || wallCoverings(design, sizes)).forEach(function (c) {
+      if (c.window || c.wall !== win.wall) return;
+      if (a1 <= c.a0 + EPS || a0 >= c.a1 - EPS || y1 <= c.y0 + EPS || win.sill >= c.y1 - EPS) return;
+      var item = design.items.filter(function (it) {
+        return it.id === c.id;
+      })[0];
+      if (item && item.type === "shower" && !c.mirror) list.push(issue("warn", "inShower", { other: c.id }));
+      else list.push(issue("error", "behind", { other: c.id }));
+    });
+    var seen = {};
+    return list.filter(function (x) {
+      var key = x.code + "|" + (x.other || "");
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+  }
+
+  // Every window's problems: { id: [issues] }.
+  function validateWindows(design, sizes) {
+    var coverings = wallCoverings(design, sizes);
+    var out = {};
+    windowsOf(design).forEach(function (win) {
+      out[win.id] = windowIssues(design, sizes, win, coverings);
+    });
+    return out;
+  }
+
+  var windowCounter = 0;
+  function newWindowId(design) {
+    var used = {};
+    windowsOf(design).forEach(function (w) {
+      used[w.id] = true;
+    });
+    var id;
+    do {
+      windowCounter++;
+      id = "n" + windowCounter;
+    } while (used[id]);
+    return id;
+  }
+
+  // The usual size for this ceiling: 3 ft by 4 ft, 3 ft off the floor,
+  // shorter when the ceiling is low.
+  function windowSize(room) {
+    var height = Math.min(WINDOW.height, room.h - WINDOW.topGap - WINDOW.minSill - 0.25);
+    var sill = Math.min(WINDOW.sill, room.h - WINDOW.topGap - height);
+    return { width: WINDOW.width, height: round(Math.max(WINDOW.min, height), 3), sill: round(sill, 3) };
+  }
+
+  // A new window where it causes no problem: as near the middle of the
+  // longest wall without a door as it can go, else the next wall along. Returns
+  // { design, window, placed }.
+  function addWindow(design, sizes, opts) {
+    var room = design.room;
+    var size = Object.assign(windowSize(room), opts || {});
+    var win = {
+      id: newWindowId(design),
+      wall: wallIds(room)[0],
+      offset: 0,
+      width: size.width,
+      height: size.height,
+      sill: size.sill,
+    };
+    var others = windowsOf(design);
+    var coverings = wallCoverings(design, sizes);
+    var doors = {};
+    itemsOfType(design, "door").forEach(function (d) {
+      doors[d.wall] = true;
+    });
+    var order = wallList(room)
+      .slice()
+      .sort(function (p, q) {
+        return (doors[p.id] ? 1 : 0) - (doors[q.id] ? 1 : 0) || q.span - p.span || p.index - q.index;
+      });
+    var trial = withWindows(design, others.concat([win]));
+    /** @type {{ wall: string, offset: number } | null} */
+    var spot = null;
+    for (var i = 0; i < order.length && !spot; i++) {
+      var wall = order[i];
+      var half = win.width / 2;
+      if (wall.span < win.width + EPS) continue;
+      for (var d = 0; d <= wall.span / 2 + EPS && !spot; d += 2 * IN) {
+        var tries = d === 0 ? [wall.span / 2] : [wall.span / 2 - d, wall.span / 2 + d];
+        for (var k = 0; k < tries.length; k++) {
+          var a = round(clamp(tries[k], half, wall.span - half), 4);
+          var cand = Object.assign({}, win, { wall: wall.id, offset: a });
+          if (!windowIssues(trial, sizes, cand, coverings).some(isError)) {
+            spot = { wall: wall.id, offset: a };
+            break;
+          }
+        }
+      }
+    }
+    var first = order[0];
+    win.wall = spot ? spot.wall : first.id;
+    win.offset = spot ? spot.offset : round(first.span / 2, 4);
+    return { design: withWindows(design, others.concat([win])), window: win, placed: !!spot };
+  }
+
+  function moveWindow(design, id, change) {
+    return withWindows(
+      design,
+      windowsOf(design).map(function (w) {
+        return w.id === id ? Object.assign({}, w, change) : w;
+      }),
+    );
+  }
+
+  function removeWindow(design, id) {
+    return withWindows(
+      design,
+      windowsOf(design).filter(function (w) {
+        return w.id !== id;
+      }),
+    );
+  }
+
+  // What the 3D room draws: { id, x, y, z, rotationY, wallId, width,
+  // height } with (x, y, z) the middle of the opening on the wall's face.
+  function toWindowPlacements(design) {
+    var all = walls(design.room);
+    return windowsOf(design)
+      .filter(function (w) {
+        return all[w.wall];
+      })
+      .map(function (w) {
+        var wall = all[w.wall];
+        return {
+          id: w.id,
+          x: wall.ox + wall.dx * w.offset,
+          y: w.sill + w.height / 2,
+          z: wall.oz + wall.dz * w.offset,
+          rotationY: wall.rotY,
+          wallId: w.wall,
+          width: w.width,
+          height: w.height,
+        };
+      });
+  }
+
+  // Moves something kept on a wall (a fixture, a point, a window) from one
+  // room to a reshaped one: the same wall when it still exists, else the
+  // new wall at the same place (or the nearest one facing the same way).
+  function rewall(from, to, wallId, offset) {
+    var same =
+      (shapeOf(from) || { kind: "rect" }).kind === (shapeOf(to) || { kind: "rect" }).kind &&
+      (shapeOf(from) || {}).at === (shapeOf(to) || {}).at;
+    if (same && isWall(to, wallId)) return { wall: wallId, offset: clamp(offset, 0, wallSpan(to, wallId)) };
+    var old = walls(from)[wallId];
+    if (!old) return { wall: wallIds(to)[0], offset: 0 };
+    var x = old.ox + old.dx * offset;
+    var z = old.oz + old.dz * offset;
+    var facing = wallList(to).filter(function (w) {
+      return w.nx === old.nx && w.nz === old.nz;
+    });
+    var near = nearestWall(facing.length ? facing : wallList(to), x, z, 0);
+    return { wall: near.wall.id, offset: round(clamp(near.along, 0, near.wall.span), 4) };
+  }
+
+  // -------------------------------------------------------------------
   // For the estimate
   // -------------------------------------------------------------------
   // The counts js/bathroom-pricing.js prices. Only a new door is an
@@ -1956,7 +2546,8 @@
     return c;
   }
 
-  // Wall areas, sq ft: the full walls less the doorways (openingsSqFt), and
+  // Wall areas, sq ft: the full walls less the doorways and windows
+  // (openingsSqFt), and
   // the tub surround a "tile around the tub" job tiles (wetSqFt): the wall
   // behind each tub and the ends of it against a side wall, up to 6 ft
   // off the floor.
@@ -1965,8 +2556,11 @@
 
   function wallAreas(design, sizes) {
     var room = design.room;
-    var gross = 2 * room.h * (room.w + room.l);
+    var gross = room.h * perimeter(room);
     var openings = 0;
+    windowsOf(design).forEach(function (w) {
+      openings += w.width * w.height;
+    });
     var wet = 0;
     design.items.forEach(function (item) {
       if (item.type === "door") openings += DOOR_OPENING.w * Math.min(DOOR_OPENING.h, room.h);
@@ -1985,6 +2579,9 @@
       openingsSqFt: round(openings, 2),
       netSqFt: round(net, 2),
       wetSqFt: round(Math.min(wet, net), 2),
+      floorSqFt: round(floorArea(room), 2),
+      perimeterFt: round(perimeter(room), 2),
+      walls: wallList(room).length,
     };
   }
 
@@ -2001,6 +2598,7 @@
       room: { w: w, l: l, h: h, wet: "N" },
       items: [],
       electrical: [],
+      windows: [],
       finishes: finishesDefault(),
       products: {},
       answered: { stack: false, products: {} },
@@ -2047,6 +2645,12 @@
       items: ["sink", "toilet"],
     },
     {
+      id: "lShape",
+      room: { w: 9, l: 8, h: 8, shape: { kind: "L", at: "NE", w: 3, l: 3 } },
+      door: { wall: "w5", offset: 2 },
+      items: ["tub", "vanity", "toilet"],
+    },
+    {
       id: "blank",
       room: { w: 8, l: 6, h: 8, wet: "N" },
       door: { wall: "S", offset: 4 },
@@ -2089,11 +2693,14 @@
         return t.id === templateId;
       })[0] || TEMPLATES[0];
     var design = emptyDesign(tpl.room.w, tpl.room.l, tpl.room.h);
-    design.room.wet = tpl.room.wet || "N";
+    var shape = fitShape(design.room, tpl.room.shape);
+    if (shape) design.room.shape = shape;
+    var first = wallIds(design.room)[0];
+    design.room.wet = tpl.room.wet || first;
     var door = { id: "door", type: "door", wall: tpl.door.wall, offset: tpl.door.offset, opts: defaultOpts("door") };
     design.items.push(door);
     tpl.items.forEach(function (type) {
-      design.items.push({ id: newId(design), type: type, wall: "N", offset: 0, opts: defaultOpts(type) });
+      design.items.push({ id: newId(design), type: type, wall: first, offset: 0, opts: defaultOpts(type) });
     });
     if (tpl.items.length) {
       // A bathroom that already exists has its stack where its fixtures
@@ -2177,10 +2784,12 @@
       num(r.l, LIMITS.min, LIMITS.maxL, 5),
       num(r.h, LIMITS.minH, LIMITS.maxH, 8),
     );
-    if (WALL_IDS.indexOf(r.wet) !== -1) design.room.wet = r.wet;
+    var shape = fitShape(design.room, r.shape);
+    if (shape) design.room.shape = shape;
+    design.room.wet = isWall(design.room, r.wet) ? r.wet : wallIds(design.room)[0];
     var seen = {};
     (Array.isArray(raw.items) ? raw.items : []).slice(0, MAX_ITEMS).forEach(function (it) {
-      if (!it || !TYPES[it.type] || WALL_IDS.indexOf(it.wall) === -1) return;
+      if (!it || !TYPES[it.type] || !isWall(design.room, it.wall)) return;
       var id = typeof it.id === "string" && /^[a-z0-9_-]{1,24}$/i.test(it.id) && !seen[it.id] ? it.id : null;
       if (!id) return;
       seen[id] = true;
@@ -2208,7 +2817,7 @@
       if (!p || !ELECTRICAL_KINDS[p.kind]) return;
       var id = typeof p.id === "string" && /^[a-z0-9_-]{1,24}$/i.test(p.id) && !seenPoints[p.id] ? p.id : null;
       if (!id) return;
-      if (p.kind !== "fan" && WALL_IDS.indexOf(p.wall) === -1) return;
+      if (p.kind !== "fan" && !isWall(design.room, p.wall)) return;
       seenPoints[id] = true;
       var forId = typeof p.for === "string" && /^[a-z0-9_-]{1,24}$/i.test(p.for) ? p.for : "room";
       design.electrical.push({
@@ -2234,6 +2843,24 @@
         return sw ? Object.assign({}, p, { sw: sw.id }) : p;
       });
     }
+    var seenWindows = {};
+    (Array.isArray(raw.windows) ? raw.windows : []).slice(0, MAX_WINDOWS).forEach(function (w) {
+      if (!w || !isWall(design.room, w.wall)) return;
+      var id = typeof w.id === "string" && /^[a-z0-9_-]{1,24}$/i.test(w.id) && !seenWindows[w.id] ? w.id : null;
+      if (!id) return;
+      seenWindows[id] = true;
+      var span = wallSpan(design.room, w.wall);
+      var width = num(w.width, WINDOW.min, Math.min(WINDOW.maxWidth, span), WINDOW.width);
+      var height = num(w.height, WINDOW.min, WINDOW.maxHeight, WINDOW.height);
+      design.windows.push({
+        id: id,
+        wall: w.wall,
+        offset: num(w.offset, 0, span, span / 2),
+        width: width,
+        height: height,
+        sill: num(w.sill, 0, design.room.h, WINDOW.sill),
+      });
+    });
     var f = raw.finishes && typeof raw.finishes === "object" ? raw.finishes : {};
     design.finishes = {
       demolition: f.demolition !== false,
@@ -2264,6 +2891,7 @@
   // A design in a link: compact JSON, base64url. decode() returns null for
   // anything that isn't one.
   function encode(design) {
+    /** @type {any} */
     var compact = {
       v: 3,
       room: {
@@ -2290,6 +2918,20 @@
       products: design.products,
       answered: design.answered || { stack: false, products: {} },
     };
+    var shape = shapeOf(design.room);
+    if (shape) compact.room.shape = { kind: shape.kind, at: shape.at, w: round(shape.w, 3), l: round(shape.l, 3) };
+    if (windowsOf(design).length) {
+      compact.windows = windowsOf(design).map(function (w) {
+        return {
+          id: w.id,
+          wall: w.wall,
+          offset: round(w.offset, 3),
+          width: round(w.width, 3),
+          height: round(w.height, 3),
+          sill: round(w.sill, 3),
+        };
+      });
+    }
     var json = JSON.stringify(compact);
     var b64 = btoa(unescape(encodeURIComponent(json)));
     return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -2310,20 +2952,40 @@
 
   // Resizing the room keeps every fixture on its wall, the same distance
   // from that wall's left end (as far as the new wall allows).
+  // A room that changes shape keeps each thing on the wall that's now where
+  // it stood (see rewall()); the cutout shrinks if the room got too small
+  // for it.
   function resize(design, room) {
-    var next = Object.assign({}, design, {
-      room: Object.assign({ wet: stackWall(design) }, room),
-    });
+    var from = design.room;
+    room = Object.assign({}, room);
+    var shape = fitShape(room, room.shape);
+    if (shape) room.shape = shape;
+    else delete room.shape;
+    var wet = stackWall(design);
+    if (!hasStack(design)) room.wet = room.wet === undefined ? wet : room.wet;
+    else room.wet = rewall(from, room, wet, wallSpan(from, wet) / 2).wall;
+    var next = Object.assign({}, design, { room: room });
     next.items = design.items.map(function (it) {
-      var span = wallSpan(room, it.wall);
-      return Object.assign({}, it, { offset: clamp(it.offset, 0, span) });
+      var at = rewall(from, room, it.wall, it.offset);
+      return Object.assign({}, it, { wall: at.wall, offset: at.offset });
     });
     next.electrical = electricalOf(design).map(function (p) {
       if (p.kind === "fan") return Object.assign({}, p, { height: room.h });
-      var span = wallSpan(room, p.wall);
+      var at = rewall(from, room, p.wall, p.offset);
       return Object.assign({}, p, {
-        offset: clamp(p.offset, 0, span),
+        wall: at.wall,
+        offset: at.offset,
         height: clamp(p.height, 0.3, room.h - 0.4),
+      });
+    });
+    next.windows = windowsOf(design).map(function (w) {
+      var at = rewall(from, room, w.wall, w.offset);
+      var height = Math.min(w.height, Math.max(WINDOW.min, room.h - 0.25 - WINDOW.minSill));
+      return Object.assign({}, w, {
+        wall: at.wall,
+        offset: at.offset,
+        height: height,
+        sill: clamp(w.sill, WINDOW.minSill, Math.max(WINDOW.minSill, room.h - 0.25 - height)),
       });
     });
     return next;
@@ -2341,7 +3003,22 @@
     formatInches: formatInches,
     parseLength: parseLength,
     walls: walls,
+    wallList: wallList,
+    wallIds: wallIds,
+    wallLetter: wallLetter,
     wallSpan: wallSpan,
+    frontDepth: frontDepth,
+    SHAPES: SHAPES,
+    SHAPE_AT: SHAPE_AT,
+    shapeOf: shapeOf,
+    shapeLimits: shapeLimits,
+    fitShape: fitShape,
+    defaultShape: defaultShape,
+    cutsOf: cutsOf,
+    outline: outline,
+    floorArea: floorArea,
+    perimeter: perimeter,
+    interiorPoint: interiorPoint,
     sizeOf: sizeOf,
     geometry: geometry,
     validate: validate,
@@ -2380,6 +3057,15 @@
     toElectricalPlacements: toElectricalPlacements,
     electricalPoints: electricalPoints,
     wallAreas: wallAreas,
+    WINDOW: WINDOW,
+    MAX_WINDOWS: MAX_WINDOWS,
+    windows: windowsOf,
+    windowSize: windowSize,
+    validateWindows: validateWindows,
+    addWindow: addWindow,
+    moveWindow: moveWindow,
+    removeWindow: removeWindow,
+    toWindowPlacements: toWindowPlacements,
     defaultOpts: defaultOpts,
     emptyDesign: emptyDesign,
     fromTemplate: fromTemplate,

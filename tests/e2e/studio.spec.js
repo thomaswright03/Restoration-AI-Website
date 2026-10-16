@@ -634,6 +634,37 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("every light and the fan say which switch turns them on, and one with none is flagged", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await step(page, "electrical").click();
+    const list = await page.evaluate(() => window.RoomPlan.electrical(window.RoomStudio.design()));
+    const light = list.find((p) => p.kind === "light");
+    const sw = list.find((p) => p.id === light.sw);
+    await byKey(page, `point-${light.id}`).click();
+    const pick = byKey(page, `pt-${light.id}-switch`);
+    await expect(pick).toHaveValue(sw.id);
+    // The switch says what it runs.
+    await byKey(page, `point-${sw.id}`).click();
+    await expect(byKey(page, `pt-${sw.id}-runs`)).toContainText("Light");
+    // Take the switch out: the light is flagged and the step won't go on.
+    await byKey(page, `pt-${sw.id}-remove`).click();
+    await expect(page.locator(".studio-step.is-electrical")).toContainText("Light has no switch to turn it on");
+    // Give it a switch of its own by the door.
+    await byKey(page, `point-${light.id}`).click();
+    await byKey(page, `pt-${light.id}-switch`).selectOption("new");
+    await expect(page.locator(".studio-step.is-electrical")).not.toContainText("has no switch to turn it on");
+    const now = await page.evaluate((id) => {
+      const d = window.RoomStudio.design();
+      return window.RoomPlan.switchOf(
+        d,
+        window.RoomPlan.electrical(d).find((p) => p.id === id),
+      );
+    }, light.id);
+    expect(now && now.kind).toBe("switch");
+    expect(errors).toEqual([]);
+  });
+
   test("an outlet drags along the wall in 3D, and a bad spot goes back with the reason", async ({ page }) => {
     test.setTimeout(60000);
     const errors = await openStudio(page);

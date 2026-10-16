@@ -1561,6 +1561,26 @@
     "studio.elec.over": ["over {what}", "sobre {what}", "sobre {what}"],
     "studio.elec.beside": ["beside {what}", "al lado de {what}", "ao lado de {what}"],
     "studio.elec.forFan": ["for the exhaust fan", "para el extractor", "para o exaustor"],
+    "studio.elec.switchLabel": ["Turned on by", "Se enciende con", "Ligado por"],
+    "studio.elec.noSwitchPick": ["No switch yet", "Todavía sin interruptor", "Ainda sem interruptor"],
+    "studio.elec.newSwitch": [
+      "A new switch by the door",
+      "Un interruptor nuevo junto a la puerta",
+      "Um interruptor novo ao lado da porta",
+    ],
+    "studio.elec.noRoomForSwitch": [
+      "There's no free spot left for another switch.",
+      "No queda sitio libre para otro interruptor.",
+      "Não há mais lugar livre para outro interruptor.",
+    ],
+    "studio.elec.switchedBy": ["{name} is on {sw}.", "{name} va en {sw}.", "{name} fica em {sw}."],
+    "studio.elec.runs": ["Turns on: {list}.", "Enciende: {list}.", "Liga: {list}."],
+    "studio.elec.runsNothing": ["Doesn't turn anything on yet.", "Todavía no enciende nada.", "Ainda não liga nada."],
+    "studio.elec.addedWithSwitch": [
+      "{name} added, with a switch by the door.",
+      "{name} añadido, con un interruptor junto a la puerta.",
+      "{name} adicionado, com um interruptor ao lado da porta.",
+    ],
     "studio.elec.gap.noOutlet": [
       "{what} needs a GFCI outlet within 36 in. of it.",
       "{what} necesita un tomacorriente GFCI a menos de 36 pulg.",
@@ -1585,6 +1605,11 @@
       "A bathroom with a tub or shower needs an exhaust fan.",
       "Un baño con bañera o ducha necesita un extractor.",
       "Um banheiro com banheira ou chuveiro precisa de um exaustor.",
+    ],
+    "studio.elec.gap.noSwitchFor": [
+      "{what} has no switch to turn it on.",
+      "{what} no tiene un interruptor que lo encienda.",
+      "{what} não tem um interruptor para ligá-lo.",
     ],
     "studio.elecIssue.outside": [
       "It's past the end of the wall.",
@@ -1615,6 +1640,11 @@
       "A basin's outlet has to be within {need} in. of it; this one is {have} in. away.",
       "El tomacorriente de un lavabo debe estar a menos de {need} pulg.; este está a {have} pulg.",
       "A tomada de uma pia precisa estar a menos de {need} pol.; esta está a {have} pol.",
+    ],
+    "studio.elecIssue.unswitched": [
+      "Every light and fan needs a switch, and this one has none.",
+      "Cada luz y extractor necesita un interruptor, y este no tiene ninguno.",
+      "Toda luz e exaustor precisa de um interruptor, e este não tem nenhum.",
     ],
     "studio.pointAt": [
       "{name}, wall {wall} at {at}, {up} up",
@@ -2454,6 +2484,11 @@
       "One thing first: {list} Want me to add it?",
       "Una cosa antes: {list} ¿Lo agrego yo?",
       "Uma coisa antes: {list} Quer que eu adicione?",
+    ],
+    "riley.offerSwitch": [
+      "Want me to put it on a switch?",
+      "¿Lo conecto a un interruptor?",
+      "Quer que eu ligue a um interruptor?",
     ],
     "riley.step.room": [
       "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",

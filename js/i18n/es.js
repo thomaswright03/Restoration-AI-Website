@@ -681,11 +681,20 @@
     "studio.elec.over": "sobre {what}",
     "studio.elec.beside": "al lado de {what}",
     "studio.elec.forFan": "para el extractor",
+    "studio.elec.switchLabel": "Se enciende con",
+    "studio.elec.noSwitchPick": "Todavía sin interruptor",
+    "studio.elec.newSwitch": "Un interruptor nuevo junto a la puerta",
+    "studio.elec.noRoomForSwitch": "No queda sitio libre para otro interruptor.",
+    "studio.elec.switchedBy": "{name} va en {sw}.",
+    "studio.elec.runs": "Enciende: {list}.",
+    "studio.elec.runsNothing": "Todavía no enciende nada.",
+    "studio.elec.addedWithSwitch": "{name} añadido, con un interruptor junto a la puerta.",
     "studio.elec.gap.noOutlet": "{what} necesita un tomacorriente GFCI a menos de 36 pulg.",
     "studio.elec.gap.noLightOver": "{what} no tiene luz sobre su espejo.",
     "studio.elec.gap.noLight": "Todavía no hay ninguna luz en el baño.",
     "studio.elec.gap.noSwitch": "{what} no tiene un interruptor al lado.",
     "studio.elec.gap.noFan": "Un baño con bañera o ducha necesita un extractor.",
+    "studio.elec.gap.noSwitchFor": "{what} no tiene un interruptor que lo encienda.",
     "studio.elecIssue.outside": "Queda más allá del final de la pared.",
     "studio.elecIssue.outsideUp": "Queda más alto que el techo.",
     "studio.elecIssue.wet":
@@ -694,6 +703,7 @@
     "studio.elecIssue.crowded": "Está justo encima de {other}.",
     "studio.elecIssue.farBasin":
       "El tomacorriente de un lavabo debe estar a menos de {need} pulg.; este está a {have} pulg.",
+    "studio.elecIssue.unswitched": "Cada luz y extractor necesita un interruptor, y este no tiene ninguno.",
     "studio.pointAt": "{name}, pared {wall} a {at}, {up} de alto",
     "studio.pointCeiling": "{name}, en el techo",
     "studio.pointWhere": "Pared {wall} a {at}, {up} de alto",
@@ -964,6 +974,7 @@
     "riley.need": "Antes de seguir, {list}.",
     "riley.tight": "Una cosa sobre {what}: {why}",
     "riley.elecGaps": "Una cosa antes: {list} ¿Lo agrego yo?",
+    "riley.offerSwitch": "¿Lo conecto a un interruptor?",
     "riley.step.room":
       "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué pared está la plomería.",
     "riley.step.layout":

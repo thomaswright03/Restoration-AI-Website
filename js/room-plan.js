@@ -1441,8 +1441,54 @@
     var out = {};
     list.forEach(function (p) {
       out[p.id] = electricalIssues(design, sizes, p, coverings, list);
+      if (NEEDS_SWITCH[p.kind] && !switchOf(design, p)) out[p.id].push(issue("error", "unswitched", {}));
     });
     return out;
+  }
+
+  // Every light and fan is turned on by a switch: its `sw` names the switch
+  // point. One switch may run several (the lights by the door), and a
+  // switch may run nothing yet.
+  var NEEDS_SWITCH = { light: true, fan: true };
+
+  function switchOf(design, point) {
+    if (!point || !point.sw) return null;
+    return (
+      electricalOf(design).filter(function (p) {
+        return p.id === point.sw && p.kind === "switch";
+      })[0] || null
+    );
+  }
+
+  // The lights and fan one switch turns on.
+  function switchedBy(design, switchId) {
+    return electricalOf(design).filter(function (p) {
+      return NEEDS_SWITCH[p.kind] && p.sw === switchId;
+    });
+  }
+
+  // Which switch a light or fan would go on: the fan's own switch for the
+  // fan, the switch by the door for a light (else any switch but the
+  // fan's). null when there's none to use.
+  function usualSwitch(list, kind) {
+    var switches = list.filter(function (p) {
+      return p.kind === "switch";
+    });
+    var pick = function (test) {
+      return switches.filter(test)[0] || null;
+    };
+    if (kind === "fan")
+      return pick(function (p) {
+        return p.for === "fan";
+      });
+    return (
+      pick(function (p) {
+        return p.for !== "fan" && p.for !== "room";
+      }) ||
+      pick(function (p) {
+        return p.for !== "fan";
+      })
+    );
   }
 
   // Does the basin / doorway have its point? Judged by where the points
@@ -1472,7 +1518,8 @@
   // Gaps in the electrical, as { code, for }: noOutlet (a basin with no
   // receptacle within reach), noLightOver (a basin with no light over its
   // mirror), noLight (no light at all), noSwitch (a doorway with no switch
-  // beside it), noFan (there's a tub or shower).
+  // beside it), noFan (there's a tub or shower), noSwitchFor (a light or
+  // fan, by point id, with no switch to turn it on).
   function electricalGaps(design, sizes) {
     var list = electricalOf(design);
     var out = [];
@@ -1500,6 +1547,9 @@
       if (!doorHasSwitch(design, sizes, list, door)) out.push({ code: "noSwitch", for: door.id });
     });
     if (wet.length && !has("fan")) out.push({ code: "noFan" });
+    list.forEach(function (p) {
+      if (NEEDS_SWITCH[p.kind] && !switchOf(design, p)) out.push({ code: "noSwitchFor", for: p.id });
+    });
     return out;
   }
 
@@ -1641,6 +1691,100 @@
         added.push(fan);
       }
     }
+    var wired = wireSwitches(design, sizes, list, added, coverings);
+    return { design: withElectrical(design, list), added: added, wired: wired };
+  }
+
+  // Where a new switch goes: inside the first doorway, beside the switches
+  // already there (or across the room from nothing, with no doorway).
+  function placeSwitch(design, sizes, list, forId, coverings) {
+    if (list.length >= MAX_ELECTRICAL) return null;
+    var room = design.room;
+    var height = Math.min(ELECTRICAL_KINDS.switch.height, room.h - 1.1);
+    var door = itemsOfType(design, "door")[0];
+    var spot = null;
+    if (door) {
+      var g = geometry(door, room, sizes);
+      var span = wallSpan(room, door.wall);
+      var half = g.size.span / 2;
+      var side = span - (door.offset + half) >= door.offset - half ? 1 : -1;
+      var at = freeOffset(
+        design,
+        sizes,
+        "switch",
+        door.wall,
+        door.offset + side * (half + 0.6),
+        height,
+        forId,
+        coverings,
+        list,
+      );
+      if (at !== null) spot = { wall: door.wall, offset: at };
+    }
+    for (var i = 0; !spot && i < WALL_IDS.length; i++) {
+      var wid = WALL_IDS[i];
+      var mid = freeOffset(design, sizes, "switch", wid, wallSpan(room, wid) / 2, height, forId, coverings, list);
+      if (mid !== null) spot = { wall: wid, offset: mid };
+    }
+    if (!spot) return null;
+    var p = {
+      id: newElectricalId(list),
+      kind: "switch",
+      wall: spot.wall,
+      offset: round(spot.offset, 4),
+      height: round(height, 3),
+      for: forId,
+    };
+    list.push(p);
+    return p;
+  }
+
+  // Puts each light and fan with no switch on the usual one (see
+  // usualSwitch), adding that switch by the door when there isn't one.
+  // Changes `list` in place; returns the ids of the points it wired.
+  function wireSwitches(design, sizes, list, added, coverings) {
+    var wired = [];
+    var probe = withElectrical(design, list);
+    list.forEach(function (p, i) {
+      if (!NEEDS_SWITCH[p.kind] || switchOf(probe, p)) return;
+      var sw = usualSwitch(list, p.kind);
+      if (!sw) {
+        sw = placeSwitch(
+          design,
+          sizes,
+          list,
+          p.kind === "fan" ? "fan" : "room",
+          coverings || wallCoverings(design, sizes),
+        );
+        if (!sw) return;
+        added.push(sw);
+      }
+      list[i] = Object.assign({}, p, { sw: sw.id });
+      wired.push(p.id);
+    });
+    return wired;
+  }
+
+  // Puts a light or fan on another switch: switchId, or "new" for a switch
+  // of its own by the door. { design, added } (the new switch, if any).
+  function setSwitch(design, pointId, switchId, sizes) {
+    var list = electricalOf(design).slice();
+    var i = -1;
+    list.forEach(function (p, k) {
+      if (p.id === pointId) i = k;
+    });
+    if (i === -1 || !NEEDS_SWITCH[list[i].kind]) return { design: design, added: null };
+    var added = null;
+    if (switchId === "new") {
+      added = placeSwitch(design, sizes, list, list[i].kind === "fan" ? "fan" : "room", wallCoverings(design, sizes));
+      if (!added) return { design: design, added: null };
+      switchId = added.id;
+    }
+    var sw = list.filter(function (p) {
+      return p.id === switchId && p.kind === "switch";
+    })[0];
+    if (!sw) return { design: design, added: null };
+    list[i] = Object.assign({}, list[i], { sw: sw.id });
     return { design: withElectrical(design, list), added: added };
   }
 
@@ -1709,7 +1853,10 @@
     if (kind === "fan") {
       var fan = { id: newElectricalId(list), kind: "fan", wall: null, offset: 0, height: room.h, for: "room" };
       list.push(fan);
-      return { design: withElectrical(design, list), point: fan, placed: true };
+      var fanAt = list.length - 1;
+      var fanSwitch = [];
+      wireSwitches(design, sizes, list, fanSwitch);
+      return { design: withElectrical(design, list), point: list[fanAt], placed: true, added: fanSwitch };
     }
     var coverings = wallCoverings(design, sizes);
     var height = Math.min(ELECTRICAL_KINDS[kind].height, room.h - 1.1);
@@ -1728,15 +1875,24 @@
       for: "room",
     };
     list.push(p);
-    return { design: withElectrical(design, list), point: p, placed: !!best };
+    var at = list.length - 1;
+    var extra = [];
+    if (NEEDS_SWITCH[kind]) wireSwitches(design, sizes, list, extra);
+    return { design: withElectrical(design, list), point: list[at], placed: !!best, added: extra };
   }
 
+  // Taking out a switch leaves what it ran with no switch, so the step
+  // says so (and an id reused later can't pick them up by accident).
   function removeElectrical(design, id) {
     return withElectrical(
       design,
-      electricalOf(design).filter(function (p) {
-        return p.id !== id;
-      }),
+      electricalOf(design)
+        .filter(function (p) {
+          return p.id !== id;
+        })
+        .map(function (p) {
+          return p.sw === id ? Object.assign({}, p, { sw: null }) : p;
+        }),
     );
   }
 
@@ -2062,8 +2218,22 @@
         offset: p.kind === "fan" ? 0 : num(p.offset, 0, wallSpan(design.room, p.wall), 1),
         height: num(p.height, 0.3, design.room.h, ELECTRICAL_KINDS[p.kind].height || design.room.h),
         for: forId,
+        sw: NEEDS_SWITCH[p.kind] && typeof p.sw === "string" && /^[a-z0-9_-]{1,24}$/i.test(p.sw) ? p.sw : null,
       });
     });
+    // Designs saved before lights and fans named their switch: each goes on
+    // the switch it would have been given, when the room has one.
+    var raw2 = Array.isArray(raw.electrical) ? raw.electrical : [];
+    var named = raw2.some(function (p) {
+      return p && typeof p.sw === "string";
+    });
+    if (!named) {
+      design.electrical = design.electrical.map(function (p) {
+        if (!NEEDS_SWITCH[p.kind]) return p;
+        var sw = usualSwitch(design.electrical, p.kind);
+        return sw ? Object.assign({}, p, { sw: sw.id }) : p;
+      });
+    }
     var f = raw.finishes && typeof raw.finishes === "object" ? raw.finishes : {};
     design.finishes = {
       demolition: f.demolition !== false,
@@ -2113,6 +2283,7 @@
           offset: round(p.offset, 3),
           height: round(p.height, 3),
           for: p.for,
+          sw: p.sw || undefined,
         };
       }),
       finishes: design.finishes,
@@ -2198,6 +2369,9 @@
     validateElectrical: validateElectrical,
     electricalGaps: electricalGaps,
     suggestElectrical: suggestElectrical,
+    setSwitch: setSwitch,
+    switchOf: switchOf,
+    switchedBy: switchedBy,
     snapElectrical: snapElectrical,
     moveElectrical: moveElectrical,
     nearestElectrical: nearestElectrical,

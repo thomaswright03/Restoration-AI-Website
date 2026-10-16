@@ -353,7 +353,8 @@ test("a receptacle may not stand within 3 ft of a tub, behind a fixture or past 
   const put = (point) => Object.assign({}, d, { electrical: [Object.assign({ id: "p", for: "room" }, point)] });
   assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "N", offset: 6, height: 3.5 }), "p"), ["wet"]);
   // A light over the tub is fine: only receptacles and switches keep away.
-  assert.deepEqual(elecErrors(put({ kind: "light", wall: "N", offset: 6, height: 6.75 }), "p"), []);
+  // (All it lacks is a switch, which isn't about where it is.)
+  assert.deepEqual(elecErrors(put({ kind: "light", wall: "N", offset: 6, height: 6.75 }), "p"), ["unswitched"]);
   assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "S", offset: 1, height: 1.5 }), "p"), ["behind"]);
   assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "S", offset: 1, height: 3.5 }), "p"), []);
   assert.deepEqual(elecErrors(put({ kind: "outlet", wall: "E", offset: 7.5, height: 3.5 }), "p"), ["outside"]);
@@ -625,4 +626,94 @@ test("the sample room the designer opens with fits with nothing tight, and isn't
   // The classic 5 x 8 still arranges with nothing broken (its toilet is tight, which is a note).
   const classic = P.fromTemplate("full5x8", {});
   assert.equal(P.hasErrors(P.validate(classic, {})), false);
+});
+
+test("every light and fan in a starting layout is on a switch, and the fan has its own", () => {
+  for (const t of P.TEMPLATES) {
+    const d = P.fromTemplate(t.id, {});
+    for (const p of P.electrical(d)) {
+      if (p.kind !== "light" && p.kind !== "fan") continue;
+      const sw = P.switchOf(d, p);
+      assert.ok(sw, t.id + " " + p.id + " has no switch");
+      if (p.kind === "fan") assert.equal(sw.for, "fan", t.id);
+      else assert.notEqual(sw.for, "fan", t.id);
+    }
+  }
+  // One switch by the door runs the lights of a room with two vanities.
+  const primary = P.fromTemplate("primary", {});
+  const lights = P.electrical(primary).filter((p) => p.kind === "light");
+  assert.ok(lights.length >= 2);
+  assert.equal(new Set(lights.map((p) => p.sw)).size, 1);
+  assert.deepEqual(
+    P.switchedBy(primary, lights[0].sw).map((p) => p.id),
+    lights.map((p) => p.id),
+  );
+});
+
+test("a light or fan with no switch is an error until one is added, and adding one wires it", () => {
+  const d = design({ w: 8, l: 6 }, [{ id: "door", type: "door", wall: "S", offset: 4 }]);
+  // Nothing but a light: adding it puts a switch by the door with it.
+  const res = P.addElectrical(d, "light", {});
+  assert.equal(res.added.length, 1);
+  const sw = res.added[0];
+  assert.equal(sw.kind, "switch");
+  assert.equal(sw.wall, "S");
+  assert.equal(res.point.sw, sw.id);
+  assert.deepEqual(elecErrors(res.design, res.point.id), []);
+  // A second light shares that switch; a fan gets one of its own.
+  const two = P.addElectrical(res.design, "light", {});
+  assert.deepEqual(two.added, []);
+  assert.equal(two.point.sw, sw.id);
+  const fan = P.addElectrical(two.design, "fan", {});
+  assert.equal(fan.added.length, 1);
+  assert.equal(fan.point.sw, fan.added[0].id);
+  assert.notEqual(fan.point.sw, sw.id);
+  // Taking the switch out leaves both lights unswitched: errors and gaps.
+  const bare = P.removeElectrical(fan.design, sw.id);
+  assert.deepEqual(elecErrors(bare, res.point.id), ["unswitched"]);
+  assert.deepEqual(
+    P.electricalGaps(bare, {})
+      .filter((g) => g.code === "noSwitchFor")
+      .map((g) => g.for),
+    [res.point.id, two.point.id],
+  );
+  // Suggesting puts them back on a switch.
+  const fixed = P.suggestElectrical(bare, {});
+  assert.deepEqual(fixed.wired, [res.point.id, two.point.id]);
+  assert.deepEqual(
+    P.electricalGaps(fixed.design, {}).filter((g) => g.code === "noSwitchFor"),
+    [],
+  );
+});
+
+test("a light can be moved onto another switch, or one of its own", () => {
+  const d = P.fromTemplate("primary", {});
+  const [a, b] = P.electrical(d).filter((p) => p.kind === "light");
+  const own = P.setSwitch(d, b.id, "new", {});
+  assert.ok(own.added);
+  assert.equal(
+    P.switchOf(
+      own.design,
+      P.electrical(own.design).find((p) => p.id === b.id),
+    ).id,
+    own.added.id,
+  );
+  assert.equal(P.switchOf(own.design, a).id, a.sw);
+  // Back onto the first light's switch.
+  const back = P.setSwitch(own.design, b.id, a.sw, {});
+  assert.equal(P.electrical(back.design).find((p) => p.id === b.id).sw, a.sw);
+  // Not onto something that isn't a switch.
+  assert.equal(P.setSwitch(d, b.id, a.id, {}).design, d);
+});
+
+test("which switch runs what survives a link, and older designs are wired on the way in", () => {
+  const d = P.fromTemplate("full5x8", {});
+  const again = P.decode(P.encode(d));
+  for (const p of P.electrical(d))
+    assert.equal(P.electrical(again).find((q) => q.id === p.id).sw || null, p.sw || null);
+  const old = JSON.parse(JSON.stringify(d));
+  old.electrical.forEach((p) => delete p.sw);
+  const loaded = P.sanitize(old);
+  for (const p of P.electrical(loaded))
+    if (p.kind === "light" || p.kind === "fan") assert.ok(P.switchOf(loaded, p), p.id);
 });

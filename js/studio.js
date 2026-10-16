@@ -3453,6 +3453,9 @@
       );
     }
 
+    var wiring = point.kind === "switch" ? switchRuns(point) : switchPicker(point);
+    if (wiring) wrap.appendChild(wiring);
+
     var mine = issues[point.id] || [];
     if (mine.length) {
       wrap.appendChild(
@@ -3488,6 +3491,53 @@
       ]),
     );
     return wrap;
+  }
+
+  // Which switch turns a light or the fan on: any switch in the room, or a
+  // new one by the door. Outlets have nothing to pick.
+  function switchPicker(point) {
+    if (point.kind !== "light" && point.kind !== "fan") return null;
+    var id = "studio-pt-" + point.id + "-switch";
+    var on = Plan.switchOf(design, point);
+    var opts = pointsOf("switch").map(function (sw) {
+      var why = pointFor(sw);
+      return h("option", { value: sw.id, text: pointName(sw) + (why ? " · " + why : "") });
+    });
+    if (!on) opts.unshift(h("option", { value: "", disabled: true, text: T("studio.elec.noSwitchPick") }));
+    opts.push(h("option", { value: "new", text: T("studio.elec.newSwitch") }));
+    var select = h("select", { id: id, class: "studio-select", "data-key": "pt-" + point.id + "-switch" }, opts);
+    select.value = on ? on.id : "";
+    select.addEventListener("change", function () {
+      if (!select.value) return;
+      var res = Plan.setSwitch(design, point.id, select.value, sizes);
+      if (res.design === design) {
+        toast(T("studio.elec.noRoomForSwitch"));
+        select.value = on ? on.id : "";
+        return;
+      }
+      commit(res.design, {
+        announce: T("studio.elec.switchedBy", {
+          name: pointName(point, res.design),
+          sw: pointName(Plan.switchOf(res.design, findPoint(point.id, res.design)), res.design),
+        }),
+      });
+    });
+    return h("div", { class: "studio-field" }, [h("label", { for: id, text: T("studio.elec.switchLabel") }), select]);
+  }
+
+  // What a switch turns on, as a note.
+  function switchRuns(point) {
+    var runs = Plan.switchedBy(design, point.id);
+    var text = runs.length
+      ? T("studio.elec.runs", {
+          list: runs
+            .map(function (p) {
+              return pointName(p);
+            })
+            .join(", "),
+        })
+      : T("studio.elec.runsNothing");
+    return h("p", { class: "studio-note", "data-key": "pt-" + point.id + "-runs", text: text });
   }
 
   // A slider for one number on a point (along the wall, or up it).
@@ -3530,7 +3580,8 @@
     ui.selected = null;
     if (ui.step !== "electrical") ui.step = "electrical";
     commit(res.design, { announce: pointLabel(res.point, res.design) });
-    toast(T("studio.elec.added", { name: pointName(res.point, res.design) }), {
+    var extra = res.added && res.added.length;
+    toast(T(extra ? "studio.elec.addedWithSwitch" : "studio.elec.added", { name: pointName(res.point, res.design) }), {
       label: T("studio.undo"),
       run: undo,
     });
@@ -3563,7 +3614,7 @@
   // point the person has already moved where it is.
   function suggestPoints() {
     var res = Plan.suggestElectrical(design, sizes);
-    if (!res.added.length) {
+    if (!res.added.length && !res.wired.length) {
       toast(T("studio.elec.nothingToAdd"));
       return;
     }
@@ -3573,14 +3624,17 @@
 
   // One thing the electrical rules still ask for, as a sentence.
   function gapText(g) {
-    return sentence(T("studio.elec.gap." + g.code, { what: g.for ? theName(g.for) : "" }));
+    var point = g.code === "noSwitchFor" ? findPoint(g.for) : null;
+    var what = point ? pointName(point) : g.for ? theName(g.for) : "";
+    return sentence(T("studio.elec.gap." + g.code, { what: what }));
   }
 
   // What's still missing, when suggesting would add at least some of it;
   // null when nothing is missing or there's no room left to add it.
   function fillableGaps() {
     var gaps = Plan.electricalGaps(design, sizes);
-    if (!gaps.length || !Plan.suggestElectrical(design, sizes).added.length) return null;
+    var res = gaps.length ? Plan.suggestElectrical(design, sizes) : null;
+    if (!res || (!res.added.length && !res.wired.length)) return null;
     return gaps.map(gapText).join(" ");
   }
 
@@ -4957,6 +5011,22 @@
   // does. Null when she has nothing to offer.
   function rileyFixFor(thing) {
     if (!thing.type) {
+      var errs = Plan.errorsOf(issues, thing.id);
+      if (
+        errs.length &&
+        errs.every(function (x) {
+          return x.code === "unswitched";
+        })
+      ) {
+        // Only missing its switch: put it on one, and leave it where it is.
+        return {
+          offer: "riley.offerSwitch",
+          run: function () {
+            var res = Plan.suggestElectrical(design, sizes);
+            commit(res.design, { announce: T("studio.elec.suggested", { n: res.added.length }) });
+          },
+        };
+      }
       return {
         offer: "riley.offer",
         run: function () {

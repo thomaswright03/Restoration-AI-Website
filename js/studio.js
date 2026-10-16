@@ -430,6 +430,8 @@
     if (ui.point && !findPoint(ui.point)) ui.point = null;
     if (!opts.keepArrange) ui.arrange = null;
     push3d();
+    // After push3d: the 3D room's lists follow the fixtures it was handed.
+    answerWhatsShown();
     renderStage();
     renderBar();
     // quiet: a slider being dragged; the panel catches up when it's let go.
@@ -527,6 +529,7 @@
     var next = Plan.decode(code);
     if (!next) return false;
     next.answered = Object.assign({}, answers(next), { stack: true });
+    answerOpened = true;
     if (!design) {
       pendingOpen = next;
       pendingOpenName = name || "";
@@ -1996,9 +1999,9 @@
   //   room         the plumbing wall picked, the sizes all lengths
   //   layout       at least one fixture, and everything fits
   //   electrical   no outlet, switch or light where it can't go
-  //   products     nothing: every list starts on the model shown in the room
-  //   finishes     nothing: every surface starts on the first product for it
-  //                (the one the estimate prices), shown pressed
+  //   products     a product picked in every list: each fixture and each of
+  //                its parts (a vanity's sink and faucet)
+  //   finishes     a product picked for every surface being done
   // missingFor() is what's left, as phrases for "To go on: ...".
   function answers(d) {
     return (d || design).answered || { stack: false, products: {} };
@@ -2012,6 +2015,69 @@
     if (slotId) next.products[slotId] = true;
     else next.stack = true;
     return Object.assign({}, d, { answered: next });
+  }
+
+  // The product slots on show, for the fixtures in the room.
+  function productSlots() {
+    if (!room3d) return [];
+    var out = [];
+    room3d.getProductGroups().forEach(function (group) {
+      group.slots.forEach(function (slot) {
+        out.push(slot);
+      });
+    });
+    return out;
+  }
+
+  // The surfaces a product is picked for: the ones being done that have
+  // products to pick from.
+  function surfaceCats(d) {
+    var f = d.finishes;
+    var walls = wallsOf(d);
+    return [
+      f.floor === "tile" ? "floorTile" : null,
+      f.floor === "flooring" ? "flooring" : null,
+      walls === "tileWet" || walls === "tile" ? "wallTile" : null,
+      walls === "tileWet" || walls === "paint" ? "wallPaint" : null,
+      f.ceiling ? "ceilingPaint" : null,
+    ].filter(function (cat) {
+      return cat && surfaceOptions(cat).length;
+    });
+  }
+
+  // A surface's product, only when the person picked it (and it's still
+  // on the list).
+  function surfacePicked(cat, d) {
+    var picked = (d || design).finishes.picks[cat];
+    return surfaceOptions(cat).some(function (o) {
+      return o.id === picked;
+    })
+      ? picked
+      : null;
+  }
+
+  // A saved project counts as answered for what it shows: every product
+  // list and surface it opens with is taken as picked. Waits for the 3D
+  // room, which is what knows the lists.
+  var answerOpened = false;
+
+  function answerWhatsShown() {
+    if (!answerOpened || !room3d) return;
+    answerOpened = false;
+    var a = answers();
+    var next = { stack: a.stack, products: Object.assign({}, a.products) };
+    productSlots().forEach(function (slot) {
+      next.products[slot.id] = true;
+    });
+    var picks = Object.assign({}, design.finishes.picks);
+    surfaceCats(design).forEach(function (cat) {
+      var shown = surfaceProduct(cat);
+      if (shown && !surfacePicked(cat)) picks[cat] = shown.id;
+    });
+    design = Object.assign({}, design, {
+      answered: next,
+      finishes: Object.assign({}, design.finishes, { picks: picks }),
+    });
   }
 
   function missingFor(step) {
@@ -2045,6 +2111,38 @@
         return Plan.errorsOf(issues, p.id).length > 0;
       });
       if (wrong.length) out.push({ key: "points", text: T("studio.need.points") });
+    } else if (step === "products") {
+      var open = productSlots().filter(function (slot) {
+        return !answers(d).products[slot.id];
+      });
+      // A few are named; a long list is counted instead.
+      if (open.length > 3) out.push({ key: "products", text: T("studio.need.productsMany", { n: open.length }) });
+      else if (open.length)
+        out.push({
+          key: "products",
+          text: T("studio.need.products", {
+            list: open
+              .map(function (slot) {
+                return slot.label;
+              })
+              .join(", "),
+          }),
+        });
+    } else if (step === "finishes") {
+      var unpicked = surfaceCats(d).filter(function (cat) {
+        return !surfacePicked(cat, d);
+      });
+      if (unpicked.length)
+        out.push({
+          key: "surfaces",
+          text: T("studio.need.surfaces", {
+            list: unpicked
+              .map(function (cat) {
+                return T("studio.need.surface." + cat);
+              })
+              .join(", "),
+          }),
+        });
     }
     return out;
   }
@@ -2102,6 +2200,7 @@
     // Products, or "Just this" turned on anywhere, ends with the step.
     if (step !== ui.step && (focusedGroup || ui.isolate)) {
       focusedGroup = null;
+      focusedSlot = null;
       if (has3d) room3d.focusProductGroup(null);
       ui.isolate = false;
       applyIsolate();
@@ -3530,53 +3629,59 @@
       ]);
       group.slots.forEach(function (slot) {
         var id = "studio-product-" + slot.id;
-        // The list starts on the model the room shows (the first that
-        // fits), so nothing has to be picked to go on.
+        // Until the person picks, the room shows the first that fits and
+        // the list says to choose.
+        var picked = !!answers().products[slot.id];
         var select = h(
           "select",
           { id: id, class: "studio-select", "data-key": "slot-" + slot.id },
-          slot.options.map(function (opt) {
-            return h("option", {
-              value: opt.id,
-              disabled: opt.reason ? true : null,
-              text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
-            });
-          }),
+          (picked ? [] : [h("option", { value: "", disabled: true, text: T("studio.products.choose") })]).concat(
+            slot.options.map(function (opt) {
+              return h("option", {
+                value: opt.id,
+                disabled: opt.reason ? true : null,
+                text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
+              });
+            }),
+          ),
         );
-        select.value = slot.value;
+        select.value = picked ? slot.value : "";
         select.addEventListener("change", function () {
           if (!select.value) return;
           room3d.setProductPick(slot.id, select.value);
           commit(withAnswer(Object.assign({}, design, { products: room3d.getProductPicks() }), slot.id));
-          focusGroup(group.id);
+          focusSlot(group.id, slot.id, true);
         });
         select.addEventListener("focus", function () {
-          focusGroup(group.id);
+          focusSlot(group.id, slot.id);
         });
         var item = items.filter(function (it) {
           return it.slotId === slot.id && it.mmns.length;
         })[0];
         card.appendChild(
-          h("div", { class: "studio-field" }, [
-            h("label", { for: id, text: slot.label }),
-            select,
-            item
-              ? h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "studio-link-btn studio-examples-btn",
-                    "data-key": "examples-" + slot.id,
-                    "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
-                    icon: "photo",
-                    onclick: function () {
-                      openPhotos(item);
+          missingMark(
+            h("div", { class: "studio-field" }, [
+              h("label", { for: id, text: slot.label }),
+              select,
+              item
+                ? h(
+                    "button",
+                    {
+                      type: "button",
+                      class: "studio-link-btn studio-examples-btn",
+                      "data-key": "examples-" + slot.id,
+                      "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
+                      icon: "photo",
+                      onclick: function () {
+                        openPhotos(item);
+                      },
                     },
-                  },
-                  [T("studio.photos.show")],
-                )
-              : null,
-          ]),
+                    [T("studio.photos.show")],
+                  )
+                : null,
+            ]),
+            !picked,
+          ),
         );
       });
       if (standIn) {
@@ -3839,10 +3944,24 @@
   function focusGroup(groupId) {
     if (!has3d || ui.view === "plan" || focusedGroup === groupId) return;
     focusedGroup = groupId;
+    focusedSlot = null;
     room3d.focusProductGroup(groupId);
     ui.isolate = true;
     applyIsolate();
     renderViewbar();
+  }
+
+  // Shows a fixture by itself and turns in close on the part being picked
+  // (a vanity's faucet). Once per part, so tabbing back to its list doesn't
+  // swing the camera again; after a pick (again) it frames the new model.
+  var focusedSlot = null;
+
+  function focusSlot(groupId, slotId, again) {
+    focusGroup(groupId);
+    if (!has3d || ui.view === "plan" || focusedGroup !== groupId) return;
+    if (focusedSlot === slotId && !again) return;
+    focusedSlot = slotId;
+    room3d.focusProductSlot(slotId);
   }
 
   // ---------- Step 4: finishes ----------
@@ -3950,48 +4069,50 @@
     if (!materialsOn()) body.appendChild(h("p", { class: "studio-note", text: T("studio.finish.notPriced") }));
   }
 
-  // The products for a surface, as picture buttons with their price. The
-  // one in the estimate is pressed: the pick, or the first product until
-  // then, so the total in the bar is always for what's shown pressed.
+  // The products for a surface, as picture buttons with their price.
+  // Until one is picked, none is pressed (the estimate prices the first
+  // meanwhile) and the step can't be left.
   function swatches(cat, title) {
-    var picked = surfaceProduct(cat);
-    var current = picked ? picked.id : null;
+    var current = surfacePicked(cat);
     var options = surfaceOptions(cat);
     if (!options.length) return null;
     var priced = materialsOn();
-    return h("div", { class: "studio-swatch-group", "data-cat": cat }, [
-      title ? h("p", { class: "studio-swatch-title", text: title }) : null,
-      h(
-        "div",
-        { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
-        options.map(function (opt) {
-          var on = current === opt.id;
-          return h(
-            "button",
-            {
-              type: "button",
-              class: "studio-swatch",
-              "aria-pressed": on ? "true" : "false",
-              "data-key": "sw-" + cat + "-" + opt.id,
-              title: opt.name,
-              onclick: function () {
-                if (on) return;
-                var picks = Object.assign({}, design.finishes.picks);
-                picks[cat] = opt.id;
-                commit(withFinishes({ picks: picks }));
+    return missingMark(
+      h("div", { class: "studio-swatch-group", "data-cat": cat }, [
+        title ? h("p", { class: "studio-swatch-title", text: title }) : null,
+        h(
+          "div",
+          { class: "studio-swatches", role: "group", "aria-label": title || T("studio.finish.product") },
+          options.map(function (opt) {
+            var on = current === opt.id;
+            return h(
+              "button",
+              {
+                type: "button",
+                class: "studio-swatch",
+                "aria-pressed": on ? "true" : "false",
+                "data-key": "sw-" + cat + "-" + opt.id,
+                title: opt.name,
+                onclick: function () {
+                  if (on) return;
+                  var picks = Object.assign({}, design.finishes.picks);
+                  picks[cat] = opt.id;
+                  commit(withFinishes({ picks: picks }));
+                },
               },
-            },
-            [
-              opt.imageUrl
-                ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
-                : null,
-              h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
-              priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
-            ],
-          );
-        }),
-      ),
-    ]);
+              [
+                opt.imageUrl
+                  ? h("img", { src: opt.imageUrl, alt: "", loading: "lazy", width: "64", height: "64" })
+                  : null,
+                h("span", { class: "studio-swatch-name", text: shortName(opt.name) }),
+                priced ? h("span", { class: "studio-swatch-price", text: unitPrice(cat, opt) }) : null,
+              ],
+            );
+          }),
+        ),
+      ]),
+      !current,
+    );
   }
 
   // Retail names are long: the brand-and-model part is enough on a button.
@@ -4966,6 +5087,7 @@
         onclick: function () {
           if (has3d) room3d.resetView();
           focusedGroup = null;
+          focusedSlot = null;
           ui.isolate = false;
           applyIsolate();
           renderViewbar();

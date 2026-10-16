@@ -392,7 +392,7 @@
     "studio.step.electrical.short": "Elétrica",
     "studio.step.products.title": "Produtos",
     "studio.step.products.intro":
-      "Cada lista começa no modelo Kohler ou Sterling que o banheiro mostra, então você pode seguir direto ou escolher os que preferir. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos. A estimativa mostra os produtos com o número do modelo; os preços deles não são somados.",
+      "Escolha um modelo Kohler ou Sterling em cada lista, para cada peça e cada uma de suas partes, para continuar. Cada um aparece no tamanho real, e os que são grandes demais para o lugar não podem ser escolhidos. A estimativa mostra os produtos com o número do modelo; os preços deles não são somados.",
     "studio.step.products.short": "Produtos",
     "studio.step.finishes.title": "Acabamentos",
     "studio.step.finishes.intro":
@@ -706,6 +706,15 @@
     "studio.need.fixture": "adicione pelo menos uma peça",
     "studio.need.fit": "mova ou tire o que não cabe ({what})",
     "studio.need.points": "corrija a parte elétrica marcada em vermelho",
+    "studio.need.products": "escolha um produto para: {list}",
+    "studio.need.productsMany": "escolha um produto em cada lista que ainda diz “Escolha um…” (faltam {n})",
+    "studio.products.choose": "Escolha um…",
+    "studio.need.surfaces": "escolha um acabamento para: {list}",
+    "studio.need.surface.floorTile": "cerâmica do piso",
+    "studio.need.surface.flooring": "piso vinílico",
+    "studio.need.surface.wallTile": "revestimento de parede",
+    "studio.need.surface.wallPaint": "tinta das paredes",
+    "studio.need.surface.ceilingPaint": "tinta do teto",
     "studio.room.plumbingNone": "Tudo o que tem ralo está nessa parede, então não há tubulação nova a passar.",
     "studio.room.plumbingSet": "Parede da hidráulica: {wall}",
     "studio.room.plumbingBroke": "Algumas peças ficaram longe demais da hidráulica.",
@@ -967,11 +976,11 @@
     "riley.step.electrical":
       "Já calculei onde devem ficar as tomadas, os interruptores, as luzes e o exaustor. Dê uma olhada e mova o que quiser pela parede.",
     "riley.step.products":
-      "O banheiro já tem um modelo em cada lugar, então você pode seguir direto ou escolher os que preferir. Mostro cada um sozinho, para nada ficar na frente, e o que for grande demais não pode ser escolhido.",
+      "Escolha um modelo em cada lista para continuar, inclusive partes como a torneira. Mostro cada um sozinho e de perto, e o que for grande demais não pode ser escolhido.",
     "riley.step.finishes":
-      "Azulejo, pintura e pisos. Cada superfície começa com um produto, e o preço acompanha enquanto você escolhe.",
+      "Azulejo, pintura e pisos. Escolha um produto para cada superfície para continuar; o preço acompanha enquanto você escolhe.",
     "riley.step.finishesNotPriced":
-      "Azulejo, pintura e pisos. Eles aparecem no banheiro conforme você escolhe; esta empresa orça os materiais à parte, então eles não estão na estimativa.",
+      "Azulejo, pintura e pisos. Escolha um para cada superfície para continuar; eles aparecem no banheiro conforme você escolhe. Esta empresa orça os materiais à parte, então eles não estão na estimativa.",
     "riley.step.estimate":
       "Isto é o total, com os preços da empresa de exemplo. Baixe o PDF, ou cadastre-se e o seu próprio projetista salva isto como projeto.",
     "riley.step.estimateOwner":

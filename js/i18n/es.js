@@ -395,7 +395,7 @@
     "studio.step.electrical.short": "Electricidad",
     "studio.step.products.title": "Productos",
     "studio.step.products.intro":
-      "Cada lista empieza en el modelo Kohler o Sterling que muestra el baño, así que puede seguir directamente o elegir los que le gusten. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir. La estimación los muestra con su número de modelo; sus precios no se suman.",
+      "Elija un modelo Kohler o Sterling en cada lista, para cada pieza y cada una de sus partes, para continuar. Cada uno se muestra en su tamaño real, y los que son demasiado grandes para su lugar no se pueden elegir. La estimación los muestra con su número de modelo; sus precios no se suman.",
     "studio.step.products.short": "Productos",
     "studio.step.finishes.title": "Acabados",
     "studio.step.finishes.intro": "Elija el piso, las paredes y el techo. Se ven en el baño a medida que los elige.",
@@ -709,6 +709,15 @@
     "studio.need.fixture": "agregue al menos una pieza",
     "studio.need.fit": "mueva o quite lo que no cabe ({what})",
     "studio.need.points": "corrija la parte eléctrica marcada en rojo",
+    "studio.need.products": "elija un producto para: {list}",
+    "studio.need.productsMany": "elija un producto en cada lista que aún dice «Elija uno…» (faltan {n})",
+    "studio.products.choose": "Elija uno…",
+    "studio.need.surfaces": "elija un acabado para: {list}",
+    "studio.need.surface.floorTile": "azulejo del piso",
+    "studio.need.surface.flooring": "piso vinílico",
+    "studio.need.surface.wallTile": "azulejo de pared",
+    "studio.need.surface.wallPaint": "pintura de paredes",
+    "studio.need.surface.ceilingPaint": "pintura del techo",
     "studio.room.plumbingNone": "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
     "studio.room.plumbingSet": "Pared de la plomería: {wall}",
     "studio.room.plumbingBroke": "Algunas piezas quedaron demasiado lejos de la plomería.",
@@ -971,11 +980,11 @@
     "riley.step.electrical":
       "Ya calculé dónde deberían ir los tomacorrientes, los interruptores, las luces y el extractor. Échele un ojo y mueva lo que quiera por su pared.",
     "riley.step.products":
-      "El baño ya tiene un modelo en cada lugar, así que puede seguir directamente o elegir los que le gusten. Muestro cada uno solo, para que nada se le ponga delante, y lo que sea demasiado grande no se puede elegir.",
+      "Elija un modelo en cada lista para continuar, también partes como la llave. Muestro cada uno solo y de cerca, y lo que sea demasiado grande no se puede elegir.",
     "riley.step.finishes":
-      "Azulejo, pintura y pisos. Cada superficie empieza con un producto, y el precio se actualiza mientras elige.",
+      "Azulejo, pintura y pisos. Elija un producto para cada superficie para continuar; el precio se actualiza mientras elige.",
     "riley.step.finishesNotPriced":
-      "Azulejo, pintura y pisos. Se ven en el baño mientras elige; esta empresa cotiza los materiales aparte, así que no están en la estimación.",
+      "Azulejo, pintura y pisos. Elija uno para cada superficie para continuar; se ven en el baño mientras elige. Esta empresa cotiza los materiales aparte, así que no están en la estimación.",
     "riley.step.estimate":
       "Esto es lo que suma, con los precios de la empresa de ejemplo. Descargue el PDF, o regístrese y su propio diseñador guardará esto como proyecto.",
     "riley.step.estimateOwner":

@@ -384,7 +384,7 @@
     "studio.step.electrical.short": "Electrical",
     "studio.step.products.title": "Products",
     "studio.step.products.intro":
-      "Each list starts on the Kohler or Sterling model the room shows, so you can go straight on, or pick the ones you like. Each is shown at its real size, and any that's too big for its spot can't be picked. The estimate lists them with their model numbers; their prices aren't added in.",
+      "Pick a Kohler or Sterling model in every list, for each fixture and each of its parts, to go on. Each is shown at its real size, and any that's too big for its spot can't be picked. The estimate lists them with their model numbers; their prices aren't added in.",
     "studio.step.products.short": "Products",
     "studio.step.finishes.title": "Finishes",
     "studio.step.finishes.intro": "Choose the floor, walls and ceiling. They show in the room as you pick them.",
@@ -690,6 +690,15 @@
     "studio.need.fixture": "add at least one fixture",
     "studio.need.fit": "move or remove what doesn't fit ({what})",
     "studio.need.points": "fix the electrical marked in red",
+    "studio.need.products": "pick a product for: {list}",
+    "studio.need.productsMany": "pick a product in each list that still says “Choose one…” ({n} left)",
+    "studio.products.choose": "Choose one…",
+    "studio.need.surfaces": "pick a finish for: {list}",
+    "studio.need.surface.floorTile": "floor tile",
+    "studio.need.surface.flooring": "flooring",
+    "studio.need.surface.wallTile": "wall tile",
+    "studio.need.surface.wallPaint": "wall paint",
+    "studio.need.surface.ceilingPaint": "ceiling paint",
     "studio.room.plumbingNone": "Everything with a drain is on that wall, so there's no new pipe to run.",
     "studio.room.plumbingSet": "Plumbing wall: {wall}",
     "studio.room.plumbingBroke": "Some fixtures are now too far from the plumbing.",
@@ -952,11 +961,11 @@
     "riley.step.electrical":
       "I've worked out where the outlets, switches, lights and fan should go. Have a look, and move any of them along its wall if you'd rather.",
     "riley.step.products":
-      "The room already has a model in every spot, so you can go straight on, or pick the ones you like. I'll show each one on its own so nothing stands in front of it, and anything too big for its spot can't be picked.",
+      "Pick a model in every list to go on, parts like the faucet too. I'll show each one on its own and up close, and anything too big for its spot can't be picked.",
     "riley.step.finishes":
-      "Tile, paint and floors. Each surface starts on a product, and the price follows along as you choose.",
+      "Tile, paint and floors. Pick a product for each surface to go on; the price follows along as you choose.",
     "riley.step.finishesNotPriced":
-      "Tile, paint and floors. They show in the room as you choose; this business prices the materials in its quote, so they aren't in the estimate.",
+      "Tile, paint and floors. Pick one for each surface to go on; they show in the room as you choose. This business prices the materials in its quote, so they aren't in the estimate.",
     "riley.step.estimate":
       "Here's what it adds up to, at the sample business's prices. Download the PDF, or sign up and your own designer saves this as a project.",
     "riley.step.estimateOwner":

@@ -2015,6 +2015,8 @@ function addProductParts(s, instance, placement, sel, bodyReady, ctx) {
         part.position.y += p[1] - box.max.y;
         part.position.z += p[2] - (box.min.z + box.max.z) / 2;
       }
+      // focusProductSlot() finds the part by this.
+      part.userData.productSlot = slot.id;
       instance.add(part);
     });
     // A real showerhead replaces the stand-in enclosure's own.
@@ -2112,18 +2114,45 @@ function productGroupDef(groupId) {
 
 // Frames every placed instance of a tab's fixtures, from in front of them.
 function focusCameraOn(s, group) {
+  var parts = [];
+  s.fixtureGroup.children.forEach(function (inst) {
+    if (group.fixtureKeys.indexOf(inst.userData.fixtureKey) !== -1) parts.push({ obj: inst, inst: inst });
+  });
+  return frameObjects(s, parts, 1.6, 3);
+}
+
+// Frames one product slot closer than its whole fixture: a part (the
+// faucet on a vanity) on the first placed fixture that has it, or a body
+// (the vanity itself) on its own. False when nothing of it is drawn.
+function focusCameraOnSlot(s, slot) {
+  var parts = [];
+  s.fixtureGroup.children.forEach(function (inst) {
+    if (parts.length || inst.userData.fixtureKey !== slot.fixtureKey) return;
+    if (slot.body) parts.push({ obj: inst, inst: inst });
+    else
+      inst.children.forEach(function (child) {
+        if (child.userData.productSlot === slot.id) parts.push({ obj: child, inst: inst });
+      });
+  });
+  return slot.body ? frameObjects(s, parts, 1.4, 1.6) : frameObjects(s, parts, 2.4, 1.1);
+}
+
+// Glides the camera to look at these objects ({ obj, inst }: the object
+// and the placed fixture it belongs to, whose turn says which way is its
+// front) from distance = their size * scale + pad feet.
+function frameObjects(s, parts, scale, pad) {
   var box = new THREE.Box3();
   var facing = null;
-  s.fixtureGroup.children.forEach(function (inst) {
-    if (group.fixtureKeys.indexOf(inst.userData.fixtureKey) === -1) return;
-    box.expandByObject(inst);
-    if (facing === null) facing = inst.rotation.y;
+  parts.forEach(function (x) {
+    x.obj.updateMatrixWorld(true);
+    box.expandByObject(x.obj);
+    if (facing === null) facing = x.inst.rotation.y;
   });
   if (box.isEmpty()) return false;
   var center = box.getCenter(new THREE.Vector3());
   var size = box.getSize(new THREE.Vector3());
   var dir = new THREE.Vector3(Math.sin(facing), 0.55, Math.cos(facing)).normalize();
-  var distance = Math.max(size.x, size.y, size.z) * 1.6 + 3;
+  var distance = Math.max(size.x, size.y, size.z) * scale + pad;
   var dims = Layout.computeRoomDimensions(state.dims);
   var diag = Math.sqrt(dims.widthFt * dims.widthFt + dims.lengthFt * dims.lengthFt);
   s.controls.minDistance = Math.min(distance, 2);
@@ -3325,7 +3354,7 @@ function rebuild() {
   rebuildElectrical(s);
   applyStudioView(s);
   if (s.pendingFocus) {
-    focusCameraOn(s, s.pendingFocus);
+    s.pendingFocus();
     s.pendingFocus = null;
   }
   // Follows the room if it resizes while walking in, or if the doorway
@@ -3851,10 +3880,36 @@ window.BathroomRoom3D = {
     // The fixtures may not be drawn yet: frame them once the next rebuild
     // has placed them.
     if (dirty) {
-      s.pendingFocus = group;
+      s.pendingFocus = function () {
+        focusCameraOn(s, group);
+      };
       return true;
     }
     return focusCameraOn(s, group);
+  },
+
+  // Turns the camera in close on one product slot: the part being picked
+  // (a vanity's faucet), or the fixture itself for its body. Falls back to
+  // the whole fixture when the part isn't drawn (a "none" pick, a model
+  // still loading). Returns whether there was anything to frame.
+  focusProductSlot: function (slotId) {
+    var s = threeState;
+    var slot = productSlot(slotId);
+    if (!s || !slot) return false;
+    var group = productGroupDef(productGroupOf(slot));
+    if (state.cameraMode === "walkin") {
+      state.cameraMode = "orbit";
+      s.controls.enablePan = true;
+      setFov(s, ORBIT_FOV);
+    }
+    var frame = function () {
+      return focusCameraOnSlot(s, slot) || (!!group && focusCameraOn(s, group));
+    };
+    if (dirty) {
+      s.pendingFocus = frame;
+      return true;
+    }
+    return frame();
   },
 
   // What to price or list: one item per showing product slot of each placed
@@ -4064,6 +4119,13 @@ window.BathroomRoom3D = {
     var s = threeState;
     if (!s) return null;
     return { x: s.camera.position.x, y: s.camera.position.y, z: s.camera.position.z };
+  },
+
+  // How far the camera is from what it looks at, in feet, or null.
+  cameraDistance: function () {
+    var s = threeState;
+    if (!s) return null;
+    return s.camera.position.distanceTo(s.controls.target);
   },
 
   previewItem: function (itemId, pose) {

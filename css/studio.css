@@ -1010,6 +1010,9 @@ main.studio-page.solid-header {
   min-width: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* A field scrolled to (a list still to pick) stays clear of the sticky
+     step bar, which grows with its "To go on" note. */
+  scroll-padding-bottom: 11rem;
   background: var(--color-surface);
   border-left: 1px solid var(--color-line);
 }

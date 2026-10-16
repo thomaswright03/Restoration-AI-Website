@@ -677,6 +677,33 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("picking a part of a product (the vanity's faucet) turns the camera in closer than the whole fixture", async ({
+    page,
+  }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await step(page, "products").click();
+    const settled = async () => {
+      let last = -1;
+      await expect
+        .poll(async () => {
+          const d = await page.evaluate(() => window.BathroomRoom3D.cameraDistance());
+          const still = Math.abs(d - last) < 0.01;
+          last = d;
+          return still;
+        })
+        .toBe(true);
+      return last;
+    };
+    await byKey(page, "slot-vanity").focus();
+    const whole = await settled();
+    await byKey(page, "slot-vanityFaucet").focus();
+    const faucet = await settled();
+    expect(faucet, `faucet ${faucet} ft vs vanity ${whole} ft`).toBeLessThan(whole * 0.8);
+    expect(errors).toEqual([]);
+  });
+
   test("leaving Products brings the whole room back, so isolation never follows into Finishes", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);
@@ -808,6 +835,7 @@ test.describe("design studio", () => {
   });
 
   test("each step waits until its questions are answered; going back is always fine", async ({ page }) => {
+    test.setTimeout(90000); // a pick in each of the sample room's 14 product lists loads its model
     const errors = await openStudio(page);
     await wait3d(page);
     const need = page.locator("#studio-step-need");
@@ -830,15 +858,30 @@ test.describe("design studio", () => {
     await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    // Every product list starts on the model the room shows: nothing to pick before going on.
-    await expect(page.locator('.studio-product-card select option[value=""]')).toHaveCount(0);
+    // Every list, the fixtures' and their parts' (the vanity's faucet), has
+    // to be picked before going on.
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-products")).toBeVisible();
+    await expect(need).toContainText("Choose one…");
+    await expect(page.locator(".studio-product-card .studio-field.is-missing").first()).toBeVisible();
+    await expect(step(page, "finishes")).toHaveAttribute("aria-disabled", "true");
+    const unpicked = page.locator('.studio-product-card select:has(option[value=""])');
+    while (await unpicked.count()) {
+      const list = unpicked.first();
+      await list.selectOption(await list.locator("option:not([disabled])").first().getAttribute("value"));
+    }
     await expect(need).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
-    // Every surface starts on a product (the one the estimate prices), shown
-    // pressed: nothing to pick before going on.
+    // So does a product for every surface being done; none starts pressed.
+    await expect(need).toHaveText("To go on: pick a finish for: floor tile, wall paint, ceiling paint.");
+    await expect(page.locator(".studio-swatch[aria-pressed='true']")).toHaveCount(0);
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
+    await expect(page.locator(".studio-swatch-group.is-missing")).toHaveCount(3);
+    const open = page.locator(".studio-swatch-group:not(:has([aria-pressed='true']))");
+    while (await open.count()) await open.first().locator(".studio-swatch").first().click();
     await expect(need).toHaveCount(0);
-    await expect(page.locator(".studio-swatch-group:not(:has([aria-pressed='true']))")).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-estimate")).toBeVisible();
     await step(page, "room").click();

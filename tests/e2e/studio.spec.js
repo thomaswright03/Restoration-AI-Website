@@ -77,6 +77,84 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
+  test("a room can be L-shaped, T-shaped or notched, and the walls, plan and price follow", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    await byKey(page, "tpl-blank").click();
+    await page.locator("#studio-size-w").fill("9");
+    await page.locator("#studio-size-w").press("Enter");
+    await page.locator("#studio-size-l").fill("8");
+    await page.locator("#studio-size-l").press("Enter");
+    const room = page.locator(".studio-step.is-room");
+    await expect(room).toContainText("Floor area: 72 sq ft");
+
+    await byKey(page, "shape-L").click();
+    await expect(byKey(page, "shape-L")).toHaveAttribute("aria-pressed", "true");
+    await expect(room).toContainText("Overall width");
+    await page.locator("#studio-cut-w").fill("3");
+    await page.locator("#studio-cut-w").press("Enter");
+    await page.locator("#studio-cut-l").fill("3");
+    await page.locator("#studio-cut-l").press("Enter");
+    await expect(byKey(page, "wall-lengths")).toHaveText("Wall lengths: A 6′ · B 3′ · C 3′ · D 5′ · E 9′ · F 8′");
+    await expect(room).toContainText("Floor area: 63 sq ft");
+    await expect(page.locator("#studio-labels .is-wall")).toHaveCount(6);
+    // Six walls to put the plumbing in.
+    await expect(page.locator('[data-key^="stack-"]')).toHaveCount(6);
+    // A cutout too big for the room is refused.
+    await page.locator("#studio-cut-w").fill("8");
+    await page.locator("#studio-cut-w").press("Enter");
+    await expect(page.locator("#studio-cut-w-error")).toHaveText("Enter a length between 1′ and 7′.");
+
+    await byKey(page, "shape-U").click();
+    await expect(page.locator("#studio-labels .is-wall")).toHaveCount(8);
+    await byKey(page, "shape-at-W").click();
+    await expect(byKey(page, "shape-at-W")).toHaveAttribute("aria-pressed", "true");
+
+    await byKey(page, "shape-rect").click();
+    await expect(page.locator("#studio-labels .is-wall")).toHaveCount(4);
+    await expect(room).toContainText("Floor area: 72 sq ft");
+    expect(errors).toEqual([]);
+  });
+
+  test("a window goes on a wall, is flagged over the door, and can be removed and put back", async ({ page }) => {
+    const errors = await openStudio(page);
+    await answerAll(page);
+    await wait3d(page);
+    const room = page.locator(".studio-step.is-room");
+    await expect(room).toContainText("No windows.");
+    await byKey(page, "window-add").click();
+    await expect(page.locator("[data-window]")).toHaveCount(1);
+    await expect(page.locator("[data-window] .studio-issues")).toHaveCount(0);
+    const win = await page.evaluate(() => window.RoomPlan.windows(window.RoomStudio.design())[0]);
+    expect(win).toMatchObject({ width: 3, height: 4, sill: 3 });
+    // Over the door: said right there.
+    const door = await page.evaluate(() => window.RoomStudio.design().items.find((it) => it.type === "door"));
+    const letter = await page.evaluate(
+      (w) => window.RoomPlan.wallLetter(window.RoomStudio.design().room, w),
+      door.wall,
+    );
+    await page
+      .locator("[data-window]")
+      .getByRole("button", { name: "Wall " + letter, exact: true })
+      .click();
+    const at = page.locator("#studio-window-at-" + win.id);
+    await at.fill(String(door.offset));
+    await at.press("Enter");
+    await expect(page.locator("[data-window] .studio-issues")).toContainText("It's over the door.");
+    // Too tall for the ceiling is refused.
+    const tall = page.locator("#studio-window-h-" + win.id);
+    await tall.fill("7");
+    await tall.press("Enter");
+    await expect(page.locator("#studio-window-h-" + win.id + "-error")).toBeVisible();
+    // Removed, then back with Undo.
+    await byKey(page, "window-remove-" + win.id).click();
+    await expect(page.locator("[data-window]")).toHaveCount(0);
+    await page.locator(".studio-action", { hasText: "Undo" }).click();
+    await expect(page.locator("[data-window]")).toHaveCount(1);
+    expect(errors).toEqual([]);
+  });
+
   test("a common bathroom replaces the room, and Undo brings the old one back", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);

@@ -717,3 +717,235 @@ test("which switch runs what survives a link, and older designs are wired on the
   for (const p of P.electrical(loaded))
     if (p.kind === "light" || p.kind === "fan") assert.ok(P.switchOf(loaded, p), p.id);
 });
+
+// ---------------------------------------------------------------------
+// Rooms that aren't rectangles, and windows
+// ---------------------------------------------------------------------
+function shaped(kind, at, w, l) {
+  const room = { w: 9, l: 8, h: 8 };
+  room.shape = P.fitShape(room, { kind, at, w: w || 3, l: l || 3 });
+  return room;
+}
+
+test("an L-shaped room has six walls going round clockwise, lettered A to F", () => {
+  const room = shaped("L", "NE");
+  const walls = P.wallList(room);
+  assert.equal(walls.length, 6);
+  assert.deepEqual(
+    walls.map((w) => w.letter),
+    ["A", "B", "C", "D", "E", "F"],
+  );
+  assert.deepEqual(
+    walls.map((w) => w.span),
+    [6, 3, 3, 5, 9, 8],
+  );
+  // Head to tail, all the way round.
+  walls.forEach((w, i) => {
+    const next = walls[(i + 1) % walls.length];
+    assert.ok(Math.abs(w.ox + w.dx * w.span - next.ox) < 1e-9);
+    assert.ok(Math.abs(w.oz + w.dz * w.span - next.oz) < 1e-9);
+  });
+  // The cutout's own corner sticks into the room: no corner to tuck into.
+  assert.equal(walls[2].inStart, false);
+  assert.equal(walls[1].inEnd, false);
+  assert.equal(P.floorArea(room), 63);
+  assert.equal(P.perimeter(room), 34);
+  assert.equal(P.wallLetter(room, "w3"), "C");
+});
+
+test("T and notched rooms have eight walls; a rectangle keeps N, E, S, W", () => {
+  assert.equal(P.wallList(shaped("T", "S")).length, 8);
+  assert.equal(P.wallList(shaped("U", "W")).length, 8);
+  assert.deepEqual(P.wallIds({ w: 8, l: 5 }), ["N", "E", "S", "W"]);
+  assert.equal(P.wallLetter({ w: 8, l: 5 }, "E"), "B");
+});
+
+test("a cutout is kept small enough to leave a usable room, or dropped", () => {
+  const room = { w: 9, l: 8 };
+  assert.deepEqual(P.fitShape(room, { kind: "L", at: "NE", w: 20, l: 0.2 }), { kind: "L", at: "NE", w: 7, l: 1 });
+  assert.equal(P.fitShape({ w: 4, l: 4 }, { kind: "U", at: "N", w: 1, l: 1 }), null);
+  assert.equal(P.fitShape(room, { kind: "hexagon" }), null);
+  assert.equal(P.fitShape(room, null), null);
+});
+
+test("the room's depth in front of a wall stops at the cutout", () => {
+  const room = shaped("L", "NE");
+  const bottom = P.walls(room).w5;
+  // Under the cutout the room is 5 ft deep, beside it 8 ft.
+  assert.equal(P.frontDepth(room, bottom, 0, 3), 5);
+  assert.equal(P.frontDepth(room, bottom, 3, 9), 8);
+});
+
+test("the cutout of an L-shaped room is wall, not floor", () => {
+  const room = shaped("L", "NE");
+  const at = (type, wall, offset) => {
+    const d = design(room, [{ id: "x", type, wall, offset }]);
+    d.room.shape = room.shape;
+    return errors(d, "x");
+  };
+  // A shower on the bottom wall, under the cutout, has 5 ft in front of
+  // the wall: not the 3.2 ft shower and its 24 in. to step in.
+  assert.deepEqual(at("shower", "w5", 1.6), ["front"]);
+  // Further along, where the room is 8 ft deep, it fits.
+  assert.deepEqual(at("shower", "w5", 5), []);
+  // The cutout's 3 ft walls are too short for it.
+  assert.deepEqual(at("shower", "w3", 1.5), ["outside", "front"]);
+  assert.deepEqual(at("vanity", "w2", 1.5), []);
+});
+
+test("every shaped room arranges a full bath with nothing left out", () => {
+  for (const [kind, at] of [
+    ["L", "NE"],
+    ["L", "SW"],
+    ["T", "S"],
+    ["U", "N"],
+  ]) {
+    const room = shaped(kind, at);
+    const d = P.emptyDesign(9, 8, 8);
+    d.room.shape = room.shape;
+    d.room.wet = null;
+    d.items = [
+      { id: "door", type: "door", wall: P.wallIds(room)[4], offset: 1.5, opts: P.defaultOpts("door") },
+      { id: "a", type: "tub", wall: "w1", offset: 0, opts: {} },
+      { id: "b", type: "vanity", wall: "w1", offset: 0, opts: P.defaultOpts("vanity") },
+      { id: "c", type: "toilet", wall: "w1", offset: 0, opts: {} },
+    ];
+    const best = P.arrange(d, {})[0];
+    assert.equal(best.placed, best.total, kind + at);
+    const issues = P.validate(Object.assign({}, d, { items: best.items }), {});
+    assert.equal(P.hasErrors(issues), false, kind + at + " " + JSON.stringify(issues));
+  }
+});
+
+test("drain runs go round the shaped room's walls to the stack", () => {
+  const room = shaped("L", "NE");
+  const d = design(room, [{ id: "t", type: "toilet", wall: "w3", offset: 1.5 }]);
+  d.room.shape = room.shape;
+  d.room.wet = "w1";
+  // From the middle of C, back along B (3) and C's first 1.5 ft: 4.5 ft.
+  assert.equal(P.stackRun(d, d.items[0], {}), 4.5);
+  d.room.wet = "w3";
+  assert.equal(P.stackRun(d, d.items[0], {}), 0);
+});
+
+test("dragging in an L-shaped room snaps to the wall in front of the pointer", () => {
+  const room = shaped("L", "NE");
+  const d = design(room, [{ id: "v", type: "vanity", wall: "w6", offset: 4 }]);
+  d.room.shape = room.shape;
+  // Just under the cutout: the cutout's bottom wall (C), not the top wall.
+  const hit = P.snap(d, "v", 7.5, 3.8, {});
+  assert.equal(hit.wall, "w3");
+  assert.equal(hit.valid, true);
+});
+
+test("a shaped room's areas: the floor without the cutout, every wall round it", () => {
+  const room = shaped("L", "NE");
+  const d = design(room, []);
+  d.room.shape = room.shape;
+  const a = P.wallAreas(d, {});
+  assert.equal(a.floorSqFt, 63);
+  assert.equal(a.perimeterFt, 34);
+  assert.equal(a.grossSqFt, 34 * 8);
+  assert.equal(a.walls, 6);
+});
+
+test("a shaped room with windows survives a link and comes back the same", () => {
+  const d = P.fromTemplate("lShape", {});
+  const w = P.addWindow(d, {}).design;
+  const back = P.decode(P.encode(w));
+  assert.deepEqual(back.room.shape, d.room.shape);
+  assert.equal(back.room.wet, d.room.wet);
+  assert.deepEqual(
+    back.items.map((it) => it.wall),
+    d.items.map((it) => it.wall),
+  );
+  assert.equal(back.windows.length, 1);
+  assert.equal(back.windows[0].wall, w.windows[0].wall);
+  // A wall that doesn't exist in this room is dropped.
+  const raw = JSON.parse(JSON.stringify(back));
+  raw.items.push({ id: "x", type: "toilet", wall: "N", offset: 1 });
+  raw.windows.push({ id: "y", wall: "w9", offset: 1, width: 3, height: 4, sill: 3 });
+  const clean = P.sanitize(raw);
+  assert.equal(
+    clean.items.some((it) => it.id === "x"),
+    false,
+  );
+  assert.equal(clean.windows.length, 1);
+});
+
+test("changing the room's shape keeps each fixture on the wall where it stood", () => {
+  const d = P.fromTemplate("full5x8", {});
+  const room = Object.assign({}, d.room, { w: 9, l: 8, shape: { kind: "L", at: "SE", w: 3, l: 3 } });
+  const next = P.resize(d, room);
+  const ids = P.wallIds(next.room);
+  next.items.forEach((it) => assert.ok(ids.includes(it.wall), it.wall));
+  next.electrical.forEach((p) => assert.ok(p.kind === "fan" || ids.includes(p.wall), p.wall));
+  assert.ok(ids.includes(next.room.wet));
+  // Back to a rectangle: compass walls again.
+  const rect = P.resize(next, Object.assign({}, next.room, { shape: null }));
+  assert.equal(rect.room.shape, undefined);
+  rect.items.forEach((it) => assert.ok(["N", "E", "S", "W"].includes(it.wall)));
+  // Too small for the cutout: it shrinks.
+  const small = P.resize(next, Object.assign({}, next.room, { w: 4 }));
+  assert.equal(small.room.shape.w, 2);
+});
+
+test("a new window goes on a wall without a door, where nothing covers it", () => {
+  const d = P.fromTemplate("full5x8", {});
+  const { design: withWin, window: win, placed } = P.addWindow(d, {});
+  assert.equal(placed, true);
+  assert.notEqual(win.wall, "S");
+  assert.deepEqual(P.validateWindows(withWin, {})[win.id], []);
+  assert.deepEqual({ width: win.width, height: win.height, sill: win.sill }, { width: 3, height: 4, sill: 3 });
+  // Its area comes off the walls.
+  assert.equal(P.wallAreas(withWin, {}).openingsSqFt, P.wallAreas(d, {}).openingsSqFt + 12);
+  const placements = P.toWindowPlacements(withWin);
+  assert.equal(placements.length, 1);
+  assert.equal(placements[0].y, 5);
+});
+
+test("a window can't go over a door, behind a fixture, past the wall or into the ceiling", () => {
+  const d = design({ w: 8, l: 6 }, [
+    { id: "door", type: "door", wall: "S", offset: 4 },
+    { id: "v", type: "vanity", wall: "N", offset: 2 },
+    { id: "s", type: "shower", wall: "E", offset: 1.6 },
+  ]);
+  const check = (win) => {
+    const w = Object.assign({ id: "n", width: 3, height: 4, sill: 3 }, win);
+    return P.validateWindows(Object.assign({}, d, { windows: [w] }), {}).n.map((x) => x.code);
+  };
+  assert.deepEqual(check({ wall: "S", offset: 4 }), ["door"]);
+  assert.deepEqual(check({ wall: "N", offset: 2, sill: 1.5 }), ["behind"]);
+  // Above the vanity, clear of its mirror's top, is fine.
+  assert.deepEqual(check({ wall: "N", offset: 6, sill: 3 }), []);
+  assert.deepEqual(check({ wall: "N", offset: 7.5 }), ["outside"]);
+  assert.deepEqual(check({ wall: "W", offset: 3, sill: 5 }), ["outside"]);
+  assert.deepEqual(check({ wall: "E", offset: 1.6, sill: 4, height: 2 }), ["inShower"]);
+  // Two windows on top of each other.
+  const two = P.validateWindows(
+    Object.assign({}, d, {
+      windows: [
+        { id: "a", wall: "W", offset: 3, width: 3, height: 3, sill: 3 },
+        { id: "b", wall: "W", offset: 3.5, width: 2, height: 3, sill: 3 },
+      ],
+    }),
+    {},
+  );
+  assert.deepEqual(
+    two.a.map((x) => x.code),
+    ["overlap"],
+  );
+});
+
+test("electrical keeps off the windows", () => {
+  const d = design({ w: 8, l: 6 }, [{ id: "door", type: "door", wall: "S", offset: 4 }]);
+  d.windows = [{ id: "n", wall: "W", offset: 3, width: 3, height: 4, sill: 3 }];
+  const issues = P.validateElectrical(
+    Object.assign({}, d, { electrical: [{ id: "e", kind: "outlet", wall: "W", offset: 3, height: 3.5, for: "room" }] }),
+    {},
+  );
+  assert.deepEqual(
+    issues.e.map((x) => x.code),
+    ["behind"],
+  );
+});

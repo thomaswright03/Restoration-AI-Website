@@ -30,20 +30,46 @@ var CANVAS_WRAP_ID = "room-3d-canvas";
 // between the orbiting camera and the interior is the one that vanishes).
 // This is deliberately the mirror image of js/bathroom-room-layout.js's
 // wall.facingY, which orients FIXTURES to face INTO the room instead.
-function shellWalls(widthFt, lengthFt) {
+function shellWalls() {
+  return roomWalls().map(function (f) {
+    return {
+      id: f.id,
+      spanFt: f.span,
+      rotY: Math.atan2(-f.nx, -f.nz),
+      x: f.ox + (f.dx * f.span) / 2,
+      z: f.oz + (f.dz * f.span) / 2,
+    };
+  });
+}
+
+// The room's walls, each a frame: its left end (ox, oz), which way it runs
+// (dx, dz), which way is into the room (nx, nz) and its span, the same as
+// js/room-plan.js walls(). A rectangle unless setRoomSize() was given the
+// walls of a shaped room.
+function roomWalls() {
+  if (state.walls) return state.walls;
+  var w = state.dims.widthFt;
+  var l = state.dims.lengthFt;
   return [
-    { id: "N", spanFt: widthFt, rotY: Math.PI, x: widthFt / 2, z: 0 },
-    { id: "E", spanFt: lengthFt, rotY: Math.PI / 2, x: widthFt, z: lengthFt / 2 },
-    { id: "S", spanFt: widthFt, rotY: 0, x: widthFt / 2, z: lengthFt },
-    { id: "W", spanFt: lengthFt, rotY: -Math.PI / 2, x: 0, z: lengthFt / 2 },
+    { id: "N", ox: 0, oz: 0, dx: 1, dz: 0, nx: 0, nz: 1, span: w },
+    { id: "E", ox: w, oz: 0, dx: 0, dz: 1, nx: -1, nz: 0, span: l },
+    { id: "S", ox: w, oz: l, dx: -1, dz: 0, nx: 0, nz: -1, span: w },
+    { id: "W", ox: 0, oz: l, dx: 0, dz: -1, nx: 1, nz: 0, span: l },
   ];
 }
 
-// Inward-facing normal per wall id — mirrors js/bathroom-room-layout.js's
-// wallsFor() normalX/normalZ (kept as a small local literal here rather
-// than importing that module's internals, matching this file's existing
-// convention of duplicating the tiny bits of wall geometry it needs).
-var WALL_INWARD_NORMAL = { N: { x: 0, z: 1 }, E: { x: -1, z: 0 }, S: { x: 0, z: -1 }, W: { x: 1, z: 0 } };
+function wallFrame(wallId) {
+  return (
+    roomWalls().filter(function (f) {
+      return f.id === wallId;
+    })[0] || null
+  );
+}
+
+// How far a point is in front of a wall's face (negative: behind it).
+function inFrontOf(f, x, z) {
+  return (x - f.ox) * f.nx + (z - f.oz) * f.nz;
+}
 
 // Which shared material (see buildMaterials()) represents a fixture type's
 // primary visible finish — matched by reference identity against the
@@ -2294,6 +2320,13 @@ var state = {
   plan: [],
   // Tile panels on the walls around a tub, see setSurround().
   surround: [],
+  // A shaped room's walls and floor outline, see setRoomSize(); null for a
+  // rectangle.
+  walls: null,
+  outline: null,
+  middle: null,
+  // Windows in the walls, see setWindows().
+  windows: [],
   // Outlets, switches, lights and the fan (js/room-plan.js
   // toElectricalPlacements()), see setElectrical().
   electrical: [],
@@ -2402,6 +2435,10 @@ function ensureScene() {
     var electricalGroup = new THREE.Group();
     scene.add(electricalGroup);
 
+    // Windows (setWindows()).
+    var windowGroup = new THREE.Group();
+    scene.add(windowGroup);
+
     // The studio's marks on the floor (setMarks()) and the outlines of the
     // selected fixture and the one under the pointer (setHighlight()),
     // drawn over everything else so they never hide inside a model.
@@ -2469,6 +2506,7 @@ function ensureScene() {
       surroundGroup: surroundGroup,
       surroundMaterial: surroundMaterial,
       electricalGroup: electricalGroup,
+      windowGroup: windowGroup,
       markGroup: markGroup,
       selectBox: selectBox,
       hoverBox: hoverBox,
@@ -2551,24 +2589,39 @@ function rebuildShell(s, widthFt, lengthFt, heightFt) {
   // UVs are rescaled to feet on the floor and walls, so a picked product's
   // texture (see applySurfaceFinish()) lands at its real size whatever the
   // room's dimensions — one shared repeat per material instead of one per wall.
-  var floorGeo = feetUVs(new THREE.PlaneGeometry(widthFt, lengthFt), widthFt, lengthFt);
+  // A shaped room's floor and ceiling follow its outline; a shape's UVs
+  // are already its own coordinates, in feet.
+  var outline = state.outline;
+  var flat = function () {
+    if (!outline) return null;
+    return new THREE.ShapeGeometry(
+      new THREE.Shape(
+        outline.map(function (p) {
+          return new THREE.Vector2(p.x, -p.z);
+        }),
+      ),
+    );
+  };
+  var floorGeo = flat() || feetUVs(new THREE.PlaneGeometry(widthFt, lengthFt), widthFt, lengthFt);
   var floor = new THREE.Mesh(floorGeo, s.shellMaterials.floor);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(widthFt / 2, 0, lengthFt / 2);
+  if (outline) floor.position.set(0, 0, 0);
+  else floor.position.set(widthFt / 2, 0, lengthFt / 2);
   floor.receiveShadow = true;
   s.shellGroup.add(floor);
   s.shellGeometries.push(floorGeo);
 
-  var ceilingGeo = new THREE.PlaneGeometry(widthFt, lengthFt);
+  var ceilingGeo = flat() || new THREE.PlaneGeometry(widthFt, lengthFt);
   var ceiling = new THREE.Mesh(ceilingGeo, s.shellMaterials.ceiling);
   ceiling.rotation.x = -Math.PI / 2;
-  ceiling.position.set(widthFt / 2, heightFt, lengthFt / 2);
+  if (outline) ceiling.position.set(0, heightFt, 0);
+  else ceiling.position.set(widthFt / 2, heightFt, lengthFt / 2);
   ceiling.receiveShadow = true;
   s.shellGroup.add(ceiling);
   s.shellGeometries.push(ceilingGeo);
 
   s.wallMeshesById = {};
-  shellWalls(widthFt, lengthFt).forEach(function (w) {
+  shellWalls().forEach(function (w) {
     var wallGeo = feetUVs(new THREE.PlaneGeometry(w.spanFt, heightFt), w.spanFt, heightFt);
     var wall = new THREE.Mesh(wallGeo, s.shellMaterials.wall);
     wall.rotation.y = w.rotY;
@@ -3022,7 +3075,8 @@ function rebuildFixtures(s, widthFt, lengthFt, heightFt) {
     // the wall: { dist: from its centerline to the nearest thing, what:
     // "wall" (the room's corner) or the fixtureKey in the way }.
     sideRoom: function (p, side, depth) {
-      var span = p.wallId === "N" || p.wallId === "S" ? widthFt : lengthFt;
+      var frame = wallFrame(p.wallId);
+      var span = frame ? frame.span : p.wallId === "N" || p.wallId === "S" ? widthFt : lengthFt;
       var room = { dist: side > 0 ? span - p.offsetFt : p.offsetFt, what: "wall" };
       var c = Math.cos(p.rotationY);
       var sn = Math.sin(p.rotationY);
@@ -3148,7 +3202,8 @@ function applyCameraMode(s) {
       // camera stranded where it was.
       state.cameraMode = "orbit";
     } else {
-      var normal = WALL_INWARD_NORMAL[ep.wallId] || { x: 0, z: 1 };
+      var entry = wallFrame(ep.wallId);
+      var normal = entry ? { x: entry.nx, z: entry.nz } : { x: 0, z: 1 };
       // A typical standing eye height, but never above the ceiling.
       var eyeHeight = Math.min(5.4, dims.heightFt - 0.8);
       var epsilon = 0.05;
@@ -3160,7 +3215,8 @@ function applyCameraMode(s) {
       s.camera.position.set(ep.x + normal.x * inside, eyeHeight, ep.z + normal.z * inside);
       // Looking toward the middle of the room and down at the fixtures, but
       // not so steeply that the walls drop out of view.
-      var look = new THREE.Vector3(dims.widthFt / 2, 0, dims.lengthFt / 2).sub(s.camera.position);
+      var middle = state.middle || { x: dims.widthFt / 2, z: dims.lengthFt / 2 };
+      var look = new THREE.Vector3(middle.x, 0, middle.z).sub(s.camera.position);
       look.y = 0;
       if (look.x * normal.x + look.z * normal.z <= 0.1) look.set(normal.x, 0, normal.z);
       var flat = look.length();
@@ -3239,22 +3295,21 @@ function overviewPose(s, aspect) {
 //   - while one fixture is being worked on (setIsolate()), the rest of the
 //     room's fixtures step out of the way.
 function applyCutaway(s, camera) {
-  var dims = Layout.computeRoomDimensions(state.dims);
-  var plane = { N: 0, E: dims.widthFt, S: dims.lengthFt, W: 0 };
   var p = camera.position;
   var only = state.isolate;
   function shown(inst, isFixture) {
     if (only && isFixture && only.indexOf(inst.userData.itemId) === -1) return false;
-    var id = inst.userData.wallId;
-    if (!inst.userData.cutaway || !WALL_INWARD_NORMAL[id]) return true;
-    var n = WALL_INWARD_NORMAL[id];
-    var along = id === "N" || id === "S" ? (p.z - plane[id]) * n.z : (p.x - plane[id]) * n.x;
-    return along > -0.05;
+    var f = wallFrame(inst.userData.wallId);
+    if (!inst.userData.cutaway || !f) return true;
+    return inFrontOf(f, p.x, p.z) > -0.05;
   }
   s.fixtureGroup.children.forEach(function (inst) {
     inst.visible = shown(inst, true);
   });
   s.electricalGroup.children.forEach(function (inst) {
+    inst.visible = shown(inst, false);
+  });
+  s.windowGroup.children.forEach(function (inst) {
     inst.visible = shown(inst, false);
   });
 }
@@ -3288,11 +3343,13 @@ function rebuild() {
   var s = threeState;
   if (!s) return;
   var dims = Layout.computeRoomDimensions(state.dims);
+  var shapeKey = JSON.stringify(state.outline || null);
   var dimsChanged =
     !s.lastDims ||
     s.lastDims.widthFt !== dims.widthFt ||
     s.lastDims.lengthFt !== dims.lengthFt ||
-    s.lastDims.heightFt !== dims.heightFt;
+    s.lastDims.heightFt !== dims.heightFt ||
+    s.lastShape !== shapeKey;
 
   if (dimsChanged) {
     rebuildShell(s, dims.widthFt, dims.lengthFt, dims.heightFt);
@@ -3317,12 +3374,14 @@ function rebuild() {
     // framing (unless standing in the doorway, which follows below).
     if (state.cameraMode !== "walkin") frameRoom(s, !!s.lastDims);
     s.lastDims = dims;
+    s.lastShape = shapeKey;
   }
 
   rebuildFinishes(s);
   rebuildFixtures(s, dims.widthFt, dims.lengthFt, dims.heightFt);
   rebuildSurround(s);
   rebuildElectrical(s);
+  rebuildWindows(s);
   applyStudioView(s);
   if (s.pendingFocus) {
     focusCameraOn(s, s.pendingFocus);
@@ -3338,17 +3397,6 @@ function rebuild() {
 // ---------------------------------------------------------------------
 var STUDIO_TONES = { select: 0x3b82f6, ok: 0x14b8a6, warn: 0xf59e0b, error: 0xef4444, info: 0x94a3b8 };
 var studioView = { selected: null, tone: "select", hover: null, marks: [] };
-
-// A wall's left end, direction along it and into the room (the same frames
-// as js/room-plan.js walls()).
-function wallFrame(wallId, w, l) {
-  return {
-    N: { ox: 0, oz: 0, dx: 1, dz: 0, nx: 0, nz: 1 },
-    E: { ox: w, oz: 0, dx: 0, dz: 1, nx: -1, nz: 0 },
-    S: { ox: w, oz: l, dx: -1, dz: 0, nx: 0, nz: -1 },
-    W: { ox: 0, oz: l, dx: 0, dz: -1, nx: 1, nz: 0 },
-  }[wallId];
-}
 
 // The box around a fixture's base (not a mirror or shelf above it).
 // Only what's actually drawn: a fixture that's been cut away or stepped
@@ -3595,6 +3643,55 @@ function rebuildElectrical(s) {
   needsRender = true;
 }
 
+// A window in its wall: a frame and sill in trim white around glass that
+// shows daylight, set just proud of the wall so it reads from inside.
+function rebuildWindows(s) {
+  disposeGroup(s.windowGroup);
+  if (!s.windowMaterials) {
+    s.windowMaterials = {
+      trim: new THREE.MeshStandardMaterial({ color: 0xf4f5f7, roughness: 0.6 }),
+      glass: new THREE.MeshStandardMaterial({
+        color: 0xcfe8ff,
+        emissive: 0x9cc9f5,
+        emissiveIntensity: 0.5,
+        roughness: 0.15,
+        metalness: 0.1,
+      }),
+    };
+  }
+  var trim = s.windowMaterials.trim;
+  var glass = s.windowMaterials.glass;
+  (state.windows || []).forEach(function (w) {
+    if (!wallFrame(w.wallId) || !(w.width > 0) || !(w.height > 0)) return;
+    var piece = new THREE.Group();
+    var t = 0.12;
+    var pane = new THREE.Mesh(new THREE.PlaneGeometry(w.width - t, w.height - t), glass);
+    pane.position.z = 0.012;
+    piece.add(pane);
+    [
+      [w.width, t, 0, (w.height - t) / 2],
+      [w.width, t, 0, -(w.height - t) / 2],
+      [t, w.height, -(w.width - t) / 2, 0],
+      [t, w.height, (w.width - t) / 2, 0],
+      [0.06, w.height - t, 0, 0],
+    ].forEach(function (b) {
+      var bar = new THREE.Mesh(new THREE.BoxGeometry(b[0], b[1], 0.06), trim);
+      bar.position.set(b[2], b[3], 0.03);
+      piece.add(bar);
+    });
+    var sill = new THREE.Mesh(new THREE.BoxGeometry(w.width + 0.25, 0.08, 0.3), trim);
+    sill.position.set(0, -w.height / 2 - 0.04, 0.15);
+    piece.add(sill);
+    piece.position.set(w.x, w.y, w.z);
+    piece.rotation.y = w.rotationY || 0;
+    piece.userData.windowId = w.id;
+    piece.userData.wallId = w.wallId;
+    piece.userData.cutaway = true;
+    s.windowGroup.add(piece);
+  });
+  needsRender = true;
+}
+
 // The tile around a tub when the walls are "tile around the tub": panels
 // on the walls, in the picked wall tile (or a plain tile color).
 function rebuildSurround(s) {
@@ -3609,7 +3706,7 @@ function rebuildSurround(s) {
     roughnessForWalls("tile"),
   );
   state.surround.forEach(function (p) {
-    var f = wallFrame(p.wallId, dims.widthFt, dims.lengthFt);
+    var f = wallFrame(p.wallId);
     var span = p.a1 - p.a0;
     var top = Math.min(p.top, dims.heightFt);
     if (!f || !(span > 0) || !(top > 0)) return;
@@ -3733,8 +3830,29 @@ window.BathroomRoom3D = {
   },
 
   // The room's inside size, feet.
-  setRoomSize: function (widthFt, lengthFt, heightFt) {
+  // shape, for a room that isn't a rectangle: { walls (js/room-plan.js
+  // wallList()), outline (its floor's corners), middle (a point on the
+  // floor to look toward) }.
+  setRoomSize: function (widthFt, lengthFt, heightFt, shape) {
     state.dims = { widthFt: widthFt, lengthFt: lengthFt, heightFt: heightFt };
+    var ok = shape && Array.isArray(shape.walls) && shape.walls.length > 4 && Array.isArray(shape.outline);
+    state.walls = ok
+      ? shape.walls.map(function (f) {
+          return { id: f.id, ox: f.ox, oz: f.oz, dx: f.dx, dz: f.dz, nx: f.nx, nz: f.nz, span: f.span };
+        })
+      : null;
+    state.outline = ok
+      ? shape.outline.map(function (p) {
+          return { x: p.x, z: p.z };
+        })
+      : null;
+    state.middle = ok && shape.middle ? { x: shape.middle.x, z: shape.middle.z } : null;
+    markDirty();
+  },
+
+  // The windows to draw (js/room-plan.js toWindowPlacements()).
+  setWindows: function (list) {
+    state.windows = Array.isArray(list) ? list.slice() : [];
     markDirty();
   },
 
@@ -3981,22 +4099,20 @@ window.BathroomRoom3D = {
     var s = threeState;
     if (!s || !pointerRay(s, clientX, clientY)) return null;
     var dims = Layout.computeRoomDimensions(state.dims);
-    var plane = { N: 0, E: dims.widthFt, S: dims.lengthFt, W: 0 };
     var cam = s.camera.position;
     var best = null;
-    Object.keys(WALL_INWARD_NORMAL).forEach(function (id) {
-      var n = WALL_INWARD_NORMAL[id];
-      var inside = id === "N" || id === "S" ? (cam.z - plane[id]) * n.z : (cam.x - plane[id]) * n.x;
-      if (inside <= 0) return;
-      var normal = new THREE.Vector3(n.x, 0, n.z);
+    roomWalls().forEach(function (f) {
+      if (inFrontOf(f, cam.x, cam.z) <= 0) return;
+      var normal = new THREE.Vector3(f.nx, 0, f.nz);
       // The plane through the wall: n . x = n . (a point on it).
-      var onWall = new THREE.Vector3(id === "E" ? plane.E : 0, 0, id === "S" ? plane.S : 0);
+      var onWall = new THREE.Vector3(f.ox, 0, f.oz);
       var hit = new THREE.Vector3();
       if (!s.raycaster.ray.intersectPlane(new THREE.Plane(normal, -normal.dot(onWall)), hit)) return;
-      if (hit.x < -0.1 || hit.x > dims.widthFt + 0.1 || hit.z < -0.1 || hit.z > dims.lengthFt + 0.1) return;
+      var along = (hit.x - f.ox) * f.dx + (hit.z - f.oz) * f.dz;
+      if (along < -0.1 || along > f.span + 0.1) return;
       if (hit.y < 0 || hit.y > dims.heightFt) return;
       var away = hit.distanceTo(cam);
-      if (!best || away < best.away) best = { x: hit.x, y: hit.y, z: hit.z, wallId: id, away: away };
+      if (!best || away < best.away) best = { x: hit.x, y: hit.y, z: hit.z, wallId: f.id, away: away };
     });
     return best ? { x: best.x, y: best.y, z: best.z, wallId: best.wallId } : null;
   },
@@ -4020,7 +4136,7 @@ window.BathroomRoom3D = {
   // and up from the floor.
   setSurround: function (panels) {
     state.surround = (Array.isArray(panels) ? panels : []).filter(function (p) {
-      return p && WALL_INWARD_NORMAL[p.wallId] && isFinite(p.a0) && isFinite(p.a1) && isFinite(p.top);
+      return p && wallFrame(p.wallId) && isFinite(p.a0) && isFinite(p.a1) && isFinite(p.top);
     });
     if (threeState) rebuildSurround(threeState);
   },

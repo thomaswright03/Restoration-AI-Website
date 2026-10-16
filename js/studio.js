@@ -2091,14 +2091,7 @@
 
   // The product slots on show, for the fixtures in the room.
   function productSlots() {
-    if (!room3d) return [];
-    var out = [];
-    room3d.getProductGroups().forEach(function (group) {
-      group.slots.forEach(function (slot) {
-        out.push(slot);
-      });
-    });
-    return out;
+    return room3d ? room3d.getProductSlots() : [];
   }
 
   // The surfaces a product is picked for: the ones being done that have

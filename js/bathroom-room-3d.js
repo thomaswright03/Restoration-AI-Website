@@ -3957,6 +3957,18 @@ window.BathroomRoom3D = {
     });
   },
 
+  // Just the product lists showing ([{ id, label }]), without working out
+  // which options fit: cheap enough for every redraw of the step bar.
+  getProductSlots: function () {
+    var cur = currentLayout();
+    var sel = selectedProducts();
+    return PRODUCT_SLOTS.filter(function (slot) {
+      return productGroupOf(slot) && slotShown(slot, cur.placedKeys, sel);
+    }).map(function (slot) {
+      return { id: slot.id, label: T("room3d.slot." + slot.id) };
+    });
+  },
+
   // Swaps any stand-in still showing for this fixture (the generic toilet,
   // the plain mirror) for its first Kohler product that fits.
   useRealProducts: function (groupId) {

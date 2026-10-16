@@ -225,6 +225,10 @@ test.describe("design studio", () => {
   });
 
   test("walk-in stands inside the doorway, and the room view comes back", async ({ page }) => {
+    // Two camera moves on top of the 3D start: on CI's 2-core runner this ran
+    // just past the default 30 s (run 96), while the click was still waiting on
+    // a busy render loop.
+    test.setTimeout(60000);
     const errors = await openStudio(page);
     await answerAll(page);
     await wait3d(page);

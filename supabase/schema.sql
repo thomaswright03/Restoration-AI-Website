@@ -7,6 +7,8 @@
 -- projects       designs a subscriber saved, written only by api/projects.js
 -- project_creations  one row per project ever created, never deleted, so the
 --                monthly allowance counts projects that were later deleted
+-- used_trials    a SHA-256 of each deleted account's email that had a plan,
+--                so the same email gets one free trial (api/checkout.js)
 --
 -- Row-level security lets a signed-in owner read and edit their own rows
 -- from the browser; everything else goes through the api/ functions.
@@ -14,6 +16,7 @@
 -- Every table hangs off auth.users with "on delete cascade" (leads through
 -- businesses), so deleting the auth user (api/account.js, "Delete account")
 -- removes the business, its leads, the subscription row and all projects.
+-- used_trials alone outlives the account, by design (one free trial per email).
 
 create extension if not exists pgcrypto;
 
@@ -181,6 +184,44 @@ grant execute on function public.create_project(uuid, text, text, integer, integ
 --   saving    saving a project's design (api/projects.js answers 503 {error: "paused"})
 --   notice    a short message shown on the account and sign-up pages while not empty
 -- The API caches the row for 15 seconds. Only the server reads it.
+-- used_trials: one row per email whose account had a Stripe subscription
+-- and was then deleted, so making a new account with the same email doesn't
+-- bring another free trial (api/checkout.js). Only a SHA-256 of the trimmed,
+-- lower-cased email is kept, never the email. Written by the trigger below,
+-- read only by the server.
+create table if not exists public.used_trials (
+  email_hash text primary key,
+  created_at timestamptz not null default now()
+);
+alter table public.used_trials enable row level security;
+revoke all on public.used_trials from anon, authenticated;
+
+create or replace function public.remember_used_trial()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+begin
+  if old.email is not null and exists (
+    select 1 from public.subscriptions s
+    where s.owner_id = old.id and s.stripe_subscription_id is not null
+  ) then
+    insert into public.used_trials (email_hash)
+    values (encode(digest(lower(trim(old.email)), 'sha256'), 'hex'))
+    on conflict (email_hash) do nothing;
+  end if;
+  return old;
+end;
+$$;
+revoke all on function public.remember_used_trial() from public, anon, authenticated;
+grant execute on function public.remember_used_trial() to supabase_auth_admin;
+-- BEFORE delete: the subscriptions row is still there (the cascade runs after).
+drop trigger if exists remember_used_trial on auth.users;
+create trigger remember_used_trial
+  before delete on auth.users
+  for each row execute function public.remember_used_trial();
+
 create table if not exists public.site_switches (
   id smallint primary key default 1 check (id = 1),
   signups boolean not null default true,

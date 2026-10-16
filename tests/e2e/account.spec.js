@@ -199,7 +199,7 @@ test("Spanish account page: the promo box and its error are in Spanish", async (
   await expect(page.locator('label[for="plan-promo"]')).toHaveText("Código promocional (opcional)");
   await page.locator("#plan-promo").fill("freeweek");
   await page.locator('[data-plan="starter"]').click();
-  await expect(page.locator("#plan-message")).toContainText("primer plan de una cuenta");
+  await expect(page.locator("#plan-message")).toContainText("o una anterior con este correo");
 });
 
 test("payments off: the plan card says paid plans aren't available yet, with no buttons to look for", async ({

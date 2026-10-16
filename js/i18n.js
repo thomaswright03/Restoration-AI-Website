@@ -676,9 +676,9 @@
       "Esse código promocional não é válido. Confira ou deixe o campo vazio para continuar sem código.",
     ],
     "acct.promo.used": [
-      "Promo codes are for an account's first plan, and this account has had one before. Leave the box empty to continue.",
-      "Los códigos promocionales son para el primer plan de una cuenta, y esta cuenta ya tuvo uno. Deje la casilla vacía para seguir.",
-      "Os códigos promocionais são para o primeiro plano de uma conta, e esta conta já teve um. Deixe o campo vazio para continuar.",
+      "Promo codes are for a first plan, and this account, or an earlier one with this email, has had one before. Leave the box empty to continue.",
+      "Los códigos promocionales son para el primer plan, y esta cuenta, o una anterior con este correo, ya tuvo uno. Deje la casilla vacía para seguir.",
+      "Os códigos promocionais são para o primeiro plano, e esta conta, ou uma anterior com este e-mail, já teve um. Deixe o campo vazio para continuar.",
     ],
     "acct.paymentsOff": [
       "Payments aren't switched on yet. Please check back soon.",

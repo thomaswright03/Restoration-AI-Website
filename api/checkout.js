@@ -6,7 +6,8 @@
 // Stripe price set: nobody is sold a plan they didn't ask for.
 // A valid promo code (PROMO_CODES, see api/_plans.js) makes the first days
 // free as a Stripe trial, once per account: {error: "promo"} for a code that
-// isn't valid, {error: "promo-used"} when the account has had a plan before.
+// isn't valid, {error: "promo-used"} when the account has had a plan before,
+// or a deleted account with the same email had one (used_trials).
 //
 // One subscription per account: before a session is made, Stripe itself is
 // asked whether this account's customer already has a subscription that's
@@ -44,7 +45,7 @@ const {
 } = require("./_lib.js");
 const { promoDays, firstPriceId } = require("./_plans.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
-const { LIVE_STATUSES, saveSubscription, subscriptionOf } = require("./_subscriptions.js");
+const { LIVE_STATUSES, saveSubscription, subscriptionOf, trialUsedBefore } = require("./_subscriptions.js");
 
 // A subscription of this account's that Stripe still runs, if any: on the
 // customer we have on file, or on any Stripe customer with their email (the
@@ -115,10 +116,12 @@ async function checkout(req, res) {
         await saveSubscription(user.id, live).catch((e) => logError(req, e, { error: "record", userId: user.id }));
         return sendJson(res, 409, { error: "already-subscribed" });
       }
-      // One free trial per account: not again after an earlier subscription.
-      const firstPlan = !(existing && existing.stripe_subscription_id);
-      if (promoFree && !firstPlan) return sendJson(res, 409, { error: "promo-used" });
+      // One free trial per account: not again after an earlier subscription,
+      // nor for a new account made with the email of a deleted one that had a plan.
       const trialDays = promoFree || Number(env("TRIAL_DAYS")) || 0;
+      let firstPlan = !(existing && existing.stripe_subscription_id);
+      if (firstPlan && trialDays > 0) firstPlan = !(await trialUsedBefore(user.email));
+      if (promoFree && !firstPlan) return sendJson(res, 409, { error: "promo-used" });
       const customer = existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined;
       const session = await stripe(
         "checkout/sessions",

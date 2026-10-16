@@ -307,7 +307,7 @@
     "acct.promo.invalid":
       "Esse código promocional não é válido. Confira ou deixe o campo vazio para continuar sem código.",
     "acct.promo.used":
-      "Os códigos promocionais são para o primeiro plano de uma conta, e esta conta já teve um. Deixe o campo vazio para continuar.",
+      "Os códigos promocionais são para o primeiro plano, e esta conta, ou uma anterior com este e-mail, já teve um. Deixe o campo vazio para continuar.",
     "acct.paymentsOff": "Os pagamentos ainda não estão ativados. Volte em breve.",
     "acct.error": "Algo deu errado. Tente de novo.",
     "acct.saved": "Salvo.",

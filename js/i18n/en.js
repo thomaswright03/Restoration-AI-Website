@@ -300,7 +300,7 @@
     "acct.checkout.cancelled": "Checkout was cancelled. Nothing was charged.",
     "acct.promo.invalid": "That promo code isn't valid. Check it, or leave the box empty to continue without one.",
     "acct.promo.used":
-      "Promo codes are for an account's first plan, and this account has had one before. Leave the box empty to continue.",
+      "Promo codes are for a first plan, and this account, or an earlier one with this email, has had one before. Leave the box empty to continue.",
     "acct.paymentsOff": "Payments aren't switched on yet. Please check back soon.",
     "acct.error": "Something went wrong. Please try again.",
     "acct.saved": "Saved.",

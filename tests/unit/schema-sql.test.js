@@ -401,10 +401,13 @@ test("row-level security: the anon key reads nothing", async () => {
     const r = await as("anon", null, (tx) => tx.query(`select count(*)::int as n from public.${table}`));
     assert.equal(r.rows[0].n, 0, table);
   }
-  await assert.rejects(
-    as("anon", null, (tx) => tx.query("select * from public.site_switches")),
-    /permission denied/,
-  );
+  for (const table of ["site_switches", "used_trials"]) {
+    await assert.rejects(
+      as("anon", null, (tx) => tx.query(`select * from public.${table}`)),
+      /permission denied/,
+      table,
+    );
+  }
 });
 
 test("kill switch: with signups off, the auth.users trigger refuses a new account", async () => {
@@ -432,4 +435,37 @@ test("deleting the auth user cascades to the business, subscription, projects an
   for (const table of ["businesses", "subscriptions", "projects", "project_creations"]) {
     assert.equal(await count(table, owner), 0, table);
   }
+});
+
+test("deleting an account that had a plan keeps only a hash of its email, so the email gets one free trial", async () => {
+  const { emailHash } = require("../../api/_subscriptions.js");
+  const paid = await newUser();
+  const free = await newUser();
+  await db.query("update auth.users set email = $2 where id = $1::uuid", [paid, " Paid@Example.com "]);
+  await db.query("update auth.users set email = $2 where id = $1::uuid", [free, "free@example.com"]);
+  await db.query(
+    "insert into public.subscriptions (owner_id, status, stripe_subscription_id) values ($1::uuid, 'canceled', 'sub_1')",
+    [paid],
+  );
+  // A plan set by hand (no Stripe subscription) never used a trial.
+  await db.query("insert into public.subscriptions (owner_id, status, plan) values ($1::uuid, 'active', 'max')", [
+    free,
+  ]);
+  await db.query("delete from auth.users where id = any($1::uuid[])", [[paid, free]]);
+  const r = await db.query("select email_hash from public.used_trials order by email_hash");
+  // The same hash api/checkout.js looks up, and never the email itself.
+  assert.deepEqual(
+    r.rows.map((x) => x.email_hash),
+    [emailHash("paid@example.com")],
+  );
+  // Deleting a second account with that email again is fine.
+  const again = await newUser();
+  await db.query("update auth.users set email = 'paid@example.com' where id = $1::uuid", [again]);
+  await db.query(
+    "insert into public.subscriptions (owner_id, status, stripe_subscription_id) values ($1::uuid, 'canceled', 'sub_2')",
+    [again],
+  );
+  await db.query("delete from auth.users where id = $1::uuid", [again]);
+  const n = await db.query("select count(*)::int as n from public.used_trials");
+  assert.equal(n.rows[0].n, 1);
 });

@@ -22,9 +22,9 @@
   ],
   "terms.h1": ["Terms of Service", "Términos del servicio", "Termos de Serviço"],
   "privacy.updated": [
-    "Last updated October 8, 2026",
-    "Última actualización: 8 de octubre de 2026",
-    "Última atualização: 8 de outubro de 2026"
+    "Last updated October 16, 2026",
+    "Última actualización: 16 de octubre de 2026",
+    "Última atualização: 16 de outubro de 2026"
   ],
   "legal.updated": [
     "Last updated October 6, 2026",
@@ -76,9 +76,9 @@
   ],
   "privacy.s5": ["How long we keep it", "Cuánto tiempo lo guardamos", "Por quanto tempo guardamos"],
   "privacy.s5p1": [
-    "Account and business details are kept while the account is open and deleted after it is closed, except billing records we must keep by law. Homeowner requests are kept until the business deletes them or closes its account. Saved projects, with the client details in them, are kept until the business deletes the project or closes its account.",
-    "Los datos de la cuenta y de la empresa se guardan mientras la cuenta esté abierta y se eliminan después de cerrarla, salvo los registros de facturación que la ley nos obliga a conservar. Las solicitudes de clientes se guardan hasta que la empresa las elimina o cierra su cuenta. Los proyectos guardados, con los datos de los clientes que contienen, se conservan hasta que la empresa elimina el proyecto o cierra su cuenta.",
-    "Os dados da conta e da empresa são guardados enquanto a conta estiver aberta e excluídos depois que ela é encerrada, exceto os registros de cobrança que a lei nos obriga a manter. Os pedidos de clientes são guardados até a empresa excluí-los ou encerrar a conta. Os projetos salvos, com os dados dos clientes que contêm, são guardados até a empresa excluir o projeto ou encerrar a conta."
+    "Account and business details are kept while the account is open and deleted after it is closed, except billing records we must keep by law. Homeowner requests are kept until the business deletes them or closes its account. Saved projects, with the client details in them, are kept until the business deletes the project or closes its account. When a closed account had a paid plan, we keep a one-way scrambled code made from its email (not the email itself), only so the same email doesn't get a second free trial.",
+    "Los datos de la cuenta y de la empresa se guardan mientras la cuenta esté abierta y se eliminan después de cerrarla, salvo los registros de facturación que la ley nos obliga a conservar. Las solicitudes de clientes se guardan hasta que la empresa las elimina o cierra su cuenta. Los proyectos guardados, con los datos de los clientes que contienen, se conservan hasta que la empresa elimina el proyecto o cierra su cuenta. Si una cuenta cerrada tuvo un plan de pago, guardamos un código cifrado de un solo sentido creado a partir de su correo (no el correo en sí), solo para que el mismo correo no reciba una segunda prueba gratuita.",
+    "Os dados da conta e da empresa são guardados enquanto a conta estiver aberta e excluídos depois que ela é encerrada, exceto os registros de cobrança que a lei nos obriga a manter. Os pedidos de clientes são guardados até a empresa excluí-los ou encerrar a conta. Os projetos salvos, com os dados dos clientes que contêm, são guardados até a empresa excluir o projeto ou encerrar a conta. Se uma conta encerrada teve um plano pago, guardamos um código embaralhado de mão única gerado a partir do e-mail (não o e-mail em si), só para que o mesmo e-mail não receba um segundo teste grátis."
   ],
   "privacy.s6": ["Your choices", "Sus opciones", "Suas escolhas"],
   "privacy.s6p1": [

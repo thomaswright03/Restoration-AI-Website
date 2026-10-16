@@ -6,6 +6,7 @@
 // business a designer link opens (api/business.js).
 "use strict";
 
+const crypto = require("node:crypto");
 const { db } = require("./_lib.js");
 const { planFromPrice, planFromPriceId, ACTIVE_STATUSES } = require("./_plans.js");
 
@@ -110,8 +111,48 @@ async function activeBusiness(slug) {
   return biz;
 }
 
+// One free trial per email, even across a deleted and re-made account:
+// deleting an account that ever had a Stripe subscription leaves a one-way
+// SHA-256 of its email in used_trials (the auth.users trigger in
+// supabase/schema.sql, which hashes the same trimmed, lower-cased email).
+function emailHash(email) {
+  return crypto
+    .createHash("sha256")
+    .update(
+      String(email || "")
+        .trim()
+        .toLowerCase(),
+    )
+    .digest("hex");
+}
+
+// Whether a deleted account with this email already had a plan. A database
+// that hasn't had the table added yet (schema.sql not re-run: PostgREST
+// answers 404) counts as no, with a warning, so checkout keeps working.
+async function trialUsedBefore(email) {
+  if (!email) return false;
+  try {
+    const rows = await db("used_trials?email_hash=eq." + emailHash(email) + "&select=email_hash");
+    return !!(rows && rows.length);
+  } catch (e) {
+    if (/Supabase 404|PGRST205|42P01/.test(String(e && e.message))) {
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          error: "used-trials-missing",
+          message: "used_trials table not found: re-run supabase/schema.sql. Free trials aren't checked by email.",
+        }),
+      );
+      return false;
+    }
+    throw e;
+  }
+}
+
 module.exports = {
   LIVE_STATUSES,
+  emailHash,
+  trialUsedBefore,
   periodEnd,
   planItem,
   subscriptionOf,

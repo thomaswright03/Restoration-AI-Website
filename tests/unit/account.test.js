@@ -35,7 +35,8 @@ function reply(status, body) {
 }
 
 // sub: the user's subscriptions row, or null. stripeFails: Stripe answers 500.
-function setup({ sub = null, stripeFails = false } = {}) {
+// usedTrial: a deleted account with this email had a plan (used_trials has its hash).
+function setup({ sub = null, stripeFails = false, usedTrial = false } = {}) {
   process.env.SUPABASE_URL = "https://db.example";
   process.env.SUPABASE_ANON_KEY = "anon";
   process.env.SUPABASE_SERVICE_ROLE_KEY = "service";
@@ -56,6 +57,8 @@ function setup({ sub = null, stripeFails = false } = {}) {
     if (u.pathname === "/auth/v1/admin/users/" + USER && method === "DELETE") return reply(200, {});
     if (u.pathname === "/rest/v1/subscriptions" && method === "GET") return reply(200, sub ? [sub] : []);
     if (u.pathname === "/rest/v1/subscriptions" && method === "PATCH") return reply(204);
+    if (u.pathname === "/rest/v1/used_trials" && method === "GET")
+      return reply(200, usedTrial ? [{ email_hash: "h" }] : []);
     if (u.host === "api.stripe.com") {
       if (stripeFails) return reply(500, { error: { message: "boom" } });
       return reply(200, { id: "x", status: "canceled" });
@@ -209,6 +212,32 @@ test("checkout: a promo code makes the first week free, once per account; a wron
   const used = await post("checkout.js", { plan: "starter", promo: "FREEWEEK" });
   assert.equal(used.statusCode, 409);
   assert.equal(used.json().error, "promo-used");
+
+  // Nor for a new account made with the email of a deleted one that had a plan:
+  // looked up by the email's hash, never the email.
+  calls = setup({ usedTrial: true });
+  const again = await post("checkout.js", { plan: "starter", promo: "FREEWEEK" });
+  assert.equal(again.statusCode, 409);
+  assert.equal(again.json().error, "promo-used");
+  const { emailHash } = require("../../api/_subscriptions.js");
+  assert.ok(calls.some((c) => c.includes("/rest/v1/used_trials")));
+  assert.ok(!calls.some((c) => /owner%40example|owner@example/i.test(c) && c.includes("used_trials")));
+  assert.equal(emailHash(" Owner@Example.com "), emailHash("owner@example.com"));
+  // With TRIAL_DAYS set and no code, that account gets no free days.
+  process.env.TRIAL_DAYS = "14";
+  calls = setup({ usedTrial: true });
+  assert.equal((await post("checkout.js", { plan: "starter" })).statusCode, 200);
+  assert.doesNotMatch(
+    calls.find((c) => c.includes("/v1/checkout/sessions")),
+    /trial_period_days/,
+  );
+  calls = setup();
+  await post("checkout.js", { plan: "starter" });
+  assert.match(
+    calls.find((c) => c.includes("/v1/checkout/sessions")),
+    /trial_period_days%5D=14/,
+  );
+  delete process.env.TRIAL_DAYS;
 
   // PROMO_CODES replaces the list, with optional days per code; "none" turns codes off.
   process.env.PROMO_CODES = "LAUNCH30:30, spring";

@@ -74,8 +74,8 @@ test.describe("the simple studio", () => {
     await expect(byKey(page, "stack-E")).toContainText("Bathtub");
     await expect(byKey(page, "stack-S")).toContainText("Door");
     await expect(byKey(page, "stack-W")).toContainText("nothing on it yet");
-    await expect(page.locator(".studio-wall-pick[aria-pressed='true']")).toHaveCount(0);
-    await expect(page.locator("#studio-step-need")).toHaveText("To go on: pick the wall your plumbing is in.");
+    await expect(page.locator("[data-key^='stack-'][aria-pressed='true']")).toHaveCount(0);
+    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the wall your pipes are in.");
     // Over the room, the hint says so too, and a tap on wall A there answers it.
     await expect(page.locator("#studio-hint")).toContainText("Tap the wall your pipes are in.");
     const room = await page.evaluate(() => window.RoomStudio.design().room);
@@ -90,7 +90,7 @@ test.describe("the simple studio", () => {
     // A new room asks again; "Not sure?" takes the wall the room suggests
     // (the least pipe).
     await byKey(page, "tpl-full5x8").click();
-    await expect(page.locator("#studio-step-need")).toHaveText("To go on: pick the wall your plumbing is in.");
+    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the wall your pipes are in.");
     await expect(byKey(page, "suggest-stack")).toHaveText(/Not sure\? Use wall A/);
     await byKey(page, "suggest-stack").click();
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
@@ -191,6 +191,99 @@ test.describe("the simple studio", () => {
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
     await expect(step(page, "products")).toHaveClass(/is-done/);
+    expect(errors).toEqual([]);
+  });
+
+  test("the door is a tap on its wall; sliding it and a second door wait under More options", async ({ page }) => {
+    const errors = await open(page);
+    await wait3d(page);
+    const picker = page.locator('[data-key^="door-wall-"]');
+    await expect(picker).toHaveCount(4);
+    await expect(byKey(page, "door-wall-S")).toHaveAttribute("aria-pressed", "true");
+    // The door's own wall says so; the others say what else stands there.
+    await expect(byKey(page, "door-wall-S")).toContainText("Door");
+    await expect(byKey(page, "door-wall-N")).toContainText("Vanity, Toilet");
+    await expect(byKey(page, "door-wall-W")).toContainText("nothing on it yet");
+    await byKey(page, "door-wall-W").click();
+    await expect(byKey(page, "door-wall-W")).toHaveAttribute("aria-pressed", "true");
+    await expect(byKey(page, "door-wall-W")).toContainText("Door");
+    await expect(byKey(page, "door-wall-S")).toContainText("nothing on it yet");
+    await expect(page.locator(".studio-step.is-room")).toContainText("On wall D");
+    await expect(studioStatus(page)).toHaveText("Everything fits");
+    // The full door card (its position, type, Add another door) is folded.
+    await expect(byKey(page, "door-add")).toBeHidden();
+    await page.locator('.studio-more[data-more="room"] > summary').click();
+    await expect(byKey(page, "door-add")).toBeVisible();
+    await expect(page.locator('.studio-more[data-more="room"] [data-key$="-wall-W"][aria-pressed="true"]')).toHaveCount(
+      1,
+    );
+    expect(errors).toEqual([]);
+  });
+
+  test("a fixture only goes in where it fits: the room is rearranged for it, or it isn't added", async ({ page }) => {
+    const errors = await open(page);
+    await answerAll(page);
+    await step(page, "layout").click();
+    // A second toilet fits the sample bath once the rest moves over.
+    await byKey(page, "add-toilet").click();
+    await expect(studioToast(page)).toContainText("Toilet 2 added; the rest moved over to make room.");
+    await expect(page.locator(".studio-item-btn")).toHaveCount(4);
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    await page.keyboard.press("Control+z");
+    await expect(page.locator(".studio-item-btn")).toHaveCount(3);
+    // A shower has no room in it however the rest is arranged: it stays out.
+    await byKey(page, "add-shower").click();
+    await expect(studioToast(page)).toContainText("Shower: no room for it here, even after moving things around.");
+    await expect(page.locator(".studio-item-btn")).toHaveCount(3);
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    expect(errors).toEqual([]);
+  });
+
+  test("a new size moves the fixtures to fit; when nothing fits, Fix it for me takes out what has no room", async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await answerAll(page);
+    // Six inches narrower, the tub and vanity would collide: they're moved.
+    await byKey(page, "size-w-less").click();
+    await expect(page.locator("#studio-size-w")).toHaveValue("8′");
+    await expect(studioToast(page)).toContainText("The fixtures moved to fit the new size.");
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    // A foot narrower still, nothing can fit the tub: the note offers the fix.
+    await byKey(page, "size-w-less").click();
+    await expect(page.locator("#studio-size-w")).toHaveValue("7′ 6″");
+    await expect(studioStatus(page)).toHaveClass(/is-error/);
+    await expect(studioToast(page)).toContainText("With the new size, some fixtures don't fit anymore.");
+    await studioToast(page).getByRole("button", { name: "Fix it for me" }).click();
+    await expect(studioToast(page)).toContainText("Arranged, and took out Bathtub: there's no room for it.");
+    await expect(studioStatus(page)).not.toHaveClass(/is-error/);
+    await step(page, "layout").click();
+    await expect(page.locator(".studio-item-btn")).toHaveCount(2);
+    // Undo brings the tub back, red, with its wiring.
+    await page.keyboard.press("Control+z");
+    await expect(page.locator(".studio-item-btn")).toHaveCount(3);
+    await expect(studioStatus(page)).toHaveClass(/is-error/);
+    expect(errors).toEqual([]);
+  });
+
+  test("a note about one step doesn't follow onto the next, and a reload comes back to the same step", async ({
+    page,
+  }) => {
+    const errors = await open(page);
+    await wait3d(page);
+    await byKey(page, "nav-next").click();
+    await expect(studioToast(page)).toBeVisible();
+    await expect(studioToast(page)).toContainText("To go on: tap the wall your pipes are in.");
+    await byKey(page, "suggest-stack").click();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-layout")).toBeVisible();
+    await expect(studioToast(page)).toBeHidden();
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
+    await page.reload();
+    await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 20000 });
+    await expect(page.locator(".studio-step.is-electrical")).toBeVisible();
+    await expect(studioToast(page)).toContainText("Here's the design you were working on.");
     expect(errors).toEqual([]);
   });
 

@@ -460,12 +460,23 @@
     });
   }
 
+  // Without a fixture, and without the wiring that was there for it (the
+  // outlet beside a vanity, the light over it, a door's switch), so none
+  // of it is left on the estimate; what the rules then ask for (a switch
+  // for a light that lost its own) is suggested again.
   function withoutItem(d, id) {
-    return Object.assign({}, d, {
+    var next = Object.assign({}, d, {
       items: d.items.filter(function (it) {
         return it.id !== id;
       }),
     });
+    var dropped = false;
+    points(d).forEach(function (p) {
+      if (p.for !== id) return;
+      next = Plan.removeElectrical(next, p.id);
+      dropped = true;
+    });
+    return dropped ? Plan.suggestElectrical(next, sizes).design : next;
   }
 
   function withFinishes(change) {
@@ -519,7 +530,7 @@
     saveTimer = setTimeout(function () {
       saveTimer = null;
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
+        localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, step: ui.step, savedAt: Date.now() }));
       } catch (e) {
         /* storage blocked or full: the design still works for this visit */
       }
@@ -533,21 +544,33 @@
     clearTimeout(saveTimer);
     saveTimer = null;
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, savedAt: Date.now() }));
+      localStorage.setItem(STORE_KEY, JSON.stringify({ design: design, step: ui.step, savedAt: Date.now() }));
     } catch (e) {
       /* storage blocked or full */
     }
   }
   window.addEventListener("pagehide", flushSave);
 
+  // The draft, and (savedStep) the step it was on, so a reload comes back
+  // to the same place.
+  var savedStep = null;
   function savedDesign() {
     if (!KEEPS_DRAFT) return null;
     try {
       var raw = JSON.parse(localStorage.getItem(STORE_KEY));
+      savedStep = raw && STEPS.indexOf(raw.step) !== -1 ? raw.step : null;
       return raw && Plan.sanitize(raw.design);
     } catch (e) {
       return null;
     }
+  }
+
+  // Back to the step the draft was on, as far as its questions allow (a
+  // step is only reached once the ones before it are answered).
+  function resumeStep() {
+    if (!savedStep || savedStep === ui.step || VIEW_ONLY) return;
+    for (var i = 0; i < STEPS.indexOf(savedStep); i++) if (missingFor(STEPS[i]).length) return;
+    goToStep(savedStep);
   }
 
   function linkedDesign() {
@@ -1815,7 +1838,7 @@
                 bestSpot(findItem(item.id));
               },
             }
-          : { label: T("studio.rearrange"), run: arrangeNow },
+          : fixAction(),
       );
     }
   }
@@ -2239,7 +2262,7 @@
     var d = design;
     var out = [];
     if (step === "room") {
-      if (!answers(d).stack) out.push({ key: "stack", text: T("studio.need.stack") });
+      if (!answers(d).stack) out.push({ key: "stack", text: T(ui.simple ? "studio.need.pipes" : "studio.need.stack") });
       if (ui.step === "room" && els.panel.querySelector('.studio-size-grid [aria-invalid="true"]'))
         out.push({ key: "size", text: T("studio.need.size") });
     } else if (step === "layout") {
@@ -2351,6 +2374,12 @@
 
   function goToStep(step) {
     if (STEPS.indexOf(step) === -1) return;
+    // A note about the step being left ("To go on: …", "Plumbing wall: A")
+    // has nothing to say on the next one.
+    if (step !== ui.step && els.toast) {
+      clearTimeout(toastTimer);
+      els.toast.hidden = true;
+    }
     // Every step starts with the whole room: a product shown by itself on
     // Products, or "Just this" turned on anywhere, ends with the step.
     if (step !== ui.step && (focusedGroup || ui.isolate)) {
@@ -2364,6 +2393,8 @@
     ui.step = step;
     renderBar();
     renderPanel({ top: true });
+    // The draft remembers the step too, so a reload comes back to it.
+    if (design) saveSoon();
     if (step === "products" && has3d && ui.selected) room3d.focusProductGroup(null);
     var heading = els.panel.querySelector("h2");
     if (!heading) return;
@@ -2424,9 +2455,12 @@
 
   // A short note at the bottom of the stage, with an optional action
   // (Undo, Rearrange) for a few seconds.
-  function toast(text, action) {
+  // `key` names what the note is about, so a later change that settles it
+  // can take it down (hideToast) instead of leaving it to time out.
+  function toast(text, action, key) {
     var el = els.toast;
     clear(el);
+    el.setAttribute("data-about", key || "");
     el.appendChild(h("span", { text: text }));
     if (action) {
       el.appendChild(
@@ -2454,6 +2488,12 @@
     );
     el.hidden = false;
     hideToastIn(action ? 8000 : 5000);
+  }
+
+  function hideToast(key) {
+    if (!els.toast || els.toast.getAttribute("data-about") !== key) return;
+    clearTimeout(toastTimer);
+    els.toast.hidden = true;
   }
 
   // The note waits while the pointer or keyboard focus is on it.
@@ -2722,11 +2762,15 @@
     });
     function set(ft) {
       var message = onSet(ft);
-      if (message) {
-        error.textContent = message;
-        error.hidden = false;
-        input.setAttribute("aria-invalid", "true");
-      }
+      if (message) showError(message);
+    }
+    // The message sits under the field, where the step's Next bar can
+    // cover it; it's brought into view.
+    function showError(message) {
+      error.textContent = message;
+      error.hidden = false;
+      input.setAttribute("aria-invalid", "true");
+      error.scrollIntoView({ block: "nearest" });
     }
     // Enter handles the text at once; the browser's own change event for
     // the same text (when the field loses focus) is then nothing new.
@@ -2736,9 +2780,7 @@
       handled = input.value;
       var ft = Plan.parseLength(input.value);
       if (ft === null) {
-        error.textContent = T("studio.lengthError");
-        error.hidden = false;
-        input.setAttribute("aria-invalid", "true");
+        showError(T("studio.lengthError"));
         return;
       }
       set(ft);
@@ -2917,16 +2959,23 @@
         ),
       );
     }
-    body.appendChild(section(T("studio.room.doors"), doorKids));
+    var doorsFull = section(T("studio.room.doors"), doorKids);
     if (ui.simple) {
+      // The usual room has one door, asked for like the pipes: which wall.
+      // Moving it along the wall, its type and a second door wait under
+      // "More options" with the height, the shape and the windows.
+      var oneDoor = doors.length === 1;
+      body.appendChild(oneDoor ? doorSection(doors[0]) : doorsFull);
       body.appendChild(
         more("room", [
+          oneDoor ? doorsFull : null,
           section(T("studio.room.height"), [h("div", { class: "studio-size-grid" }, [heightField])]),
           shapeSection(room, shape),
           windowsSection(),
         ]),
       );
     } else {
+      body.appendChild(doorsFull);
       body.appendChild(windowsSection());
     }
   }
@@ -2996,21 +3045,61 @@
   }
 
   // What stands on a wall, named: "Toilet, Vanity", "Door", or "nothing
-  // on it yet".
-  function wallWhat(wid) {
+  // on it yet". `except` leaves one item out (the door being placed).
+  function wallWhat(wid, except) {
     var names = design.items
       .filter(function (it) {
-        return it.wall === wid && it.type !== "door";
+        return it.wall === wid && it.type !== "door" && it.id !== except;
       })
       .concat(
         design.items.filter(function (it) {
-          return it.wall === wid && it.type === "door";
+          return it.wall === wid && it.type === "door" && it.id !== except;
         }),
       )
       .map(function (it) {
         return itemName(it);
       });
     return names.length ? names.join(", ") : T("studio.room.wallEmpty");
+  }
+
+  // Which wall the door is on (the simple studio): each wall as a button
+  // that says what stands on it, the way the pipes are asked; the other
+  // walls leave the door out, since it's the door that would move there.
+  function doorSection(door) {
+    var buttons = Plan.wallIds(design.room).map(function (wid) {
+      var on = wid === door.wall;
+      var what = on ? wallWhat(wid) : wallWhat(wid, door.id);
+      return h(
+        "button",
+        {
+          type: "button",
+          class: "studio-wall-pick",
+          "aria-pressed": on ? "true" : "false",
+          "aria-label": T("studio.room.wallWith", { letter: letter(wid), what: what }),
+          "data-key": "door-wall-" + wid,
+          onclick: function () {
+            if (!on) moveToWall(door, wid);
+          },
+        },
+        [
+          h("span", { class: "studio-wall-letter", text: letter(wid) }),
+          h("span", { class: "studio-wall-what", text: what }),
+        ],
+      );
+    });
+    return section(T("studio.room.doorWhere"), [
+      h("p", { class: "studio-note", text: T("studio.room.doorHelp") }),
+      h("div", { class: "studio-field" }, [
+        h("div", { class: "studio-wall-picker" }, [
+          h("div", { class: "studio-wall-plan", "aria-hidden": "true" }, [planSvg(design, { mini: true, tags: true })]),
+          h("div", { class: "studio-wall-list", role: "group", "aria-label": T("studio.room.doorWhere") }, buttons),
+        ]),
+      ]),
+      h("p", {
+        class: "studio-field-help",
+        text: T("studio.room.doorAt", { letter: letter(door.wall), at: len(door.offset) }),
+      }),
+    ]);
   }
 
   // The room's shape: a rectangle, or one with a piece out of it (an L,
@@ -3100,7 +3189,7 @@
     var kind = Plan.shapeOf(next.room) ? Plan.shapeOf(next.room).kind : "rect";
     commit(next, { announce: T("studio.shape.changed", { shape: T("studio.shape." + kind) }) });
     if (errorCount(issues) > before) {
-      toast(T("studio.resizeBroke"), { label: T("studio.rearrange"), run: arrangeNow });
+      toast(T("studio.resizeBroke"), fixAction());
     }
   }
 
@@ -3263,15 +3352,28 @@
     toast(T("studio.templateUsed", { name: T("studio.template." + id) }), { label: T("studio.undo"), run: undo });
   }
 
+  // A new size keeps every fixture where it was along its wall, and the
+  // wiring tied to one that no longer works there is worked out again. In
+  // the simple studio a size that leaves fixtures with no room moves them
+  // to a layout that fits, when there is one, so measuring the room never
+  // ends in red; the note says so and Undo puts them back.
   function resizeRoom(key, ft) {
     var room = Object.assign({}, design.room);
     room[key] = ft;
-    var before = errorCount(issues);
-    var next = Plan.resize(design, room);
-    commit(next);
-    if (errorCount(issues) > before) {
-      toast(T("studio.resizeBroke"), { label: T("studio.rearrange"), run: arrangeNow });
+    var before = misfits(design).length;
+    var next = rewire(Plan.resize(design, room));
+    var broke = misfits(next).length > before;
+    if (broke && ui.simple) {
+      var best = Plan.arrange(next, sizes, { count: 1 })[0];
+      if (best && fitsAll(next, best.items)) {
+        commit(rewire(Object.assign({}, next, { items: best.items })), { announce: T("studio.resizeMoved") });
+        toast(T("studio.resizeMoved"), { label: T("studio.undo"), run: undo });
+        return;
+      }
     }
+    commit(next);
+    if (broke) toast(T("studio.resizeBroke"), fixAction(), "resize");
+    else if (!misfits(next).length) hideToast("resize");
   }
 
   // The wall the stack is in: everything with a drain is measured from
@@ -3282,7 +3384,7 @@
       announce: T("studio.room.plumbingSet", { wall: letter(wallId) }),
     });
     if (errorCount(issues) > before) {
-      toast(T("studio.room.plumbingBroke"), { label: T("studio.rearrange"), run: arrangeNow });
+      toast(T("studio.room.plumbingBroke"), fixAction());
     }
   }
 
@@ -3336,7 +3438,7 @@
               class: "btn " + (broken ? "btn-primary" : "btn-secondary") + " studio-arrange-btn",
               "data-key": "arrange",
               disabled: fixtures.length ? null : true,
-              onclick: broken ? arrangeNow : showArrangements,
+              onclick: broken ? fixLayout : showArrangements,
             },
             [h("span", { icon: "arrange" }), T(broken ? "studio.layout.fixIt" : "studio.layout.another")],
           ),
@@ -3662,6 +3764,26 @@
 
   function addFixture(type, opts) {
     var res = Plan.addItem(design, type, sizes, opts ? copy(opts) : undefined);
+    if (!res.placed && type !== "door" && ui.simple) {
+      // The simple studio never adds a fixture in red: when the room can
+      // be rearranged to make room for it, it goes in that way; when it
+      // can't, it doesn't go in, and the note says what would make room.
+      var best = Plan.arrange(res.design, sizes, { count: 1 })[0];
+      if (best && fitsAll(res.design, best.items)) {
+        ui.selected = res.item.id;
+        if (ui.step !== "layout") ui.step = "layout";
+        commit(rewire(Object.assign({}, res.design, { items: best.items })), {
+          announce: T("studio.addedMoved", { name: itemName(res.item, res.design) }),
+        });
+        toast(T("studio.addedMoved", { name: itemName(res.item, res.design) }), {
+          label: T("studio.undo"),
+          run: undo,
+        });
+      } else {
+        toast(T("studio.noRoomFor", { name: T("studio.type." + type) }));
+      }
+      return;
+    }
     ui.selected = res.item.id;
     if (type !== "door" && ui.step !== "layout" && ui.step !== "room") ui.step = "layout";
     commit(res.design, { announce: itemLabel(res.item, res.design) });
@@ -3714,7 +3836,7 @@
   function bestSpot(item) {
     var spots = Plan.findSpots(design, item, sizes, { step: IN });
     if (!spots.length) {
-      toast(T("studio.noSpot", { name: itemName(item) }), { label: T("studio.rearrange"), run: arrangeNow });
+      toast(T("studio.noSpot", { name: itemName(item) }), fixAction());
       return;
     }
     var d = rewire(moveItem(design, item.id, spots[0].wall, spots[0].offset));
@@ -3758,6 +3880,95 @@
     if (!best) return;
     commit(rewire(Object.assign({}, design, { items: best.items })), { announce: T("studio.arranged") });
     toast(T("studio.arranged"), { label: T("studio.undo"), run: undo });
+  }
+
+  // The fixtures that still don't fit in a layout (the door is placed by
+  // the person and stays put).
+  function misfits(d) {
+    var list = Plan.validate(d, sizes);
+    return d.items.filter(function (it) {
+      return it.type !== "door" && Plan.errorsOf(list, it.id).length > 0;
+    });
+  }
+
+  // Whether a layout with these items fits, so a fix is only offered or
+  // done when it does.
+  function fitsAll(d, items) {
+    return misfits(Object.assign({}, d, { items: items })).length === 0;
+  }
+
+  // "Fix it for me" (the simple studio): the best layout, and when even
+  // that leaves fixtures with no room, the ones with no room go, newest
+  // first, until the rest fit; the note says which, and Undo brings them
+  // back. Rearranging is slow with many fixtures, so the panel says it's
+  // working first.
+  function fixLayout() {
+    ui.arrange = { loading: true, options: [] };
+    renderPanel();
+    setTimeout(function () {
+      var d = design;
+      var gone = [];
+      for (var guard = 0; guard < 24; guard++) {
+        var best = Plan.arrange(d, sizes, { count: 1 })[0];
+        if (!best) break;
+        var trial = Object.assign({}, d, { items: best.items });
+        if (!misfits(trial).length) {
+          d = trial;
+          break;
+        }
+        var out = firstToGo(d);
+        if (!out) break;
+        gone.push(itemName(out, d));
+        d = withoutItem(d, out.id);
+      }
+      ui.arrange = null;
+      if (d === design) {
+        renderPanel();
+        return;
+      }
+      var note = gone.length ? T("studio.layout.fixedOut", { list: gone.join(", ") }) : T("studio.arranged");
+      ui.selected = null;
+      commit(rewire(d), { announce: note });
+      toast(note, { label: T("studio.undo"), run: undo });
+    }, 20);
+  }
+
+  // Which fixture goes when they can't all fit: the ones a bathroom can do
+  // without first (a cabinet, a second of a kind, then a tub or shower,
+  // then a basin, and a toilet last), the biggest among equals, then the
+  // newest. Rearranging places the big pieces first, so the one with no
+  // room isn't always the one to lose.
+  function firstToGo(d) {
+    var seen = {};
+    var rank = function (it) {
+      var kind = it.type === "vanity" || it.type === "sink" ? "basin" : it.type;
+      if (it.type === "cabinet") return 5;
+      if (seen[kind]) return 4;
+      seen[kind] = true;
+      return kind === "tub" || kind === "shower" ? 3 : kind === "basin" ? 2 : 1;
+    };
+    var ranked = d.items
+      .filter(function (it) {
+        return it.type !== "door";
+      })
+      .map(function (it, i) {
+        var size = Plan.sizeOf(it, sizes);
+        return { it: it, rank: rank(it), area: size.span * size.depth, i: i };
+      });
+    ranked.sort(function (a, b) {
+      return b.rank - a.rank || b.area - a.area || b.i - a.i;
+    });
+    return ranked.length ? ranked[0].it : null;
+  }
+
+  // How a layout that doesn't fit gets fixed: in the simple studio by
+  // fixLayout (which also takes out what has no room), otherwise by the
+  // best arrangement alone.
+  function fixAction() {
+    return {
+      label: T(ui.simple ? "studio.layout.fixIt" : "studio.rearrange"),
+      run: ui.simple ? fixLayout : arrangeNow,
+    };
   }
 
   // Within an inch of each other everywhere: the same layout to the eye.
@@ -4230,10 +4441,38 @@
         }),
       ]),
     );
-    groups.forEach(function (group) {
-      var standIn = items.some(function (it) {
+    var standInGroups = groups.filter(function (group) {
+      return items.some(function (it) {
         return it.groupId === group.id && !it.mmns.length;
       });
+    });
+    // The simple studio offers the real products once, for every list at
+    // once, rather than a brand-named button under each card.
+    if (ui.simple && standInGroups.length && has3d) {
+      body.appendChild(
+        h("div", { class: "studio-real-all" }, [
+          h("p", { class: "studio-note", text: T("studio.products.useRealAllHelp") }),
+          h(
+            "button",
+            {
+              type: "button",
+              class: "btn btn-secondary btn-sm",
+              "data-key": "real-all",
+              onclick: function () {
+                var changed = false;
+                standInGroups.forEach(function (group) {
+                  if (room3d.useRealProducts(group.id)) changed = true;
+                });
+                if (changed) commit(Object.assign({}, design, { products: room3d.getProductPicks() }));
+              },
+            },
+            [T("studio.products.useRealAll")],
+          ),
+        ]),
+      );
+    }
+    groups.forEach(function (group) {
+      var standIn = !ui.simple && standInGroups.indexOf(group) !== -1;
       var card = h("div", { class: "studio-card studio-product-card", "data-group": group.id }, [
         h("div", { class: "studio-card-head" }, [
           h("h3", {}, [h("span", { class: "studio-card-icon", icon: GROUP_ICONS[group.id] || "cube" }), group.label]),
@@ -4763,19 +5002,20 @@
       commit(withFinishes(change));
     };
 
-    body.appendChild(
-      section(T("studio.finish.demo"), [
-        toggle(
-          T("studio.finish.demoLabel"),
-          f.demolition,
-          function (on) {
-            set({ demolition: on });
-          },
-          "fin-demo",
-          T("studio.finish.demoHelp"),
-        ),
-      ]),
-    );
+    var demolition = section(T("studio.finish.demo"), [
+      toggle(
+        T("studio.finish.demoLabel"),
+        f.demolition,
+        function (on) {
+          set({ demolition: on });
+        },
+        "fin-demo",
+        T("studio.finish.demoHelp"),
+      ),
+    ]);
+    // Taking the old bathroom out first is the usual case: the simple
+    // studio keeps the switch under "More options", after the picks.
+    if (!ui.simple) body.appendChild(demolition);
 
     body.appendChild(
       section(T("studio.finish.floor"), [
@@ -4833,6 +5073,7 @@
         f.ceiling ? swatches("ceilingPaint") : null,
       ]),
     );
+    if (ui.simple) body.appendChild(more("finishes", [demolition]));
     if (!materialsOn()) body.appendChild(h("p", { class: "studio-note", text: T("studio.finish.notPriced") }));
   }
 
@@ -5712,6 +5953,9 @@
     // Arriving on a step, she says what the step is for; a warning alone
     // doesn't interrupt that.
     var tight = trouble && (issues[trouble.id] || []).length ? trouble : null;
+    // In the simple studio the drain runs are measured from a wall that
+    // hasn't been picked yet: nothing to warn about until it is.
+    if (tight && ui.simple && asksForWall()) tight = null;
     if (tight && !opts.greet && !opts.step) {
       window.Riley.say({
         tone: "warn",
@@ -6171,6 +6415,7 @@
     renderViewbar();
     renderHint();
     refreshNow();
+    if (saved) resumeStep();
     rileyStart();
     fitStage();
     window.addEventListener("resize", fitStage);

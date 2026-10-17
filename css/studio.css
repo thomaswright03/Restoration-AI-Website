@@ -2308,8 +2308,9 @@ main.studio-page.solid-header {
    a laptop too. */
 @media (max-width: 1600px) {
   .studio-brand {
-    flex: 0 1 11rem;
+    flex: 0 4 auto;
     min-width: 0;
+    max-width: 16rem;
   }
 
   .studio-steps {
@@ -3124,8 +3125,23 @@ html[data-embed="1"] .studio-plan {
   grid-template-columns: 1fr 1fr;
 }
 
-/* Which wall the plumbing is in: the plan and a button per wall saying
-   what stands on it. */
+/* The one "real products" offer of the simple studio's Products step. */
+.studio-real-all {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.studio-real-all .studio-note {
+  margin: 0;
+  flex: 1 1 14rem;
+}
+
+/* Which wall the plumbing (or the door) is in: the plan and a button per
+   wall saying what stands on it. */
 .studio-wall-picker {
   display: grid;
   grid-template-columns: 108px minmax(0, 1fr);

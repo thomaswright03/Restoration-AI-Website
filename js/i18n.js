@@ -1827,6 +1827,11 @@
     ],
     // ---------- what a step needs before moving on ----------
     "studio.need": ["To go on: {list}.", "Para continuar: {list}.", "Para continuar: {list}."],
+    "studio.need.pipes": [
+      "tap the wall your pipes are in",
+      "toque la pared donde están las tuberías",
+      "toque na parede onde estão os canos",
+    ],
     "studio.need.stack": [
       "pick the wall your plumbing is in",
       "elija la pared donde está la plomería",
@@ -2730,6 +2735,47 @@
     "studio.products.choicesFor": ["Choices for {what}", "Opciones para {what}", "Opções para {what}"],
     "studio.products.closeChoices": ["Close the choices", "Cerrar las opciones", "Fechar as opções"],
     "studio.products.noPhoto": ["No photo", "Sin foto", "Sem foto"],
+    "studio.products.useRealAll": [
+      "Use real products in every list",
+      "Usar productos reales en todas las listas",
+      "Usar produtos reais em todas as listas",
+    ],
+    "studio.products.useRealAllHelp": [
+      "Some lists show a standard product with no picture.",
+      "Algunas listas muestran un producto estándar sin foto.",
+      "Algumas listas mostram um produto padrão sem foto.",
+    ],
+    "studio.room.doorWhere": ["Where's the door?", "¿Dónde está la puerta?", "Onde fica a porta?"],
+    "studio.room.doorHelp": [
+      "Tap the wall the door is on.",
+      "Toque la pared donde está la puerta.",
+      "Toque na parede onde está a porta.",
+    ],
+    "studio.room.doorAt": [
+      "On wall {letter}, {at} from the left corner. To slide it along the wall or add another door, open More options.",
+      "En la pared {letter}, a {at} de la esquina izquierda. Para moverla por la pared o agregar otra puerta, abra Más opciones.",
+      "Na parede {letter}, a {at} do canto esquerdo. Para movê-la pela parede ou adicionar outra porta, abra Mais opções.",
+    ],
+    "studio.layout.fixedOut": [
+      "Arranged, and took out {list}: there's no room for it.",
+      "Acomodado; se quitó {list}: no había lugar.",
+      "Organizado; {list} saiu: não havia lugar.",
+    ],
+    "studio.resizeMoved": [
+      "The fixtures moved to fit the new size.",
+      "Las piezas se movieron para caber en la nueva medida.",
+      "As peças se moveram para caber na nova medida.",
+    ],
+    "studio.addedMoved": [
+      "{name} added; the rest moved over to make room.",
+      "Listo: {name}; lo demás se movió para hacer lugar.",
+      "Pronto: {name}; o resto se moveu para abrir espaço.",
+    ],
+    "studio.noRoomFor": [
+      "{name}: no room for it here, even after moving things around. Make the room bigger or take something out first.",
+      "{name}: no hay lugar aquí, ni moviendo las cosas. Agrande el baño o quite algo primero.",
+      "{name}: não há lugar aqui, nem movendo as coisas. Aumente o banheiro ou tire algo primeiro.",
+    ],
 
     // ---------- Riley, the guide (js/riley.js) ----------
     "riley.name": ["Riley", "Riley", "Riley"],

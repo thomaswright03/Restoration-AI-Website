@@ -12,9 +12,25 @@
   "signup.h1": ["Create your account", "Cree su cuenta", "Crie a sua conta"],
   "signup.h1Login": ["Log in", "Iniciar sesión", "Entrar"],
   "signup.lede": [
-    "Create your account, then pick a plan. Have a promo code? Enter it when you pick your plan and your first {{@promoDays}} days are free.",
-    "Cree su cuenta y luego elija un plan. ¿Tiene un código promocional? Escríbalo al elegir su plan y sus primeros {{@promoDays}} días son gratis.",
-    "Crie a sua conta e depois escolha um plano. Tem um código promocional? Digite-o ao escolher o plano e os seus primeiros {{@promoDays}} dias são grátis."
+    "Create your account and the Starter plan is yours free for 7 days. Pick a plan whenever you're ready.",
+    "Cree su cuenta y el plan Starter es suyo gratis por 7 días. Elija un plan cuando esté listo.",
+    "Crie a sua conta e o plano Starter é seu, grátis, por 7 dias. Escolha um plano quando estiver pronto."
+  ],
+  "signup.offer.title": ["Your first week is free", "Su primera semana es gratis", "A sua primeira semana é grátis"],
+  "signup.offer.1": [
+    "The Starter plan for 7 days: save up to {{@starterMonthly}} new projects",
+    "El plan Starter por 7 días: guarde hasta {{@starterMonthly}} proyectos nuevos",
+    "O plano Starter por 7 dias: salve até {{@starterMonthly}} projetos novos"
+  ],
+  "signup.offer.2": [
+    "No card, no payment, nothing to cancel",
+    "Sin tarjeta, sin pagos y sin nada que cancelar",
+    "Sem cartão, sem pagamento e sem nada para cancelar"
+  ],
+  "signup.offer.3": [
+    "Afterwards, plans from {{@priceStarter}} a month, or keep using the designer free",
+    "Después, planes desde {{@priceStarter}} al mes, o siga usando el diseñador gratis",
+    "Depois, planos a partir de {{@priceStarter}} por mês, ou continue usando o projetista de graça"
   ],
   "signup.tabs": ["Create an account or log in", "Crear una cuenta o iniciar sesión", "Criar uma conta ou entrar"],
   "signup.tabSignup": ["Create account", "Crear cuenta", "Criar conta"],
@@ -71,26 +87,20 @@
   "account.newPassword.label": ["New password", "Contraseña nueva", "Senha nova"],
   "account.newPassword.save": ["Save password", "Guardar contraseña", "Salvar senha"],
   "account.plan.title": ["Your plan", "Su plan", "Seu plano"],
-  "account.plan.buyStarter": [
-    "Choose Starter, {{@priceStarter}} a month",
-    "Elegir Starter, {{@priceStarter}} al mes",
-    "Escolher Starter, {{@priceStarter}} por mês"
-  ],
-  "account.plan.buyPro": [
-    "Choose Pro, {{@pricePro}} a month",
-    "Elegir Pro, {{@pricePro}} al mes",
-    "Escolher Pro, {{@pricePro}} por mês"
-  ],
-  "account.plan.buyMax": [
-    "Choose Max, {{@priceMax}} a month",
-    "Elegir Max, {{@priceMax}} al mes",
-    "Escolher Max, {{@priceMax}} por mês"
-  ],
+  "account.plan.buyStarter": ["Choose Starter", "Elegir Starter", "Escolher Starter"],
+  "account.plan.buyPro": ["Choose Pro", "Elegir Pro", "Escolher Pro"],
+  "account.plan.buyMax": ["Choose Max", "Elegir Max", "Escolher Max"],
   "account.plan.trialNote": [
     "Checkout is handled by Stripe. With a promo code your first {{@promoDays}} days are free: cancel before they end and you pay nothing.",
     "El pago lo procesa Stripe. Con un código promocional sus primeros {{@promoDays}} días son gratis: si cancela antes de que terminen, no paga nada.",
     "O pagamento é feito pela Stripe. Com um código promocional os seus primeiros {{@promoDays}} dias são grátis: se cancelar antes do fim, não paga nada."
   ],
+  "account.plan.pitch": [
+    "Every plan is billed monthly in US dollars, and you can cancel any time.",
+    "Todos los planes se cobran cada mes en dólares estadounidenses y puede cancelar cuando quiera.",
+    "Todos os planos são cobrados todo mês em dólares americanos, e você pode cancelar quando quiser."
+  ],
+  "account.plan.everyPlan": ["Every plan includes:", "Todos los planes incluyen:", "Todos os planos incluem:"],
   "account.plan.manage": [
     "Manage billing, change plan or cancel",
     "Administrar pagos, cambiar de plan o cancelar",

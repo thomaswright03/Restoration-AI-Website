@@ -18,7 +18,22 @@
     "Puede usar el diseñador todo lo que quiera, pero para guardar proyectos necesita un plan de pago.",
     "Você pode usar o projetista à vontade, mas para salvar projetos precisa de um plano pago."
   ],
-  "projects.free.cta": ["Pick a plan", "Elegir un plan", "Escolher um plano"],
+  "projects.free.starter": [
+    "<strong>Starter</strong>, {{@priceStarter}} a month: {{@starterMonthly}} new projects a month, keep up to {{@starterTotal}}",
+    "<strong>Starter</strong>, {{@priceStarter}} al mes: {{@starterMonthly}} proyectos nuevos al mes, guarde hasta {{@starterTotal}}",
+    "<strong>Starter</strong>, {{@priceStarter}} por mês: {{@starterMonthly}} projetos novos por mês, guarde até {{@starterTotal}}"
+  ],
+  "projects.free.pro": [
+    "<strong>Pro</strong>, {{@pricePro}} a month: {{@proMonthly}} new projects a month, keep up to {{@proTotal}}",
+    "<strong>Pro</strong>, {{@pricePro}} al mes: {{@proMonthly}} proyectos nuevos al mes, guarde hasta {{@proTotal}}",
+    "<strong>Pro</strong>, {{@pricePro}} por mês: {{@proMonthly}} projetos novos por mês, guarde até {{@proTotal}}"
+  ],
+  "projects.free.max": [
+    "<strong>Max</strong>, {{@priceMax}} a month: {{@maxMonthly}} new projects a month, keep up to {{@maxTotal}}",
+    "<strong>Max</strong>, {{@priceMax}} al mes: {{@maxMonthly}} proyectos nuevos al mes, guarde hasta {{@maxTotal}}",
+    "<strong>Max</strong>, {{@priceMax}} por mês: {{@maxMonthly}} projetos novos por mês, guarde até {{@maxTotal}}"
+  ],
+  "projects.free.cta": ["See plans and prices", "Ver planes y precios", "Ver planos e preços"],
   "projects.usage.title": ["What your plan allows", "Lo que permite su plan", "O que o seu plano permite"],
   "projects.usage.monthLabel": ["New projects this month", "Proyectos nuevos este mes", "Projetos novos este mês"],
   "projects.usage.totalLabel": ["Saved projects", "Proyectos guardados", "Projetos salvos"],

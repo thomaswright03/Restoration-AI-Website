@@ -213,6 +213,12 @@ test("checkout: a promo code makes the first week free, once per account; a wron
   assert.equal(used.statusCode, 409);
   assert.equal(used.json().error, "promo-used");
 
+  // Nor after the free week at sign-up (no Stripe subscription, no card).
+  setup({ sub: { owner_id: USER, status: "none", free_week_ends: "2026-01-08T00:00:00Z" } });
+  const afterWeek = await post("checkout.js", { plan: "starter", promo: "FREEWEEK" });
+  assert.equal(afterWeek.statusCode, 409);
+  assert.equal(afterWeek.json().error, "promo-used");
+
   // Nor for a new account made with the email of a deleted one that had a plan:
   // looked up by the email's hash, never the email.
   calls = setup({ usedTrial: true });

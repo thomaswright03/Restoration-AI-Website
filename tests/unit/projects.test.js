@@ -148,6 +148,15 @@ test("plans: free unless active or trialing; plan column, then Pro/Max price ids
   assert.deepEqual(limitsOf("free"), { monthly: 0, total: 0 });
   assert.equal(planFromPrice({ lookup_key: "pro_monthly" }), "pro");
   assert.equal(planFromPrice({ metadata: { plan: "Max" } }), "max");
+
+  // The free week at sign-up: Starter until free_week_ends, then Free; a
+  // paid plan always wins.
+  const later = new Date(Date.now() + 86400000).toISOString();
+  const earlier = new Date(Date.now() - 86400000).toISOString();
+  assert.equal(planOf({ status: "none", free_week_ends: later }), "starter");
+  assert.equal(planOf({ status: "none", free_week_ends: earlier }), "free");
+  assert.equal(planOf({ status: "canceled", free_week_ends: later }), "starter");
+  assert.equal(planOf({ status: "active", plan: "max", free_week_ends: later }), "max");
   assert.equal(planFromPrice({ lookup_key: "something" }), "");
 });
 
@@ -356,7 +365,12 @@ test("projects: counts come from the database as numbers, and ?counts=1 skips th
 
   const counts = await call("GET", { query: { counts: "1" } });
   assert.equal(counts.statusCode, 200);
-  assert.deepEqual(counts.json(), { plan: "max", limits: limitsOf("max"), used: { month: 1, total: 1000 } });
+  assert.deepEqual(counts.json(), {
+    plan: "max",
+    limits: limitsOf("max"),
+    used: { month: 1, total: 1000 },
+    freeWeekEnds: null,
+  });
   // No project row travelled: the counts are HEAD requests with empty bodies.
   const reads = data.requests.filter((r) => r.path.startsWith("/rest/v1/projects"));
   assert.deepEqual(

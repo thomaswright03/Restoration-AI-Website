@@ -95,7 +95,7 @@
           <li data-nav-signed-in hidden><a href="projects.html">My projects</a></li>
           <li data-nav-signed-in hidden><a href="account.html">Account</a></li>
           <li><a href="account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
-          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Get started</a></li>
+          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Try it free</a></li>
           <li class="nav-lang">
             <details class="lang-menu nav-menu">
               <summary>
@@ -150,16 +150,20 @@
         <div class="hero-inner">
           <div class="hero-words">
             <p class="eyebrow center">For remodeling and restoration businesses</p>
+            <p class="hero-offer" data-nav-signed-out>Starter free for 7 days: just sign up, no card needed</p>
             <h1><em>Design</em> your customer's bathroom in 3D</h1>
             <p>
               Lay out the room, pick fixtures and finishes, and see a rough estimate at your prices. Save each design as
               a project, with your client's details and a materials list.
             </p>
             <div class="hero-actions">
-              <a href="signup.html" class="btn btn-primary">Get started</a>
+              <a href="signup.html" class="btn btn-primary">Start your free week</a>
               <a href="designer.html" class="btn btn-outline">Try the live demo</a>
             </div>
-            <p class="hero-note">Have a promo code? Your first 7 days are free. Cancel any time.</p>
+            <p class="hero-note">
+              Sign up and use the Starter plan free for 7 days: save real projects, with no card and no payment. After
+              that, plans start at $49.99 a month.
+            </p>
           </div>
           <!-- The designer itself, retaken with scripts/hero-shots.mjs (one image per language); phones get a tighter crop of the room. -->
           <figure class="hero-shot">
@@ -188,7 +192,10 @@
           <div class="card">
             <span class="card-number">01</span>
             <h3>Sign up</h3>
-            <p>Create an account and pick the Starter, Pro or Max plan. A promo code makes your first 7 days free.</p>
+            <p>
+              Create an account and your first 7 days on Starter are free, with no card. Then pick Starter, Pro or Max
+              to keep saving projects.
+            </p>
           </div>
           <div class="card">
             <span class="card-number">02</span>
@@ -255,17 +262,19 @@
         <p class="eyebrow center">Pricing</p>
         <h2 class="section-title" id="pricing-title">Pick the plan that fits your workload</h2>
         <p class="section-subtitle">
-          Billed monthly, cancel any time. Have a promo code? Your first 7 days are free. Prices in US dollars.
+          Every new account gets Starter free for 7 days, with no card needed. After that, plans are billed monthly and
+          you can cancel any time. Prices in US dollars.
         </p>
         <div class="plan-grid plan-grid-3">
           <div class="plan-card">
             <h3>Starter</h3>
             <p class="plan-price"><span>$49.99</span> per month</p>
+            <p class="plan-offer">First 7 days free, no card</p>
             <ul class="plan-limits">
               <li>10 new projects a month</li>
               <li>Keep up to 50 projects</li>
             </ul>
-            <a href="signup.html?plan=starter" class="btn btn-outline-dark btn-block">Get started</a>
+            <a href="signup.html?plan=starter" class="btn btn-outline-dark btn-block">Start your free week</a>
           </div>
           <div class="plan-card plan-card-featured">
             <p class="plan-badge">Most popular</p>
@@ -287,7 +296,10 @@
             <a href="signup.html?plan=max" class="btn btn-outline-dark btn-block">Get started</a>
           </div>
         </div>
-        <p class="plan-free">Just looking? A free account lets you use the designer; saving projects needs a plan.</p>
+        <p class="plan-free">
+          Just looking? After your free week, a free account still lets you use the designer; saving projects needs a
+          plan.
+        </p>
         <ul class="plan-includes">
           <li>The 3D bathroom designer and estimate, for your business</li>
           <li>Your own labor prices</li>
@@ -299,6 +311,24 @@
       <section class="section faq-list" id="faq" aria-labelledby="faq-title">
         <p class="eyebrow center">FAQ</p>
         <h2 class="section-title" id="faq-title">Questions</h2>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              How does the free week work?
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner">
+              <p>
+                Create an account and you're on the Starter plan for 7 days, free: save up to 10 new projects. There's
+                no card to enter and nothing to cancel. When the week ends, your account goes back to the free plan on
+                its own, and you're only charged if you pick a plan. Projects you saved stay in your account. One free
+                week per person.
+              </p>
+            </div>
+          </div>
+        </div>
         <div class="faq-item">
           <h3 class="faq-heading">
             <button class="faq-question" type="button">
@@ -387,8 +417,8 @@
           <div class="faq-answer">
             <div class="faq-answer-inner">
               <p>
-                Yes, any time from your account. Your designer stays on until the end of the period you've paid for. If
-                a promo code gave you free days and you cancel before they end, you aren't charged.
+                Yes, any time from your account. Your designer stays on until the end of the period you've paid for. The
+                free week needs no cancelling: it simply ends.
               </p>
             </div>
           </div>
@@ -414,8 +444,10 @@
       <section class="cta-band">
         <p class="eyebrow center">Get started</p>
         <h2 class="section-title">Give your customers a better way to start</h2>
-        <p class="section-subtitle">Plans start at $49.99 a month, and a promo code makes your first 7 days free.</p>
-        <a href="signup.html" class="btn btn-primary">Get started</a>
+        <p class="section-subtitle">
+          Start with a free week of Starter, no card needed. After that, plans start at $49.99 a month.
+        </p>
+        <a href="signup.html" class="btn btn-primary">Start your free week</a>
       </section>
     </main>
 
@@ -433,7 +465,7 @@
           <a href="designer.html">Live demo</a>
           <a href="index.html#pricing">Pricing</a>
           <a href="index.html#faq">FAQ</a>
-          <a href="signup.html">Get started</a>
+          <a href="signup.html">Try it free</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contact</h2>

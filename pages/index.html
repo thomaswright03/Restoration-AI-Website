@@ -3,10 +3,11 @@
         <div class="hero-inner">
           <div class="hero-words">
             <p class="eyebrow center">{{index.eyebrow}}</p>
+            <p class="hero-offer" data-nav-signed-out>{{offer.pill}}</p>
             <h1>{{index.h1}}</h1>
             <p>{{index.lede}}</p>
             <div class="hero-actions">
-              <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{nav.cta}}</a>
+              <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{offer.cta}}</a>
               <a href="{{@root}}{{@dir}}designer.html" class="btn btn-outline">{{index.tryDemo}}</a>
             </div>
             <p class="hero-note">{{index.heroNote}}</p>
@@ -98,11 +99,12 @@
           <div class="plan-card">
             <h3>{{index.plan.starter}}</h3>
             <p class="plan-price"><span>{{@priceStarter}}</span> {{index.plan.perMonth}}</p>
+            <p class="plan-offer">{{index.plan.starterOffer}}</p>
             <ul class="plan-limits">
               <li>{{index.plan.starter.monthly}}</li>
               <li>{{index.plan.starter.total}}</li>
             </ul>
-            <a href="{{@root}}{{@dir}}signup.html?plan=starter" class="btn btn-outline-dark btn-block">{{nav.cta}}</a>
+            <a href="{{@root}}{{@dir}}signup.html?plan=starter" class="btn btn-outline-dark btn-block">{{offer.cta}}</a>
           </div>
           <div class="plan-card plan-card-featured">
             <p class="plan-badge">{{index.plan.badge}}</p>
@@ -112,7 +114,7 @@
               <li>{{index.plan.pro.monthly}}</li>
               <li>{{index.plan.pro.total}}</li>
             </ul>
-            <a href="{{@root}}{{@dir}}signup.html?plan=pro" class="btn btn-primary btn-block">{{nav.cta}}</a>
+            <a href="{{@root}}{{@dir}}signup.html?plan=pro" class="btn btn-primary btn-block">{{index.plan.getStarted}}</a>
           </div>
           <div class="plan-card">
             <h3>{{index.plan.max}}</h3>
@@ -121,7 +123,7 @@
               <li>{{index.plan.max.monthly}}</li>
               <li>{{index.plan.max.total}}</li>
             </ul>
-            <a href="{{@root}}{{@dir}}signup.html?plan=max" class="btn btn-outline-dark btn-block">{{nav.cta}}</a>
+            <a href="{{@root}}{{@dir}}signup.html?plan=max" class="btn btn-outline-dark btn-block">{{index.plan.getStarted}}</a>
           </div>
         </div>
         <p class="plan-free">{{index.plan.free}}</p>
@@ -136,6 +138,17 @@
       <section class="section faq-list" id="faq" aria-labelledby="faq-title">
         <p class="eyebrow center">{{nav.faq}}</p>
         <h2 class="section-title" id="faq-title">{{index.faq.title}}</h2>
+        <div class="faq-item">
+          <h3 class="faq-heading">
+            <button class="faq-question" type="button">
+              {{index.q8}}
+              <span class="icon" aria-hidden="true">+</span>
+            </button>
+          </h3>
+          <div class="faq-answer">
+            <div class="faq-answer-inner"><p>{{index.a8}}</p></div>
+          </div>
+        </div>
         <div class="faq-item">
           <h3 class="faq-heading">
             <button class="faq-question" type="button">
@@ -219,6 +232,6 @@
         <p class="eyebrow center">{{index.cta.eyebrow}}</p>
         <h2 class="section-title">{{index.cta.title}}</h2>
         <p class="section-subtitle">{{index.cta.text}}</p>
-        <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{nav.cta}}</a>
+        <a href="{{@root}}{{@dir}}signup.html" class="btn btn-primary">{{offer.cta}}</a>
       </section>
     </main>

@@ -92,7 +92,7 @@
           <li data-nav-signed-in hidden><a href="../es/projects.html">Mis proyectos</a></li>
           <li data-nav-signed-in hidden><a href="../es/account.html">Cuenta</a></li>
           <li><a href="../es/account.html" data-auth-link data-logout-label="Cerrar sesión">Iniciar sesión</a></li>
-          <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Empezar</a></li>
+          <li data-nav-signed-out><a href="../es/signup.html" class="nav-cta">Pruébelo gratis</a></li>
           <li class="nav-lang">
             <details class="lang-menu nav-menu">
               <summary>
@@ -198,7 +198,16 @@
               <strong>Tiene el plan gratis.</strong> Puede usar el diseñador todo lo que quiera, pero para guardar
               proyectos necesita un plan de pago.
             </p>
-            <p><a href="../es/account.html">Elegir un plan</a></p>
+            <ul class="plan-mini">
+              <li><strong>Starter</strong>, $49.99 al mes: 10 proyectos nuevos al mes, guarde hasta 50</li>
+              <li><strong>Pro</strong>, $99.99 al mes: 25 proyectos nuevos al mes, guarde hasta 100</li>
+              <li><strong>Max</strong>, $199.99 al mes: 100 proyectos nuevos al mes, guarde hasta 1,000</li>
+            </ul>
+            <p><a href="../es/account.html" class="btn btn-primary">Ver planes y precios</a></p>
+          </div>
+          <div class="app-notice" id="projects-freeweek" role="status" hidden>
+            <p id="projects-freeweek-text"></p>
+            <p><a href="../es/account.html">Ver planes y precios</a></p>
           </div>
 
           <div class="app-card" id="projects-usage" hidden>
@@ -313,7 +322,7 @@
           <a href="../es/designer.html">Demo en vivo</a>
           <a href="../es/index.html#pricing">Precios</a>
           <a href="../es/index.html#faq">Preguntas</a>
-          <a href="../es/signup.html">Empezar</a>
+          <a href="../es/signup.html">Pruébelo gratis</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contacto</h2>

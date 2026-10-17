@@ -2,7 +2,8 @@
 // /api/projects: a subscriber's saved designs ("projects"), with the
 // signed-in user's Supabase access token as a Bearer token.
 //
-//   GET                       the plan, its limits, what's used, and the list
+//   GET                       the plan, its limits, what's used, freeWeekEnds
+//                             (api/_plans.js, the free week), and the list
 //   GET    ?counts=1          the plan, its limits and what's used, without the
 //                             list (for screens that only show usage; the
 //                             counts come from the database as numbers)
@@ -39,7 +40,7 @@
 "use strict";
 
 const { supabaseReady, sendJson, sendError, db, dbCount, requireUser, readForm, readRawBody } = require("./_lib.js");
-const { planOf, limitsOf } = require("./_plans.js");
+const { planOf, limitsOf, onFreeWeek, ACTIVE_STATUSES } = require("./_plans.js");
 const { subscriptionOf } = require("./_subscriptions.js");
 const { isOff, pausedBody, switches } = require("./_switches.js");
 const Plan = require("../js/room-plan.js");
@@ -182,9 +183,13 @@ function monthStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 }
 
+// freeWeekEnds: when the free week ends, while it's what gives the plan
+// (null on a paid plan or after the week).
 async function planFor(userId) {
-  const plan = planOf(await subscriptionOf(userId));
-  return { plan, limits: limitsOf(plan) };
+  const sub = await subscriptionOf(userId);
+  const plan = planOf(sub);
+  const freeWeek = !!sub && !ACTIVE_STATUSES.includes(sub.status) && onFreeWeek(sub);
+  return { plan, limits: limitsOf(plan), freeWeekEnds: freeWeek ? sub.free_week_ends : null };
 }
 
 // What the account has used, counted by the database (no rows travel).
@@ -221,13 +226,13 @@ module.exports = async function handler(req, res) {
         return sendJson(res, 200, { project: rows[0] });
       }
       const countsOnly = /^(1|true)$/.test(String((req.query && req.query.counts) || ""));
-      const [{ plan, limits }, used, projects] = await Promise.all([
+      const [{ plan, limits, freeWeekEnds }, used, projects] = await Promise.all([
         planFor(user.id),
         usage(user.id),
         countsOnly ? null : db("projects?" + owner + "&select=" + LIST_FIELDS + "&order=updated_at.desc&limit=1000"),
       ]);
-      if (countsOnly) return sendJson(res, 200, { plan, limits, used });
-      return sendJson(res, 200, { plan, limits, used, projects: projects || [] });
+      if (countsOnly) return sendJson(res, 200, { plan, limits, used, freeWeekEnds });
+      return sendJson(res, 200, { plan, limits, used, freeWeekEnds, projects: projects || [] });
     }
 
     const body = req.method === "DELETE" ? {} : await readBody(req);

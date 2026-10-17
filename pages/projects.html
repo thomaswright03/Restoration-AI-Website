@@ -40,6 +40,15 @@
           </div>
           <div class="app-notice" id="projects-free" hidden>
             <p><strong>{{projects.free.title}}</strong> {{projects.free.text}}</p>
+            <ul class="plan-mini">
+              <li>{{projects.free.starter}}</li>
+              <li>{{projects.free.pro}}</li>
+              <li>{{projects.free.max}}</li>
+            </ul>
+            <p><a href="{{@root}}{{@dir}}account.html" class="btn btn-primary">{{projects.free.cta}}</a></p>
+          </div>
+          <div class="app-notice" id="projects-freeweek" role="status" hidden>
+            <p id="projects-freeweek-text"></p>
             <p><a href="{{@root}}{{@dir}}account.html">{{projects.free.cta}}</a></p>
           </div>
 

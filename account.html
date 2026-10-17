@@ -89,7 +89,7 @@
           <li data-nav-signed-in hidden><a href="projects.html">My projects</a></li>
           <li data-nav-signed-in hidden><a href="account.html">Account</a></li>
           <li><a href="account.html" data-auth-link data-logout-label="Log out">Log in</a></li>
-          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Get started</a></li>
+          <li data-nav-signed-out><a href="signup.html" class="nav-cta">Try it free</a></li>
           <li class="nav-lang">
             <details class="lang-menu nav-menu">
               <summary>
@@ -193,17 +193,50 @@
               <button type="button" class="btn btn-outline-dark" id="plan-retry">Try again</button>
             </div>
             <div id="plan-buy" hidden>
+              <p class="plan-pitch">Every plan is billed monthly in US dollars, and you can cancel any time.</p>
               <div class="form-group plan-promo" id="plan-promo-row" hidden>
                 <label for="plan-promo">Promo code (optional)</label>
                 <input type="text" id="plan-promo" autocomplete="off" autocapitalize="characters" spellcheck="false" />
               </div>
-              <div class="app-actions">
-                <button type="button" class="btn btn-outline-dark" data-plan="starter">
-                  Choose Starter, $49.99 a month
-                </button>
-                <button type="button" class="btn btn-primary" data-plan="pro">Choose Pro, $99.99 a month</button>
-                <button type="button" class="btn btn-outline-dark" data-plan="max">Choose Max, $199.99 a month</button>
+              <div class="plan-grid plan-grid-3 plan-grid-account">
+                <div class="plan-card">
+                  <h3>Starter</h3>
+                  <p class="plan-price"><span>$49.99</span> per month</p>
+                  <ul class="plan-limits">
+                    <li>10 new projects a month</li>
+                    <li>Keep up to 50 projects</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="starter">
+                    Choose Starter
+                  </button>
+                </div>
+                <div class="plan-card plan-card-featured">
+                  <p class="plan-badge">Most popular</p>
+                  <h3>Pro</h3>
+                  <p class="plan-price"><span>$99.99</span> per month</p>
+                  <ul class="plan-limits">
+                    <li>25 new projects a month</li>
+                    <li>Keep up to 100 projects</li>
+                  </ul>
+                  <button type="button" class="btn btn-primary btn-block" data-plan="pro">Choose Pro</button>
+                </div>
+                <div class="plan-card">
+                  <h3>Max</h3>
+                  <p class="plan-price"><span>$199.99</span> per month</p>
+                  <ul class="plan-limits">
+                    <li>100 new projects a month</li>
+                    <li>Keep up to 1,000 projects</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="max">Choose Max</button>
+                </div>
               </div>
+              <p class="plan-includes-title">Every plan includes:</p>
+              <ul class="plan-includes plan-includes-account">
+                <li>The 3D bathroom designer and estimate, for your business</li>
+                <li>Your own labor prices</li>
+                <li>Saved projects with client details, the 3D model and a materials list</li>
+                <li>English, Spanish and Portuguese</li>
+              </ul>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               Checkout is handled by Stripe. With a promo code your first 7 days are free: cancel before they end and
@@ -620,7 +653,7 @@
           <a href="designer.html">Live demo</a>
           <a href="index.html#pricing">Pricing</a>
           <a href="index.html#faq">FAQ</a>
-          <a href="signup.html">Get started</a>
+          <a href="signup.html">Try it free</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contact</h2>

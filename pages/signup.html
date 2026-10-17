@@ -3,6 +3,14 @@
         <h1 class="section-title" id="auth-title" data-mode-text="signup">{{signup.h1}}</h1>
         <h1 class="section-title" data-mode-text="login" hidden>{{signup.h1Login}}</h1>
         <p class="section-subtitle" data-mode-text="signup">{{signup.lede}}</p>
+        <div class="offer-card" data-mode-text="signup">
+          <h2>{{signup.offer.title}}</h2>
+          <ul>
+            <li>{{signup.offer.1}}</li>
+            <li>{{signup.offer.2}}</li>
+            <li>{{signup.offer.3}}</li>
+          </ul>
+        </div>
 
         <div class="app-notice" id="server-down" role="alert" hidden>
           <p><strong>{{account.down.title}}</strong> <span id="server-down-text">{{account.down.text}}</span></p>

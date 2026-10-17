@@ -10,7 +10,7 @@
   "nav.logout": ["Log out", "Cerrar sesión", "Sair"],
   "nav.projects": ["My projects", "Mis proyectos", "Meus projetos"],
   "nav.account": ["Account", "Cuenta", "Conta"],
-  "nav.cta": ["Get started", "Empezar", "Começar"],
+  "nav.cta": ["Try it free", "Pruébelo gratis", "Teste grátis"],
   "nav.language": ["Language", "Idioma", "Idioma"],
   "nav.langCode": ["EN", "ES", "PT"],
   "footer.tagline": [
@@ -33,5 +33,11 @@
   "footer.themeLabel": ["Theme", "Tema", "Tema"],
   "footer.system": ["System", "Sistema", "Sistema"],
   "footer.light": ["Light", "Claro", "Claro"],
-  "footer.dark": ["Dark", "Oscuro", "Escuro"]
+  "footer.dark": ["Dark", "Oscuro", "Escuro"],
+  "offer.pill": [
+    "Starter free for 7 days: just sign up, no card needed",
+    "Starter gratis por 7 días: solo regístrese, sin tarjeta",
+    "Starter grátis por 7 dias: é só se cadastrar, sem cartão"
+  ],
+  "offer.cta": ["Start your free week", "Empiece su semana gratis", "Comece a sua semana grátis"]
 }

@@ -1591,3 +1591,78 @@ body:has(.studio-page) .nav {
 .btn-danger:hover:not(:disabled) {
   filter: brightness(0.9);
 }
+
+/* ---------- Plans on the account page (no paid plan yet) ---------- */
+.plan-pitch {
+  margin: var(--space-4) 0 var(--space-5);
+  color: var(--color-ink-soft);
+}
+
+.plan-grid-account {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  max-width: none;
+  margin: var(--space-7) 0 0;
+}
+
+.plan-card .btn.is-suggested {
+  box-shadow: 0 0 0 3px var(--color-focus);
+}
+
+.plan-includes-title {
+  margin: var(--space-6) 0 var(--space-2);
+  font-weight: 600;
+}
+
+.plan-includes.plan-includes-account {
+  max-width: none;
+  margin: 0;
+}
+
+/* ---------- The free week, for visitors ---------- */
+.hero-offer {
+  display: inline-block;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: #04201c !important;
+  font-weight: 600;
+}
+
+.offer-card {
+  margin-bottom: var(--space-6);
+  padding: var(--space-5) var(--space-6);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-accent-bright) 12%, var(--color-surface));
+}
+
+.offer-card h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-lg);
+}
+
+.offer-card ul {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.hero-offer[hidden],
+.offer-card[hidden] {
+  display: none;
+}
+
+.plan-offer {
+  margin: 0 0 var(--space-4);
+  color: var(--color-accent-text);
+  font-weight: 600;
+}
+
+.plan-mini {
+  margin: var(--space-2) 0 var(--space-4);
+  padding-left: var(--space-5);
+}
+
+.plan-mini li {
+  margin-bottom: var(--space-1);
+}

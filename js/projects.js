@@ -497,6 +497,7 @@
   // ===================================================================
   var state = {
     plan: "free",
+    freeWeekEnds: null, // while the free week at sign-up is what gives the plan
     limits: { monthly: 0, total: 0 },
     used: { month: 0, total: 0 },
     projects: [],
@@ -508,6 +509,10 @@
     $("projects-plan").textContent = T("proj.planLine", { plan: planName(state.plan) });
     show($("projects-plan"), true);
     show($("projects-free"), !paid);
+    show($("projects-freeweek"), !!state.freeWeekEnds);
+    if (state.freeWeekEnds) {
+      $("projects-freeweek-text").textContent = T("proj.freeWeek", { date: formatDate(state.freeWeekEnds) });
+    }
     show($("projects-usage"), paid);
     show($("project-new"), true);
     if (!paid) return;
@@ -884,6 +889,7 @@
       .then(function (results) {
         var data = results[0];
         state.plan = data.plan;
+        state.freeWeekEnds = data.freeWeekEnds || null;
         state.limits = data.limits;
         state.used = data.used;
         state.projects = data.projects || [];

@@ -89,7 +89,7 @@
           <li data-nav-signed-in hidden><a href="../pt/projects.html">Meus projetos</a></li>
           <li data-nav-signed-in hidden><a href="../pt/account.html">Conta</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
+          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Teste grátis</a></li>
           <li class="nav-lang">
             <details class="lang-menu nav-menu">
               <summary>
@@ -197,19 +197,52 @@
               <button type="button" class="btn btn-outline-dark" id="plan-retry">Tentar de novo</button>
             </div>
             <div id="plan-buy" hidden>
+              <p class="plan-pitch">
+                Todos os planos são cobrados todo mês em dólares americanos, e você pode cancelar quando quiser.
+              </p>
               <div class="form-group plan-promo" id="plan-promo-row" hidden>
                 <label for="plan-promo">Código promocional (opcional)</label>
                 <input type="text" id="plan-promo" autocomplete="off" autocapitalize="characters" spellcheck="false" />
               </div>
-              <div class="app-actions">
-                <button type="button" class="btn btn-outline-dark" data-plan="starter">
-                  Escolher Starter, US$ 49,99 por mês
-                </button>
-                <button type="button" class="btn btn-primary" data-plan="pro">Escolher Pro, US$ 99,99 por mês</button>
-                <button type="button" class="btn btn-outline-dark" data-plan="max">
-                  Escolher Max, US$ 199,99 por mês
-                </button>
+              <div class="plan-grid plan-grid-3 plan-grid-account">
+                <div class="plan-card">
+                  <h3>Starter</h3>
+                  <p class="plan-price"><span>US$ 49,99</span> por mês</p>
+                  <ul class="plan-limits">
+                    <li>10 projetos novos por mês</li>
+                    <li>Guarde até 50 projetos</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="starter">
+                    Escolher Starter
+                  </button>
+                </div>
+                <div class="plan-card plan-card-featured">
+                  <p class="plan-badge">O mais escolhido</p>
+                  <h3>Pro</h3>
+                  <p class="plan-price"><span>US$ 99,99</span> por mês</p>
+                  <ul class="plan-limits">
+                    <li>25 projetos novos por mês</li>
+                    <li>Guarde até 100 projetos</li>
+                  </ul>
+                  <button type="button" class="btn btn-primary btn-block" data-plan="pro">Escolher Pro</button>
+                </div>
+                <div class="plan-card">
+                  <h3>Max</h3>
+                  <p class="plan-price"><span>US$ 199,99</span> por mês</p>
+                  <ul class="plan-limits">
+                    <li>100 projetos novos por mês</li>
+                    <li>Guarde até 1.000 projetos</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="max">Escolher Max</button>
+                </div>
               </div>
+              <p class="plan-includes-title">Todos os planos incluem:</p>
+              <ul class="plan-includes plan-includes-account">
+                <li>O projetista de banheiros em 3D e a estimativa, para a sua empresa</li>
+                <li>Os seus próprios preços de mão de obra</li>
+                <li>Projetos salvos com os dados do cliente, o modelo 3D e a lista de materiais</li>
+                <li>Inglês, espanhol e português</li>
+              </ul>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>
               O pagamento é feito pela Stripe. Com um código promocional os seus primeiros 7 dias são grátis: se
@@ -634,7 +667,7 @@
           <a href="../pt/designer.html">Demonstração</a>
           <a href="../pt/index.html#pricing">Preços</a>
           <a href="../pt/index.html#faq">Perguntas</a>
-          <a href="../pt/signup.html">Começar</a>
+          <a href="../pt/signup.html">Teste grátis</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contato</h2>

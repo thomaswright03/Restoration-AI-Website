@@ -26,9 +26,9 @@
   ],
   "index.tryDemo": ["Try the live demo", "Probar la demo", "Ver a demonstração"],
   "index.heroNote": [
-    "Have a promo code? Your first {{@promoDays}} days are free. Cancel any time.",
-    "¿Tiene un código promocional? Sus primeros {{@promoDays}} días son gratis. Cancele cuando quiera.",
-    "Tem um código promocional? Os seus primeiros {{@promoDays}} dias são grátis. Cancele quando quiser."
+    "Sign up and use the Starter plan free for 7 days: save real projects, with no card and no payment. After that, plans start at {{@priceStarter}} a month.",
+    "Regístrese y use el plan Starter gratis por 7 días: guarde proyectos reales, sin tarjeta y sin pagar nada. Después, los planes empiezan en {{@priceStarter}} al mes.",
+    "Cadastre-se e use o plano Starter grátis por 7 dias: salve projetos de verdade, sem cartão e sem pagar nada. Depois, os planos começam em {{@priceStarter}} por mês."
   ],
   "index.heroImageAlt": [
     "The designer's layout step: a 5 by 8½ foot bathroom in 3D with a vanity, toilet and bathtub along its walls, the six steps across the top, Riley's note under the room, the fixtures to add on the right, and the running estimate in the top corner.",
@@ -44,9 +44,9 @@
   "index.how.title": ["Up and running in three steps", "Listo en tres pasos", "Pronto em três passos"],
   "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],
   "index.how.1.text": [
-    "Create an account and pick the Starter, Pro or Max plan. A promo code makes your first {{@promoDays}} days free.",
-    "Cree una cuenta y elija el plan Starter, Pro o Max. Con un código promocional, sus primeros {{@promoDays}} días son gratis.",
-    "Crie uma conta e escolha o plano Starter, Pro ou Max. Com um código promocional, os seus primeiros {{@promoDays}} dias são grátis."
+    "Create an account and your first 7 days on Starter are free, with no card. Then pick Starter, Pro or Max to keep saving projects.",
+    "Cree una cuenta y sus primeros 7 días en Starter son gratis, sin tarjeta. Después elija Starter, Pro o Max para seguir guardando proyectos.",
+    "Crie uma conta e os seus primeiros 7 dias no Starter são grátis, sem cartão. Depois escolha Starter, Pro ou Max para continuar salvando projetos."
   ],
   "index.how.2.title": ["Make it yours", "Hágalo suyo", "Deixe com a sua cara"],
   "index.how.2.text": [
@@ -112,9 +112,9 @@
     "Escolha o plano que combina com o seu volume de trabalho"
   ],
   "index.pricing.subtitle": [
-    "Billed monthly, cancel any time. Have a promo code? Your first {{@promoDays}} days are free. Prices in US dollars.",
-    "Se cobran cada mes y puede cancelar cuando quiera. ¿Tiene un código promocional? Sus primeros {{@promoDays}} días son gratis. Precios en dólares estadounidenses.",
-    "Cobrança mensal, cancele quando quiser. Tem um código promocional? Os seus primeiros {{@promoDays}} dias são grátis. Preços em dólares americanos."
+    "Every new account gets Starter free for 7 days, with no card needed. After that, plans are billed monthly and you can cancel any time. Prices in US dollars.",
+    "Cada cuenta nueva recibe Starter gratis por 7 días, sin tarjeta. Después, los planes se cobran cada mes y puede cancelar cuando quiera. Precios en dólares estadounidenses.",
+    "Toda conta nova ganha o Starter grátis por 7 dias, sem cartão. Depois, os planos são cobrados todo mês e você pode cancelar quando quiser. Preços em dólares americanos."
   ],
   "index.plan.starter": ["Starter", "Starter", "Starter"],
   "index.plan.starter.monthly": [
@@ -151,10 +151,16 @@
   ],
   "index.plan.perMonth": ["per month", "al mes", "por mês"],
   "index.plan.badge": ["Most popular", "El más elegido", "O mais escolhido"],
+  "index.plan.starterOffer": [
+    "First 7 days free, no card",
+    "Primeros 7 días gratis, sin tarjeta",
+    "Primeiros 7 dias grátis, sem cartão"
+  ],
+  "index.plan.getStarted": ["Get started", "Empezar", "Começar"],
   "index.plan.free": [
-    "Just looking? A free account lets you use the designer; saving projects needs a plan.",
-    "¿Solo quiere probar? Con una cuenta gratis puede usar el diseñador; para guardar proyectos necesita un plan.",
-    "Só quer conhecer? Com uma conta grátis você usa o projetista; para salvar projetos é preciso um plano."
+    "Just looking? After your free week, a free account still lets you use the designer; saving projects needs a plan.",
+    "¿Solo quiere probar? Después de su semana gratis, una cuenta gratis le sigue dejando usar el diseñador; para guardar proyectos necesita un plan.",
+    "Só quer conhecer? Depois da semana grátis, a conta grátis continua liberando o projetista; para salvar projetos é preciso um plano."
   ],
   "index.inc.1": [
     "The 3D bathroom designer and estimate, for your business",
@@ -173,6 +179,12 @@
   ],
   "index.inc.5": ["English, Spanish and Portuguese", "Inglés, español y portugués", "Inglês, espanhol e português"],
   "index.faq.title": ["Questions", "Preguntas frecuentes", "Perguntas frequentes"],
+  "index.q8": ["How does the free week work?", "¿Cómo funciona la semana gratis?", "Como funciona a semana grátis?"],
+  "index.a8": [
+    "Create an account and you're on the Starter plan for 7 days, free: save up to {{@starterMonthly}} new projects. There's no card to enter and nothing to cancel. When the week ends, your account goes back to the free plan on its own, and you're only charged if you pick a plan. Projects you saved stay in your account. One free week per person.",
+    "Cree una cuenta y tendrá el plan Starter gratis por 7 días: guarde hasta {{@starterMonthly}} proyectos nuevos. No hay que poner tarjeta ni cancelar nada. Cuando termina la semana, su cuenta vuelve sola al plan gratis, y solo se le cobra si elige un plan. Los proyectos que guardó se quedan en su cuenta. Una semana gratis por persona.",
+    "Crie uma conta e você fica no plano Starter por 7 dias, de graça: salve até {{@starterMonthly}} projetos novos. Não precisa informar cartão nem cancelar nada. Quando a semana acaba, a conta volta sozinha para o plano grátis, e você só é cobrado se escolher um plano. Os projetos que você salvou continuam na sua conta. Uma semana grátis por pessoa."
+  ],
   "index.q1": ["Do I need to install anything?", "¿Necesito instalar algo?", "Preciso instalar alguma coisa?"],
   "index.a1": [
     "No. Room Designer 3D runs in your browser on a phone, tablet or computer.",
@@ -209,9 +221,9 @@
   ],
   "index.q5": ["Can I cancel?", "¿Puedo cancelar?", "Posso cancelar?"],
   "index.a5": [
-    "Yes, any time from your account. Your designer stays on until the end of the period you've paid for. If a promo code gave you free days and you cancel before they end, you aren't charged.",
-    "Sí, cuando quiera desde su cuenta. Su diseñador sigue activo hasta el final del período pagado. Si un código promocional le dio días gratis y cancela antes de que terminen, no se le cobra.",
-    "Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. Se um código promocional lhe deu dias grátis e você cancelar antes de eles acabarem, não é cobrado."
+    "Yes, any time from your account. Your designer stays on until the end of the period you've paid for. The free week needs no cancelling: it simply ends.",
+    "Sí, cuando quiera desde su cuenta. Su diseñador sigue activo hasta el final del período pagado. La semana gratis no hay que cancelarla: simplemente termina.",
+    "Sim, quando quiser, pela sua conta. O seu projetista continua ativo até o fim do período pago. A semana grátis não precisa ser cancelada: ela simplesmente acaba."
   ],
   "index.q6": ["Is it only for bathrooms?", "¿Es solo para baños?", "É só para banheiros?"],
   "index.a6": [
@@ -226,8 +238,8 @@
     "Dê aos seus clientes um jeito melhor de começar"
   ],
   "index.cta.text": [
-    "Plans start at {{@priceStarter}} a month, and a promo code makes your first {{@promoDays}} days free.",
-    "Planes desde {{@priceStarter}} al mes, y con un código promocional sus primeros {{@promoDays}} días son gratis.",
-    "Planos a partir de {{@priceStarter}} por mês, e com um código promocional os seus primeiros {{@promoDays}} dias são grátis."
+    "Start with a free week of Starter, no card needed. After that, plans start at {{@priceStarter}} a month.",
+    "Empiece con una semana gratis de Starter, sin tarjeta. Después, los planes empiezan en {{@priceStarter}} al mes.",
+    "Comece com uma semana grátis do Starter, sem cartão. Depois, os planos começam em {{@priceStarter}} por mês."
   ]
 }

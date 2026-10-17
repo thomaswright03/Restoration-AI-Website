@@ -7,8 +7,8 @@
 -- projects       designs a subscriber saved, written only by api/projects.js
 -- project_creations  one row per project ever created, never deleted, so the
 --                monthly allowance counts projects that were later deleted
--- used_trials    a SHA-256 of each deleted account's email that had a plan,
---                so the same email gets one free trial (api/checkout.js)
+-- used_trials    a SHA-256 of each email that had the free week or a plan,
+--                so the same person gets one free trial (api/checkout.js)
 --
 -- Row-level security lets a signed-in owner read and edit their own rows
 -- from the browser; everything else goes through the api/ functions.
@@ -52,6 +52,10 @@ create table if not exists public.subscriptions (
 -- starter | pro | max: which plan the subscription is on (api/_plans.js).
 -- Filled by the Stripe webhook; can also be set by hand in Table Editor.
 alter table public.subscriptions add column if not exists plan text;
+-- The free week: when it ends. Set once, at sign-up, by grant_free_week()
+-- below; until then the account counts as Starter (api/_plans.js). The
+-- Stripe webhook never writes it, so a paid plan doesn't clear it.
+alter table public.subscriptions add column if not exists free_week_ends timestamptz;
 -- Retired: the old "Put it on your website" add-on. Nothing reads or writes
 -- it any more (a business's designer opens only for its owner); kept so
 -- existing databases don't need a destructive change.
@@ -257,3 +261,72 @@ drop trigger if exists refuse_signup_when_paused on auth.users;
 create trigger refuse_signup_when_paused
   before insert on auth.users
   for each row execute function public.refuse_signup_when_paused();
+
+-- The free week: every new account gets Starter for 7 days, with no card
+-- and no payment (api/_plans.js). Once per person: the email's key (no
+-- +tag, no Gmail dots; api/_subscriptions.js emailKey() does the same) is
+-- hashed into used_trials when the week is given, so a second account with
+-- the same or a dressed-up email, or a deleted and re-made one, gets none.
+-- Anything going wrong here never stops the sign-up itself.
+create or replace function public.email_key(p_email text)
+returns text
+language plpgsql
+immutable
+as $$
+declare
+  e text := lower(trim(coalesce(p_email, '')));
+  at_pos integer := length(e) - strpos(reverse(e), '@') + 1;
+  local text;
+  domain text;
+begin
+  if strpos(e, '@') < 2 then
+    return e;
+  end if;
+  local := split_part(substr(e, 1, at_pos - 1), '+', 1);
+  domain := substr(e, at_pos + 1);
+  if domain in ('gmail.com', 'googlemail.com') then
+    local := replace(local, '.', '');
+    domain := 'gmail.com';
+  end if;
+  return local || '@' || domain;
+end;
+$$;
+
+create or replace function public.grant_free_week()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, extensions
+as $$
+declare
+  raw_hash text;
+  key_hash text;
+  claimed integer;
+begin
+  if new.email is null or trim(new.email) = '' then
+    return new;
+  end if;
+  raw_hash := encode(digest(lower(trim(new.email)), 'sha256'), 'hex');
+  key_hash := encode(digest(public.email_key(new.email), 'sha256'), 'hex');
+  if exists (select 1 from public.used_trials where email_hash in (raw_hash, key_hash)) then
+    return new;
+  end if;
+  insert into public.used_trials (email_hash) values (key_hash) on conflict (email_hash) do nothing;
+  get diagnostics claimed = row_count;
+  if claimed = 1 then
+    insert into public.subscriptions (owner_id, free_week_ends)
+      values (new.id, now() + interval '7 days')
+      on conflict (owner_id) do nothing;
+  end if;
+  return new;
+exception when others then
+  raise warning 'grant_free_week: %', sqlerrm;
+  return new;
+end;
+$$;
+revoke all on function public.grant_free_week() from public, anon, authenticated;
+grant execute on function public.grant_free_week() to supabase_auth_admin;
+drop trigger if exists grant_free_week on auth.users;
+create trigger grant_free_week
+  after insert on auth.users
+  for each row execute function public.grant_free_week();

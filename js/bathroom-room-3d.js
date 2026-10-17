@@ -2086,7 +2086,9 @@ function slotOptionStates(slot, sel, shown) {
     var reason = null;
     if (opt.available && !opt.available(sel)) reason = T(opt.unavailableReason || "room3d.noFit");
     else if (shown && sel[slot.id] !== opt && productWouldDrop(slot, opt)) reason = T("room3d.tooBig");
-    return { id: opt.id, label: T("room3d.option." + opt.id), reason: reason };
+    // mmns: the Kohler model numbers it puts in the room (the studio shows
+    // their photos); a stand-in or "none" has none.
+    return { id: opt.id, label: T("room3d.option." + opt.id), reason: reason, mmns: optionMmns(slot, opt, sel) };
   });
 }
 

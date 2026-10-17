@@ -971,14 +971,14 @@ test.describe("design studio", () => {
     // to be picked before going on.
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-products")).toBeVisible();
-    await expect(need).toContainText("Choose one…");
-    await expect(page.locator(".studio-product-card .studio-field.is-missing").first()).toBeVisible();
+    await expect(need).toContainText("tap Keep or Change in each list still waiting");
+    await expect(page.locator(".studio-product-card .studio-pick.is-missing").first()).toBeVisible();
     await expect(step(page, "finishes")).toHaveAttribute("aria-disabled", "true");
-    const unpicked = page.locator('.studio-product-card select:has(option[value=""])');
-    while (await unpicked.count()) {
-      const list = unpicked.first();
-      await list.selectOption(await list.locator("option:not([disabled])").first().getAttribute("value"));
-    }
+    // Keeping what's shown is a pick; so is choosing another product.
+    const waiting = page.locator('.studio-pick[data-picked="false"]');
+    await waiting.first().locator(".studio-pick-change").click();
+    await page.locator(".studio-option:not([disabled])").first().click();
+    while (await waiting.count()) await waiting.first().locator(".studio-pick-keep").click();
     await expect(need).toHaveCount(0);
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();

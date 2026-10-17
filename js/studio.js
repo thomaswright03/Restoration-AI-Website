@@ -26,6 +26,9 @@
   var IN = 1 / 12;
 
   var STEPS = ["room", "layout", "electrical", "products", "finishes", "estimate"];
+  // The steps with a one-line intro and a shorter line from Riley in the
+  // simple studio (the estimate's depend on whose prices they are).
+  var SIMPLE_INTRO = ["room", "layout", "electrical", "products", "finishes"];
   var ADDABLE = ["toilet", "vanity", "sink", "tub", "shower", "cabinet"];
   var ADDABLE_POINTS = ["outlet", "switch", "light", "fan"];
   var MAX_DOORS = 3;
@@ -40,6 +43,9 @@
   var VIEW_ONLY = PAGE_PARAMS.get("embed") === "1";
   var KEEPS_DRAFT = !PAGE_PARAMS.get("project") && !VIEW_ONLY;
   var HASH_KEY = "design";
+  // The studio opens with the basics of each step ("simple"); "All options"
+  // shows every setting. This browser remembers the choice.
+  var MODE_KEY = "rd3d_studio_mode";
   // Tile and plank floors are bought with extra for cuts and breakage;
   // walls take two coats of paint.
   var TILE_WASTE = 1.1;
@@ -147,6 +153,9 @@
       '<path d="M6.3 6.3l1.7 1.7M16 16l1.7 1.7M6.3 17.7 8 16M16 8l1.7-1.7" opacity="0.45"/>',
     external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
     send: '<path d="M4 12 20 4l-6 16-3-7z"/><path d="m11 13 9-9"/>',
+
+    pipe: '<path d="M4 4v6a3 3 0 0 0 3 3h10a3 3 0 0 1 3 3v4"/><path d="M2 4h4M18 20h4"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   };
 
   function icon(name) {
@@ -179,8 +188,50 @@
     drag: null,
     arrange: null, // { options: [...] } while "Arrange it for me" shows its choices
     isolate: false, // show the fixture being worked on by itself
+    simple: savedMode() !== "all", // the basics of each step, or every setting
+    open: {}, // which "More options" are open, by name, across redraws
+    chooser: null, // the product list whose choices are open (Products step)
   };
   var els = {};
+
+  function savedMode() {
+    try {
+      return localStorage.getItem(MODE_KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setSimple(on) {
+    if (ui.simple === on) return;
+    ui.simple = on;
+    try {
+      localStorage.setItem(MODE_KEY, on ? "simple" : "all");
+    } catch (e) {
+      /* storage blocked: the choice still holds for this visit */
+    }
+    if (els.studio) els.studio.classList.toggle("is-simple", on);
+    renderViewbar();
+    renderHint();
+    renderPanel();
+    rileyTalk({ step: true });
+    announce(T(on ? "studio.mode.simpleOn" : "studio.mode.allOn"));
+  }
+
+  // The simple studio keeps the rarely needed settings of a step behind a
+  // "More options" fold (kept open across redraws once opened); with all
+  // options showing they're laid out like everything else.
+  function more(name, kids, label) {
+    if (!ui.simple) return h("div", { class: "studio-more-open" }, kids);
+    var box = h("details", { class: "studio-more", open: ui.open[name] ? true : null, "data-more": name }, [
+      h("summary", {}, [h("span", { icon: "right" }), h("span", { text: label || T("studio.more") })]),
+      h("div", { class: "studio-more-body" }, kids),
+    ]);
+    box.addEventListener("toggle", function () {
+      ui.open[name] = box.open;
+    });
+    return box;
+  }
 
   function findItem(id, d) {
     return (d || design).items.filter(function (it) {
@@ -868,20 +919,23 @@
 
     if (mini && !opts.tags) return svg;
 
-    // The wall the plumbing stack is in, hatched along its inside face.
-    var stack = wallOf(Plan.stackWall(d), d);
-    var sp0 = wallPoint(stack, 0, 0);
-    var sp1 = wallPoint(stack, stack.span, STACK_BAND);
-    svg.appendChild(
-      s("g", { class: "plan-stack" }, [
-        s("rect", {
-          x: num(Math.min(sp0.x, sp1.x)),
-          y: num(Math.min(sp0.z, sp1.z)),
-          width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
-          height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
-        }),
-      ]),
-    );
+    // The wall the plumbing stack is in, hatched along its inside face
+    // (not while the Room step is still asking which wall: stack false).
+    if (opts.stack !== false) {
+      var stack = wallOf(Plan.stackWall(d), d);
+      var sp0 = wallPoint(stack, 0, 0);
+      var sp1 = wallPoint(stack, stack.span, STACK_BAND);
+      svg.appendChild(
+        s("g", { class: "plan-stack" }, [
+          s("rect", {
+            x: num(Math.min(sp0.x, sp1.x)),
+            y: num(Math.min(sp0.z, sp1.z)),
+            width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
+            height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
+          }),
+        ]),
+      );
+    }
 
     // Wall letters and the room's size. A shaped room shows each wall's
     // length beside its letter.
@@ -1540,7 +1594,8 @@
     els.mini.hidden = ui.view === "plan" || !has3d;
     if (els.isoBtn) {
       var what = isolateWhat();
-      els.isoBtn.hidden = ui.view === "plan" || !has3d;
+      // The simple studio shows "Just this" once there's something to show.
+      els.isoBtn.hidden = ui.view === "plan" || !has3d || (ui.simple && !what);
       els.isoBtn.disabled = !what;
       els.isoBtn.setAttribute("aria-pressed", ui.isolate && what ? "true" : "false");
       var label = T(ui.isolate && what ? "studio.view.isolateOn" : "studio.view.isolate");
@@ -1556,8 +1611,41 @@
         ? "studio.hint.plan"
         : ui.view === "walk"
           ? "studio.hint.walk"
-          : "studio.hint.3d";
+          : asksForWall()
+            ? "studio.hint.pipes"
+            : "studio.hint.3d";
     els.hint.textContent = T(key);
+  }
+
+  // While the Room step waits to be told which wall the plumbing is in, a
+  // tap on a wall in the 3D room answers it.
+  function asksForWall() {
+    return !VIEW_ONLY && ui.step === "room" && !!design && !answers().stack;
+  }
+
+  // The wall a point on the floor (room feet) is nearest to.
+  function nearestWall(x, z) {
+    /** @type {{ id: string, dist: number } | null} */
+    var best = null;
+    Plan.wallIds(design.room).forEach(function (wid) {
+      var w = wallOf(wid);
+      var a = clamp((x - w.ox) * w.dx + (z - w.oz) * w.dz, 0, w.span);
+      var p = wallPoint(w, a, 0);
+      var dist = Math.sqrt((p.x - x) * (p.x - x) + (p.z - z) * (p.z - z));
+      if (!best || dist < best.dist) best = { id: wid, dist: dist };
+    });
+    return best ? best.id : null;
+  }
+
+  function tapWall(clientX, clientY) {
+    if (!has3d || !asksForWall()) return false;
+    var hit = room3d.wallHit(clientX, clientY);
+    if (!hit) return false;
+    var wid = Plan.wallIds(design.room).indexOf(hit.wallId) !== -1 ? hit.wallId : nearestWall(hit.x, hit.z);
+    if (!wid) return false;
+    setStackWall(wid);
+    toast(T("studio.room.plumbingSet", { wall: letter(wid) }));
+    return true;
   }
 
   // ---------------------------------------------------------------------
@@ -1828,10 +1916,12 @@
         endDrag(e.type === "pointercancel");
         return;
       }
-      // A click on empty floor (not a turn of the room) lets go.
+      // A click on empty floor (not a turn of the room) lets go; on a wall,
+      // while the Room step is asking, it picks the plumbing wall.
       var press = ui.pressEmpty;
       ui.pressEmpty = null;
       if (press && Math.abs(e.clientX - press.x) + Math.abs(e.clientY - press.y) < 5) {
+        if (tapWall(e.clientX, e.clientY)) return;
         if (ui.selected) select(null);
         if (ui.point) selectPoint(null);
       }
@@ -2291,11 +2381,15 @@
   function renderBar() {
     if (VIEW_ONLY) return;
     var stop = null;
+    var cur = STEPS.indexOf(ui.step);
     Array.prototype.forEach.call(els.steps.querySelectorAll("[data-step]"), function (btn) {
       var step = btn.getAttribute("data-step");
       var on = step === ui.step;
       if (on) btn.setAttribute("aria-current", "step");
       else btn.removeAttribute("aria-current");
+      // A step behind this one with its questions answered shows a check.
+      var done = STEPS.indexOf(step) < cur && !missingFor(step).length;
+      btn.classList.toggle("is-done", done);
       // A step past one that isn't finished can't be gone to yet.
       var locked = !!stop;
       btn.classList.toggle("is-locked", locked);
@@ -2305,15 +2399,16 @@
     });
     els.studio.setAttribute("data-step", ui.step);
     // On a phone the steps scroll inside the bar: the current one stays in view.
-    var cur = els.steps.querySelector('[aria-current="step"]');
-    if (cur && els.steps.scrollWidth > els.steps.clientWidth) {
+    var curBtn = els.steps.querySelector('[aria-current="step"]');
+    if (curBtn && els.steps.scrollWidth > els.steps.clientWidth) {
       var bar = els.steps.getBoundingClientRect();
-      var box = cur.getBoundingClientRect();
+      var box = curBtn.getBoundingClientRect();
       if (box.left < bar.left) els.steps.scrollLeft += box.left - bar.left;
       else if (box.right > bar.right) els.steps.scrollLeft += box.right - bar.right;
     }
     var last = els.steps.querySelector('[data-label="estimate"]');
     if (last) last.textContent = stepShort("estimate");
+    if (els.hint) renderHint();
     els.undo.disabled = !past.length;
     els.redo.disabled = !future.length;
     if (estimatorOn()) {
@@ -2441,9 +2536,30 @@
     // "design" is the last step without the price estimator: still 6 of 6.
     var n = STEPS.indexOf(step === "design" ? "estimate" : step) + 1;
     return h("header", { class: "studio-step-head" }, [
-      h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
+      h("div", { class: "studio-step-topline" }, [
+        h("p", { class: "studio-step-count", text: T("studio.stepOf", { n: n, total: STEPS.length }) }),
+        modeSwitch(),
+      ]),
       h("h2", { tabindex: "-1", text: T("studio.step." + step + ".title") }),
       stepIntro(step),
+    ]);
+  }
+
+  // The basics, or all options: a switch at the top of every step, which
+  // this browser remembers.
+  function modeSwitch() {
+    return h("label", { class: "studio-mode", for: "studio-mode", title: T("studio.mode.help") }, [
+      h("input", {
+        type: "checkbox",
+        id: "studio-mode",
+        role: "switch",
+        "data-key": "mode",
+        checked: ui.simple ? null : true,
+        onchange: function (e) {
+          setSimple(!e.target.checked);
+        },
+      }),
+      h("span", { class: "studio-mode-label", text: T("studio.mode.all") }),
     ]);
   }
 
@@ -2452,7 +2568,9 @@
   // haven't set their prices, it says so and points to where they're set.
   function stepIntro(step) {
     if (step !== "estimate" || BIZ.demo) {
-      return h("p", { class: "studio-step-intro", text: T("studio.step." + step + ".intro") });
+      // The simple studio says each step in a line.
+      var key = ui.simple && SIMPLE_INTRO.indexOf(step) !== -1 ? "studio.simple." + step + ".intro" : null;
+      return h("p", { class: "studio-step-intro", text: T(key || "studio.step." + step + ".intro") });
     }
     var mode = ratesMode();
     if (mode === "own") {
@@ -2584,10 +2702,12 @@
   }
 
   // A length field that takes feet and inches ("8' 6\"", "8 6", "102 in"),
-  // with 1 in. steps either side. onSet(ft) returns an error message or
-  // nothing.
+  // with 1 in. steps either side (6 in. in the simple studio, where the
+  // buttons are the way to set a size; Shift makes a step a foot).
+  // onSet(ft) returns an error message or nothing.
   function lengthField(key, label, valueFt, onSet, help) {
     var id = "studio-" + key;
+    var by = ui.simple ? 6 * IN : IN;
     var error = h("p", { class: "studio-field-error", id: id + "-error", hidden: true });
     var input = h("input", {
       type: "text",
@@ -2632,7 +2752,7 @@
     var step = function (dir) {
       return function (e) {
         var ft = Plan.parseLength(input.value);
-        set((ft === null ? valueFt : ft) + dir * (e.shiftKey ? 1 : IN));
+        set((ft === null ? valueFt : ft) + dir * (e.shiftKey ? 1 : by));
       };
     };
     return h("div", { class: "studio-field" }, [
@@ -2641,7 +2761,7 @@
         h("button", {
           type: "button",
           "data-key": key + "-less",
-          "aria-label": T("studio.inchLess", { what: label }),
+          "aria-label": T(ui.simple ? "studio.halfFootLess" : "studio.inchLess", { what: label }),
           text: "−",
           onclick: step(-1),
         }),
@@ -2649,12 +2769,16 @@
         h("button", {
           type: "button",
           "data-key": key + "-more",
-          "aria-label": T("studio.inchMore", { what: label }),
+          "aria-label": T(ui.simple ? "studio.halfFootMore" : "studio.inchMore", { what: label }),
           text: "+",
           onclick: step(1),
         }),
       ]),
-      h("p", { class: "studio-field-help", id: id + "-help", text: help || T("studio.lengthHelp") }),
+      h("p", {
+        class: "studio-field-help",
+        id: id + "-help",
+        text: help || T(ui.simple ? "studio.lengthHelpSimple" : "studio.lengthHelp"),
+      }),
       error,
     ]);
   }
@@ -2701,12 +2825,11 @@
         ),
       );
     });
-    body.appendChild(section(T("studio.room.start"), [grid]));
+    body.appendChild(section(T(ui.simple ? "studio.room.pick" : "studio.room.start"), [grid]));
     fillTemplateThumbs();
 
     var room = design.room;
     var shape = Plan.shapeOf(room);
-    body.appendChild(shapeSection(room, shape));
     var setDim = function (key) {
       return function (ft) {
         var lim = Plan.LIMITS;
@@ -2717,55 +2840,45 @@
         return null;
       };
     };
-    body.appendChild(
-      section(T("studio.room.size"), [
-        h("div", { class: "studio-size-grid" }, [
-          lengthField(
-            "size-w",
-            T(shape ? "studio.room.widthOverall" : "studio.room.width"),
-            room.w,
-            setDim("w"),
-            T(shape ? "studio.room.widthOverallHelp" : "studio.room.widthHelp"),
-          ),
-          lengthField(
-            "size-l",
-            T(shape ? "studio.room.lengthOverall" : "studio.room.length"),
-            room.l,
-            setDim("l"),
-            T(shape ? "studio.room.lengthOverallHelp" : "studio.room.lengthHelp"),
-          ),
-          lengthField("size-h", T("studio.room.height"), room.h, setDim("h"), T("studio.room.heightHelp")),
+    var widthField = lengthField(
+      "size-w",
+      T(shape ? "studio.room.widthOverall" : "studio.room.width"),
+      room.w,
+      setDim("w"),
+      T(shape ? "studio.room.widthOverallHelp" : "studio.room.widthHelp"),
+    );
+    var lengthF = lengthField(
+      "size-l",
+      T(shape ? "studio.room.lengthOverall" : "studio.room.length"),
+      room.l,
+      setDim("l"),
+      T(shape ? "studio.room.lengthOverallHelp" : "studio.room.lengthHelp"),
+    );
+    var heightField = lengthField("size-h", T("studio.room.height"), room.h, setDim("h"), T("studio.room.heightHelp"));
+    var area = h("p", {
+      class: "studio-note",
+      text: T("studio.room.area", { area: Pricing.formatQty(num(Plan.floorArea(room), 1)) }),
+    });
+    if (ui.simple) {
+      // The basics: how wide, how long. The height, the shape and the
+      // windows wait under "More options".
+      body.appendChild(
+        section(T("studio.room.howBig"), [
+          h("div", { class: "studio-size-grid is-pair" }, [widthField, lengthF]),
+          area,
         ]),
-        h("p", {
-          class: "studio-note",
-          text: T("studio.room.area", { area: Pricing.formatQty(num(Plan.floorArea(room), 1)) }),
-        }),
-      ]),
-    );
+      );
+    } else {
+      body.appendChild(shapeSection(room, shape));
+      body.appendChild(
+        section(T("studio.room.size"), [
+          h("div", { class: "studio-size-grid" }, [widthField, lengthF, heightField]),
+          area,
+        ]),
+      );
+    }
 
-    var stack = Plan.stackWall(design);
-    var run = Plan.drainRun(design, sizes);
-    var stackSet = answers().stack;
-    body.appendChild(
-      section(T("studio.room.plumbing"), [
-        h("p", { class: "studio-note", text: T("studio.room.plumbingHelp") }),
-        missingMark(
-          h("div", { class: "studio-field" }, [
-            h("span", { class: "studio-field-label", text: T("studio.room.plumbingWall") }),
-            wallChoice(stackSet ? stack : null, setStackWall, "stack", T("studio.room.plumbingWall")),
-          ]),
-          !stackSet,
-        ),
-        h("p", {
-          class: "studio-field-help",
-          text: !stackSet
-            ? T("studio.room.plumbingUnset", { wall: letter(stack) })
-            : run > 0
-              ? T("studio.room.plumbingRun", { run: len(run) })
-              : T("studio.room.plumbingNone"),
-        }),
-      ]),
-    );
+    body.appendChild(plumbingSection());
 
     var doors = itemsOf("door");
     var doorKids = doors.map(function (door, i) {
@@ -2805,7 +2918,99 @@
       );
     }
     body.appendChild(section(T("studio.room.doors"), doorKids));
-    body.appendChild(windowsSection());
+    if (ui.simple) {
+      body.appendChild(
+        more("room", [
+          section(T("studio.room.height"), [h("div", { class: "studio-size-grid" }, [heightField])]),
+          shapeSection(room, shape),
+          windowsSection(),
+        ]),
+      );
+    } else {
+      body.appendChild(windowsSection());
+    }
+  }
+
+  // Which wall the plumbing is in: each wall as a button that says what
+  // stands on it (so "the toilet's wall" is a tap, not a letter to look
+  // up), with the plan beside them. Until it's answered, a "Not sure?"
+  // button takes the wall the room suggests. A tap on a wall in the 3D
+  // room answers it too (tapWall).
+  function plumbingSection() {
+    var stack = Plan.stackWall(design);
+    var run = Plan.drainRun(design, sizes);
+    var stackSet = answers().stack;
+    var buttons = Plan.wallIds(design.room).map(function (wid) {
+      var on = stackSet && wid === stack;
+      var what = wallWhat(wid);
+      return h(
+        "button",
+        {
+          type: "button",
+          class: "studio-wall-pick",
+          "aria-pressed": on ? "true" : "false",
+          "aria-label": T("studio.room.wallWith", { letter: letter(wid), what: what }),
+          "data-key": "stack-" + wid,
+          onclick: function () {
+            if (!on) setStackWall(wid);
+          },
+        },
+        [
+          h("span", { class: "studio-wall-letter", text: letter(wid) }),
+          h("span", { class: "studio-wall-what", text: what }),
+        ],
+      );
+    });
+    var picker = h("div", { class: "studio-wall-picker" }, [
+      h("div", { class: "studio-wall-plan", "aria-hidden": "true" }, [
+        planSvg(design, { mini: true, tags: true, stack: stackSet }),
+      ]),
+      h("div", { class: "studio-wall-list", role: "group", "aria-label": T("studio.room.plumbingWall") }, buttons),
+    ]);
+    return section(T(ui.simple ? "studio.room.pipes" : "studio.room.plumbing"), [
+      h("p", { class: "studio-note", text: T(ui.simple ? "studio.room.pipesHelp" : "studio.room.plumbingHelp") }),
+      missingMark(h("div", { class: "studio-field" }, [picker]), !stackSet),
+      !stackSet
+        ? h(
+            "button",
+            {
+              type: "button",
+              class: "btn btn-secondary btn-sm",
+              "data-key": "suggest-stack",
+              onclick: function () {
+                setStackWall(stack);
+              },
+            },
+            [h("span", { icon: "pipe" }), T("studio.room.suggestWall", { letter: letter(stack) })],
+          )
+        : null,
+      h("p", {
+        class: "studio-field-help",
+        text: !stackSet
+          ? T("studio.room.suggestWallHelp")
+          : run > 0
+            ? T("studio.room.plumbingRun", { run: len(run) })
+            : T("studio.room.plumbingNone"),
+      }),
+    ]);
+  }
+
+  // What stands on a wall, named: "Toilet, Vanity", "Door", or "nothing
+  // on it yet".
+  function wallWhat(wid) {
+    var names = design.items
+      .filter(function (it) {
+        return it.wall === wid && it.type !== "door";
+      })
+      .concat(
+        design.items.filter(function (it) {
+          return it.wall === wid && it.type === "door";
+        }),
+      )
+      .map(function (it) {
+        return itemName(it);
+      });
+    return names.length ? names.join(", ") : T("studio.room.wallEmpty");
   }
 
   // The room's shape: a rectangle, or one with a piece out of it (an L,
@@ -3113,27 +3318,52 @@
     var fixtures = design.items.filter(function (it) {
       return it.type !== "door";
     });
-    body.appendChild(
-      section(T("studio.layout.arrange"), [
-        h("p", { class: "studio-note", text: T("studio.layout.arrangeHelp") }),
-        h(
-          "button",
-          {
-            type: "button",
-            class: "btn btn-secondary studio-arrange-btn",
-            "data-key": "arrange",
-            disabled: fixtures.length ? null : true,
-            onclick: showArrangements,
-          },
-          [h("span", { icon: "arrange" }), T("studio.layout.arrangeBtn")],
-        ),
-        ui.arrange ? arrangeChoices() : null,
-      ]),
-    );
-
     var trouble = design.items.filter(function (it) {
       return (issues[it.id] || []).length;
     });
+    var broken = design.items.some(function (it) {
+      return Plan.errorsOf(issues, it.id).length > 0;
+    });
+    if (ui.simple) {
+      // One button: "Fix it for me" while something doesn't fit (the best
+      // layout, straight away), "Try another layout" otherwise.
+      body.appendChild(
+        section(null, [
+          h(
+            "button",
+            {
+              type: "button",
+              class: "btn " + (broken ? "btn-primary" : "btn-secondary") + " studio-arrange-btn",
+              "data-key": "arrange",
+              disabled: fixtures.length ? null : true,
+              onclick: broken ? arrangeNow : showArrangements,
+            },
+            [h("span", { icon: "arrange" }), T(broken ? "studio.layout.fixIt" : "studio.layout.another")],
+          ),
+          h("p", { class: "studio-note", text: T(broken ? "studio.layout.fixItHelp" : "studio.layout.anotherHelp") }),
+          ui.arrange ? arrangeChoices() : null,
+        ]),
+      );
+    } else {
+      body.appendChild(
+        section(T("studio.layout.arrange"), [
+          h("p", { class: "studio-note", text: T("studio.layout.arrangeHelp") }),
+          h(
+            "button",
+            {
+              type: "button",
+              class: "btn btn-secondary studio-arrange-btn",
+              "data-key": "arrange",
+              disabled: fixtures.length ? null : true,
+              onclick: showArrangements,
+            },
+            [h("span", { icon: "arrange" }), T("studio.layout.arrangeBtn")],
+          ),
+          ui.arrange ? arrangeChoices() : null,
+        ]),
+      );
+    }
+
     if (trouble.length) {
       body.appendChild(
         section(T("studio.layout.check"), [
@@ -3340,24 +3570,28 @@
       );
     }
 
-    // The room around it.
+    // The room around it (under "Details" in the simple studio).
     var m = Plan.measure(design, item.id, sizes);
     if (m && item.type !== "door") {
       wrap.appendChild(
-        h("dl", { class: "studio-gaps" }, [
-          h("dt", { text: T("studio.gap.left") }),
-          h("dd", { text: T("studio.gapTo", { gap: len(m.left.dist), what: theName(m.left.what) }) }),
-          h("dt", { text: T("studio.gap.right") }),
-          h("dd", { text: T("studio.gapTo", { gap: len(m.right.dist), what: theName(m.right.what) }) }),
-          h("dt", { text: T("studio.gap.front") }),
-          h("dd", { text: T("studio.gapTo", { gap: len(m.front.dist), what: theName(m.front.what) }) }),
-        ]),
-      );
-      wrap.appendChild(
-        h("p", {
-          class: "studio-note",
-          text: T("studio.size", { w: Plan.formatInches(size.span), d: Plan.formatInches(size.depth) }),
-        }),
+        more(
+          k,
+          [
+            h("dl", { class: "studio-gaps" }, [
+              h("dt", { text: T("studio.gap.left") }),
+              h("dd", { text: T("studio.gapTo", { gap: len(m.left.dist), what: theName(m.left.what) }) }),
+              h("dt", { text: T("studio.gap.right") }),
+              h("dd", { text: T("studio.gapTo", { gap: len(m.right.dist), what: theName(m.right.what) }) }),
+              h("dt", { text: T("studio.gap.front") }),
+              h("dd", { text: T("studio.gapTo", { gap: len(m.front.dist), what: theName(m.front.what) }) }),
+            ]),
+            h("p", {
+              class: "studio-note",
+              text: T("studio.size", { w: Plan.formatInches(size.span), d: Plan.formatInches(size.depth) }),
+            }),
+          ],
+          T("studio.details"),
+        ),
       );
     }
 
@@ -3594,6 +3828,24 @@
 
     var list = points(design);
     var full = list.length >= Plan.MAX_ELECTRICAL;
+    // The simple studio leads with what's already done: "2 outlets, 2
+    // switches, 1 light, 1 fan, placed where the rules say."
+    if (ui.simple) {
+      var counts = ADDABLE_POINTS.filter(function (kind) {
+        return pointsOf(kind).length > 0;
+      }).map(function (kind) {
+        var n = pointsOf(kind).length;
+        return T(n === 1 ? "studio.elec.n1." + kind : "studio.elec.n." + kind, { n: n });
+      });
+      body.appendChild(
+        h("p", { class: "studio-done" + (counts.length ? "" : " is-empty"), "data-testid": "elec-done" }, [
+          h("span", { icon: counts.length ? "check" : "info" }),
+          h("span", {
+            text: counts.length ? T("studio.elec.doneFor", { list: counts.join(", ") }) : T("studio.elec.doneNone"),
+          }),
+        ]),
+      );
+    }
     body.appendChild(
       section(T("studio.elec.add"), [
         h("p", { class: "studio-note", text: T("studio.elec.addHelp") }),
@@ -3951,6 +4203,33 @@
       return;
     }
     var items = room3d.getProductPricingItems();
+    // The photos make the thumbnails; the step draws again once they're in.
+    if (!window.ProductPhotos) {
+      loadPhotoData().then(function () {
+        if (ui.step === "products" && window.ProductPhotos) renderPanel();
+      });
+    }
+    var slots = [];
+    groups.forEach(function (group) {
+      slots = slots.concat(group.slots);
+    });
+    var picked = slots.filter(function (slot) {
+      return !!answers().products[slot.id];
+    }).length;
+    var allPicked = picked === slots.length;
+    body.appendChild(
+      h("p", { class: "studio-progress" + (allPicked ? " is-done" : ""), "data-testid": "products-progress" }, [
+        h("span", { class: "studio-progress-bar", "aria-hidden": "true" }, [
+          h("span", { style: "width:" + Math.round((100 * picked) / Math.max(1, slots.length)) + "%" }),
+        ]),
+        h("span", {
+          class: "studio-progress-text",
+          text: allPicked
+            ? T("studio.products.allPicked")
+            : T("studio.products.progress", { n: picked, total: slots.length }),
+        }),
+      ]),
+    );
     groups.forEach(function (group) {
       var standIn = items.some(function (it) {
         return it.groupId === group.id && !it.mmns.length;
@@ -3975,61 +4254,7 @@
         ]),
       ]);
       group.slots.forEach(function (slot) {
-        var id = "studio-product-" + slot.id;
-        // Until the person picks, the room shows the first that fits and
-        // the list says to choose.
-        var picked = !!answers().products[slot.id];
-        var select = h(
-          "select",
-          { id: id, class: "studio-select", "data-key": "slot-" + slot.id },
-          (picked ? [] : [h("option", { value: "", disabled: true, text: T("studio.products.choose") })]).concat(
-            slot.options.map(function (opt) {
-              return h("option", {
-                value: opt.id,
-                disabled: opt.reason ? true : null,
-                text: opt.label + (opt.reason ? " (" + opt.reason + ")" : ""),
-              });
-            }),
-          ),
-        );
-        select.value = picked ? slot.value : "";
-        select.addEventListener("change", function () {
-          if (!select.value) return;
-          room3d.setProductPick(slot.id, select.value);
-          commit(withAnswer(Object.assign({}, design, { products: room3d.getProductPicks() }), slot.id));
-          focusSlot(group.id, slot.id, true);
-        });
-        select.addEventListener("focus", function () {
-          focusSlot(group.id, slot.id);
-        });
-        var item = items.filter(function (it) {
-          return it.slotId === slot.id && it.mmns.length;
-        })[0];
-        card.appendChild(
-          missingMark(
-            h("div", { class: "studio-field" }, [
-              h("label", { for: id, text: slot.label }),
-              select,
-              item
-                ? h(
-                    "button",
-                    {
-                      type: "button",
-                      class: "studio-link-btn studio-examples-btn",
-                      "data-key": "examples-" + slot.id,
-                      "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
-                      icon: "photo",
-                      onclick: function () {
-                        openPhotos(item);
-                      },
-                    },
-                    [T("studio.photos.show")],
-                  )
-                : null,
-            ]),
-            !picked,
-          ),
-        );
+        card.appendChild(productRow(group, slot, items));
       });
       if (standIn) {
         card.appendChild(
@@ -4058,6 +4283,201 @@
         text: T("studio.products.priceNote"),
       }),
     );
+  }
+
+  // One product list: its photo and name as the room shows it now, with
+  // Keep (that's the pick) and Change (the choices, as pictures, under it).
+  // Until the person keeps or changes it, the list is still waiting.
+  function productRow(group, slot, items) {
+    var isPicked = !!answers().products[slot.id];
+    var open = ui.chooser === slot.id;
+    var current = slot.options.filter(function (opt) {
+      return opt.id === slot.value;
+    })[0] || { id: slot.value, label: slot.value, mmns: [] };
+    var item = items.filter(function (it) {
+      return it.slotId === slot.id && it.mmns.length;
+    })[0];
+    var change = h(
+      "button",
+      {
+        type: "button",
+        class: "btn btn-secondary btn-sm studio-pick-change",
+        "data-key": "slot-" + slot.id,
+        "aria-expanded": open ? "true" : "false",
+        "aria-label": T(open ? "studio.products.closeChoices" : "studio.products.changeThis", { what: slot.label }),
+        onclick: function () {
+          ui.chooser = open ? null : slot.id;
+          renderPanel();
+          if (!open) focusSlot(group.id, slot.id);
+        },
+        onfocus: function () {
+          focusSlot(group.id, slot.id);
+        },
+      },
+      [
+        h("span", { icon: open ? "close" : "sliders" }),
+        T(open ? "studio.products.closeChoices" : "studio.products.change"),
+      ],
+    );
+    var row = h(
+      "div",
+      {
+        class: "studio-pick" + (isPicked ? " is-picked" : "") + (open ? " is-open" : ""),
+        "data-slot": slot.id,
+        "data-picked": isPicked ? "true" : "false",
+      },
+      [
+        h("div", { class: "studio-pick-row" }, [
+          thumbEl(current.mmns),
+          h("div", { class: "studio-pick-text" }, [
+            h("span", { class: "studio-pick-label", text: slot.label }),
+            h("strong", { class: "studio-pick-name", text: current.label }),
+            h("span", { class: "studio-pick-state" }, [
+              h("span", { icon: isPicked ? "check" : "info" }),
+              h("span", { text: T(isPicked ? "studio.products.picked" : "studio.products.showing") }),
+            ]),
+            item
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    class: "studio-link-btn studio-examples-btn",
+                    "data-key": "examples-" + slot.id,
+                    "aria-label": T("studio.photos.showFor", { product: item.productLabel }),
+                    icon: "photo",
+                    onclick: function () {
+                      openPhotos(item);
+                    },
+                  },
+                  [T("studio.photos.show")],
+                )
+              : null,
+          ]),
+          h("div", { class: "studio-pick-actions" }, [
+            !isPicked
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    class: "btn btn-primary btn-sm studio-pick-keep",
+                    "data-key": "keep-" + slot.id,
+                    "aria-label": T("studio.products.keepThis", { what: slot.label, product: current.label }),
+                    onclick: function () {
+                      keepProduct(group, slot, current);
+                    },
+                    onfocus: function () {
+                      focusSlot(group.id, slot.id);
+                    },
+                  },
+                  [h("span", { icon: "check" }), T("studio.products.keep")],
+                )
+              : null,
+            change,
+          ]),
+        ]),
+        open ? productChoices(group, slot) : null,
+      ],
+    );
+    return missingMark(row, !isPicked);
+  }
+
+  // A list's choices as picture buttons; one that can't be picked says why.
+  function productChoices(group, slot) {
+    return h(
+      "div",
+      { class: "studio-options", role: "group", "aria-label": T("studio.products.choicesFor", { what: slot.label }) },
+      slot.options.map(function (opt) {
+        var on = opt.id === slot.value;
+        return h(
+          "button",
+          {
+            type: "button",
+            class: "studio-option",
+            "aria-pressed": on ? "true" : "false",
+            "data-key": "opt-" + slot.id + "-" + opt.id,
+            disabled: opt.reason ? true : null,
+            title: opt.reason || null,
+            onclick: function () {
+              pickProduct(group, slot, opt.id);
+            },
+          },
+          [
+            thumbEl(opt.mmns),
+            h("span", { class: "studio-option-name", text: opt.label }),
+            opt.reason ? h("span", { class: "studio-option-why", text: opt.reason }) : null,
+          ],
+        );
+      }),
+    );
+  }
+
+  // Keeps what the room shows for a list, and moves on to the next list
+  // still waiting (shown in the room, so the person sees what they'd keep).
+  function keepProduct(group, slot, current) {
+    commit(withAnswer(design, slot.id), {
+      announce: slot.label + ": " + current.label + " · " + T("studio.products.picked"),
+    });
+    var next = nextWaiting();
+    if (next) {
+      focusKey("keep-" + next.slot.id);
+      focusSlot(next.group.id, next.slot.id);
+    } else {
+      focusKey("slot-" + slot.id);
+    }
+  }
+
+  function pickProduct(group, slot, optId) {
+    room3d.setProductPick(slot.id, optId);
+    ui.chooser = null;
+    commit(withAnswer(Object.assign({}, design, { products: room3d.getProductPicks() }), slot.id));
+    focusSlot(group.id, slot.id, true);
+    focusKey("slot-" + slot.id);
+  }
+
+  // The first product list without a pick yet: { group, slot } or null.
+  function nextWaiting() {
+    var groups = room3d ? room3d.getProductGroups() : [];
+    for (var i = 0; i < groups.length; i++) {
+      for (var j = 0; j < groups[i].slots.length; j++) {
+        if (!answers().products[groups[i].slots[j].id]) return { group: groups[i], slot: groups[i].slots[j] };
+      }
+    }
+    return null;
+  }
+
+  // Focus (and show) the panel control with this data-key, if it's there.
+  function focusKey(key) {
+    var el = els.panel.querySelector('[data-key="' + key + '"]');
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (el.scrollIntoView) el.scrollIntoView({ block: "center" });
+  }
+
+  // A product's photo from its listing (js/product-photos.js, once it's
+  // loaded), or a blank with a camera on it.
+  function thumbEl(mmns) {
+    var path = thumbPath(mmns || []);
+    if (!path) return h("span", { class: "studio-thumb is-blank", icon: "photo", title: T("studio.products.noPhoto") });
+    var img = h("img", {
+      class: "studio-thumb",
+      src: photoUrl(path, 300),
+      alt: "",
+      loading: "lazy",
+      referrerpolicy: "no-referrer",
+    });
+    img.addEventListener("error", function () {
+      if (img.parentNode) img.parentNode.replaceChild(thumbEl([]), img);
+    });
+    return img;
+  }
+
+  function thumbPath(mmns) {
+    var data = (window.ProductPhotos && window.ProductPhotos.products) || {};
+    for (var i = 0; i < mmns.length; i++) {
+      var p = data[mmns[i]];
+      if (p && (p.other.length || p.home.length)) return p.other[0] || p.home[0];
+    }
+    return null;
   }
 
   // ---------- Show examples: a product's photos from its listing ----------
@@ -5301,6 +5721,7 @@
       return;
     }
     var stepKey = "riley.step." + ui.step;
+    if (ui.simple && SIMPLE_INTRO.indexOf(ui.step) !== -1) stepKey = "riley.simple." + ui.step;
     if (ui.step === "estimate" && !estimatorOn()) {
       // Without the price estimator there's no total to talk about.
       stepKey = BIZ.demo ? "riley.step.design" : "riley.step.designOwner";
@@ -5541,7 +5962,12 @@
             },
           },
           [
-            h("span", { class: "studio-step-num", text: String(i + 1) }),
+            // The number, or a check once the step is done (renderBar).
+            h("span", { class: "studio-step-num" }, [
+              h("span", { class: "studio-step-n", text: String(i + 1) }),
+              h("span", { class: "studio-step-check", icon: "check" }),
+              h("span", { class: "visually-hidden studio-step-donetext", text: " " + T("studio.stepDone") }),
+            ]),
             h("span", { class: "studio-step-label", "data-label": step, text: T("studio.step." + step + ".short") }),
           ],
         ),
@@ -5672,6 +6098,7 @@
     els.riley = VIEW_ONLY ? null : document.getElementById("studio-riley");
     els.linkDialog = document.getElementById("studio-link-dialog");
     els.body = els.studio.querySelector(".studio-body");
+    els.studio.classList.toggle("is-simple", ui.simple && !VIEW_ONLY);
     placeRiley();
     els.planSvg = s("svg", { class: "plan-svg" });
     els.planWrap.appendChild(els.planSvg);

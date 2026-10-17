@@ -2303,9 +2303,51 @@ main.studio-page.solid-header {
 }
 
 /* ---------- Narrower screens ---------- */
-/* Below this the step names (but the current one) and the action names
-   fold away, so the business and title keep their room in every language. */
+/* Below this the action names fold away and the steps' names get smaller
+   (the business and title give up room first), so every step is named on
+   a laptop too. */
 @media (max-width: 1600px) {
+  .studio-brand {
+    flex: 0 1 11rem;
+    min-width: 0;
+  }
+
+  .studio-steps {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .studio-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-step-btn {
+    flex: none;
+    gap: var(--space-15);
+    padding-right: var(--space-3);
+    font-size: var(--fs-xs);
+  }
+
+  .studio-step-num {
+    width: 26px;
+    height: 26px;
+    font-size: var(--fs-xs);
+  }
+
+  .studio-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+
+/* Smaller still (tablets, phones): only the current step's name shows. */
+@media (max-width: 1180px) {
   .studio-step-label {
     display: none;
   }
@@ -2320,15 +2362,6 @@ main.studio-page.solid-header {
 
   .studio-step-btn[aria-current="step"] .studio-step-label {
     display: inline;
-  }
-
-  .studio-action-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
   }
 }
 
@@ -2923,8 +2956,489 @@ html[data-embed="1"] .studio-plan {
 }
 
 .studio-field.is-missing,
-.studio-swatch-group.is-missing {
+.studio-swatch-group.is-missing,
+.studio-pick.is-missing {
   border-radius: var(--radius-sm);
   outline: 2px solid var(--color-danger);
   outline-offset: 4px;
+}
+
+.studio-pick.is-missing {
+  border-radius: var(--radius);
+  outline-offset: 2px;
+}
+
+/* ---------- The simple studio ---------- */
+/* The "All options" switch, beside "Step n of 6" at the top of each step. */
+.studio-step-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-1);
+}
+
+.studio-step-topline .studio-step-count {
+  margin: 0;
+}
+
+.studio-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  color: var(--color-ink-soft);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.studio-mode:hover {
+  background: var(--color-surface-alt);
+  color: var(--color-ink);
+}
+
+.studio-mode input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-line-strong);
+  cursor: pointer;
+  transition: background 0.2s var(--ease);
+}
+
+.studio-mode input::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--studio-white);
+  box-shadow: 0 1px 3px rgba(10, 16, 36, 0.35);
+  transition: transform 0.2s var(--ease);
+}
+
+.studio-mode input:checked {
+  background: var(--color-accent-bright);
+}
+
+.studio-mode input:checked::after {
+  transform: translateX(14px);
+}
+
+/* A step behind the current one with its questions answered: a check in
+   place of its number. */
+.studio-step-check,
+.studio-step-btn:not(.is-done) .studio-step-donetext {
+  display: none;
+}
+
+.studio-step-check .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.studio-step-btn.is-done .studio-step-n {
+  display: none;
+}
+
+.studio-step-btn.is-done .studio-step-check {
+  display: inline-grid;
+  place-items: center;
+}
+
+.studio-step-btn.is-done .studio-step-num {
+  border-color: var(--studio-ok);
+  background: color-mix(in srgb, var(--studio-ok) 16%, var(--color-surface));
+  color: var(--studio-ok);
+}
+
+/* "More options": the rest of a step's settings, folded away. */
+.studio-more {
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-lg);
+}
+
+.studio-more > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--tap);
+  padding: var(--space-2) var(--space-4);
+  list-style: none;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-accent-text);
+  cursor: pointer;
+}
+
+.studio-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.studio-more > summary .icon {
+  transition: transform 0.2s var(--ease);
+}
+
+.studio-more[open] > summary .icon {
+  transform: rotate(90deg);
+}
+
+.studio-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+.studio-more-open {
+  display: contents;
+}
+
+.studio-inspector .studio-more > summary {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3);
+}
+
+.studio-inspector .studio-more-body {
+  gap: var(--space-3);
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+/* Width and length side by side. */
+.studio-size-grid.is-pair {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Which wall the plumbing is in: the plan and a button per wall saying
+   what stands on it. */
+.studio-wall-picker {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.studio-wall-plan {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: var(--space-15);
+  border-radius: var(--radius-sm);
+  background: var(--studio-plan-bg);
+}
+
+.studio-wall-plan .plan-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.studio-wall-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.studio-wall-pick {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: var(--space-15) var(--space-3);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-wall-pick:hover {
+  border-color: var(--color-accent-bright);
+}
+
+.studio-wall-pick[aria-pressed="true"] {
+  background: var(--color-selected-bg);
+  border-color: var(--color-selected-bg);
+  color: var(--color-selected-ink);
+  font-weight: 600;
+}
+
+.studio-wall-letter {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-on-dark);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+
+.studio-wall-pick[aria-pressed="true"] .studio-wall-letter {
+  background: var(--color-selected-ink);
+  color: var(--color-selected-bg);
+}
+
+.studio-wall-what {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* "Done for you: 2 outlets, …" on the Electrical step. */
+.studio-done {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--studio-ok) 12%, var(--color-surface));
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+}
+
+.studio-done .icon {
+  margin-top: 1px;
+  color: var(--studio-ok);
+}
+
+.studio-done.is-empty {
+  background: var(--color-surface-alt);
+}
+
+.studio-done.is-empty .icon {
+  color: var(--color-muted);
+}
+
+/* "3 of 9 picked" on the Products step. */
+.studio-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-15);
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-accent-text);
+}
+
+.studio-progress-bar {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-alt);
+  overflow: hidden;
+}
+
+.studio-progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent-bright);
+  transition: width 0.3s var(--ease);
+}
+
+.studio-progress.is-done {
+  color: var(--studio-ok);
+}
+
+.studio-progress.is-done .studio-progress-bar > span {
+  background: var(--studio-ok);
+}
+
+/* A product list: the photo and name of what's showing, Keep and Change. */
+.studio-pick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+}
+
+.studio-pick.is-picked {
+  border-color: color-mix(in srgb, var(--studio-ok) 45%, var(--color-line));
+}
+
+.studio-pick-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.studio-pick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.studio-pick-label {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.studio-pick-name {
+  font-size: var(--fs-sm);
+  line-height: 1.3;
+}
+
+.studio-pick-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--fs-xs);
+  color: var(--color-muted);
+}
+
+.studio-pick-state .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.studio-pick.is-picked .studio-pick-state {
+  color: var(--studio-ok);
+  font-weight: 600;
+}
+
+.studio-pick-text .studio-examples-btn {
+  align-self: flex-start;
+  min-height: 32px;
+  padding: 0;
+}
+
+.studio-pick-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.studio-pick-actions .btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.studio-pick.is-picked .studio-pick-actions {
+  justify-content: flex-end;
+}
+
+.studio-pick.is-picked .studio-pick-actions .btn {
+  flex: 0 1 auto;
+}
+
+.studio-thumb {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  background: var(--studio-white);
+  object-fit: contain;
+}
+
+.studio-thumb.is-blank {
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-alt);
+  color: var(--color-muted);
+}
+
+/* The choices for a list, as pictures. */
+.studio-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--color-line);
+}
+
+.studio-option {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-15);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-option .studio-thumb {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.studio-option-name {
+  font-size: var(--fs-xs);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.studio-option-why {
+  font-size: var(--fs-2xs);
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.studio-option:hover:not(:disabled) {
+  border-color: var(--color-accent-bright);
+}
+
+.studio-option[aria-pressed="true"] {
+  border-color: var(--studio-select);
+  box-shadow: 0 0 0 2px var(--studio-select);
+}
+
+.studio-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .studio-size-grid.is-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-wall-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-wall-plan {
+    max-width: 160px;
+  }
 }

@@ -400,6 +400,15 @@
     // The states a plan can be bought from: when it can't be (payments not
     // set up, or checkout paused), the sentence must not point at buttons
     // that aren't there.
+    var buyable = !!config.payments && !switchedOff("checkout");
+    // The free week at sign-up (supabase/schema.sql grant_free_week): Starter
+    // until free_week_ends, no card. Said while it runs, and once it's over
+    // on an account that never bought a plan.
+    var weekEnds = s.free_week_ends ? new Date(s.free_week_ends) : null;
+    if (weekEnds && !isNaN(weekEnds.getTime()) && (s.status === "none" || weekEnds.getTime() > Date.now())) {
+      var key = weekEnds.getTime() > Date.now() ? "acct.status.freeWeek" : "acct.status.freeWeekEnded";
+      return T(key + (buyable ? "" : "NoBuy"), { date: formatDate(s.free_week_ends) });
+    }
     if (s.status === "none" || s.status === "canceled" || s.status === "incomplete_expired") {
       if (!config.payments) return T("acct.status." + s.status + "PaymentsOff");
       if (switchedOff("checkout")) return T("acct.status." + s.status + "Paused");
@@ -439,14 +448,15 @@
     $("plan-status").textContent = text;
 
     show($("plan-buy"), canBuy);
-    // Promo codes give free days only on an account's first plan.
-    var promo = canBuy && !!config.promo && !s.stripe_subscription_id;
+    // Promo codes give free days only on an account's first plan, and not
+    // after the free week.
+    var promo = canBuy && !!config.promo && !s.stripe_subscription_id && !s.free_week_ends;
     show($("plan-promo-row"), promo);
     show($("plan-trial-note"), promo);
     if (promo && params.get("promo") && !field("plan-promo").value) field("plan-promo").value = params.get("promo");
     show($("plan-manage"), !!s.stripe_customer_id);
     Array.prototype.forEach.call(document.querySelectorAll("[data-plan]"), function (b) {
-      b.hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
+      (b.closest(".plan-card") || b).hidden = !config.plans || !config.plans[b.getAttribute("data-plan")];
     });
     var wanted = params.get("plan");
     if (canBuy && PLANS.indexOf(wanted) >= 0) {

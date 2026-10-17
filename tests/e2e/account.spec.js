@@ -27,6 +27,7 @@ async function signedIn(
     periodEnd = "2026-11-01T00:00:00Z",
     prices = {},
     delays = {},
+    freeWeekEnds = null,
   } = {},
 ) {
   const calls = [];
@@ -50,7 +51,7 @@ async function signedIn(
   await page.route(SUPABASE + "/rest/v1/subscriptions**", async (route) => {
     await delayed(delays.subscription);
     return route.fulfill({
-      json: { owner_id: "u1", status, plan, current_period_end: periodEnd },
+      json: { owner_id: "u1", status, plan, current_period_end: periodEnd, free_week_ends: freeWeekEnds },
     });
   });
   await page.route(SUPABASE + "/rest/v1/businesses**", async (route) => {
@@ -487,11 +488,11 @@ test("after logging in: My projects, or the page ?next= names on this site, or t
   await page.waitForURL(/\/account\.html\?plan=pro&promo=FREEWEEK$/);
 });
 
-test("signed in, the header offers My projects and Account instead of Pricing and Get started", async ({ page }) => {
+test("signed in, the header offers My projects and Account instead of Pricing and Try it free", async ({ page }) => {
   await page.goto("/index.html");
   const nav = page.locator("#nav-links");
   await expect(nav.getByRole("link", { name: "Pricing" })).toBeVisible();
-  await expect(nav.getByRole("link", { name: "Get started" })).toBeVisible();
+  await expect(nav.getByRole("link", { name: "Try it free" })).toBeVisible();
   await expect(nav.getByRole("link", { name: "My projects" })).toBeHidden();
   await expect(nav.getByRole("link", { name: "Account" })).toBeHidden();
 
@@ -502,7 +503,7 @@ test("signed in, the header offers My projects and Account instead of Pricing an
   await expect(navEs.getByRole("link", { name: "Cuenta" })).toBeVisible();
   await expect(navEs.getByRole("link", { name: "Cerrar sesión" })).toBeVisible();
   await expect(navEs.getByRole("link", { name: "Precios" })).toBeHidden();
-  await expect(navEs.getByRole("link", { name: "Empezar" })).toBeHidden();
+  await expect(navEs.getByRole("link", { name: "Pruébelo gratis" })).toBeHidden();
   await expect(navEs.getByRole("link", { name: "Mis proyectos" })).toHaveAttribute("href", /\/es\/projects\.html$/);
   await page.evaluate(() => localStorage.clear());
 });
@@ -1132,4 +1133,47 @@ test("the account page fills every card whichever answers first: the plan, the b
     );
     await expect(page.locator("#biz-url"), which).toHaveText(/designer\.html\?b=smith-bath$/);
   }
+});
+
+test("the free week: the plan card says until when, shows each plan's price and limits, and offers no promo code", async ({
+  page,
+}) => {
+  const ends = new Date(Date.now() + 3 * 86400000).toISOString();
+  await signedIn(page, { status: "none", payments: true, freeWeekEnds: ends });
+  await page.goto("/account.html");
+  await expect(page.locator("#plan-status")).toContainText("free Starter week until");
+  await expect(page.locator("#plan-buy")).toBeVisible();
+  for (const [plan, price] of [
+    ["starter", "$49.99"],
+    ["pro", "$99.99"],
+    ["max", "$199.99"],
+  ]) {
+    const card = page.locator(".plan-card", { has: page.locator(`[data-plan="${plan}"]`) });
+    await expect(card).toBeVisible();
+    await expect(card.locator(".plan-price")).toContainText(price);
+    await expect(card.locator(".plan-limits li")).toHaveCount(2);
+  }
+  await expect(page.locator("#plan-promo-row")).toBeHidden();
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(axe.violations.map((v) => v.id)).toEqual([]);
+
+  // Over: said once, in Spanish too, with the plans still there to pick.
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await signedIn(page, { status: "none", payments: true, freeWeekEnds: "2026-01-08T00:00:00Z" });
+  await page.goto("/es/account.html");
+  await expect(page.locator("#plan-status")).toContainText("Su semana gratis de Starter terminó");
+  await expect(page.locator('[data-plan="pro"]')).toBeVisible();
+});
+
+test("visitors see the free week on the home page and sign-up page; signed in, the offer is gone", async ({ page }) => {
+  await page.goto("/index.html");
+  await expect(page.locator(".hero-offer")).toBeVisible();
+  await expect(page.locator(".hero-offer")).toContainText("free for 7 days");
+  await expect(page.locator(".hero-actions .btn-primary")).toHaveText("Start your free week");
+  await page.goto("/pt/signup.html");
+  await expect(page.locator(".offer-card h2")).toHaveText("A sua primeira semana é grátis");
+
+  await page.evaluate(() => localStorage.setItem("sb-fakeproject-auth-token", "{}"));
+  await page.goto("/index.html");
+  await expect(page.locator(".hero-offer")).toBeHidden();
 });

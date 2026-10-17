@@ -156,6 +156,8 @@
     "proj.summary.paid": "Plano {plan}: {month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
     "proj.summary.counts": "{month} de {monthly} projetos novos este mês, {total} de {limit} salvos.",
     "proj.summary.planPending": "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
+    "proj.freeWeek":
+      "Semana grátis do Starter até {date}, sem cartão. Escolha um plano para continuar salvando depois.",
     "proj.updated": "Atualizado em {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",
@@ -249,6 +251,14 @@
       "Salvar projetos está pausado no momento. O seu projeto está seguro neste navegador; tente de novo daqui a pouco.",
     "acct.status.none":
       "Você está no plano grátis: pode usar o projetista, mas salvar projetos exige um plano pago. Escolha um plano abaixo.",
+    "acct.status.freeWeek":
+      "Você está na sua semana grátis do Starter até {date}: salve projetos sem cartão e sem pagar nada. Para continuar salvando depois, escolha um plano abaixo.",
+    "acct.status.freeWeekNoBuy":
+      "Você está na sua semana grátis do Starter até {date}: salve projetos sem cartão e sem pagar nada.",
+    "acct.status.freeWeekEnded":
+      "A sua semana grátis do Starter acabou em {date}, e nada foi cobrado. Os seus projetos continuam aqui para leitura; escolha um plano abaixo para salvar de novo.",
+    "acct.status.freeWeekEndedNoBuy":
+      "A sua semana grátis do Starter acabou em {date}, e nada foi cobrado. Os seus projetos continuam aqui para leitura.",
     "acct.status.nonePaymentsOff":
       "Você está no plano grátis: pode usar o projetista, mas salvar projetos exige um plano pago. Os planos pagos ainda não estão disponíveis. Enquanto isso, preencha abaixo os dados da empresa e os preços de mão de obra; o seu projetista já os usa.",
     "acct.status.nonePaused":

@@ -8,7 +8,7 @@
 
 const crypto = require("node:crypto");
 const { db } = require("./_lib.js");
-const { planFromPrice, planFromPriceId, ACTIVE_STATUSES } = require("./_plans.js");
+const { planFromPrice, planFromPriceId, hasPlan } = require("./_plans.js");
 
 // Statuses under which Stripe may still bill, or may start to: an account
 // with one of these must not start another subscription. incomplete is a
@@ -106,8 +106,8 @@ async function activeBusiness(slug) {
   );
   const biz = rows && rows[0];
   if (!biz) return null;
-  const sub = await subscriptionOf(biz.owner_id, "status");
-  if (!sub || !ACTIVE_STATUSES.includes(sub.status)) return { inactive: true, business: biz };
+  const sub = await subscriptionOf(biz.owner_id, "status,free_week_ends");
+  if (!hasPlan(sub)) return { inactive: true, business: biz };
   return biz;
 }
 
@@ -115,24 +115,46 @@ async function activeBusiness(slug) {
 // deleting an account that ever had a Stripe subscription leaves a one-way
 // SHA-256 of its email in used_trials (the auth.users trigger in
 // supabase/schema.sql, which hashes the same trimmed, lower-cased email).
-function emailHash(email) {
-  return crypto
-    .createHash("sha256")
-    .update(
-      String(email || "")
-        .trim()
-        .toLowerCase(),
-    )
-    .digest("hex");
+// The free week at sign-up records the hash of emailKey() instead, so
+// name+1@ and n.a.m.e@gmail.com count as the same person.
+function sha256(text) {
+  return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-// Whether a deleted account with this email already had a plan. A database
-// that hasn't had the table added yet (schema.sql not re-run: PostgREST
-// answers 404) counts as no, with a warning, so checkout keeps working.
+function emailHash(email) {
+  return sha256(
+    String(email || "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+// The email with what a person can vary at will taken out: a +tag, and
+// Gmail's dots. Must match public.email_key() in supabase/schema.sql.
+function emailKey(email) {
+  const e = String(email || "")
+    .trim()
+    .toLowerCase();
+  const at = e.lastIndexOf("@");
+  if (at < 1) return e;
+  let local = e.slice(0, at).split("+")[0];
+  let domain = e.slice(at + 1);
+  if (domain === "gmail.com" || domain === "googlemail.com") {
+    local = local.replace(/\./g, "");
+    domain = "gmail.com";
+  }
+  return local + "@" + domain;
+}
+
+// Whether this email (or its emailKey) already had a free trial or free
+// week. A database that hasn't had the table added yet (schema.sql not
+// re-run: PostgREST answers 404) counts as no, with a warning, so checkout
+// keeps working.
 async function trialUsedBefore(email) {
   if (!email) return false;
   try {
-    const rows = await db("used_trials?email_hash=eq." + emailHash(email) + "&select=email_hash");
+    const hashes = [...new Set([emailHash(email), sha256(emailKey(email))])];
+    const rows = await db("used_trials?email_hash=in.(" + hashes.join(",") + ")&select=email_hash");
     return !!(rows && rows.length);
   } catch (e) {
     if (/Supabase 404|PGRST205|42P01/.test(String(e && e.message))) {
@@ -152,6 +174,7 @@ async function trialUsedBefore(email) {
 module.exports = {
   LIVE_STATUSES,
   emailHash,
+  emailKey,
   trialUsedBefore,
   periodEnd,
   planItem,

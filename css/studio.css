@@ -111,7 +111,10 @@ main.studio-page.solid-header {
 }
 
 .studio-page .designer-intro .btn {
-  flex: none;
+  flex: 0 1 auto;
+  max-width: 45%;
+  white-space: normal;
+  text-align: center;
   min-height: var(--tap);
   padding: var(--space-2) var(--space-5);
   font-size: var(--fs-sm);

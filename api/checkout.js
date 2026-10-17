@@ -6,8 +6,9 @@
 // Stripe price set: nobody is sold a plan they didn't ask for.
 // A valid promo code (PROMO_CODES, see api/_plans.js) makes the first days
 // free as a Stripe trial, once per account: {error: "promo"} for a code that
-// isn't valid, {error: "promo-used"} when the account has had a plan before,
-// or a deleted account with the same email had one (used_trials).
+// isn't valid, {error: "promo-used"} when the account has had a plan or the
+// free week before, or a deleted account with the same email had one
+// (used_trials).
 //
 // One subscription per account: before a session is made, Stripe itself is
 // asked whether this account's customer already has a subscription that's
@@ -116,10 +117,11 @@ async function checkout(req, res) {
         await saveSubscription(user.id, live).catch((e) => logError(req, e, { error: "record", userId: user.id }));
         return sendJson(res, 409, { error: "already-subscribed" });
       }
-      // One free trial per account: not again after an earlier subscription,
-      // nor for a new account made with the email of a deleted one that had a plan.
+      // One free trial per account: not again after an earlier subscription
+      // or the free week at sign-up, nor for a new account made with the
+      // email of a deleted one that had either.
       const trialDays = promoFree || Number(env("TRIAL_DAYS")) || 0;
-      let firstPlan = !(existing && existing.stripe_subscription_id);
+      let firstPlan = !(existing && (existing.stripe_subscription_id || existing.free_week_ends));
       if (firstPlan && trialDays > 0) firstPlan = !(await trialUsedBefore(user.email));
       if (promoFree && !firstPlan) return sendJson(res, 409, { error: "promo-used" });
       const customer = existing && existing.stripe_customer_id ? existing.stripe_customer_id : undefined;

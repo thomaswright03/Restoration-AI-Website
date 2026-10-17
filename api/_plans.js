@@ -11,6 +11,12 @@
 // Free accounts (no paid plan, or one that isn't active) can use the
 // designer but can't save projects.
 //
+// The free week: every new account gets Starter free for its first 7 days,
+// with no card and no Stripe at all. supabase/schema.sql's sign-up trigger
+// sets subscriptions.free_week_ends, once per person (used_trials). Until
+// then the account counts as Starter; after it, Free again, unless a paid
+// plan has started (a paid plan always wins).
+//
 // Which plan a subscription is on: the plan its current Stripe price maps
 // to, by any route: the price id matched against STRIPE_PRICE_STARTER /
 // _PRO / _MAX (comma-separated lists allowed), else subscriptions.plan (the
@@ -93,9 +99,21 @@ function planFromPrice(price) {
   return "";
 }
 
+// Whether the row's free week is still running.
+function onFreeWeek(sub, now = Date.now()) {
+  const ends = sub && sub.free_week_ends ? Date.parse(sub.free_week_ends) : NaN;
+  return ends > now;
+}
+
+// Whether a subscriptions row gives its owner a plan (paid or the free week).
+function hasPlan(sub) {
+  return !!sub && (ACTIVE_STATUSES.includes(sub.status) || onFreeWeek(sub));
+}
+
 // The plan a subscriptions row puts its owner on.
 function planOf(sub) {
-  if (!sub || !ACTIVE_STATUSES.includes(sub.status)) return "free";
+  if (!sub) return "free";
+  if (!ACTIVE_STATUSES.includes(sub.status)) return onFreeWeek(sub) ? "starter" : "free";
   const mapped = planFromPriceId(sub.price_id);
   if (mapped) return mapped;
   if (sub.plan && PLANS[sub.plan] && sub.plan !== "free") return sub.plan;
@@ -154,6 +172,8 @@ module.exports = {
   firstPriceId,
   planFromPriceId,
   planFromPrice,
+  onFreeWeek,
+  hasPlan,
   planOf,
   limitsOf,
   promoCodes,

@@ -89,7 +89,7 @@
           <li data-nav-signed-in hidden><a href="../pt/projects.html">Meus projetos</a></li>
           <li data-nav-signed-in hidden><a href="../pt/account.html">Conta</a></li>
           <li><a href="../pt/account.html" data-auth-link data-logout-label="Sair">Entrar</a></li>
-          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Começar</a></li>
+          <li data-nav-signed-out><a href="../pt/signup.html" class="nav-cta">Teste grátis</a></li>
           <li class="nav-lang">
             <details class="lang-menu nav-menu">
               <summary>
@@ -193,7 +193,16 @@
               <strong>Você está no plano grátis.</strong> Você pode usar o projetista à vontade, mas para salvar
               projetos precisa de um plano pago.
             </p>
-            <p><a href="../pt/account.html">Escolher um plano</a></p>
+            <ul class="plan-mini">
+              <li><strong>Starter</strong>, US$ 49,99 por mês: 10 projetos novos por mês, guarde até 50</li>
+              <li><strong>Pro</strong>, US$ 99,99 por mês: 25 projetos novos por mês, guarde até 100</li>
+              <li><strong>Max</strong>, US$ 199,99 por mês: 100 projetos novos por mês, guarde até 1.000</li>
+            </ul>
+            <p><a href="../pt/account.html" class="btn btn-primary">Ver planos e preços</a></p>
+          </div>
+          <div class="app-notice" id="projects-freeweek" role="status" hidden>
+            <p id="projects-freeweek-text"></p>
+            <p><a href="../pt/account.html">Ver planos e preços</a></p>
           </div>
 
           <div class="app-card" id="projects-usage" hidden>
@@ -308,7 +317,7 @@
           <a href="../pt/designer.html">Demonstração</a>
           <a href="../pt/index.html#pricing">Preços</a>
           <a href="../pt/index.html#faq">Perguntas</a>
-          <a href="../pt/signup.html">Começar</a>
+          <a href="../pt/signup.html">Teste grátis</a>
         </div>
         <div class="footer-col" data-show-if="company.supportEmail" hidden>
           <h2 class="footer-heading">Contato</h2>

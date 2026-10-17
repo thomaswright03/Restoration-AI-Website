@@ -44,17 +44,50 @@
               <button type="button" class="btn btn-outline-dark" id="plan-retry">{{account.down.retry}}</button>
             </div>
             <div id="plan-buy" hidden>
+              <p class="plan-pitch">{{account.plan.pitch}}</p>
               <div class="form-group plan-promo" id="plan-promo-row" hidden>
                 <label for="plan-promo">{{account.plan.promo}}</label>
                 <input type="text" id="plan-promo" autocomplete="off" autocapitalize="characters" spellcheck="false" />
               </div>
-              <div class="app-actions">
-                <button type="button" class="btn btn-outline-dark" data-plan="starter">
-                  {{account.plan.buyStarter}}
-                </button>
-                <button type="button" class="btn btn-primary" data-plan="pro">{{account.plan.buyPro}}</button>
-                <button type="button" class="btn btn-outline-dark" data-plan="max">{{account.plan.buyMax}}</button>
+              <div class="plan-grid plan-grid-3 plan-grid-account">
+                <div class="plan-card">
+                  <h3>{{index.plan.starter}}</h3>
+                  <p class="plan-price"><span>{{@priceStarter}}</span> {{index.plan.perMonth}}</p>
+                  <ul class="plan-limits">
+                    <li>{{index.plan.starter.monthly}}</li>
+                    <li>{{index.plan.starter.total}}</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="starter">
+                    {{account.plan.buyStarter}}
+                  </button>
+                </div>
+                <div class="plan-card plan-card-featured">
+                  <p class="plan-badge">{{index.plan.badge}}</p>
+                  <h3>{{index.plan.pro}}</h3>
+                  <p class="plan-price"><span>{{@pricePro}}</span> {{index.plan.perMonth}}</p>
+                  <ul class="plan-limits">
+                    <li>{{index.plan.pro.monthly}}</li>
+                    <li>{{index.plan.pro.total}}</li>
+                  </ul>
+                  <button type="button" class="btn btn-primary btn-block" data-plan="pro">{{account.plan.buyPro}}</button>
+                </div>
+                <div class="plan-card">
+                  <h3>{{index.plan.max}}</h3>
+                  <p class="plan-price"><span>{{@priceMax}}</span> {{index.plan.perMonth}}</p>
+                  <ul class="plan-limits">
+                    <li>{{index.plan.max.monthly}}</li>
+                    <li>{{index.plan.max.total}}</li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-dark btn-block" data-plan="max">{{account.plan.buyMax}}</button>
+                </div>
               </div>
+              <p class="plan-includes-title">{{account.plan.everyPlan}}</p>
+              <ul class="plan-includes plan-includes-account">
+                <li>{{index.inc.1}}</li>
+                <li>{{index.inc.2}}</li>
+                <li>{{index.inc.6}}</li>
+                <li>{{index.inc.5}}</li>
+              </ul>
             </div>
             <p class="form-note" id="plan-trial-note" hidden>{{account.plan.trialNote}}</p>
             <div class="app-actions" id="plan-manage" hidden>

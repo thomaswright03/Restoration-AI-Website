@@ -469,3 +469,59 @@ test("deleting an account that had a plan keeps only a hash of its email, so the
   const n = await db.query("select count(*)::int as n from public.used_trials");
   assert.equal(n.rows[0].n, 1);
 });
+
+test("the free week: a new account gets Starter for 7 days, once per person, and sign-up never fails over it", async () => {
+  const { emailHash, emailKey } = require("../../api/_subscriptions.js");
+  const signUp = async (id, email) => {
+    await db.query("insert into auth.users (id, email) values ($1::uuid, $2)", [id, email]);
+    const r = await db.query(
+      "select free_week_ends > now() + interval '6 days 23 hours' and free_week_ends <= now() + interval '7 days' as week from public.subscriptions where owner_id = $1::uuid",
+      [id],
+    );
+    return r.rows[0] ? r.rows[0].week : null;
+  };
+  assert.equal(await signUp("44444444-4444-4444-8444-000000000001", "Jo.Smith+bath@GMail.com"), true);
+  // The same person again, dressed up or not: no second week, but the account is made.
+  assert.equal(await signUp("44444444-4444-4444-8444-000000000002", "josmith@gmail.com"), null);
+  assert.equal(await signUp("44444444-4444-4444-8444-000000000003", "j.o.smith+2@googlemail.com"), null);
+  // Someone else gets theirs.
+  assert.equal(await signUp("44444444-4444-4444-8444-000000000004", "pat@example.com"), true);
+  // An email whose deleted account had a Stripe plan (raw hash, recorded at deletion) gets none.
+  await db.query("insert into public.used_trials (email_hash) values ($1)", [emailHash("Paid.Before@Example.com")]);
+  assert.equal(await signUp("44444444-4444-4444-8444-000000000005", "paid.before@example.com"), null);
+
+  // The database and api/_subscriptions.js agree on the key.
+  for (const email of [
+    "Jo.Smith+bath@GMail.com",
+    " a.b+c@Example.com ",
+    "x@googlemail.com",
+    "no-at-sign",
+    "a+b@c+d.com",
+  ]) {
+    const r = await db.query("select public.email_key($1) as k", [email]);
+    assert.equal(r.rows[0].k, emailKey(email), email);
+  }
+  const hashes = await db.query("select count(*)::int as n from public.used_trials where email_hash = $1", [
+    require("node:crypto").createHash("sha256").update("josmith@gmail.com").digest("hex"),
+  ]);
+  assert.equal(hashes.rows[0].n, 1);
+
+  // A paid plan's webhook write keeps the free week's date (merge, not replace).
+  await db.query(
+    "insert into public.subscriptions (owner_id, status) values ($1::uuid, 'active') on conflict (owner_id) do update set status = excluded.status",
+    ["44444444-4444-4444-8444-000000000004"],
+  );
+  const kept = await db.query(
+    "select free_week_ends is not null as kept from public.subscriptions where owner_id = $1::uuid",
+    ["44444444-4444-4444-8444-000000000004"],
+  );
+  assert.equal(kept.rows[0].kept, true);
+
+  // A broken grant never blocks the sign-up.
+  await db.query("alter table public.used_trials rename to used_trials_away");
+  try {
+    assert.equal(await signUp("44444444-4444-4444-8444-000000000006", "new@example.com"), null);
+  } finally {
+    await db.query("alter table public.used_trials_away rename to used_trials");
+  }
+});

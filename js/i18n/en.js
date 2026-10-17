@@ -153,6 +153,7 @@
     "proj.summary.paid": "{plan} plan: {month} of {monthly} new projects this month, {total} of {limit} saved.",
     "proj.summary.counts": "{month} of {monthly} new projects this month, {total} of {limit} saved.",
     "proj.summary.planPending": "What your plan allows will show here once your plan details load.",
+    "proj.freeWeek": "Free Starter week until {date}, no card needed. Pick a plan to keep saving after that.",
     "proj.updated": "Updated {date}",
     "proj.open": "Open",
     "proj.openNamed": "Open {name}",
@@ -245,6 +246,14 @@
       "Saving projects is paused right now. Your design is safe in this browser; try again in a little while.",
     "acct.status.none":
       "You're on the free plan: you can use the designer, but saving projects needs a paid plan. Pick a plan below.",
+    "acct.status.freeWeek":
+      "You're on your free Starter week until {date}: save projects with no card and no payment. To keep saving after that, pick a plan below.",
+    "acct.status.freeWeekNoBuy":
+      "You're on your free Starter week until {date}: save projects with no card and no payment.",
+    "acct.status.freeWeekEnded":
+      "Your free Starter week ended on {date}, and nothing was charged. Your projects are still here to read; pick a plan below to save again.",
+    "acct.status.freeWeekEndedNoBuy":
+      "Your free Starter week ended on {date}, and nothing was charged. Your projects are still here to read.",
     "acct.status.nonePaymentsOff":
       "You're on the free plan: you can use the designer, but saving projects needs a paid plan. Paid plans aren't available yet. Meanwhile, set up your business details and labor prices below; your designer already uses them.",
     "acct.status.nonePaused":

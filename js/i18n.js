@@ -333,6 +333,11 @@
       "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
       "O que o seu plano permite vai aparecer aqui quando os dados do seu plano carregarem.",
     ],
+    "proj.freeWeek": [
+      "Free Starter week until {date}, no card needed. Pick a plan to keep saving after that.",
+      "Semana gratis de Starter hasta el {date}, sin tarjeta. Elija un plan para seguir guardando después.",
+      "Semana grátis do Starter até {date}, sem cartão. Escolha um plano para continuar salvando depois.",
+    ],
     "proj.updated": ["Updated {date}", "Actualizado el {date}", "Atualizado em {date}"],
     "proj.open": ["Open", "Abrir", "Abrir"],
     "proj.openNamed": ["Open {name}", "Abrir {name}", "Abrir {name}"],
@@ -511,6 +516,27 @@
       "You're on the free plan: you can use the designer, but saving projects needs a paid plan. Pick a plan below.",
       "Tiene el plan gratis: puede usar el diseñador, pero guardar proyectos requiere un plan de pago. Elija un plan abajo.",
       "Você está no plano grátis: pode usar o projetista, mas salvar projetos exige um plano pago. Escolha um plano abaixo.",
+    ],
+    // The free week at sign-up: Starter until {date}, no card.
+    "acct.status.freeWeek": [
+      "You're on your free Starter week until {date}: save projects with no card and no payment. To keep saving after that, pick a plan below.",
+      "Tiene su semana gratis de Starter hasta el {date}: guarde proyectos sin tarjeta y sin pagar nada. Para seguir guardando después, elija un plan abajo.",
+      "Você está na sua semana grátis do Starter até {date}: salve projetos sem cartão e sem pagar nada. Para continuar salvando depois, escolha um plano abaixo.",
+    ],
+    "acct.status.freeWeekNoBuy": [
+      "You're on your free Starter week until {date}: save projects with no card and no payment.",
+      "Tiene su semana gratis de Starter hasta el {date}: guarde proyectos sin tarjeta y sin pagar nada.",
+      "Você está na sua semana grátis do Starter até {date}: salve projetos sem cartão e sem pagar nada.",
+    ],
+    "acct.status.freeWeekEnded": [
+      "Your free Starter week ended on {date}, and nothing was charged. Your projects are still here to read; pick a plan below to save again.",
+      "Su semana gratis de Starter terminó el {date} y no se cobró nada. Sus proyectos siguen aquí para leerlos; elija un plan abajo para volver a guardar.",
+      "A sua semana grátis do Starter acabou em {date}, e nada foi cobrado. Os seus projetos continuam aqui para leitura; escolha um plano abaixo para salvar de novo.",
+    ],
+    "acct.status.freeWeekEndedNoBuy": [
+      "Your free Starter week ended on {date}, and nothing was charged. Your projects are still here to read.",
+      "Su semana gratis de Starter terminó el {date} y no se cobró nada. Sus proyectos siguen aquí para leerlos.",
+      "A sua semana grátis do Starter acabou em {date}, e nada foi cobrado. Os seus projetos continuam aqui para leitura.",
     ],
     "acct.status.nonePaymentsOff": [
       "You're on the free plan: you can use the designer, but saving projects needs a paid plan. Paid plans aren't available yet. Meanwhile, set up your business details and labor prices below; your designer already uses them.",

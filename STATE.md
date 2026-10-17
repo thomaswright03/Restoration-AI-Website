@@ -14,6 +14,8 @@ Done this round:
 
 - 2026-10-16: room shapes and windows (Thomas's ask). room.shape = L / T / U (notch) cut from the w x l box (js/room-plan.js "Room shapes"); shaped rooms' walls are w1..wN, lettered A.. clockwise; rectangles keep N/E/S/W. Windows live in design.windows (wall, offset, width, height, sill); they come off the wall area but have no install price.
 
+- 2026-10-17: the free week (Thomas's ask). Every new account gets Starter free for 7 days, no card, no Stripe: auth.users trigger grant_free_week sets subscriptions.free_week_ends and records the email key's hash in used_trials (one per person; +tags and Gmail dots ignored). api/_plans.js planOf: paid plan wins, else Starter while the week runs, else Free. After the week, no promo-code trial. Visitors see it on the home page, sign-up page and demo; the account page shows the three plans with prices and limits; My projects lists them for free accounts. NEEDS Thomas to re-run supabase/schema.sql before it does anything.
+
 ## Not verified / still open
 
 - Full e2e (168 tests) passed in 14.0 min on a 4-core sandbox with `CI=1 E2E_WORKERS=2` (2026-10-16). On GitHub's 2-core runner (1 worker) it took 26.5 min in run 96, close to the 30 min job limit.

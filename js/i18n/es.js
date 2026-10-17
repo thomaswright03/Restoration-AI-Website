@@ -156,6 +156,8 @@
     "proj.summary.paid": "Plan {plan}: {month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
     "proj.summary.counts": "{month} de {monthly} proyectos nuevos este mes, {total} de {limit} guardados.",
     "proj.summary.planPending": "Lo que permite su plan aparecerá aquí cuando se carguen los datos de su plan.",
+    "proj.freeWeek":
+      "Semana gratis de Starter hasta el {date}, sin tarjeta. Elija un plan para seguir guardando después.",
     "proj.updated": "Actualizado el {date}",
     "proj.open": "Abrir",
     "proj.openNamed": "Abrir {name}",
@@ -250,6 +252,14 @@
       "Guardar proyectos está pausado por ahora. Su diseño está a salvo en este navegador; inténtelo de nuevo en un rato.",
     "acct.status.none":
       "Tiene el plan gratis: puede usar el diseñador, pero guardar proyectos requiere un plan de pago. Elija un plan abajo.",
+    "acct.status.freeWeek":
+      "Tiene su semana gratis de Starter hasta el {date}: guarde proyectos sin tarjeta y sin pagar nada. Para seguir guardando después, elija un plan abajo.",
+    "acct.status.freeWeekNoBuy":
+      "Tiene su semana gratis de Starter hasta el {date}: guarde proyectos sin tarjeta y sin pagar nada.",
+    "acct.status.freeWeekEnded":
+      "Su semana gratis de Starter terminó el {date} y no se cobró nada. Sus proyectos siguen aquí para leerlos; elija un plan abajo para volver a guardar.",
+    "acct.status.freeWeekEndedNoBuy":
+      "Su semana gratis de Starter terminó el {date} y no se cobró nada. Sus proyectos siguen aquí para leerlos.",
     "acct.status.nonePaymentsOff":
       "Tiene el plan gratis: puede usar el diseñador, pero guardar proyectos requiere un plan de pago. Los planes de pago aún no están disponibles. Mientras tanto, complete abajo los datos de su empresa y sus precios de mano de obra; su diseñador ya los usa.",
     "acct.status.nonePaused":

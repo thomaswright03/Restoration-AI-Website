@@ -287,6 +287,8 @@ test("back from checkout, the page waits for Stripe's confirmation and never off
   await page.waitForTimeout(500);
   await expect(page.locator("#plan-buy")).toBeHidden();
   expect(calls).toEqual([]);
+  // The return marker is read once, so a later reload doesn't wait on a payment again.
+  expect(new URL(page.url()).searchParams.has("checkout")).toBe(false);
 
   // A second plan refused by the server (already-subscribed) is explained, not "something went wrong".
   await signedIn(page, { status: "canceled", payments: true });

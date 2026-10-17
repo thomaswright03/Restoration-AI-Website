@@ -1067,6 +1067,13 @@
       $("plan-status").textContent = T("proj.loading");
       if (checkout === "success") checkoutWait = "pending";
       if (checkout === "cancelled") status($("plan-message"), "info", T("acct.checkout.cancelled"));
+      // Read once: a reload (or a bookmark) of the return URL must not wait
+      // on a payment again, e.g. after the plan was cancelled.
+      if (checkout && window.history.replaceState) {
+        params.delete("checkout");
+        var rest = params.toString();
+        window.history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+      }
 
       loadSubscription().then(function () {
         // The Stripe webhook can land a few seconds after the redirect back.

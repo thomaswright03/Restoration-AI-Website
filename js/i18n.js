@@ -129,9 +129,9 @@
     "line.badValve": ["Bad valve replacement", "Cambio de válvula dañada", "Troca de registro com defeito"],
     "line.electricalPoints": ["Electrical points", "Puntos eléctricos", "Pontos elétricos"],
     "line.drainRun": [
-      "New drain line to the plumbing wall",
-      "Nueva línea de desagüe hasta la pared de plomería",
-      "Nova linha de esgoto até a parede hidráulica",
+      "New drain line to the nearest plumbing wall",
+      "Nueva línea de desagüe hasta la pared de plomería más cercana",
+      "Nova linha de esgoto até a parede hidráulica mais próxima",
     ],
 
     // ---------- estimate: assumptions and summary ----------
@@ -1810,11 +1810,16 @@
     // ---------- the plumbing wall ----------
     "studio.room.plumbing": ["Plumbing", "Plomería", "Hidráulica"],
     "studio.room.plumbingHelp": [
-      "The drains all run to one wall, the one with the stack in it. Pick the wall your toilet is on today: fixtures on it tie straight in, and anything further away needs a new drain line run to it.",
-      "Todos los desagües van a una sola pared, la que tiene la bajante. Elija la pared donde está hoy su inodoro: las piezas en esa pared se conectan directamente y cualquier otra necesita una nueva línea de desagüe.",
-      "Todos os ralos vão para uma única parede, a que tem a prumada. Escolha a parede onde está hoje o seu vaso sanitário: as peças nela se ligam direto e qualquer outra precisa de uma nova linha de esgoto.",
+      "The drains run to the walls with plumbing in them. Pick every wall that has pipes today (usually the toilet's wall, and the tub's if it's on another): fixtures on those walls tie straight in, and anything further away needs a new drain line run to the nearest one.",
+      "Los desagües van a las paredes que tienen plomería. Elija cada pared que hoy tiene tuberías (casi siempre la del inodoro, y la de la tina si está en otra): las piezas en esas paredes se conectan directamente y cualquier otra necesita una nueva línea de desagüe hasta la más cercana.",
+      "Os ralos vão para as paredes que têm hidráulica. Escolha cada parede que hoje tem canos (quase sempre a do vaso sanitário, e a da banheira se estiver em outra): as peças nessas paredes se ligam direto e qualquer outra precisa de uma nova linha de esgoto até a mais próxima.",
     ],
-    "studio.room.plumbingWall": ["Wall with the plumbing", "Pared con la plomería", "Parede com a hidráulica"],
+    "studio.room.plumbingWall": ["Walls with plumbing", "Paredes con plomería", "Paredes com hidráulica"],
+    "studio.room.plumbingLast": [
+      "At least one wall needs plumbing. Tap another wall first, then take this one off.",
+      "Al menos una pared necesita plomería. Toque otra pared primero y luego quite esta.",
+      "Pelo menos uma parede precisa de hidráulica. Toque em outra parede primeiro e depois tire esta.",
+    ],
     "studio.room.plumbingRun": [
       "As it stands, the layout needs {run} of new drain line.",
       "Como está, la distribución necesita {run} de nueva línea de desagüe.",
@@ -1828,14 +1833,14 @@
     // ---------- what a step needs before moving on ----------
     "studio.need": ["To go on: {list}.", "Para continuar: {list}.", "Para continuar: {list}."],
     "studio.need.pipes": [
-      "tap the wall your pipes are in",
-      "toque la pared donde están las tuberías",
-      "toque na parede onde estão os canos",
+      "tap the walls your pipes are in",
+      "toque las paredes donde están las tuberías",
+      "toque nas paredes onde estão os canos",
     ],
     "studio.need.stack": [
-      "pick the wall your plumbing is in",
-      "elija la pared donde está la plomería",
-      "escolha a parede onde fica a hidráulica",
+      "pick the walls your plumbing is in",
+      "elija las paredes donde está la plomería",
+      "escolha as paredes onde fica a hidráulica",
     ],
     "studio.need.size": ["fix the room size", "corrija la medida del baño", "corrija a medida do banheiro"],
     "studio.need.fixture": ["add at least one fixture", "agregue al menos una pieza", "adicione pelo menos uma peça"],
@@ -1871,14 +1876,19 @@
     "studio.need.surface.wallPaint": ["wall paint", "pintura de paredes", "tinta das paredes"],
     "studio.need.surface.ceilingPaint": ["ceiling paint", "pintura del techo", "tinta do teto"],
     "studio.room.plumbingNone": [
-      "Everything with a drain is on that wall, so there's no new pipe to run.",
-      "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
-      "Tudo o que tem ralo está nessa parede, então não há tubulação nova a passar.",
+      "Everything with a drain is on a plumbing wall, so there's no new pipe to run.",
+      "Todo lo que tiene desagüe está en una pared con plomería, así que no hay tubería nueva que correr.",
+      "Tudo o que tem ralo está numa parede com hidráulica, então não há tubulação nova a passar.",
     ],
     "studio.room.plumbingSet": [
       "Plumbing wall: {wall}",
       "Pared de la plomería: {wall}",
       "Parede da hidráulica: {wall}",
+    ],
+    "studio.room.plumbingSetMany": [
+      "Plumbing walls: {wall}",
+      "Paredes de la plomería: {wall}",
+      "Paredes da hidráulica: {wall}",
     ],
     "studio.room.plumbingBroke": [
       "Some fixtures are now too far from the plumbing.",
@@ -1904,6 +1914,7 @@
       "Mostrar só {what}, com todo o resto fora do caminho",
     ],
     "studio.sum.stack": ["Plumbing wall: {wall}", "Pared de la plomería: {wall}", "Parede hidráulica: {wall}"],
+    "studio.sum.stacks": ["Plumbing walls: {wall}", "Paredes de la plomería: {wall}", "Paredes hidráulicas: {wall}"],
     "studio.sum.drainRun": ["New drain line: {run}", "Nueva línea de desagüe: {run}", "Nova linha de esgoto: {run}"],
     "studio.sum.electrical": ["Electrical: {list}", "Electricidad: {list}", "Elétrica: {list}"],
     "studio.sum.item": [
@@ -2630,9 +2641,9 @@
     "studio.details": ["Details", "Detalles", "Detalhes"],
     "studio.stepDone": ["done", "listo", "pronto"],
     "studio.simple.room.intro": [
-      "Pick a bathroom like yours, set its size, then tap the wall your pipes are in.",
-      "Elija un baño parecido al suyo, ponga su tamaño y luego toque la pared donde están las tuberías.",
-      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque na parede onde estão os canos.",
+      "Pick a bathroom like yours, set its size, then tap the walls your pipes are in.",
+      "Elija un baño parecido al suyo, ponga su tamaño y luego toque las paredes donde están las tuberías.",
+      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque nas paredes onde estão os canos.",
     ],
     "studio.simple.layout.intro": [
       "Tap to add a fixture. Drag it in the room to move it. If something doesn't fit, you'll see it right away.",
@@ -2662,9 +2673,9 @@
     "studio.room.howBig": ["How big is it?", "¿Qué tan grande es?", "Qual é o tamanho?"],
     "studio.room.pipes": ["Where are the pipes?", "¿Dónde están las tuberías?", "Onde estão os canos?"],
     "studio.room.pipesHelp": [
-      "Tap the wall the water and drain pipes come in through. Usually it's the wall the toilet is on.",
-      "Toque la pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro.",
-      "Toque na parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário.",
+      "Tap each wall the water and drain pipes come in through. Usually it's the wall the toilet is on, plus the tub's wall if it's on another one.",
+      "Toque cada pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro, más la de la tina si está en otra.",
+      "Toque em cada parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário, mais a da banheira se estiver em outra.",
     ],
     "studio.room.wallWith": ["Wall {letter}: {what}", "Pared {letter}: {what}", "Parede {letter}: {what}"],
     "studio.room.wallEmpty": ["nothing on it yet", "nada todavía", "nada ainda"],
@@ -2833,9 +2844,9 @@
       "Quer que eu ligue a um interruptor?",
     ],
     "riley.step.room": [
-      "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",
-      "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué pared está la plomería.",
-      "Vamos começar pelo banheiro. Escolha um parecido com o seu ou informe as suas medidas e depois me diga em qual parede está a hidráulica.",
+      "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which walls the plumbing is in.",
+      "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué paredes está la plomería.",
+      "Vamos começar pelo banheiro. Escolha um parecido com o seu ou informe as suas medidas e depois me diga em quais paredes está a hidráulica.",
     ],
     "riley.step.layout": [
       "Now the layout. Add what you want and drag it around; I'll tell you the moment something won't fit.",
@@ -2895,9 +2906,9 @@
     ],
     // Shorter lines for the simple studio (the basics of each step).
     "riley.simple.room": [
-      "Let's start with your room. Pick one like yours, set the size, then tap the wall your pipes are in.",
-      "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque la pared donde están las tuberías.",
-      "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque na parede onde estão os canos.",
+      "Let's start with your room. Pick one like yours, set the size, then tap the walls your pipes are in.",
+      "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque las paredes donde están las tuberías.",
+      "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque nas paredes onde estão os canos.",
     ],
     "riley.simple.layout": [
       "Now add what you want and drag it around. If something doesn't fit, I'll say so and offer to fix it.",

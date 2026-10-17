@@ -646,11 +646,11 @@ test.describe("design studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("the plumbing wall decides where a drain can go, and the estimate prices the pipe", async ({ page }) => {
+  test("the plumbing walls decide where a drain can go, and the estimate prices the pipe", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);
     // The sample bath's plumbing is in wall A, where the toilet and vanity are.
-    await expect(page.locator(".studio-step.is-room")).toContainText("Everything with a drain is on that wall");
+    await expect(page.locator(".studio-step.is-room")).toContainText("Everything with a drain is on a plumbing wall");
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
 
     // In a bathroom this small every drain reaches any wall, so grow it:
@@ -665,7 +665,16 @@ test.describe("design studio", () => {
     };
     await size("12'", "12'");
     await expect(length).toHaveValue("12′");
+    // A tap adds a wall; the last one can't be taken off.
     await byKey(page, "stack-S").click();
+    await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
+    await expect(byKey(page, "stack-S")).toHaveAttribute("aria-pressed", "true");
+    expect(await page.evaluate(() => window.RoomPlan.stackWalls(window.RoomStudio.design()))).toEqual(["N", "S"]);
+    await byKey(page, "stack-N").click();
+    await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "false");
+    await byKey(page, "stack-S").click();
+    await expect(byKey(page, "stack-S")).toHaveAttribute("aria-pressed", "true");
+    await expect(studioToast(page)).toContainText("At least one wall needs plumbing");
     await expect(studioStatus(page)).toHaveClass(/is-error/);
     await step(page, "layout").click();
     await expect(page.locator(".studio-issues").first()).toContainText("too far from the plumbing in wall C");
@@ -676,10 +685,17 @@ test.describe("design studio", () => {
     await size("8' 6\"", "5'");
     await expect(length).toHaveValue("5′");
     await byKey(page, "stack-E").click();
+    await byKey(page, "stack-S").click();
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
     await expect(page.locator(".studio-step.is-room")).toContainText("of new drain line");
+    // With pipes in wall A as well, the toilet and vanity tie straight in.
+    await byKey(page, "stack-N").click();
+    await expect(page.locator(".studio-step.is-room")).toContainText("Everything with a drain is on a plumbing wall");
+    expect(await page.evaluate(() => window.RoomPlan.stackWalls(window.RoomStudio.design()))).toEqual(["N", "E"]);
+    // Taken off again, the pipe to wall A is back in the estimate.
+    await byKey(page, "stack-N").click();
     await step(page, "estimate").click();
-    await expect(page.getByTestId("estimate-card")).toContainText("New drain line to the plumbing wall");
+    await expect(page.getByTestId("estimate-card")).toContainText("New drain line to the nearest plumbing wall");
     expect(errors).toEqual([]);
   });
 
@@ -948,11 +964,11 @@ test.describe("design studio", () => {
     const errors = await openStudio(page);
     await wait3d(page);
     const need = page.locator("#studio-step-need");
-    await expect(need).toHaveText("To go on: pick the wall your plumbing is in.");
+    await expect(need).toHaveText("To go on: pick the walls your plumbing is in.");
     await expect(step(page, "layout")).toHaveAttribute("aria-disabled", "true");
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-room")).toBeVisible();
-    await expect(studioToast(page)).toContainText("To go on: pick the wall your plumbing is in.");
+    await expect(studioToast(page)).toContainText("To go on: pick the walls your plumbing is in.");
     await expect(page.locator(".studio-riley .riley-text")).toContainText("Before we move on");
     await expect(page.locator(".studio-field.is-missing")).toHaveCount(1);
     // Jumping ahead from the step bar is refused too.

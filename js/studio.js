@@ -337,6 +337,15 @@
     return Plan.wallLetter((d || design).room, wallId);
   }
 
+  // The plumbing walls by letter: "A" or "A, C".
+  function stackLetters(d) {
+    return Plan.stackWalls(d || design)
+      .map(function (wid) {
+        return letter(wid, d);
+      })
+      .join(", ");
+  }
+
   // How many fixtures (and doors) don't fit where they are.
   function errorCount(list) {
     return Object.keys(list).filter(function (id) {
@@ -390,7 +399,7 @@
       return T(key, {
         run: len(x.have / 12),
         most: len(x.need / 12),
-        wall: letter(Plan.stackWall(d || design), d),
+        wall: letter(x.wall || Plan.stackWall(d || design), d),
       });
     }
     if (x.code === "side" && item.type !== "toilet") key = "studio.issue.sideGap";
@@ -942,22 +951,24 @@
 
     if (mini && !opts.tags) return svg;
 
-    // The wall the plumbing stack is in, hatched along its inside face
-    // (not while the Room step is still asking which wall: stack false).
+    // The walls the plumbing is in, hatched along their inside face
+    // (not while the Room step is still asking which: stack false).
     if (opts.stack !== false) {
-      var stack = wallOf(Plan.stackWall(d), d);
-      var sp0 = wallPoint(stack, 0, 0);
-      var sp1 = wallPoint(stack, stack.span, STACK_BAND);
-      svg.appendChild(
-        s("g", { class: "plan-stack" }, [
-          s("rect", {
-            x: num(Math.min(sp0.x, sp1.x)),
-            y: num(Math.min(sp0.z, sp1.z)),
-            width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
-            height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
-          }),
-        ]),
-      );
+      Plan.stackWalls(d).forEach(function (wid) {
+        var stack = wallOf(wid, d);
+        var sp0 = wallPoint(stack, 0, 0);
+        var sp1 = wallPoint(stack, stack.span, STACK_BAND);
+        svg.appendChild(
+          s("g", { class: "plan-stack" }, [
+            s("rect", {
+              x: num(Math.min(sp0.x, sp1.x)),
+              y: num(Math.min(sp0.z, sp1.z)),
+              width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
+              height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
+            }),
+          ]),
+        );
+      });
     }
 
     // Wall letters and the room's size. A shaped room shows each wall's
@@ -2980,17 +2991,19 @@
     }
   }
 
-  // Which wall the plumbing is in: each wall as a button that says what
+  // Which walls the plumbing is in: each wall as a button that says what
   // stands on it (so "the toilet's wall" is a tap, not a letter to look
-  // up), with the plan beside them. Until it's answered, a "Not sure?"
-  // button takes the wall the room suggests. A tap on a wall in the 3D
-  // room answers it too (tapWall).
+  // up), with the plan beside them. A tap turns a wall on or off; the
+  // last one stays on. Until it's answered, a "Not sure?" button takes the
+  // wall the room suggests. A tap on a wall in the 3D room answers it too
+  // (tapWall).
   function plumbingSection() {
     var stack = Plan.stackWall(design);
+    var stacks = Plan.stackWalls(design);
     var run = Plan.drainRun(design, sizes);
     var stackSet = answers().stack;
     var buttons = Plan.wallIds(design.room).map(function (wid) {
-      var on = stackSet && wid === stack;
+      var on = stackSet && stacks.indexOf(wid) !== -1;
       var what = wallWhat(wid);
       return h(
         "button",
@@ -3001,7 +3014,9 @@
           "aria-label": T("studio.room.wallWith", { letter: letter(wid), what: what }),
           "data-key": "stack-" + wid,
           onclick: function () {
-            if (!on) setStackWall(wid);
+            if (!stackSet) setStackWall(wid);
+            else if (!on || stacks.length > 1) toggleStackWall(wid);
+            else toast(T("studio.room.plumbingLast"));
           },
         },
         [
@@ -3376,12 +3391,24 @@
     else if (!misfits(next).length) hideToast("resize");
   }
 
-  // The wall the stack is in: everything with a drain is measured from
-  // it, so moving it can leave a fixture out of reach.
+  // The walls the plumbing is in: everything with a drain is measured
+  // from the nearest one, so moving or dropping one can leave a fixture
+  // out of reach. setStackWall answers with just that wall;
+  // toggleStackWall adds a wall or takes one off.
   function setStackWall(wallId) {
+    stackTo(Plan.setStack(design, wallId));
+  }
+
+  function toggleStackWall(wallId) {
+    stackTo(Plan.toggleStack(design, wallId));
+  }
+
+  function stackTo(next) {
     var before = errorCount(issues);
-    commit(withAnswer(Plan.setStack(design, wallId)), {
-      announce: T("studio.room.plumbingSet", { wall: letter(wallId) }),
+    commit(withAnswer(next), {
+      announce: T(Plan.stackWalls(next).length > 1 ? "studio.room.plumbingSetMany" : "studio.room.plumbingSet", {
+        wall: stackLetters(next),
+      }),
     });
     if (errorCount(issues) > before) {
       toast(T("studio.room.plumbingBroke"), fixAction());
@@ -5375,7 +5402,7 @@
         T("studio.sum.item", { name: itemName(it, d), wall: letter(it.wall, d), at: len(it.offset) }) + itemExtras(it),
       );
     });
-    out.push(T("studio.sum.stack", { wall: letter(Plan.stackWall(d), d) }));
+    out.push(T(Plan.stackWalls(d).length > 1 ? "studio.sum.stacks" : "studio.sum.stack", { wall: stackLetters(d) }));
     var run = Plan.drainRun(d, sizes);
     if (run > 0) out.push(T("studio.sum.drainRun", { run: len(run) }));
     var pts = points(d);
@@ -5805,16 +5832,18 @@
     });
     // The plumbing wall, and a mark where each electrical point goes. The
     // design list beside the plan names them.
-    var stack = wallOf(Plan.stackWall(d), d);
-    var s0 = wallPoint(stack, 0, 0);
-    var s1 = wallPoint(stack, stack.span, STACK_BAND);
-    shapes.rects.push({
-      x0: Math.min(s0.x, s1.x),
-      x1: Math.max(s0.x, s1.x) + (Math.abs(s1.x - s0.x) < 1e-6 ? STACK_BAND : 0),
-      z0: Math.min(s0.z, s1.z),
-      z1: Math.max(s0.z, s1.z) + (Math.abs(s1.z - s0.z) < 1e-6 ? STACK_BAND : 0),
-      fill: [219, 234, 254],
-      stroke: [37, 99, 235],
+    Plan.stackWalls(d).forEach(function (wid) {
+      var stack = wallOf(wid, d);
+      var s0 = wallPoint(stack, 0, 0);
+      var s1 = wallPoint(stack, stack.span, STACK_BAND);
+      shapes.rects.push({
+        x0: Math.min(s0.x, s1.x),
+        x1: Math.max(s0.x, s1.x) + (Math.abs(s1.x - s0.x) < 1e-6 ? STACK_BAND : 0),
+        z0: Math.min(s0.z, s1.z),
+        z1: Math.max(s0.z, s1.z) + (Math.abs(s1.z - s0.z) < 1e-6 ? STACK_BAND : 0),
+        fill: [219, 234, 254],
+        stroke: [37, 99, 235],
+      });
     });
     points(d).forEach(function (point) {
       var pose = Plan.electricalPose(d, point, sizes);

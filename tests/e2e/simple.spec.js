@@ -75,7 +75,7 @@ test.describe("the simple studio", () => {
     await expect(byKey(page, "stack-S")).toContainText("Door");
     await expect(byKey(page, "stack-W")).toContainText("nothing on it yet");
     await expect(page.locator("[data-key^='stack-'][aria-pressed='true']")).toHaveCount(0);
-    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the wall your pipes are in.");
+    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the walls your pipes are in.");
     // Over the room, the hint says so too, and a tap on wall A there answers it.
     await expect(page.locator("#studio-hint")).toContainText("Tap the wall your pipes are in.");
     const room = await page.evaluate(() => window.RoomStudio.design().room);
@@ -90,12 +90,19 @@ test.describe("the simple studio", () => {
     // A new room asks again; "Not sure?" takes the wall the room suggests
     // (the least pipe).
     await byKey(page, "tpl-full5x8").click();
-    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the wall your pipes are in.");
+    await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the walls your pipes are in.");
     await expect(byKey(page, "suggest-stack")).toHaveText(/Not sure\? Use wall A/);
     await byKey(page, "suggest-stack").click();
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
     await expect(byKey(page, "suggest-stack")).toHaveCount(0);
     await expect(page.locator("#studio-step-need")).toHaveCount(0);
+    // Pipes in more than one wall: a tap adds one, a second tap takes it off.
+    await byKey(page, "stack-E").click();
+    await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
+    await expect(byKey(page, "stack-E")).toHaveAttribute("aria-pressed", "true");
+    expect(await page.evaluate(() => window.RoomPlan.stackWalls(window.RoomStudio.design()))).toEqual(["N", "E"]);
+    await byKey(page, "stack-E").click();
+    await expect(byKey(page, "stack-E")).toHaveAttribute("aria-pressed", "false");
     // Answered, the room step gets its check mark once it's left.
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-layout")).toBeVisible();
@@ -273,7 +280,7 @@ test.describe("the simple studio", () => {
     await wait3d(page);
     await byKey(page, "nav-next").click();
     await expect(studioToast(page)).toBeVisible();
-    await expect(studioToast(page)).toContainText("To go on: tap the wall your pipes are in.");
+    await expect(studioToast(page)).toContainText("To go on: tap the walls your pipes are in.");
     await byKey(page, "suggest-stack").click();
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-layout")).toBeVisible();

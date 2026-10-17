@@ -86,7 +86,7 @@
     "line.noStack": "Sem prumada hidráulica existente",
     "line.badValve": "Troca de registro com defeito",
     "line.electricalPoints": "Pontos elétricos",
-    "line.drainRun": "Nova linha de esgoto até a parede hidráulica",
+    "line.drainRun": "Nova linha de esgoto até a parede hidráulica mais próxima",
     "scope.describe": "Demolição: {demolition}; piso novo: {floor}; paredes: {walls}; pintar o teto: {ceiling}",
     "assume.scope": "{scope}. Somente este serviço está no orçamento.",
     "assume.floorArea": "Área do piso: {w} × {l} pés = {area} pés² (considera-se o teto do mesmo tamanho).",
@@ -764,13 +764,15 @@
     "studio.pointWhere": "Parede {wall} a {at}, {up} de altura",
     "studio.room.plumbing": "Hidráulica",
     "studio.room.plumbingHelp":
-      "Todos os ralos vão para uma única parede, a que tem a prumada. Escolha a parede onde está hoje o seu vaso sanitário: as peças nela se ligam direto e qualquer outra precisa de uma nova linha de esgoto.",
-    "studio.room.plumbingWall": "Parede com a hidráulica",
+      "Os ralos vão para as paredes que têm hidráulica. Escolha cada parede que hoje tem canos (quase sempre a do vaso sanitário, e a da banheira se estiver em outra): as peças nessas paredes se ligam direto e qualquer outra precisa de uma nova linha de esgoto até a mais próxima.",
+    "studio.room.plumbingWall": "Paredes com hidráulica",
+    "studio.room.plumbingLast":
+      "Pelo menos uma parede precisa de hidráulica. Toque em outra parede primeiro e depois tire esta.",
     "studio.room.plumbingRun": "Como está, a distribuição precisa de {run} de nova linha de esgoto.",
     "studio.room.plumbingUnset": "Ainda não escolhida. Até lá, os ralos são medidos a partir da parede {wall}.",
     "studio.need": "Para continuar: {list}.",
-    "studio.need.pipes": "toque na parede onde estão os canos",
-    "studio.need.stack": "escolha a parede onde fica a hidráulica",
+    "studio.need.pipes": "toque nas paredes onde estão os canos",
+    "studio.need.stack": "escolha as paredes onde fica a hidráulica",
     "studio.need.size": "corrija a medida do banheiro",
     "studio.need.fixture": "adicione pelo menos uma peça",
     "studio.need.fit": "mova ou tire o que não cabe ({what})",
@@ -784,8 +786,10 @@
     "studio.need.surface.wallTile": "revestimento de parede",
     "studio.need.surface.wallPaint": "tinta das paredes",
     "studio.need.surface.ceilingPaint": "tinta do teto",
-    "studio.room.plumbingNone": "Tudo o que tem ralo está nessa parede, então não há tubulação nova a passar.",
+    "studio.room.plumbingNone":
+      "Tudo o que tem ralo está numa parede com hidráulica, então não há tubulação nova a passar.",
     "studio.room.plumbingSet": "Parede da hidráulica: {wall}",
+    "studio.room.plumbingSetMany": "Paredes da hidráulica: {wall}",
     "studio.room.plumbingBroke": "Algumas peças ficaram longe demais da hidráulica.",
     "studio.issue.offStack": "Está fora da parede hidráulica: {run} de nova linha de esgoto até a parede {wall}.",
     "studio.issue.noStack":
@@ -794,6 +798,7 @@
     "studio.view.isolateOn": "Mostrando só isto",
     "studio.view.isolateHelp": "Mostrar só {what}, com todo o resto fora do caminho",
     "studio.sum.stack": "Parede hidráulica: {wall}",
+    "studio.sum.stacks": "Paredes hidráulicas: {wall}",
     "studio.sum.drainRun": "Nova linha de esgoto: {run}",
     "studio.sum.electrical": "Elétrica: {list}",
     "studio.sum.item": "{name}: parede {wall}, centro a {at} do canto esquerdo",
@@ -1024,7 +1029,7 @@
     "studio.details": "Detalhes",
     "studio.stepDone": "pronto",
     "studio.simple.room.intro":
-      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque na parede onde estão os canos.",
+      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque nas paredes onde estão os canos.",
     "studio.simple.layout.intro":
       "Toque para adicionar uma peça. Arraste-a no banheiro para mover. Se algo não couber, você vê na hora.",
     "studio.simple.electrical.intro":
@@ -1036,7 +1041,7 @@
     "studio.room.howBig": "Qual é o tamanho?",
     "studio.room.pipes": "Onde estão os canos?",
     "studio.room.pipesHelp":
-      "Toque na parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário.",
+      "Toque em cada parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário, mais a da banheira se estiver em outra.",
     "studio.room.wallWith": "Parede {letter}: {what}",
     "studio.room.wallEmpty": "nada ainda",
     "studio.room.suggestWall": "Não sabe? Usar a parede {letter}",
@@ -1104,7 +1109,7 @@
     "riley.elecGaps": "Uma coisa antes: {list} Quer que eu adicione?",
     "riley.offerSwitch": "Quer que eu ligue a um interruptor?",
     "riley.step.room":
-      "Vamos começar pelo banheiro. Escolha um parecido com o seu ou informe as suas medidas e depois me diga em qual parede está a hidráulica.",
+      "Vamos começar pelo banheiro. Escolha um parecido com o seu ou informe as suas medidas e depois me diga em quais paredes está a hidráulica.",
     "riley.step.layout":
       "Agora a distribuição. Adicione o que quiser e arraste; eu aviso na hora em que algo não couber.",
     "riley.step.electrical":
@@ -1127,7 +1132,7 @@
     "riley.step.estimateOwnerDefaults":
       "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
     "riley.simple.room":
-      "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque na parede onde estão os canos.",
+      "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque nas paredes onde estão os canos.",
     "riley.simple.layout":
       "Agora adicione o que quiser e arraste. Se algo não couber, eu aviso e me ofereço para arrumar.",
     "riley.simple.electrical":

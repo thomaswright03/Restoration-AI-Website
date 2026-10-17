@@ -9,8 +9,8 @@
 // A design:
 //   { v: 3,
 //     room: { w, l, h, wet, shape }, feet: width (x), length (z), ceiling,
-//                                  the wall the plumbing stack is in, and
-//                                  any cutout (see Room shapes)
+//                                  the wall the plumbing is in (or a list
+//                                  of them), and any cutout (see Room shapes)
 //     items: [ { id, type, wall, offset, opts } ],
 //     electrical: [ { id, kind, wall, offset, height, for } ],
 //     windows: [ { id, wall, offset, width, height, sill } ],
@@ -1522,15 +1522,18 @@
   // -------------------------------------------------------------------
   // Plumbing: the stack wall, and how far a drain can run from it
   // -------------------------------------------------------------------
-  // A bathroom's drains all join one soil stack, which lives inside one
-  // wall. Fixtures on that wall tie straight in; anything on another wall
-  // needs a drain line run around to it, under the floor, falling about a
-  // quarter inch per foot. That run costs money and can't go on forever,
-  // so where the stack is decides what layouts are real.
+  // A bathroom's drains join a soil stack, which lives inside a wall.
+  // Fixtures on a wall with plumbing in it tie straight in; anything on
+  // another wall needs a drain line run around to it, under the floor,
+  // falling about a quarter inch per foot. That run costs money and can't
+  // go on forever, so where the plumbing is decides what layouts are real.
   //
-  // design.room.wet is that wall ("N", "E", "S" or "W"). The run is
-  // measured the way a plumber would route it: around the room's
-  // perimeter from the fixture to the nearest end of the stack wall.
+  // design.room.wet is that wall ("N", "E", "S" or "W"), or a list of
+  // them when pipes come in through more than one (a tub on one wall, the
+  // toilet and vanity on another). Saved designs from before that hold a
+  // single wall, which still reads the same. The run is measured the way
+  // a plumber would route it: around the room's perimeter from the
+  // fixture to the nearest end of the nearest plumbing wall.
   //
   // A toilet's 3 in. soil line is the fussy one (it needs the fall and a
   // big hole in the floor); a sink's 1.5 in. line travels much further.
@@ -1540,16 +1543,38 @@
   // pipe under the floor and no one thinks twice; past that it's a job.
   var FREE_RUN = 3;
 
+  // The plumbing walls a room's `wet` names, in wall order, each once:
+  // a wall id or a list of them, with anything that isn't a wall of this
+  // room dropped. Empty when it names none.
+  function wetWalls(room, wet) {
+    var list = Array.isArray(wet) ? wet : [wet];
+    return wallIds(room).filter(function (wid) {
+      return list.indexOf(wid) !== -1;
+    });
+  }
+
+  // Every wall with plumbing in it (the first wall when the design names
+  // none), and the first of them, for anything that wants just one.
+  function stackWalls(design) {
+    if (!design || !design.room) return ["N"];
+    var list = wetWalls(design.room, design.room.wet);
+    return list.length ? list : [wallIds(design.room)[0]];
+  }
+
   function stackWall(design) {
-    if (!design || !design.room) return "N";
-    var wall = design.room.wet;
-    return isWall(design.room, wall) ? wall : wallIds(design.room)[0];
+    return stackWalls(design)[0];
   }
 
   // Whether the design says where the stack is. A design being arranged
   // from scratch doesn't yet: the layout decides, and the stack follows.
   function hasStack(design) {
-    return !!design && !!design.room && isWall(design.room, design.room.wet);
+    return !!design && !!design.room && wetWalls(design.room, design.room.wet).length > 0;
+  }
+
+  // How `wet` is kept: one wall as its id, as designs always held it,
+  // several as a list.
+  function wetValue(list) {
+    return list.length === 1 ? list[0] : list.slice();
   }
 
   // Distance around the room's perimeter from wall A's left end,
@@ -1564,29 +1589,43 @@
     return Math.min(d, total - d);
   }
 
-  // Feet of new drain line a fixture needs where it stands: 0 on the
-  // stack wall, otherwise the shorter way around to one of that wall's
-  // ends. A fixture on the opposite wall picks up the whole side wall on
-  // the way, which is why those runs get long.
+  // Feet of new drain line a fixture needs where it stands: 0 on a
+  // plumbing wall, otherwise the shorter way around to the nearest end of
+  // the nearest plumbing wall. A fixture opposite the only plumbing wall
+  // picks up the whole side wall on the way, which is why those runs get
+  // long.
   function stackRun(design, item, sizes) {
+    return stackReach(design, item, sizes).run;
+  }
+
+  // The plumbing wall a fixture's drain runs to, and how far: the wall
+  // it stands on when that has plumbing, otherwise the nearest one.
+  function nearestStack(design, item, sizes) {
+    return stackReach(design, item, sizes).wall;
+  }
+
+  function stackReach(design, item, sizes) {
     var t = TYPES[item.type];
-    if (!t || !t.wet || !hasStack(design)) return 0;
+    var list = stackWalls(design);
+    if (!t || !t.wet || !hasStack(design)) return { wall: list[0], run: 0 };
+    if (list.indexOf(item.wall) !== -1) return { wall: item.wall, run: 0 };
     var room = design.room;
-    var stack = stackWall(design);
-    if (item.wall === stack) return 0;
     var total = perimeter(room);
-    var start = perimeterAt(room, stack, 0);
-    var end = start + wallSpan(room, stack);
     var span = wallSpan(room, item.wall);
     var spots = [item.offset];
     if (t.drainEnd) {
       var half = sizeOf(item, sizes).span / 2;
       spots.push(item.offset - half, item.offset + half);
     }
-    var best = Infinity;
-    spots.forEach(function (a) {
-      var me = perimeterAt(room, item.wall, clamp(a, 0, span));
-      best = Math.min(best, aroundTo(me, start, total), aroundTo(me, end, total));
+    var best = { wall: list[0], run: Infinity };
+    list.forEach(function (stack) {
+      var start = perimeterAt(room, stack, 0);
+      var end = start + wallSpan(room, stack);
+      spots.forEach(function (a) {
+        var me = perimeterAt(room, item.wall, clamp(a, 0, span));
+        var run = Math.min(aroundTo(me, start, total), aroundTo(me, end, total));
+        if (run < best.run - EPS) best = { wall: stack, run: run };
+      });
     });
     return best;
   }
@@ -1599,7 +1638,12 @@
     if (!limit) return [];
     var run = stackRun(design, item, sizes);
     if (run <= FREE_RUN + EPS) return [];
-    var extra = { other: "stack", need: Math.round(limit * 12), have: Math.round(run * 12) };
+    var extra = {
+      other: "stack",
+      need: Math.round(limit * 12),
+      have: Math.round(run * 12),
+      wall: nearestStack(design, item, sizes),
+    };
     return [issue(run > limit + EPS ? "error" : "warn", run > limit + EPS ? "noStack" : "offStack", extra)];
   }
 
@@ -1641,9 +1685,29 @@
     return best ? best.wall : wallIds(design.room)[0];
   }
 
-  function setStack(design, wallId) {
+  // Sets the plumbing walls: one wall id, or a list of them. Anything
+  // that names no wall of this room leaves the design as it is.
+  function setStack(design, walls) {
+    var list = wetWalls(design.room, walls);
+    if (!list.length) return design;
+    return Object.assign({}, design, { room: Object.assign({}, design.room, { wet: wetValue(list) }) });
+  }
+
+  // Adds a wall to the plumbing walls, or takes it off. The last one
+  // stays: drains have to run somewhere.
+  function toggleStack(design, wallId) {
     if (!isWall(design.room, wallId)) return design;
-    return Object.assign({}, design, { room: Object.assign({}, design.room, { wet: wallId }) });
+    var list = hasStack(design) ? stackWalls(design) : [];
+    var on = list.indexOf(wallId) !== -1;
+    if (on && list.length === 1) return design;
+    return setStack(
+      design,
+      on
+        ? list.filter(function (w) {
+            return w !== wallId;
+          })
+        : list.concat([wallId]),
+    );
   }
 
   // -------------------------------------------------------------------
@@ -2786,7 +2850,8 @@
     );
     var shape = fitShape(design.room, r.shape);
     if (shape) design.room.shape = shape;
-    design.room.wet = isWall(design.room, r.wet) ? r.wet : wallIds(design.room)[0];
+    var wet = wetWalls(design.room, Array.isArray(r.wet) ? r.wet.slice(0, 16) : r.wet);
+    design.room.wet = wet.length ? wetValue(wet) : wallIds(design.room)[0];
     var seen = {};
     (Array.isArray(raw.items) ? raw.items : []).slice(0, MAX_ITEMS).forEach(function (it) {
       if (!it || !TYPES[it.type] || !isWall(design.room, it.wall)) return;
@@ -2898,7 +2963,7 @@
         w: round(design.room.w, 3),
         l: round(design.room.l, 3),
         h: round(design.room.h, 3),
-        wet: stackWall(design),
+        wet: wetValue(stackWalls(design)),
       },
       items: design.items.map(function (it) {
         return { id: it.id, type: it.type, wall: it.wall, offset: round(it.offset, 3), opts: it.opts };
@@ -2963,7 +3028,16 @@
     else delete room.shape;
     var wet = stackWall(design);
     if (!hasStack(design)) room.wet = room.wet === undefined ? wet : room.wet;
-    else room.wet = rewall(from, room, wet, wallSpan(from, wet) / 2).wall;
+    else {
+      room.wet = wetValue(
+        wetWalls(
+          room,
+          stackWalls(design).map(function (wid) {
+            return rewall(from, room, wid, wallSpan(from, wid) / 2).wall;
+          }),
+        ),
+      );
+    }
     var next = Object.assign({}, design, { room: room });
     next.items = design.items.map(function (it) {
       var at = rewall(from, room, it.wall, it.offset);
@@ -3034,10 +3108,13 @@
     counts: counts,
     STACK_LIMIT: STACK_LIMIT,
     stackWall: stackWall,
+    stackWalls: stackWalls,
     stackRun: stackRun,
+    nearestStack: nearestStack,
     drainRun: drainRun,
     suggestStack: suggestStack,
     setStack: setStack,
+    toggleStack: toggleStack,
     MAX_ELECTRICAL: MAX_ELECTRICAL,
     ELECTRICAL_KINDS: ELECTRICAL_KINDS,
     ELECTRICAL_IDS: ["outlet", "switch", "light", "fan"],

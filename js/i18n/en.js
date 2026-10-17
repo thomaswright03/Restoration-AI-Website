@@ -86,7 +86,7 @@
     "line.noStack": "No existing plumbing stack",
     "line.badValve": "Bad valve replacement",
     "line.electricalPoints": "Electrical points",
-    "line.drainRun": "New drain line to the plumbing wall",
+    "line.drainRun": "New drain line to the nearest plumbing wall",
     "scope.describe": "Demolition: {demolition}; new floor: {floor}; walls: {walls}; paint ceiling: {ceiling}",
     "assume.scope": "{scope}. Only this work is priced.",
     "assume.floorArea": "Floor area: {w} × {l} ft = {area} sq ft (the ceiling is taken to be the same size).",
@@ -747,13 +747,14 @@
     "studio.pointWhere": "Wall {wall} at {at}, {up} up",
     "studio.room.plumbing": "Plumbing",
     "studio.room.plumbingHelp":
-      "The drains all run to one wall, the one with the stack in it. Pick the wall your toilet is on today: fixtures on it tie straight in, and anything further away needs a new drain line run to it.",
-    "studio.room.plumbingWall": "Wall with the plumbing",
+      "The drains run to the walls with plumbing in them. Pick every wall that has pipes today (usually the toilet's wall, and the tub's if it's on another): fixtures on those walls tie straight in, and anything further away needs a new drain line run to the nearest one.",
+    "studio.room.plumbingWall": "Walls with plumbing",
+    "studio.room.plumbingLast": "At least one wall needs plumbing. Tap another wall first, then take this one off.",
     "studio.room.plumbingRun": "As it stands, the layout needs {run} of new drain line.",
     "studio.room.plumbingUnset": "Not picked yet. Until you pick, drains are measured from wall {wall}.",
     "studio.need": "To go on: {list}.",
-    "studio.need.pipes": "tap the wall your pipes are in",
-    "studio.need.stack": "pick the wall your plumbing is in",
+    "studio.need.pipes": "tap the walls your pipes are in",
+    "studio.need.stack": "pick the walls your plumbing is in",
     "studio.need.size": "fix the room size",
     "studio.need.fixture": "add at least one fixture",
     "studio.need.fit": "move or remove what doesn't fit ({what})",
@@ -767,8 +768,9 @@
     "studio.need.surface.wallTile": "wall tile",
     "studio.need.surface.wallPaint": "wall paint",
     "studio.need.surface.ceilingPaint": "ceiling paint",
-    "studio.room.plumbingNone": "Everything with a drain is on that wall, so there's no new pipe to run.",
+    "studio.room.plumbingNone": "Everything with a drain is on a plumbing wall, so there's no new pipe to run.",
     "studio.room.plumbingSet": "Plumbing wall: {wall}",
+    "studio.room.plumbingSetMany": "Plumbing walls: {wall}",
     "studio.room.plumbingBroke": "Some fixtures are now too far from the plumbing.",
     "studio.issue.offStack": "It's off the plumbing wall: {run} of new drain line to wall {wall}.",
     "studio.issue.noStack":
@@ -777,6 +779,7 @@
     "studio.view.isolateOn": "Showing just this",
     "studio.view.isolateHelp": "Show only {what}, with everything else out of the way",
     "studio.sum.stack": "Plumbing wall: {wall}",
+    "studio.sum.stacks": "Plumbing walls: {wall}",
     "studio.sum.drainRun": "New drain line: {run}",
     "studio.sum.electrical": "Electrical: {list}",
     "studio.sum.item": "{name}: wall {wall}, center {at} from the left corner",
@@ -1006,7 +1009,7 @@
     "studio.more": "More options",
     "studio.details": "Details",
     "studio.stepDone": "done",
-    "studio.simple.room.intro": "Pick a bathroom like yours, set its size, then tap the wall your pipes are in.",
+    "studio.simple.room.intro": "Pick a bathroom like yours, set its size, then tap the walls your pipes are in.",
     "studio.simple.layout.intro":
       "Tap to add a fixture. Drag it in the room to move it. If something doesn't fit, you'll see it right away.",
     "studio.simple.electrical.intro":
@@ -1017,7 +1020,7 @@
     "studio.room.howBig": "How big is it?",
     "studio.room.pipes": "Where are the pipes?",
     "studio.room.pipesHelp":
-      "Tap the wall the water and drain pipes come in through. Usually it's the wall the toilet is on.",
+      "Tap each wall the water and drain pipes come in through. Usually it's the wall the toilet is on, plus the tub's wall if it's on another one.",
     "studio.room.wallWith": "Wall {letter}: {what}",
     "studio.room.wallEmpty": "nothing on it yet",
     "studio.room.suggestWall": "Not sure? Use wall {letter}",
@@ -1087,7 +1090,7 @@
     "riley.elecGaps": "One thing first: {list} Want me to add it?",
     "riley.offerSwitch": "Want me to put it on a switch?",
     "riley.step.room":
-      "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which wall the plumbing is in.",
+      "Let's start with the room. Pick a bathroom close to yours or type your own measurements, then tell me which walls the plumbing is in.",
     "riley.step.layout":
       "Now the layout. Add what you want and drag it around; I'll tell you the moment something won't fit.",
     "riley.step.electrical":
@@ -1110,7 +1113,7 @@
     "riley.step.estimateOwnerDefaults":
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
     "riley.simple.room":
-      "Let's start with your room. Pick one like yours, set the size, then tap the wall your pipes are in.",
+      "Let's start with your room. Pick one like yours, set the size, then tap the walls your pipes are in.",
     "riley.simple.layout":
       "Now add what you want and drag it around. If something doesn't fit, I'll say so and offer to fix it.",
     "riley.simple.electrical":

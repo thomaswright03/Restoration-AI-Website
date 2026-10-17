@@ -86,7 +86,7 @@
     "line.noStack": "Sin bajante de plomería existente",
     "line.badValve": "Cambio de válvula dañada",
     "line.electricalPoints": "Puntos eléctricos",
-    "line.drainRun": "Nueva línea de desagüe hasta la pared de plomería",
+    "line.drainRun": "Nueva línea de desagüe hasta la pared de plomería más cercana",
     "scope.describe": "Demolición: {demolition}; piso nuevo: {floor}; paredes: {walls}; pintar el techo: {ceiling}",
     "assume.scope": "{scope}. Solo se cotiza este trabajo.",
     "assume.floorArea": "Área del piso: {w} × {l} pies = {area} pies² (se toma el techo del mismo tamaño).",
@@ -767,13 +767,14 @@
     "studio.pointWhere": "Pared {wall} a {at}, {up} de alto",
     "studio.room.plumbing": "Plomería",
     "studio.room.plumbingHelp":
-      "Todos los desagües van a una sola pared, la que tiene la bajante. Elija la pared donde está hoy su inodoro: las piezas en esa pared se conectan directamente y cualquier otra necesita una nueva línea de desagüe.",
-    "studio.room.plumbingWall": "Pared con la plomería",
+      "Los desagües van a las paredes que tienen plomería. Elija cada pared que hoy tiene tuberías (casi siempre la del inodoro, y la de la tina si está en otra): las piezas en esas paredes se conectan directamente y cualquier otra necesita una nueva línea de desagüe hasta la más cercana.",
+    "studio.room.plumbingWall": "Paredes con plomería",
+    "studio.room.plumbingLast": "Al menos una pared necesita plomería. Toque otra pared primero y luego quite esta.",
     "studio.room.plumbingRun": "Como está, la distribución necesita {run} de nueva línea de desagüe.",
     "studio.room.plumbingUnset": "Aún sin elegir. Mientras tanto, los desagües se miden desde la pared {wall}.",
     "studio.need": "Para continuar: {list}.",
-    "studio.need.pipes": "toque la pared donde están las tuberías",
-    "studio.need.stack": "elija la pared donde está la plomería",
+    "studio.need.pipes": "toque las paredes donde están las tuberías",
+    "studio.need.stack": "elija las paredes donde está la plomería",
     "studio.need.size": "corrija la medida del baño",
     "studio.need.fixture": "agregue al menos una pieza",
     "studio.need.fit": "mueva o quite lo que no cabe ({what})",
@@ -787,8 +788,10 @@
     "studio.need.surface.wallTile": "azulejo de pared",
     "studio.need.surface.wallPaint": "pintura de paredes",
     "studio.need.surface.ceilingPaint": "pintura del techo",
-    "studio.room.plumbingNone": "Todo lo que tiene desagüe está en esa pared, así que no hay tubería nueva que correr.",
+    "studio.room.plumbingNone":
+      "Todo lo que tiene desagüe está en una pared con plomería, así que no hay tubería nueva que correr.",
     "studio.room.plumbingSet": "Pared de la plomería: {wall}",
+    "studio.room.plumbingSetMany": "Paredes de la plomería: {wall}",
     "studio.room.plumbingBroke": "Algunas piezas quedaron demasiado lejos de la plomería.",
     "studio.issue.offStack":
       "Está fuera de la pared de la plomería: {run} de nueva línea de desagüe hasta la pared {wall}.",
@@ -798,6 +801,7 @@
     "studio.view.isolateOn": "Mostrando solo esto",
     "studio.view.isolateHelp": "Mostrar solo {what}, con todo lo demás fuera del camino",
     "studio.sum.stack": "Pared de la plomería: {wall}",
+    "studio.sum.stacks": "Paredes de la plomería: {wall}",
     "studio.sum.drainRun": "Nueva línea de desagüe: {run}",
     "studio.sum.electrical": "Electricidad: {list}",
     "studio.sum.item": "{name}: pared {wall}, centro a {at} de la esquina izquierda",
@@ -1028,7 +1032,7 @@
     "studio.details": "Detalles",
     "studio.stepDone": "listo",
     "studio.simple.room.intro":
-      "Elija un baño parecido al suyo, ponga su tamaño y luego toque la pared donde están las tuberías.",
+      "Elija un baño parecido al suyo, ponga su tamaño y luego toque las paredes donde están las tuberías.",
     "studio.simple.layout.intro":
       "Toque para agregar una pieza. Arrástrela en el baño para moverla. Si algo no cabe, lo verá enseguida.",
     "studio.simple.electrical.intro":
@@ -1040,7 +1044,7 @@
     "studio.room.howBig": "¿Qué tan grande es?",
     "studio.room.pipes": "¿Dónde están las tuberías?",
     "studio.room.pipesHelp":
-      "Toque la pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro.",
+      "Toque cada pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro, más la de la tina si está en otra.",
     "studio.room.wallWith": "Pared {letter}: {what}",
     "studio.room.wallEmpty": "nada todavía",
     "studio.room.suggestWall": "¿No sabe? Usar la pared {letter}",
@@ -1108,7 +1112,7 @@
     "riley.elecGaps": "Una cosa antes: {list} ¿Lo agrego yo?",
     "riley.offerSwitch": "¿Lo conecto a un interruptor?",
     "riley.step.room":
-      "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué pared está la plomería.",
+      "Empecemos con el baño. Elija uno parecido al suyo o escriba sus medidas, y luego dígame en qué paredes está la plomería.",
     "riley.step.layout":
       "Ahora la distribución. Agregue lo que quiera y muévalo; le aviso en el momento en que algo no quepa.",
     "riley.step.electrical":
@@ -1132,7 +1136,7 @@
     "riley.step.estimateOwnerDefaults":
       "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "riley.simple.room":
-      "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque la pared donde están las tuberías.",
+      "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque las paredes donde están las tuberías.",
     "riley.simple.layout":
       "Ahora agregue lo que quiera y muévalo. Si algo no cabe, se lo digo y me ofrezco a arreglarlo.",
     "riley.simple.electrical":

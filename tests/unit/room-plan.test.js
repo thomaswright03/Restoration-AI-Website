@@ -554,6 +554,59 @@ test("the plumbing wall survives a link and a resize", () => {
   assert.equal(P.stackWall(P.sanitize({ v: 2, room: { w: 8, l: 6, h: 8 }, items: [] })), "N");
 });
 
+test("a room can have plumbing in more than one wall, and each drain runs to the nearest", () => {
+  // Across a 10 ft room from wall N the toilet can't drain (see above)...
+  let d = design({ w: 10, l: 10 }, [
+    { id: "wc", type: "toilet", wall: "S", offset: 5 },
+    { id: "sk", type: "sink", wall: "E", offset: 8 },
+  ]);
+  assert.deepEqual(errors(d, "wc"), ["noStack"]);
+  // ...but with pipes in wall S as well it ties straight in, and the sink
+  // runs to whichever plumbing wall is nearer (S, 2 ft round the corner).
+  d = P.toggleStack(d, "S");
+  assert.deepEqual(P.stackWalls(d), ["N", "S"]);
+  assert.equal(P.stackWall(d), "N");
+  assert.deepEqual(errors(d, "wc"), []);
+  assert.equal(P.stackRun(d, d.items[0]), 0);
+  assert.equal(P.stackRun(d, d.items[1]), 2);
+  assert.equal(P.nearestStack(d, d.items[1]), "S");
+  assert.equal(P.drainRun(d), 0);
+  // An off-wall issue names the wall the drain runs to.
+  const far = P.setStack(d, ["W", "N"]);
+  const off = P.validate(far, {}).wc.filter((x) => x.code === "offStack");
+  assert.equal(off.length, 1);
+  assert.equal(off[0].wall, "W");
+  // Taking a wall off puts the problem back; the last one stays.
+  d = P.toggleStack(d, "S");
+  assert.equal(d.room.wet, "N");
+  assert.deepEqual(errors(d, "wc"), ["noStack"]);
+  assert.equal(P.toggleStack(d, "N"), d);
+  // setStack takes a list too, keeps wall order and ignores what isn't a wall.
+  assert.deepEqual(P.stackWalls(P.setStack(d, ["W", "Z", "E", "E"])), ["E", "W"]);
+  assert.equal(P.setStack(d, ["Z"]), d);
+});
+
+test("a new fixture can use any plumbing wall", () => {
+  const d = design({ w: 9, l: 9 }, [{ id: "door", type: "door", wall: "S", offset: 4.5 }]);
+  const added = P.addItem(P.setStack(d, ["N", "E"]), "toilet", {});
+  assert.equal(added.placed, true);
+  assert.ok(["N", "E"].includes(added.item.wall), added.item.wall);
+});
+
+test("several plumbing walls survive a link, a save and a resize; one-wall saves still load", () => {
+  const d = P.setStack(design({ w: 8, l: 6 }, [{ id: "sk", type: "sink", wall: "E", offset: 2 }]), ["E", "W"]);
+  const back = P.decode(P.encode(d));
+  assert.deepEqual(P.stackWalls(back), ["E", "W"]);
+  assert.deepEqual(P.stackWalls(P.sanitize(JSON.parse(JSON.stringify(d)))), ["E", "W"]);
+  assert.deepEqual(P.stackWalls(P.resize(back, { w: 7, l: 5, h: 8 })), ["E", "W"]);
+  // A save from before: one wall, as a string.
+  const old = P.sanitize({ v: 3, room: { w: 8, l: 6, h: 8, wet: "S" }, items: [] });
+  assert.equal(old.room.wet, "S");
+  assert.deepEqual(P.stackWalls(old), ["S"]);
+  // A list with nothing usable in it falls back to the first wall.
+  assert.deepEqual(P.stackWalls(P.sanitize({ v: 3, room: { w: 8, l: 6, h: 8, wet: ["Q", 3] }, items: [] })), ["N"]);
+});
+
 test("what the person has answered goes with the design, and nothing else does", () => {
   const d = P.fromTemplate("full5x8", {});
   assert.deepEqual(d.answered, { stack: false, products: {} });

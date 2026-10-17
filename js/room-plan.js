@@ -185,7 +185,7 @@
     if (m) return Number(m[1]);
     m = /^(\d+(?:\.\d+)?)\s*(?:in|inch|inches|pulg|pol|")$/.exec(s);
     if (m) return Number(m[1]) / 12;
-    m = /^(\d+)\s*(?:ft|feet|foot|pies|pie|pés|pé|'|\s)\s*(\d+(?:\.\d+)?)\s*(?:in|inch|inches|pulg|pol|")?$/.exec(s);
+    m = /^(\d+)\s*(?:ft|feet|foot|pies|pie|pés|pé|'|-|\s)\s*(\d+(?:\.\d+)?)\s*(?:in|inch|inches|pulg|pol|")?$/.exec(s);
     if (m) return Number(m[1]) + Number(m[2]) / 12;
     return null;
   }

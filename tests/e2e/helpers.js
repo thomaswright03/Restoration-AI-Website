@@ -19,14 +19,30 @@ async function useConfig(page, overrides) {
   return config;
 }
 
+// The studio opens with the basics of each step; "All options" shows every
+// setting. These tests drive every setting, so they open it with all
+// options on, the way a browser that chose that remembers it
+// (tests/e2e/simple.spec.js covers the basics).
+async function allOptions(page) {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("rd3d_studio_mode", "all");
+    } catch {
+      /* storage blocked: the studio opens simple */
+    }
+  });
+}
+
 // Opens the design studio (the sample full bath: 8½ ft x 5 ft, the plumbing
 // in wall A with the vanity and toilet on it, a tub on wall B, the door on
 // wall C) and waits until it's drawn. Returns the page errors seen, for a
 // final check. With ?project=<id> the studio starts only once the saved
 // project is in (sign-in check, then the read), so it's given longer.
-async function openStudio(page, url = "/designer.html") {
+// opts.simple opens it the way a first visit does, with the basics.
+async function openStudio(page, url = "/designer.html", opts = {}) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  if (!opts.simple) await allOptions(page);
   await page.goto(url);
   await expect(page.locator(".studio-step-btn")).toHaveCount(6, { timeout: 20000 });
   await expect(page.locator(".studio-status")).toBeVisible();
@@ -133,6 +149,7 @@ module.exports = {
   ROOT,
   BASE_CONFIG,
   useConfig,
+  allOptions,
   openStudio,
   wait3d,
   answerAll,

@@ -1827,6 +1827,11 @@
     ],
     // ---------- what a step needs before moving on ----------
     "studio.need": ["To go on: {list}.", "Para continuar: {list}.", "Para continuar: {list}."],
+    "studio.need.pipes": [
+      "tap the wall your pipes are in",
+      "toque la pared donde están las tuberías",
+      "toque na parede onde estão os canos",
+    ],
     "studio.need.stack": [
       "pick the wall your plumbing is in",
       "elija la pared donde está la plomería",
@@ -1850,9 +1855,9 @@
       "escolha um produto para: {list}",
     ],
     "studio.need.productsMany": [
-      "pick a product in each list that still says “Choose one…” ({n} left)",
-      "elija un producto en cada lista que aún dice «Elija uno…» (faltan {n})",
-      "escolha um produto em cada lista que ainda diz “Escolha um…” (faltam {n})",
+      "tap Keep or Change in each list still waiting ({n} left)",
+      "toque Dejar o Cambiar en cada lista que falta (faltan {n})",
+      "toque Manter ou Trocar em cada lista que falta (faltam {n})",
     ],
     "studio.products.choose": ["Choose one…", "Elija uno…", "Escolha um…"],
     "studio.need.surfaces": [
@@ -2606,6 +2611,172 @@
     "room3d.option.K-14443-CP": ["Purist robe hook", "Purist, gancho para bata", "Purist, gancho para roupão"],
     "room3d.option.K-23529-CP": ["Parallel robe hook", "Parallel, gancho para bata", "Parallel, gancho para roupão"],
 
+    // ---------- The simple studio (js/studio.js) ----------
+    // The studio opens with the basics of each step; "All options" shows
+    // every setting, the way it always did.
+    "studio.mode.all": ["All options", "Todas las opciones", "Todas as opções"],
+    "studio.mode.help": [
+      "Show every setting on each step",
+      "Mostrar todos los ajustes de cada paso",
+      "Mostrar todos os ajustes de cada etapa",
+    ],
+    "studio.mode.simpleOn": [
+      "Showing the basics of each step.",
+      "Mostrando lo básico de cada paso.",
+      "Mostrando o básico de cada etapa.",
+    ],
+    "studio.mode.allOn": ["Showing all options.", "Mostrando todas las opciones.", "Mostrando todas as opções."],
+    "studio.more": ["More options", "Más opciones", "Mais opções"],
+    "studio.details": ["Details", "Detalles", "Detalhes"],
+    "studio.stepDone": ["done", "listo", "pronto"],
+    "studio.simple.room.intro": [
+      "Pick a bathroom like yours, set its size, then tap the wall your pipes are in.",
+      "Elija un baño parecido al suyo, ponga su tamaño y luego toque la pared donde están las tuberías.",
+      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque na parede onde estão os canos.",
+    ],
+    "studio.simple.layout.intro": [
+      "Tap to add a fixture. Drag it in the room to move it. If something doesn't fit, you'll see it right away.",
+      "Toque para agregar una pieza. Arrástrela en el baño para moverla. Si algo no cabe, lo verá enseguida.",
+      "Toque para adicionar uma peça. Arraste-a no banheiro para mover. Se algo não couber, você vê na hora.",
+    ],
+    "studio.simple.electrical.intro": [
+      "The outlets, switches, lights and fan are already placed where the rules say. Move one if you like, or add more.",
+      "Los tomacorrientes, interruptores, luces y extractor ya están donde marcan las normas. Mueva alguno si quiere, o agregue más.",
+      "As tomadas, interruptores, luzes e exaustor já estão onde as normas indicam. Mova algum se quiser, ou adicione mais.",
+    ],
+    "studio.simple.products.intro": [
+      "For each list, keep what's shown or tap Change to see the choices with pictures.",
+      "En cada lista, deje lo que se muestra o toque Cambiar para ver las opciones con fotos.",
+      "Em cada lista, mantenha o que aparece ou toque em Trocar para ver as opções com fotos.",
+    ],
+    "studio.simple.finishes.intro": [
+      "Tap a floor, a wall and a ceiling. You'll see them in the room right away.",
+      "Toque un piso, una pared y un techo. Los verá en el baño enseguida.",
+      "Toque um piso, uma parede e um teto. Você os vê no banheiro na hora.",
+    ],
+    "studio.room.pick": [
+      "Pick a bathroom like yours",
+      "Elija un baño parecido al suyo",
+      "Escolha um banheiro parecido com o seu",
+    ],
+    "studio.room.howBig": ["How big is it?", "¿Qué tan grande es?", "Qual é o tamanho?"],
+    "studio.room.pipes": ["Where are the pipes?", "¿Dónde están las tuberías?", "Onde estão os canos?"],
+    "studio.room.pipesHelp": [
+      "Tap the wall the water and drain pipes come in through. Usually it's the wall the toilet is on.",
+      "Toque la pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro.",
+      "Toque na parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário.",
+    ],
+    "studio.room.wallWith": ["Wall {letter}: {what}", "Pared {letter}: {what}", "Parede {letter}: {what}"],
+    "studio.room.wallEmpty": ["nothing on it yet", "nada todavía", "nada ainda"],
+    "studio.room.suggestWall": [
+      "Not sure? Use wall {letter}",
+      "¿No sabe? Usar la pared {letter}",
+      "Não sabe? Usar a parede {letter}",
+    ],
+    "studio.room.suggestWallHelp": [
+      "That's the wall that needs the least pipe for this layout.",
+      "Es la pared que necesita menos tubería para esta distribución.",
+      "É a parede que precisa de menos cano para esta distribuição.",
+    ],
+    "studio.lengthHelpSimple": [
+      "Tap − or + for 6 inches, or type a size like 8′ 6″.",
+      "Toque − o + para 6 pulgadas, o escriba una medida como 8′ 6″.",
+      "Toque − ou + para 6 polegadas, ou digite uma medida como 8′ 6″.",
+    ],
+    "studio.halfFootLess": ["{what}: 6 inches less", "{what}: 6 pulgadas menos", "{what}: 6 polegadas a menos"],
+    "studio.halfFootMore": ["{what}: 6 inches more", "{what}: 6 pulgadas más", "{what}: 6 polegadas a mais"],
+    "studio.hint.pipes": [
+      "Tap the wall your pipes are in. Drag to turn the room.",
+      "Toque la pared donde están las tuberías. Arrastre para girar el baño.",
+      "Toque na parede onde estão os canos. Arraste para girar o banheiro.",
+    ],
+    "studio.layout.fixIt": ["Fix it for me", "Arreglarlo por mí", "Arrumar para mim"],
+    "studio.layout.fixItHelp": [
+      "Something doesn't fit. Tap and everything gets moved to where it does.",
+      "Algo no cabe. Toque y todo se mueve adonde sí quepa.",
+      "Algo não cabe. Toque e tudo é movido para onde cabe.",
+    ],
+    "studio.layout.another": ["Try another layout", "Probar otra distribución", "Tentar outra distribuição"],
+    "studio.layout.anotherHelp": [
+      "See a few layouts where everything fits. Pick one, or keep yours.",
+      "Vea algunas distribuciones donde todo cabe. Elija una o quédese con la suya.",
+      "Veja algumas distribuições em que tudo cabe. Escolha uma ou fique com a sua.",
+    ],
+    "studio.elec.doneFor": [
+      "Done for you: {list}, placed where the rules say.",
+      "Hecho por usted: {list}, en los lugares que marcan las normas.",
+      "Feito para você: {list}, nos lugares que as normas indicam.",
+    ],
+    "studio.elec.doneNone": [
+      "Nothing placed yet. Tap “Suggest what's missing” and it's done for you.",
+      "Aún no hay nada. Toque «Sugerir lo que falta» y se hace por usted.",
+      "Ainda não há nada. Toque em “Sugerir o que falta” e é feito para você.",
+    ],
+    "studio.elec.n.outlet": ["{n} outlets", "{n} tomacorrientes", "{n} tomadas"],
+    "studio.elec.n1.outlet": ["1 outlet", "1 tomacorriente", "1 tomada"],
+    "studio.elec.n.switch": ["{n} switches", "{n} interruptores", "{n} interruptores"],
+    "studio.elec.n1.switch": ["1 switch", "1 interruptor", "1 interruptor"],
+    "studio.elec.n.light": ["{n} lights", "{n} luces", "{n} luzes"],
+    "studio.elec.n1.light": ["1 light", "1 luz", "1 luz"],
+    "studio.elec.n.fan": ["{n} fans", "{n} extractores", "{n} exaustores"],
+    "studio.elec.n1.fan": ["1 fan", "1 extractor", "1 exaustor"],
+    "studio.products.progress": ["{n} of {total} picked", "{n} de {total} elegidos", "{n} de {total} escolhidos"],
+    "studio.products.allPicked": [
+      "All picked. Change any of them whenever you like.",
+      "Todo elegido. Cambie cualquiera cuando quiera.",
+      "Tudo escolhido. Troque qualquer um quando quiser.",
+    ],
+    "studio.products.keep": ["Keep", "Dejar", "Manter"],
+    "studio.products.keepThis": ["Keep {what}: {product}", "Dejar {what}: {product}", "Manter {what}: {product}"],
+    "studio.products.change": ["Change", "Cambiar", "Trocar"],
+    "studio.products.changeThis": ["Change {what}", "Cambiar {what}", "Trocar {what}"],
+    "studio.products.picked": ["Picked", "Elegido", "Escolhido"],
+    "studio.products.showing": ["Shown now", "Se ve ahora", "Aparece agora"],
+    "studio.products.choicesFor": ["Choices for {what}", "Opciones para {what}", "Opções para {what}"],
+    "studio.products.closeChoices": ["Close the choices", "Cerrar las opciones", "Fechar as opções"],
+    "studio.products.noPhoto": ["No photo", "Sin foto", "Sem foto"],
+    "studio.products.useRealAll": [
+      "Use real products in every list",
+      "Usar productos reales en todas las listas",
+      "Usar produtos reais em todas as listas",
+    ],
+    "studio.products.useRealAllHelp": [
+      "Some lists show a standard product with no picture.",
+      "Algunas listas muestran un producto estándar sin foto.",
+      "Algumas listas mostram um produto padrão sem foto.",
+    ],
+    "studio.room.doorWhere": ["Where's the door?", "¿Dónde está la puerta?", "Onde fica a porta?"],
+    "studio.room.doorHelp": [
+      "Tap the wall the door is on.",
+      "Toque la pared donde está la puerta.",
+      "Toque na parede onde está a porta.",
+    ],
+    "studio.room.doorAt": [
+      "On wall {letter}, {at} from the left corner. To slide it along the wall or add another door, open More options.",
+      "En la pared {letter}, a {at} de la esquina izquierda. Para moverla por la pared o agregar otra puerta, abra Más opciones.",
+      "Na parede {letter}, a {at} do canto esquerdo. Para movê-la pela parede ou adicionar outra porta, abra Mais opções.",
+    ],
+    "studio.layout.fixedOut": [
+      "Arranged, and took out {list}: there's no room for it.",
+      "Acomodado; se quitó {list}: no había lugar.",
+      "Organizado; {list} saiu: não havia lugar.",
+    ],
+    "studio.resizeMoved": [
+      "The fixtures moved to fit the new size.",
+      "Las piezas se movieron para caber en la nueva medida.",
+      "As peças se moveram para caber na nova medida.",
+    ],
+    "studio.addedMoved": [
+      "{name} added; the rest moved over to make room.",
+      "Listo: {name}; lo demás se movió para hacer lugar.",
+      "Pronto: {name}; o resto se moveu para abrir espaço.",
+    ],
+    "studio.noRoomFor": [
+      "{name}: no room for it here, even after moving things around. Make the room bigger or take something out first.",
+      "{name}: no hay lugar aquí, ni moviendo las cosas. Agrande el baño o quite algo primero.",
+      "{name}: não há lugar aqui, nem movendo as coisas. Aumente o banheiro ou tire algo primeiro.",
+    ],
+
     // ---------- Riley, the guide (js/riley.js) ----------
     "riley.name": ["Riley", "Riley", "Riley"],
     "riley.mute": ["Mute Riley", "Silenciar a Riley", "Silenciar a Riley"],
@@ -2721,6 +2892,32 @@
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
       "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
       "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
+    ],
+    // Shorter lines for the simple studio (the basics of each step).
+    "riley.simple.room": [
+      "Let's start with your room. Pick one like yours, set the size, then tap the wall your pipes are in.",
+      "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque la pared donde están las tuberías.",
+      "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque na parede onde estão os canos.",
+    ],
+    "riley.simple.layout": [
+      "Now add what you want and drag it around. If something doesn't fit, I'll say so and offer to fix it.",
+      "Ahora agregue lo que quiera y muévalo. Si algo no cabe, se lo digo y me ofrezco a arreglarlo.",
+      "Agora adicione o que quiser e arraste. Se algo não couber, eu aviso e me ofereço para arrumar.",
+    ],
+    "riley.simple.electrical": [
+      "I've already placed the outlets, switches, lights and fan. Have a look, and move one if you like.",
+      "Ya puse los tomacorrientes, interruptores, luces y extractor. Échele un ojo y mueva alguno si quiere.",
+      "Já coloquei as tomadas, interruptores, luzes e exaustor. Dê uma olhada e mova algum se quiser.",
+    ],
+    "riley.simple.products": [
+      "Now the products. For each one, keep what's shown or tap Change to see other choices.",
+      "Ahora los productos. En cada uno, deje lo que se muestra o toque Cambiar para ver otras opciones.",
+      "Agora os produtos. Em cada um, mantenha o que aparece ou toque em Trocar para ver outras opções.",
+    ],
+    "riley.simple.finishes": [
+      "Last picks: a floor, a wall and a ceiling. Tap one of each and watch the room change.",
+      "Últimas elecciones: un piso, una pared y un techo. Toque uno de cada uno y vea cómo cambia el baño.",
+      "Últimas escolhas: um piso, uma parede e um teto. Toque um de cada e veja o banheiro mudar.",
     ],
 
     // ---------- PDF (js/estimate-pdf.js) ----------

@@ -7,7 +7,7 @@
 Done this round:
 
 - past_due now keeps the plan (grace window while Stripe retries); unpaid/canceled still drop to Free. Account notice reworded in 3 languages; unit + e2e tests updated (api/_plans.js ACTIVE_STATUSES).
-- js/studio.js and js/business.js are now in jsconfig.json checkJs (globals added to types/globals.d.ts). js/bathroom-room-3d.js is still unchecked.
+- js/studio.js and js/business.js are now in jsconfig.json checkJs (globals added to types/globals.d.ts). js/bathroom-room-3d.js is now checked too (2026-10-18; three.js declared as any in types/globals.d.ts).
 - README now documents the Home Depot photo requests (images.thdstatic.com).
 - Playwright: local workers default 3 (E2E_WORKERS overrides); added `npm run test:e2e:smoke` (3 small specs).
 - `npm run check`: lint, prettier, both tsc, pages, 271 unit tests all pass.
@@ -24,9 +24,9 @@ Done this round:
 - 2026-10-16: main CI was red for runs 96-98 (Prettier on STATE.md; walk-in e2e test past 30 s on the runner, now 60 s like its 3D siblings). Fixed in ab1328f; CI run 99 on main is GREEN (2026-10-16, 17.5 min).
 - Branch protection: 2026-10-16 Thomas created a rule for main requiring the CI check "Lint, format, pages in sync, unit and browser tests". GitHub shows it NOT ENFORCED: private repo on a free personal account. It enforces only with GitHub Pro (or Team) or if the repo goes public. Thomas decided 2026-10-16 to leave it unenforced (no upgrade); CI still runs on every push. UPDATE 2026-10-18: Thomas says the repo IS public, so the existing rule should now enforce; Thomas to confirm on GitHub (Settings > Branches shows no 'not enforced' warning). Not checkable from the sandbox (no gh access).
 - Live Stripe/Supabase/kill-switch test-mode run DONE 2026-10-16/17 (Thomas): all run steps passed; log in docs/live-check.md. Not run live: FREEWEEK succeeding on a first plan (unit + e2e cover it).
-- studio.js is now ~6.7k lines in one closure (shared state); the split was NOT done: it needs a careful no-behaviour-change refactor with the full browser suite, not a blind edit. bathroom-room-3d.js is still outside checkJs.
+- studio.js is now ~6.7k lines in one closure (shared state); the split was NOT done: it needs a careful no-behaviour-change refactor with the full browser suite, not a blind edit. bathroom-room-3d.js checkJs done.
 - No visual QA at 375/1440 px light/dark yet (needs a browser run; fix round 2 sandbox had no node_modules or Playwright browsers).
 - 2026-10-18 fix round 2 found the grade-76 report was of commit 95160b1; items 4, 5 (studio/business), 8, 9 and 10 and the live check were already fixed above. Items 1 and 2 are covered by the smoke subset, workers cap and the CI notes above.
 - Free-trial rule DECIDED 2026-10-16 (Thomas): one free trial per email. Deleting an account that had a Stripe subscription keeps a SHA-256 of its email in used_trials (auth.users trigger, supabase/schema.sql); api/checkout.js refuses promo/TRIAL_DAYS days for that email. Privacy text updated (en/es/pt). Thomas re-ran supabase/schema.sql 2026-10-16 21:38 UTC, so it's live.
 - Legal items (DPAs, consent checkbox, sub-processor list, contact fields in site-config.json) are Thomas's.
-- 2026-10-18 fix round 1 (this pass): nothing else code-side changed; remaining grader items are the studio.js split (needs full browser suite), bathroom-room-3d.js checkJs, and 375/1440 light/dark visual QA, all needing node_modules + Playwright.
+- 2026-10-18 fix round 1 (this pass): bathroom-room-3d.js added to checkJs; remaining grader items are the studio.js split (needs full browser suite), and 375/1440 light/dark visual QA, all needing node_modules + Playwright.

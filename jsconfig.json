@@ -28,6 +28,7 @@
     "js/materials-pricing.js",
     "js/estimate-pdf.js",
     "js/studio.js",
+    "js/bathroom-room-3d.js",
     "js/business.js"
   ]
 }

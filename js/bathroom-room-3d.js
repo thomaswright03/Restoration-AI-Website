@@ -636,6 +636,7 @@ var fixtureModelLoader = null;
 // Model paths are relative to the site root; the Spanish and Portuguese
 // pages live one folder down (es/, pt/), so resolve them from this file.
 function siteUrl(path) {
+  // @ts-expect-error import.meta is fine in the browser's ES module; tsc sees CommonJS.
   return new URL("../" + path, import.meta.url).href;
 }
 
@@ -4233,6 +4234,7 @@ window.BathroomRoom3D = {
     if (!s || !pointerRay(s, clientX, clientY)) return null;
     var dims = Layout.computeRoomDimensions(state.dims);
     var cam = s.camera.position;
+    /** @type {any} */
     var best = null;
     roomWalls().forEach(function (f) {
       if (inFrontOf(f, cam.x, cam.z) <= 0) return;

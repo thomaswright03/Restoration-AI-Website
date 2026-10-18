@@ -19,6 +19,7 @@ interface Window {
   ProductPhotos?: any;
   SiteConfig?: any;
   BathroomRoom3D?: any;
+  BathroomRoomLayout?: any;
   RoomStudio?: any;
   jspdf?: any;
   EstimatePdf?: any;
@@ -49,3 +50,8 @@ interface Error {
   code?: string;
   data?: any;
 }
+
+// js/bathroom-room-3d.js imports three.js through the page's import map
+// (vendored under js/vendor), so there are no npm types for it.
+declare module "three";
+declare module "three/addons/*";

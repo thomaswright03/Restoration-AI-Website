@@ -11,7 +11,8 @@ jobs:
   checks:
     name: Lint, format, pages in sync, unit and browser tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The browser suite runs one worker at a time and takes about 28 minutes on its own.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 

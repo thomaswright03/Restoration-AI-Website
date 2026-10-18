@@ -24,6 +24,8 @@ Done this round:
 - 2026-10-16: main CI was red for runs 96-98 (Prettier on STATE.md; walk-in e2e test past 30 s on the runner, now 60 s like its 3D siblings). Fixed in ab1328f; CI run 99 on main is GREEN (2026-10-16, 17.5 min).
 - Branch protection: 2026-10-16 Thomas created a rule for main requiring the CI check "Lint, format, pages in sync, unit and browser tests". GitHub shows it NOT ENFORCED: private repo on a free personal account. It enforces only with GitHub Pro (or Team) or if the repo goes public. Thomas decided 2026-10-16 to leave it unenforced (no upgrade); CI still runs on every push.
 - Live Stripe/Supabase/kill-switch test-mode run DONE 2026-10-16/17 (Thomas): all run steps passed; log in docs/live-check.md. Not run live: FREEWEEK succeeding on a first plan (unit + e2e cover it).
-- studio.js (~5.2k lines) split not done; no visual QA at 375/1440 px light/dark.
+- studio.js is now ~6.7k lines in one closure (shared state); the split was NOT done: it needs a careful no-behaviour-change refactor with the full browser suite, not a blind edit. bathroom-room-3d.js is still outside checkJs.
+- No visual QA at 375/1440 px light/dark yet (needs a browser run; fix round 2 sandbox had no node_modules or Playwright browsers).
+- 2026-10-18 fix round 2 found the grade-76 report was of commit 95160b1; items 4, 5 (studio/business), 8, 9 and 10 and the live check were already fixed above. Items 1 and 2 are covered by the smoke subset, workers cap and the CI notes above.
 - Free-trial rule DECIDED 2026-10-16 (Thomas): one free trial per email. Deleting an account that had a Stripe subscription keeps a SHA-256 of its email in used_trials (auth.users trigger, supabase/schema.sql); api/checkout.js refuses promo/TRIAL_DAYS days for that email. Privacy text updated (en/es/pt). Thomas re-ran supabase/schema.sql 2026-10-16 21:38 UTC, so it's live.
 - Legal items (DPAs, consent checkbox, sub-processor list, contact fields in site-config.json) are Thomas's.

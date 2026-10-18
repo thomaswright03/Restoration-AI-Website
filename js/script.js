@@ -42,26 +42,47 @@ document.addEventListener("DOMContentLoaded", function () {
   // account page carries out (js/account.js, ?logout=1).
   var authLink = document.querySelector("[data-auth-link]");
   if (authLink) {
-    var signedIn = false;
-    try {
-      for (var i = 0; i < localStorage.length; i++) {
-        if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) signedIn = true;
+    var loginLabel = authLink.textContent;
+    var loginHref = authLink.getAttribute("href") || "";
+    var applyAuth = function () {
+      var signedIn = false;
+      try {
+        for (var i = 0; i < localStorage.length; i++) {
+          if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) signedIn = true;
+        }
+      } catch (e) {
+        /* storage blocked: treat as signed out */
       }
+      authLink.textContent = signedIn ? authLink.getAttribute("data-logout-label") : loginLabel;
+      authLink.setAttribute(
+        "href",
+        signedIn ? loginHref.replace(/account\.html.*$/, "account.html?logout=1") : loginHref,
+      );
+      // A signed-in business gets My projects and Account where visitors see
+      // Pricing and Get started.
+      Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-in]"), function (li) {
+        li.hidden = !signedIn;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-out]"), function (li) {
+        li.hidden = signedIn;
+      });
+    };
+    applyAuth();
+    // Supabase writes the sign-in in this tab without a storage event, so
+    // the nav watches those writes itself (and other tabs' events).
+    try {
+      ["setItem", "removeItem"].forEach(function (name) {
+        var original = Storage.prototype[name];
+        Storage.prototype[name] = function (key) {
+          var result = original.apply(this, arguments);
+          if (/^sb-.+-auth-token$/.test(String(key))) applyAuth();
+          return result;
+        };
+      });
     } catch (e) {
-      /* storage blocked: treat as signed out */
+      /* no Storage to watch: the nav is right as of the page load */
     }
-    if (signedIn) {
-      authLink.textContent = authLink.getAttribute("data-logout-label");
-      authLink.setAttribute("href", authLink.getAttribute("href").replace(/account\.html.*$/, "account.html?logout=1"));
-    }
-    // A signed-in business gets My projects and Account where visitors see
-    // Pricing and Get started.
-    Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-in]"), function (li) {
-      li.hidden = !signedIn;
-    });
-    Array.prototype.forEach.call(document.querySelectorAll("[data-nav-signed-out]"), function (li) {
-      li.hidden = signedIn;
-    });
+    window.addEventListener("storage", applyAuth);
   }
 
   // The nav's menus (a <details> each: the language menu and the theme

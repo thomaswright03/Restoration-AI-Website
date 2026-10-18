@@ -174,6 +174,20 @@ test("signed in, the nav's Log in reads Log out in each language and signs out",
   await expect(page.locator("[data-auth-link]")).toHaveText("Log in");
 });
 
+test("the nav follows a sign-in and a sign-out made on the page, without a reload", async ({ page }) => {
+  await page.goto("/index.html?lang=en");
+  const link = page.locator("[data-auth-link]");
+  await expect(link).toHaveText("Log in");
+  await expect(page.locator("[data-nav-signed-out]").first()).toBeVisible();
+  await page.evaluate(() => localStorage.setItem("sb-fakeproject-auth-token", "{}"));
+  await expect(link).toHaveText("Log out");
+  await expect(page.locator("[data-nav-signed-in]").first()).toBeVisible();
+  await expect(page.locator("[data-nav-signed-out]").first()).toBeHidden();
+  await page.evaluate(() => localStorage.removeItem("sb-fakeproject-auth-token"));
+  await expect(link).toHaveText("Log in");
+  await expect(link).not.toHaveAttribute("href", /logout/);
+});
+
 test("a promo code from the link fills the plan card's box and goes to checkout; a wrong one says so", async ({
   page,
 }) => {

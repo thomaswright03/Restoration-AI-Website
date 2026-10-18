@@ -34,8 +34,31 @@ function planItem(sub) {
 
 // The account's subscriptions row (one per owner), or null. `select` is the
 // PostgREST column list.
+//
+// subscriptions.free_week_ends comes from a later schema change. Until
+// supabase/schema.sql has been re-run, a select that names it is refused
+// (400, column does not exist); the read is then repeated without it, so the
+// plan is computed with no free week rather than failing, and a loud
+// warning goes to the log.
 async function subscriptionOf(ownerId, select = "*") {
-  const rows = await db("subscriptions?owner_id=eq." + encodeURIComponent(ownerId) + "&select=" + select);
+  const path = "subscriptions?owner_id=eq." + encodeURIComponent(ownerId) + "&select=";
+  let rows;
+  try {
+    rows = await db(path + select);
+  } catch (e) {
+    const all = select.split(",");
+    const cols = all.filter((c) => c.trim() !== "free_week_ends");
+    if (cols.length === all.length || !/free_week_ends/.test(String(e && e.message))) throw e;
+    console.warn(
+      JSON.stringify({
+        level: "warn",
+        error: "schema-missing-free-week",
+        message:
+          "subscriptions.free_week_ends is missing: re-run supabase/schema.sql. Free weeks are ignored until then.",
+      }),
+    );
+    rows = await db(path + cols.join(","));
+  }
   return (rows && rows[0]) || null;
 }
 

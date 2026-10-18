@@ -30,3 +30,9 @@ Done this round:
 - Free-trial rule DECIDED 2026-10-16 (Thomas): one free trial per email. Deleting an account that had a Stripe subscription keeps a SHA-256 of its email in used_trials (auth.users trigger, supabase/schema.sql); api/checkout.js refuses promo/TRIAL_DAYS days for that email. Privacy text updated (en/es/pt). Thomas re-ran supabase/schema.sql 2026-10-16 21:38 UTC, so it's live.
 - Legal items (DPAs, consent checkbox, sub-processor list, contact fields in site-config.json) are Thomas's.
 - 2026-10-18 fix round 1 (this pass): bathroom-room-3d.js added to checkJs; remaining grader items are the studio.js split (needs full browser suite), and 375/1440 light/dark visual QA, all needing node_modules + Playwright.
+
+## 2026-10-18 Excellence fix round 2 (last grade 73)
+
+- Done: account page "Latest update" card (en/es/pt, frontend changes first); subscriptionOf() retries without free_week_ends when the column is missing and logs `schema-missing-free-week` (unit test in business-preview.test.js); nav follows sign-in/out without reload (js/script.js watches sb-*-auth-token writes; e2e in account.spec.js); local e2e workers = cores/2 (max 3), expect timeout 15 s everywhere.
+- Whether the live DB has free_week_ends: UNKNOWN as of 2026-10-18 (Thomas to confirm; code now tolerates either).
+- NOT done (need a browser/ops access or a large refactor): studio.js split, strictNullChecks, WebKit project, 4-width screenshots, alerting/restore/rollback/live Stripe check, video captions, custom domain, branch-protection confirmation. Thomas said to ignore "needs me" items.

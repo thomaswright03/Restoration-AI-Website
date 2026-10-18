@@ -112,3 +112,38 @@ test("an unknown business is not found", async () => {
       : orig(url, opts))(global.fetch);
   assert.match((await load({ b: "nobody" })).body, /load\(null, "not-found"\)/);
 });
+
+test("a database without subscriptions.free_week_ends still opens the owner's designer", async () => {
+  setup({ status: "active", plan: "starter" });
+  const inner = global.fetch;
+  const asked = [];
+  global.fetch = async (url, opts) => {
+    const u = new URL(url);
+    if (u.pathname === "/rest/v1/subscriptions") {
+      asked.push(u.searchParams.get("select"));
+      if (/free_week_ends/.test(u.searchParams.get("select"))) {
+        const body = JSON.stringify({ message: "column subscriptions.free_week_ends does not exist" });
+        return {
+          ok: false,
+          status: 400,
+          headers: new Headers(),
+          text: async () => body,
+          json: async () => JSON.parse(body),
+        };
+      }
+    }
+    return inner(url, opts);
+  };
+  const warn = console.warn;
+  const warned = [];
+  console.warn = (m) => warned.push(String(m));
+  try {
+    const res = await load({ b: "smith", t: "owner-token" });
+    assert.match(res.body, /"name":"Smith Bath"/);
+    assert.doesNotMatch(res.body, /preview/);
+  } finally {
+    console.warn = warn;
+  }
+  assert.deepEqual(asked, ["status,free_week_ends", "status"]);
+  assert.ok(warned.some((m) => /schema-missing-free-week/.test(m)));
+});

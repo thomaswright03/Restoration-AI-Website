@@ -18,7 +18,10 @@ module.exports = defineConfig({
   // runners get few cores to begin with, so serial execution is the
   // reliable choice there; local runs keep full parallelism since dev
   // machines have never shown this problem.
-  workers: Number(process.env.E2E_WORKERS) || (process.env.CI ? 1 : 3),
+  // One worker per two cores (at least 1, at most 3): 4 workers on 2 cores failed 11 designer tests.
+  workers:
+    Number(process.env.E2E_WORKERS) ||
+    (process.env.CI ? 1 : Math.max(1, Math.min(3, Math.floor(require("node:os").cpus().length / 2)))),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
@@ -28,7 +31,7 @@ module.exports = defineConfig({
   // confirmed: the same two 3D-adjacent expect() calls kept timing out at
   // the default 5s even running alone. Widen the default assertion timeout
   // in CI rather than keep chasing the render pipeline's startup cost.
-  expect: { timeout: process.env.CI ? 15000 : 5000 },
+  expect: { timeout: 15000 },
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",

@@ -85,6 +85,14 @@ async function confirmStack(page) {
   await page.waitForFunction(() => window.RoomStudio.design().answered.stack === true);
 }
 
+// "Pick a bathroom like yours" is folded until opened: opens it and
+// starts from that bathroom.
+async function pickTemplate(page, id) {
+  const fold = page.locator(".studio-templates-fold");
+  if (!(await fold.evaluate((el) => el.open))) await fold.locator("summary").click();
+  await page.locator(`[data-key="tpl-${id}"]`).click();
+}
+
 // The page point a room point (feet: x across, y up, z back) is drawn at,
 // for driving a drag with the mouse. BathroomRoom3D.project() measures from
 // the canvas; the mouse measures from the page.
@@ -154,6 +162,7 @@ module.exports = {
   wait3d,
   answerAll,
   confirmStack,
+  pickTemplate,
   onScreen,
   expectNoPlaceholders,
   delayed,

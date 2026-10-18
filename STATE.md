@@ -16,6 +16,8 @@ Done this round:
 
 - 2026-10-17: the free week (Thomas's ask). Every new account gets Starter free for 7 days, no card, no Stripe: auth.users trigger grant_free_week sets subscriptions.free_week_ends and records the email key's hash in used_trials (one per person; +tags and Gmail dots ignored). api/_plans.js planOf: paid plan wins, else Starter while the week runs, else Free. After the week, no promo-code trial. Visitors see it on the home page, sign-up page and demo; the account page shows the three plans with prices and limits; My projects lists them for free accounts. NEEDS Thomas to re-run supabase/schema.sql before it does anything.
 
+- 2026-10-18: one question at a time (Thomas's ask). In the simple studio Room asks the size, then the pipes, then the door; Products asks each list; Finishes the floor, walls, ceiling. Next/Back move between questions, then steps; gates unchanged (js/studio.js questions()). Size sits above "Pick a bathroom like yours", which is folded in both modes. Plumbing walls show a Pipes tag, pipe blue on the plan and pipes in 3D (BathroomRoom3D.setPipes) on Room and Layout. FAQ is off the top bar (footer keeps it).
+
 ## Not verified / still open
 
 - Full e2e (168 tests) passed in 14.0 min on a 4-core sandbox with `CI=1 E2E_WORKERS=2` (2026-10-16). On GitHub's 2-core runner (1 worker) it took 26.5 min in run 96, close to the 30 min job limit.

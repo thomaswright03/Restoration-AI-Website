@@ -11,6 +11,7 @@
   --studio-warn: #b45309;
   --studio-error: #d92d42;
   --studio-select: #3355f0;
+  --studio-pipe: #0b74c4; /* the walls the plumbing is in */
   --studio-plan-bg: #f8fafe;
   --studio-plan-ink: #1e2946;
   --studio-plan-line: rgba(51, 85, 240, 0.13);
@@ -29,6 +30,7 @@
     --studio-warn: #fbbf24;
     --studio-error: #ff7a8c;
     --studio-select: #8ea6ff;
+    --studio-pipe: #5cc4ff;
     --studio-plan-bg: #0d1530;
     --studio-plan-ink: #dbe4ff;
     --studio-plan-line: rgba(142, 166, 255, 0.12);
@@ -43,6 +45,7 @@
   --studio-warn: #fbbf24;
   --studio-error: #ff7a8c;
   --studio-select: #8ea6ff;
+  --studio-pipe: #5cc4ff;
   --studio-plan-bg: #0d1530;
   --studio-plan-ink: #dbe4ff;
   --studio-plan-line: rgba(142, 166, 255, 0.12);
@@ -2633,12 +2636,18 @@ html[data-embed="1"] .studio-plan {
 
 /* ---------- The plumbing wall and the electrical, on the plan ---------- */
 .plan-stack rect {
-  fill: var(--studio-select);
-  fill-opacity: 0.14;
-  stroke: var(--studio-select);
-  stroke-opacity: 0.4;
+  fill: var(--studio-pipe);
+  fill-opacity: 0.18;
+  stroke: var(--studio-pipe);
+  stroke-opacity: 0.55;
   stroke-width: 0.035;
   stroke-dasharray: 0.3 0.14;
+}
+
+.plan-stack line {
+  stroke: var(--studio-pipe);
+  stroke-width: 0.09;
+  stroke-linecap: round;
 }
 
 .plan-point {
@@ -3223,6 +3232,47 @@ html[data-embed="1"] .studio-plan {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A wall picked for the plumbing: a pipe-blue edge and a "Pipes" tag. */
+.studio-wall-pick.has-pipes {
+  border-color: var(--studio-pipe);
+  box-shadow: inset 4px 0 0 var(--studio-pipe);
+}
+
+.studio-wall-pipes {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: none;
+  margin-left: auto;
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: var(--studio-white);
+  color: #0b74c4; /* on the white tag in both themes */
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.studio-wall-pipes .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* One question at a time: "Question 2 of 3" over the question. */
+.studio-q-count {
+  margin: 0 0 var(--space-1);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--color-accent-text);
+}
+
+.studio-q-title:focus {
+  outline: none;
+}
+
+.studio-product-card .studio-q-count {
+  margin-bottom: var(--space-2);
 }
 
 /* "Done for you: 2 outlets, …" on the Electrical step. */

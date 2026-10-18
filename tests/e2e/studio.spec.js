@@ -15,6 +15,7 @@ const {
   studioStatus,
   studioToast,
   expectNoPlaceholders,
+  pickTemplate,
 } = require("./helpers");
 
 test.describe("design studio", () => {
@@ -30,7 +31,7 @@ test.describe("design studio", () => {
     // toilet only gets code's 15 in. beside it rather than the recommended
     // 18, which is a note, not a problem. The chip names it and says why; a
     // click shows it.
-    await byKey(page, "tpl-full5x8").click();
+    await pickTemplate(page, "full5x8");
     await confirmStack(page);
     await expect(page.locator("#studio-size-w")).toHaveValue("8′");
     await expect(studioStatus(page)).toHaveText("Fits; the toilet is tight");
@@ -81,7 +82,7 @@ test.describe("design studio", () => {
     const errors = await openStudio(page);
     await answerAll(page);
     await wait3d(page);
-    await byKey(page, "tpl-blank").click();
+    await pickTemplate(page, "blank");
     await page.locator("#studio-size-w").fill("9");
     await page.locator("#studio-size-w").press("Enter");
     await page.locator("#studio-size-l").fill("8");
@@ -158,7 +159,7 @@ test.describe("design studio", () => {
   test("a common bathroom replaces the room, and Undo brings the old one back", async ({ page }) => {
     const errors = await openStudio(page);
     await answerAll(page);
-    await byKey(page, "tpl-primary").click();
+    await pickTemplate(page, "primary");
     await expect(studioToast(page)).toContainText("Started from: Primary bath.");
     await expect(page.locator("#studio-size-w")).toHaveValue("11′");
     await expect(studioStatus(page)).not.toHaveClass(/is-error/);
@@ -186,7 +187,7 @@ test.describe("design studio", () => {
 
     // The 11 x 9 primary bath has room for another toilet.
     await step(page, "room").click();
-    await byKey(page, "tpl-primary").click();
+    await pickTemplate(page, "primary");
     await confirmStack(page);
     await step(page, "layout").click();
     await byKey(page, "add-toilet").click();
@@ -229,7 +230,7 @@ test.describe("design studio", () => {
       expect(fit).toBe("Everything fits");
 
     await step(page, "room").click();
-    await byKey(page, "tpl-showerBath").click();
+    await pickTemplate(page, "showerBath");
     await confirmStack(page);
     await step(page, "layout").click();
     await byKey(page, "arrange").click();

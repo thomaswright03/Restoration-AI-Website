@@ -437,6 +437,9 @@
     "studio.stepNav": "Etapas",
     "studio.back": "Voltar para {step}",
     "studio.next": "Próximo: {step}",
+    "studio.backQ": "Voltar",
+    "studio.nextQ": "Próximo",
+    "studio.questionOf": "Pergunta {n} de {total}",
     "studio.type.toilet": "Vaso sanitário",
     "studio.type.vanity": "Gabinete com pia",
     "studio.type.sink": "Pia de coluna",
@@ -1038,8 +1041,7 @@
     "studio.more": "Mais opções",
     "studio.details": "Detalhes",
     "studio.stepDone": "pronto",
-    "studio.simple.room.intro":
-      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque nas paredes onde estão os canos.",
+    "studio.simple.room.intro": "Uma pergunta de cada vez: o tamanho, as paredes onde estão os canos e depois a porta.",
     "studio.simple.layout.intro":
       "Toque para adicionar uma peça. Arraste-a no banheiro para mover. Se algo não couber, você vê na hora.",
     "studio.simple.electrical.intro":
@@ -1049,6 +1051,9 @@
     "studio.simple.finishes.intro": "Toque um piso, uma parede e um teto. Você os vê no banheiro na hora.",
     "studio.room.pick": "Escolha um banheiro parecido com o seu",
     "studio.room.howBig": "Qual é o tamanho?",
+    "studio.room.dims": "Quais são as medidas do banheiro?",
+    "studio.room.pickHelp": "Começa com um layout comum com as peças já no lugar. Depois você pode mudar o que quiser.",
+    "studio.room.pipesHere": "Canos",
     "studio.room.pipes": "Onde estão os canos?",
     "studio.room.pipesHelp":
       "Toque em cada parede por onde entram os canos de água e esgoto. Quase sempre é a parede do vaso sanitário, mais a da banheira se estiver em outra.",
@@ -1141,6 +1146,12 @@
     "riley.step.designOwner": "Aqui está o seu projeto completo. Salve como projeto ou baixe o PDF para o seu cliente.",
     "riley.step.estimateOwnerDefaults":
       "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
+    "riley.q.size": "Vamos começar pelo seu banheiro. Quanto ele mede de largura e de comprimento, de parede a parede?",
+    "riley.q.pipes": "Agora toque nas paredes onde estão os canos. Eu marco essas paredes com canos no banheiro.",
+    "riley.q.door": "Em qual parede fica a porta?",
+    "riley.q.floor": "Primeiro o piso. Toque em um e você o verá no banheiro.",
+    "riley.q.walls": "Agora as paredes: pintura, azulejo ou os dois.",
+    "riley.q.ceiling": "Por último, o teto: pintado ou como está.",
     "riley.simple.room":
       "Vamos começar pelo seu banheiro. Escolha um parecido, defina o tamanho e depois toque nas paredes onde estão os canos.",
     "riley.simple.layout":

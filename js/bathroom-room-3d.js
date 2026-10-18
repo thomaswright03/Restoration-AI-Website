@@ -2358,6 +2358,8 @@ var state = {
   middle: null,
   // Windows in the walls, see setWindows().
   windows: [],
+  // The walls the plumbing is in, drawn with pipes on them, see setPipes().
+  pipes: [],
   // Outlets, switches, lights and the fan (js/room-plan.js
   // toElectricalPlacements()), see setElectrical().
   electrical: [],
@@ -2466,6 +2468,10 @@ function ensureScene() {
     var electricalGroup = new THREE.Group();
     scene.add(electricalGroup);
 
+    // The plumbing walls' pipes (setPipes()).
+    var pipeGroup = new THREE.Group();
+    scene.add(pipeGroup);
+
     // Windows (setWindows()).
     var windowGroup = new THREE.Group();
     scene.add(windowGroup);
@@ -2538,6 +2544,7 @@ function ensureScene() {
       surroundMaterial: surroundMaterial,
       electricalGroup: electricalGroup,
       windowGroup: windowGroup,
+      pipeGroup: pipeGroup,
       markGroup: markGroup,
       selectBox: selectBox,
       hoverBox: hoverBox,
@@ -3343,6 +3350,9 @@ function applyCutaway(s, camera) {
   s.windowGroup.children.forEach(function (inst) {
     inst.visible = shown(inst, false);
   });
+  s.pipeGroup.children.forEach(function (inst) {
+    inst.visible = shown(inst, false);
+  });
 }
 
 // Points the camera at the whole room. animate: glide there.
@@ -3413,6 +3423,7 @@ function rebuild() {
   rebuildSurround(s);
   rebuildElectrical(s);
   rebuildWindows(s);
+  rebuildPipes(s);
   applyStudioView(s);
   if (s.pendingFocus) {
     s.pendingFocus();
@@ -3723,6 +3734,45 @@ function rebuildWindows(s) {
   needsRender = true;
 }
 
+// Each plumbing wall (setPipes()) shows what's in it: a blue band on the
+// wall, a drain line along it near the floor and two supply pipes up it,
+// so the walls picked for the pipes read as such in the room.
+function rebuildPipes(s) {
+  disposeGroup(s.pipeGroup);
+  if (!state.pipes.length) return;
+  var dims = Layout.computeRoomDimensions(state.dims);
+  state.pipes.forEach(function (wallId) {
+    var f = wallFrame(wallId);
+    if (!f || !(f.span > 0.6)) return;
+    var piece = new THREE.Group();
+    var band = new THREE.Mesh(
+      new THREE.PlaneGeometry(f.span, dims.heightFt),
+      new THREE.MeshBasicMaterial({ color: 0x1e90ff, transparent: true, opacity: 0.12, depthWrite: false }),
+    );
+    band.position.set(0, dims.heightFt / 2, 0.02);
+    piece.add(band);
+    var pipe = new THREE.MeshStandardMaterial({ color: 0x1e88e5, roughness: 0.35, metalness: 0.4 });
+    var copper = new THREE.MeshStandardMaterial({ color: 0xc8703a, roughness: 0.3, metalness: 0.6 });
+    var drain = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, f.span - 0.3, 16), pipe);
+    drain.rotation.z = Math.PI / 2;
+    drain.position.set(0, 0.9, 0.12);
+    piece.add(drain);
+    [-0.25, 0.25].forEach(function (at, i) {
+      var up = dims.heightFt - 0.9;
+      var riser = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, up, 12), i ? pipe : copper);
+      riser.position.set(at * f.span, 0.9 + up / 2, 0.1);
+      piece.add(riser);
+    });
+    // In the wall's own frame: x along it, z into the room.
+    piece.position.set(f.ox + (f.dx * f.span) / 2, 0, f.oz + (f.dz * f.span) / 2);
+    piece.rotation.y = Math.atan2(f.nx, f.nz);
+    piece.userData.wallId = wallId;
+    piece.userData.cutaway = true;
+    s.pipeGroup.add(piece);
+  });
+  needsRender = true;
+}
+
 // The tile around a tub when the walls are "tile around the tub": panels
 // on the walls, in the picked wall tile (or a plain tile color).
 function rebuildSurround(s) {
@@ -3879,6 +3929,20 @@ window.BathroomRoom3D = {
       : null;
     state.middle = ok && shape.middle ? { x: shape.middle.x, z: shape.middle.z } : null;
     markDirty();
+  },
+
+  // The walls the plumbing is in, by id (js/room-plan.js stackWalls()),
+  // drawn with pipes on them; [] draws none.
+  setPipes: function (wallIds) {
+    var next = Array.isArray(wallIds) ? wallIds.slice() : [];
+    if (next.join() === state.pipes.join()) return;
+    state.pipes = next;
+    if (threeState) rebuildPipes(threeState);
+  },
+
+  // The walls drawn with pipes on them now (for the tests).
+  getPipes: function () {
+    return state.pipes.slice();
   },
 
   // The windows to draw (js/room-plan.js toWindowPlacements()).

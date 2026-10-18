@@ -191,6 +191,7 @@
     simple: savedMode() !== "all", // the basics of each step, or every setting
     open: {}, // which "More options" are open, by name, across redraws
     chooser: null, // the product list whose choices are open (Products step)
+    q: {}, // the simple studio: which of a step's questions is on show, by step
   };
   var els = {};
 
@@ -958,14 +959,18 @@
         var stack = wallOf(wid, d);
         var sp0 = wallPoint(stack, 0, 0);
         var sp1 = wallPoint(stack, stack.span, STACK_BAND);
+        // A pipe drawn down the middle of the hatching.
+        var pp0 = wallPoint(stack, Math.min(0.3, stack.span / 4), STACK_BAND / 2);
+        var pp1 = wallPoint(stack, stack.span - Math.min(0.3, stack.span / 4), STACK_BAND / 2);
         svg.appendChild(
-          s("g", { class: "plan-stack" }, [
+          s("g", { class: "plan-stack", "data-wall": wid }, [
             s("rect", {
               x: num(Math.min(sp0.x, sp1.x)),
               y: num(Math.min(sp0.z, sp1.z)),
               width: num(Math.abs(sp1.x - sp0.x) || STACK_BAND),
               height: num(Math.abs(sp1.z - sp0.z) || STACK_BAND),
             }),
+            s("line", { x1: num(pp0.x), y1: num(pp0.z), x2: num(pp1.x), y2: num(pp1.z) }),
           ]),
         );
       });
@@ -1361,9 +1366,18 @@
     });
     room3d.setSurround(f.walls === "tileWet" ? surroundPanels(design) : []);
     room3d.setElectrical(Plan.toElectricalPlacements(design, sizes));
+    pushPipes();
     applyIsolate();
   }
   var pushed3d = {};
+
+  // The walls picked for the plumbing show pipes on them in the room while
+  // the Room and Layout steps are open (where the plumbing matters).
+  function pushPipes() {
+    if (!room3d || !room3d.setPipes || !design) return;
+    var shown = answers().stack && (ui.step === "room" || ui.step === "layout");
+    room3d.setPipes(shown ? Plan.stackWalls(design) : []);
+  }
 
   // Which fixtures the room shows on their own while one is being worked
   // on: the selected one (with the electrical point's fixture counting as
@@ -1437,11 +1451,22 @@
     if (plan) {
       planSvg(
         d,
-        { list: list, selected: ui.selected, point: ui.point, hover: ui.hover, interactive: !VIEW_ONLY },
+        {
+          list: list,
+          selected: ui.selected,
+          point: ui.point,
+          hover: ui.hover,
+          interactive: !VIEW_ONLY,
+          stack: answers(d).stack,
+        },
         els.planSvg,
       );
     } else {
-      planSvg(d, { mini: true, tags: true, list: list, selected: ui.selected, point: ui.point }, els.miniSvg);
+      planSvg(
+        d,
+        { mini: true, tags: true, list: list, selected: ui.selected, point: ui.point, stack: answers(d).stack },
+        els.miniSvg,
+      );
       // While dragging, the outline says whether it fits where it is.
       room3d.setHighlight(ui.selected, ui.drag && ui.drag.moved ? toneOf(ui.selected, list) : "select", ui.hover);
       room3d.setMarks(floorMarks(d, list, ui.selected));
@@ -1654,7 +1679,9 @@
   // While the Room step waits to be told which wall the plumbing is in, a
   // tap on a wall in the 3D room answers it.
   function asksForWall() {
-    return !VIEW_ONLY && ui.step === "room" && !!design && !answers().stack;
+    if (VIEW_ONLY || ui.step !== "room" || !design || answers().stack) return false;
+    var q = currentQ("room");
+    return !q || q.id === "pipes";
   }
 
   // The wall a point on the floor (room feet) is nearest to.
@@ -2178,13 +2205,152 @@
   // ---------------------------------------------------------------------
   // The bar: steps, undo, link, start over, the estimate total
   // ---------------------------------------------------------------------
-  function goTo(step) {
+  function goTo(step, at) {
     // Forward only once every step before it is answered; back any time.
     var stop = unfinishedBefore(step);
     if (stop) return refuseStep(stop);
     if (ui.missing && ui.missing !== step) ui.missing = null;
     rileyLater();
-    return goToStep(step);
+    return goToStep(step, at);
+  }
+
+  // ---------------------------------------------------------------------
+  // One question at a time (the simple studio)
+  // ---------------------------------------------------------------------
+  // The simple studio asks a step's questions one by one: only the
+  // question on show, Next for the one after it (once it's answered), and
+  // after the last one the next step. Room asks the size, then where the
+  // pipes are, then the door; Products each list; Finishes the floor, the
+  // walls and the ceiling. Layout and Electrical are one question each,
+  // shown as they are. All options lays a step's questions out together.
+  //   questions(step)  [{ id, group?, slot? }], [] where there's no wizard
+  //   currentQ(step)   the one on show, or null
+  //   questionMissing  what the one on show still needs, like missingFor()
+  function questions(step) {
+    if (!ui.simple || VIEW_ONLY) return [];
+    if (step === "room") return [{ id: "size" }, { id: "pipes" }, { id: "door" }];
+    if (step === "finishes") return [{ id: "floor" }, { id: "walls" }, { id: "ceiling" }];
+    if (step !== "products" || !room3d) return [];
+    var out = [];
+    room3d.getProductGroups().forEach(function (group) {
+      group.slots.forEach(function (slot) {
+        out.push({ id: "slot-" + slot.id, group: group, slot: slot });
+      });
+    });
+    return out;
+  }
+
+  function qIndex(step, list) {
+    var n = (list || questions(step)).length;
+    return clamp(ui.q[step] || 0, 0, Math.max(0, n - 1));
+  }
+
+  function currentQ(step) {
+    var list = questions(step);
+    return list.length ? list[qIndex(step, list)] : null;
+  }
+
+  var Q_SURFACES = {
+    floor: ["floorTile", "flooring"],
+    walls: ["wallTile", "wallPaint"],
+    ceiling: ["ceilingPaint"],
+  };
+
+  function questionMissing(step, q) {
+    if (!q) return [];
+    if (step === "room") {
+      return missingFor("room").filter(function (x) {
+        return (q.id === "size" && x.key === "size") || (q.id === "pipes" && x.key === "stack");
+      });
+    }
+    if (step === "products") {
+      return answers().products[q.slot.id]
+        ? []
+        : [{ key: "products", text: T("studio.need.products", { list: q.slot.label }) }];
+    }
+    if (step === "finishes") {
+      var unpicked = surfaceCats(design).filter(function (cat) {
+        return Q_SURFACES[q.id].indexOf(cat) !== -1 && !surfacePicked(cat);
+      });
+      if (!unpicked.length) return [];
+      return [
+        {
+          key: "surfaces",
+          text: T("studio.need.surfaces", {
+            list: unpicked
+              .map(function (cat) {
+                return T("studio.need.surface." + cat);
+              })
+              .join(", "),
+          }),
+        },
+      ];
+    }
+    return [];
+  }
+
+  // The first of a step's questions that still needs an answer (0 when
+  // they all have one).
+  function firstOpenQ(step) {
+    var list = questions(step);
+    for (var i = 0; i < list.length; i++) if (questionMissing(step, list[i]).length) return i;
+    return 0;
+  }
+
+  // Next within a step: on to the next question once this one is answered.
+  function nextQuestion() {
+    var q = currentQ(ui.step);
+    var left = questionMissing(ui.step, q);
+    if (left.length) {
+      ui.missing = ui.step;
+      renderPanel();
+      sayMissing(left);
+      return;
+    }
+    showQuestion(qIndex(ui.step) + 1);
+  }
+
+  // Shows question i of this step, the way a new step is shown: at the
+  // top, its title in focus, Riley saying what it asks.
+  function showQuestion(i) {
+    ui.q[ui.step] = i;
+    if (ui.missing === ui.step) ui.missing = null;
+    if (els.toast) {
+      clearTimeout(toastTimer);
+      els.toast.hidden = true;
+    }
+    ui.chooser = null;
+    renderPanel({ top: true });
+    renderHint();
+    showQuestionIn3d();
+    var title = els.panel.querySelector(".studio-q-title");
+    if (title) title.focus({ preventScroll: true });
+    rileyLater();
+  }
+
+  // A product list's question shows its fixture, close in on that part.
+  function showQuestionIn3d() {
+    var q = currentQ(ui.step);
+    if (q && q.slot) focusSlot(q.group.id, q.slot.id);
+  }
+
+  // A question's section, marked as the one on show: "Question 2 of 3"
+  // over its title, which takes focus when it comes up.
+  function asQuestion(step, sec) {
+    var list = questions(step);
+    var i = qIndex(step, list);
+    sec.classList.add("studio-question");
+    sec.setAttribute("data-question", list[i].id);
+    var title = sec.querySelector("h3");
+    if (title) {
+      title.setAttribute("tabindex", "-1");
+      title.classList.add("studio-q-title");
+    }
+    sec.insertBefore(
+      h("p", { class: "studio-q-count", text: T("studio.questionOf", { n: i + 1, total: list.length }) }),
+      sec.firstChild,
+    );
+    return sec;
   }
 
   // ---------------------------------------------------------------------
@@ -2358,8 +2524,20 @@
   function refuseStep(stop) {
     var list = missingFor(stop);
     ui.missing = stop;
-    if (ui.step !== stop) goToStep(stop);
-    else renderPanel();
+    // One question at a time: the first one still waiting for an answer.
+    var at = questions(stop).length ? firstOpenQ(stop) : undefined;
+    if (ui.step !== stop) goToStep(stop, at);
+    else {
+      if (at !== undefined) ui.q[stop] = at;
+      renderPanel();
+      showQuestionIn3d();
+    }
+    sayMissing(list);
+  }
+
+  // "To go on: …" in a note and by Riley, with the first field it's about
+  // brought into view.
+  function sayMissing(list) {
     toast(T("studio.need", { list: needText(list) }));
     if (window.Riley && els.riley) window.Riley.say({ tone: "warn", text: T("riley.need", { list: needText(list) }) });
     var first = els.panel.querySelector(".is-missing");
@@ -2383,8 +2561,14 @@
     }, 0);
   }
 
-  function goToStep(step) {
+  // `at`: which of the step's questions to show (a number or "last");
+  // a step arrived at from another starts at its first.
+  function goToStep(step, at) {
     if (STEPS.indexOf(step) === -1) return;
+    var qs = questions(step);
+    if (at === "last") ui.q[step] = Math.max(0, qs.length - 1);
+    else if (typeof at === "number") ui.q[step] = at;
+    else if (step !== ui.step) ui.q[step] = 0;
     // A note about the step being left ("To go on: …", "Plumbing wall: A")
     // has nothing to say on the next one.
     if (step !== ui.step && els.toast) {
@@ -2404,6 +2588,8 @@
     ui.step = step;
     renderBar();
     renderPanel({ top: true });
+    pushPipes();
+    if (step === "products") showQuestionIn3d();
     // The draft remembers the step too, so a reload comes back to it.
     if (design) saveSoon();
     if (step === "products" && has3d && ui.selected) room3d.focusProductGroup(null);
@@ -2653,7 +2839,13 @@
     var i = STEPS.indexOf(ui.step);
     var prev = STEPS[i - 1];
     var next = STEPS[i + 1];
-    var left = next ? missingFor(ui.step) : [];
+    // One question at a time: Back and Next move between the step's
+    // questions, and only past its first or last to another step.
+    var qs = questions(ui.step);
+    var qi = qIndex(ui.step, qs);
+    var qBack = qi > 0;
+    var qNext = qi < qs.length - 1;
+    var left = qNext ? questionMissing(ui.step, qs[qi]) : next ? missingFor(ui.step) : [];
     if (!left.length && ui.missing === ui.step) ui.missing = null;
     var shown = ui.step === "estimate" && !estimatorOn() ? "design" : ui.step;
     return h("nav", { class: "studio-step-nav", "aria-label": T("studio.stepNav") }, [
@@ -2671,26 +2863,28 @@
             text: T("studio.need", { list: needText(left) }),
           })
         : null,
-      prev
+      qBack || prev
         ? h("button", {
             type: "button",
             class: "btn btn-secondary",
             "data-key": "nav-prev",
-            text: T("studio.back", { step: stepShort(prev) }),
+            text: qBack ? T("studio.backQ") : T("studio.back", { step: stepShort(prev) }),
             onclick: function () {
-              goTo(prev);
+              if (qBack) showQuestion(qi - 1);
+              else goTo(prev, "last");
             },
           })
         : h("span"),
-      next
+      qNext || next
         ? h("button", {
             type: "button",
             class: "btn btn-primary",
             "data-key": "nav-next",
-            text: T("studio.next", { step: stepShort(next) }),
+            text: qNext ? T("studio.nextQ") : T("studio.next", { step: stepShort(next) }),
             "aria-describedby": left.length ? "studio-step-need" : null,
             onclick: function () {
-              goTo(next);
+              if (qNext) nextQuestion();
+              else goTo(next);
             },
           })
         : null,
@@ -2878,7 +3072,8 @@
         ),
       );
     });
-    body.appendChild(section(T(ui.simple ? "studio.room.pick" : "studio.room.start"), [grid]));
+    // The common bathrooms come after the size, folded until opened.
+    var templates = templatesFold(grid);
     fillTemplateThumbs();
 
     var room = design.room;
@@ -2912,26 +3107,6 @@
       class: "studio-note",
       text: T("studio.room.area", { area: Pricing.formatQty(num(Plan.floorArea(room), 1)) }),
     });
-    if (ui.simple) {
-      // The basics: how wide, how long. The height, the shape and the
-      // windows wait under "More options".
-      body.appendChild(
-        section(T("studio.room.howBig"), [
-          h("div", { class: "studio-size-grid is-pair" }, [widthField, lengthF]),
-          area,
-        ]),
-      );
-    } else {
-      body.appendChild(shapeSection(room, shape));
-      body.appendChild(
-        section(T("studio.room.size"), [
-          h("div", { class: "studio-size-grid" }, [widthField, lengthF, heightField]),
-          area,
-        ]),
-      );
-    }
-
-    body.appendChild(plumbingSection());
 
     var doors = itemsOf("door");
     var doorKids = doors.map(function (door, i) {
@@ -2971,24 +3146,77 @@
       );
     }
     var doorsFull = section(T("studio.room.doors"), doorKids);
-    if (ui.simple) {
-      // The usual room has one door, asked for like the pipes: which wall.
-      // Moving it along the wall, its type and a second door wait under
-      // "More options" with the height, the shape and the windows.
-      var oneDoor = doors.length === 1;
-      body.appendChild(oneDoor ? doorSection(doors[0]) : doorsFull);
+
+    if (!ui.simple) {
+      body.appendChild(shapeSection(room, shape));
       body.appendChild(
-        more("room", [
-          oneDoor ? doorsFull : null,
-          section(T("studio.room.height"), [h("div", { class: "studio-size-grid" }, [heightField])]),
-          shapeSection(room, shape),
-          windowsSection(),
+        section(T("studio.room.size"), [
+          h("div", { class: "studio-size-grid" }, [widthField, lengthF, heightField]),
+          area,
         ]),
       );
-    } else {
+      body.appendChild(templates);
+      body.appendChild(plumbingSection());
       body.appendChild(doorsFull);
       body.appendChild(windowsSection());
+      return;
     }
+
+    // The simple studio, one question at a time: how big (with the common
+    // bathrooms, the height and the shape folded under it), where the
+    // pipes are, then where the door is (with a second door and the
+    // windows folded under it).
+    var q = currentQ("room").id;
+    if (q === "size") {
+      body.appendChild(
+        asQuestion(
+          "room",
+          section(T("studio.room.dims"), [
+            h("div", { class: "studio-size-grid is-pair" }, [widthField, lengthF]),
+            area,
+          ]),
+        ),
+      );
+      body.appendChild(templates);
+      body.appendChild(
+        more("roomSize", [
+          section(T("studio.room.height"), [h("div", { class: "studio-size-grid" }, [heightField])]),
+          shapeSection(room, shape),
+        ]),
+      );
+    } else if (q === "pipes") {
+      body.appendChild(asQuestion("room", plumbingSection()));
+    } else {
+      // The usual room has one door, asked for like the pipes: which wall.
+      // Moving it along the wall, its type and a second door wait under
+      // "More options" with the windows.
+      var oneDoor = doors.length === 1;
+      body.appendChild(asQuestion("room", oneDoor ? doorSection(doors[0]) : doorsFull));
+      body.appendChild(more("room", [oneDoor ? doorsFull : null, windowsSection()]));
+    }
+  }
+
+  // "Pick a bathroom like yours": the common bathrooms to start from,
+  // folded until opened (and kept open across redraws once it is).
+  function templatesFold(grid) {
+    var box = h(
+      "details",
+      { class: "studio-more studio-templates-fold", open: ui.open.templates ? true : null, "data-more": "templates" },
+      [
+        h("summary", {}, [
+          h("span", { icon: "right" }),
+          h("span", { text: T(ui.simple ? "studio.room.pick" : "studio.room.start") }),
+        ]),
+        h("div", { class: "studio-more-body" }, [
+          h("p", { class: "studio-note", text: T("studio.room.pickHelp") }),
+          grid,
+        ]),
+      ],
+    );
+    box.addEventListener("toggle", function () {
+      ui.open.templates = box.open;
+    });
+    return box;
   }
 
   // Which walls the plumbing is in: each wall as a button that says what
@@ -3009,7 +3237,7 @@
         "button",
         {
           type: "button",
-          class: "studio-wall-pick",
+          class: "studio-wall-pick" + (on ? " has-pipes" : ""),
           "aria-pressed": on ? "true" : "false",
           "aria-label": T("studio.room.wallWith", { letter: letter(wid), what: what }),
           "data-key": "stack-" + wid,
@@ -3022,6 +3250,14 @@
         [
           h("span", { class: "studio-wall-letter", text: letter(wid) }),
           h("span", { class: "studio-wall-what", text: what }),
+          // A wall with the pipes in it says so, with a pipe, here and in
+          // the room (pushPipes) and on the plan.
+          on
+            ? h("span", { class: "studio-wall-pipes", "aria-hidden": "true" }, [
+                h("span", { icon: "pipe" }),
+                h("span", { text: T("studio.room.pipesHere") }),
+              ])
+            : null,
         ],
       );
     });
@@ -4498,7 +4734,10 @@
         ]),
       );
     }
+    // One question at a time: the list on show, in its fixture's card.
+    var q = currentQ("products");
     groups.forEach(function (group) {
+      if (q && q.group.id !== group.id) return;
       var standIn = !ui.simple && standInGroups.indexOf(group) !== -1;
       var card = h("div", { class: "studio-card studio-product-card", "data-group": group.id }, [
         h("div", { class: "studio-card-head" }, [
@@ -4520,7 +4759,7 @@
         ]),
       ]);
       group.slots.forEach(function (slot) {
-        card.appendChild(productRow(group, slot, items));
+        if (!q || q.slot.id === slot.id) card.appendChild(productRow(group, slot, items));
       });
       if (standIn) {
         card.appendChild(
@@ -4541,7 +4780,7 @@
           ),
         );
       }
-      body.appendChild(card);
+      body.appendChild(q ? asQuestion("products", card) : card);
     });
     body.appendChild(
       h("p", {
@@ -4683,6 +4922,19 @@
     commit(withAnswer(design, slot.id), {
       announce: slot.label + ": " + current.label + " · " + T("studio.products.picked"),
     });
+    // One question at a time: Keep answers it and goes on to the next
+    // list (or to Next, after the last).
+    var qs = questions("products");
+    if (qs.length) {
+      var i = qIndex("products", qs);
+      if (i < qs.length - 1) {
+        showQuestion(i + 1);
+        focusKey("keep-" + qs[i + 1].slot.id);
+      } else {
+        focusKey("nav-next");
+      }
+      return;
+    }
     var next = nextWaiting();
     if (next) {
       focusKey("keep-" + next.slot.id);
@@ -5044,63 +5296,68 @@
     // studio keeps the switch under "More options", after the picks.
     if (!ui.simple) body.appendChild(demolition);
 
-    body.appendChild(
-      section(T("studio.finish.floor"), [
-        choiceGroup(
-          T("studio.finish.floor"),
-          [
-            { value: "tile", label: T("studio.finish.floor.tile") },
-            { value: "flooring", label: T("studio.finish.floor.flooring") },
-            { value: "none", label: T("studio.finish.floor.none") },
-          ],
-          f.floor,
-          function (v) {
-            set({ floor: v });
-          },
-          "fin-floor",
-        ),
-        f.floor === "tile" ? swatches("floorTile") : null,
-        f.floor === "flooring" ? swatches("flooring") : null,
-      ]),
-    );
+    var floor = section(T("studio.finish.floor"), [
+      choiceGroup(
+        T("studio.finish.floor"),
+        [
+          { value: "tile", label: T("studio.finish.floor.tile") },
+          { value: "flooring", label: T("studio.finish.floor.flooring") },
+          { value: "none", label: T("studio.finish.floor.none") },
+        ],
+        f.floor,
+        function (v) {
+          set({ floor: v });
+        },
+        "fin-floor",
+      ),
+      f.floor === "tile" ? swatches("floorTile") : null,
+      f.floor === "flooring" ? swatches("flooring") : null,
+    ]);
 
     var walls = wallsOf(design);
     var hasTub = itemsOf("tub").length > 0;
-    body.appendChild(
-      section(T("studio.finish.walls"), [
-        choiceGroup(
-          T("studio.finish.walls"),
-          [
-            { value: "paint", label: T("studio.finish.walls.paint") },
-            hasTub ? { value: "tileWet", label: T("studio.finish.walls.tileWet") } : null,
-            { value: "tile", label: T("studio.finish.walls.tile") },
-            { value: "none", label: T("studio.finish.walls.none") },
-          ].filter(Boolean),
-          walls,
-          function (v) {
-            set({ walls: v });
-          },
-          "fin-walls",
-        ),
-        walls === "tileWet" || walls === "tile" ? swatches("wallTile", T("studio.finish.wallTile")) : null,
-        walls === "tileWet" || walls === "paint" ? swatches("wallPaint", T("studio.finish.wallPaint")) : null,
-      ]),
-    );
+    var wallsSec = section(T("studio.finish.walls"), [
+      choiceGroup(
+        T("studio.finish.walls"),
+        [
+          { value: "paint", label: T("studio.finish.walls.paint") },
+          hasTub ? { value: "tileWet", label: T("studio.finish.walls.tileWet") } : null,
+          { value: "tile", label: T("studio.finish.walls.tile") },
+          { value: "none", label: T("studio.finish.walls.none") },
+        ].filter(Boolean),
+        walls,
+        function (v) {
+          set({ walls: v });
+        },
+        "fin-walls",
+      ),
+      walls === "tileWet" || walls === "tile" ? swatches("wallTile", T("studio.finish.wallTile")) : null,
+      walls === "tileWet" || walls === "paint" ? swatches("wallPaint", T("studio.finish.wallPaint")) : null,
+    ]);
 
-    body.appendChild(
-      section(T("studio.finish.ceiling"), [
-        toggle(
-          T("studio.finish.ceilingLabel"),
-          f.ceiling,
-          function (on) {
-            set({ ceiling: on });
-          },
-          "fin-ceiling",
-        ),
-        f.ceiling ? swatches("ceilingPaint") : null,
-      ]),
-    );
-    if (ui.simple) body.appendChild(more("finishes", [demolition]));
+    var ceiling = section(T("studio.finish.ceiling"), [
+      toggle(
+        T("studio.finish.ceilingLabel"),
+        f.ceiling,
+        function (on) {
+          set({ ceiling: on });
+        },
+        "fin-ceiling",
+      ),
+      f.ceiling ? swatches("ceilingPaint") : null,
+    ]);
+    // One question at a time: the floor, the walls, then the ceiling, with
+    // taking the old bathroom out under "More options" on the last.
+    var q = currentQ("finishes");
+    if (q) {
+      body.appendChild(asQuestion("finishes", { floor: floor, walls: wallsSec, ceiling: ceiling }[q.id]));
+      if (q.id === "ceiling") body.appendChild(more("finishes", [demolition]));
+    } else {
+      body.appendChild(floor);
+      body.appendChild(wallsSec);
+      body.appendChild(ceiling);
+      if (ui.simple) body.appendChild(more("finishes", [demolition]));
+    }
     if (!materialsOn()) body.appendChild(h("p", { class: "studio-note", text: T("studio.finish.notPriced") }));
   }
 
@@ -5995,6 +6252,9 @@
     }
     var stepKey = "riley.step." + ui.step;
     if (ui.simple && SIMPLE_INTRO.indexOf(ui.step) !== -1) stepKey = "riley.simple." + ui.step;
+    // One question at a time: she says what the question on show asks.
+    var q = currentQ(ui.step);
+    if (q && !q.slot) stepKey = "riley.q." + q.id;
     if (ui.step === "estimate" && !estimatorOn()) {
       // Without the price estimator there's no total to talk about.
       stepKey = BIZ.demo ? "riley.step.design" : "riley.step.designOwner";

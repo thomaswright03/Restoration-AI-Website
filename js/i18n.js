@@ -1046,6 +1046,11 @@
     "studio.stepNav": ["Steps", "Pasos", "Etapas"],
     "studio.back": ["Back to {step}", "Volver a {step}", "Voltar para {step}"],
     "studio.next": ["Next: {step}", "Siguiente: {step}", "Próximo: {step}"],
+    // One question at a time (the simple studio): Back and Next between a
+    // step's questions, and which one is on show.
+    "studio.backQ": ["Back", "Atrás", "Voltar"],
+    "studio.nextQ": ["Next", "Siguiente", "Próximo"],
+    "studio.questionOf": ["Question {n} of {total}", "Pregunta {n} de {total}", "Pergunta {n} de {total}"],
 
     "studio.type.toilet": ["Toilet", "Inodoro", "Vaso sanitário"],
     "studio.type.vanity": ["Vanity", "Mueble de lavabo", "Gabinete com pia"],
@@ -2667,9 +2672,9 @@
     "studio.details": ["Details", "Detalles", "Detalhes"],
     "studio.stepDone": ["done", "listo", "pronto"],
     "studio.simple.room.intro": [
-      "Pick a bathroom like yours, set its size, then tap the walls your pipes are in.",
-      "Elija un baño parecido al suyo, ponga su tamaño y luego toque las paredes donde están las tuberías.",
-      "Escolha um banheiro parecido com o seu, defina o tamanho e depois toque nas paredes onde estão os canos.",
+      "One question at a time: the size, the walls your pipes are in, then the door.",
+      "Una pregunta a la vez: el tamaño, las paredes donde están las tuberías y luego la puerta.",
+      "Uma pergunta de cada vez: o tamanho, as paredes onde estão os canos e depois a porta.",
     ],
     "studio.simple.layout.intro": [
       "Tap to add a fixture. Drag it in the room to move it. If something doesn't fit, you'll see it right away.",
@@ -2697,6 +2702,17 @@
       "Escolha um banheiro parecido com o seu",
     ],
     "studio.room.howBig": ["How big is it?", "¿Qué tan grande es?", "Qual é o tamanho?"],
+    "studio.room.dims": [
+      "What are the dimensions of the bathroom?",
+      "¿Cuáles son las medidas del baño?",
+      "Quais são as medidas do banheiro?",
+    ],
+    "studio.room.pickHelp": [
+      "Starts you from a common layout with its fixtures in place. You can change anything after.",
+      "Empieza con una distribución común con sus muebles ya puestos. Después puede cambiar lo que quiera.",
+      "Começa com um layout comum com as peças já no lugar. Depois você pode mudar o que quiser.",
+    ],
+    "studio.room.pipesHere": ["Pipes", "Tuberías", "Canos"],
     "studio.room.pipes": ["Where are the pipes?", "¿Dónde están las tuberías?", "Onde estão os canos?"],
     "studio.room.pipesHelp": [
       "Tap each wall the water and drain pipes come in through. Usually it's the wall the toilet is on, plus the tub's wall if it's on another one.",
@@ -2931,6 +2947,33 @@
       "Isto é o total, por enquanto com preços de exemplo padrão: defina os seus próprios preços de mão de obra na página da conta e isto vai acompanhar. Salve como projeto ou baixe o PDF para o seu cliente.",
     ],
     // Shorter lines for the simple studio (the basics of each step).
+    // One question at a time: what she says as each question comes up.
+    "riley.q.size": [
+      "Let's start with your room. How wide and how long is it, wall to wall?",
+      "Empecemos con su baño. ¿Cuánto mide de ancho y de largo, de pared a pared?",
+      "Vamos começar pelo seu banheiro. Quanto ele mede de largura e de comprimento, de parede a parede?",
+    ],
+    "riley.q.pipes": [
+      "Now tap the walls your pipes are in. I'll mark them with pipes in the room.",
+      "Ahora toque las paredes donde están las tuberías. Se las marco con tuberías en el baño.",
+      "Agora toque nas paredes onde estão os canos. Eu marco essas paredes com canos no banheiro.",
+    ],
+    "riley.q.door": ["Which wall is the door on?", "¿En qué pared está la puerta?", "Em qual parede fica a porta?"],
+    "riley.q.floor": [
+      "First the floor. Tap one and you'll see it in the room.",
+      "Primero el piso. Toque uno y lo verá en el baño.",
+      "Primeiro o piso. Toque em um e você o verá no banheiro.",
+    ],
+    "riley.q.walls": [
+      "Now the walls: paint, tile, or both.",
+      "Ahora las paredes: pintura, azulejo o ambos.",
+      "Agora as paredes: pintura, azulejo ou os dois.",
+    ],
+    "riley.q.ceiling": [
+      "Last, the ceiling: painted or left as it is.",
+      "Por último, el techo: pintado o como está.",
+      "Por último, o teto: pintado ou como está.",
+    ],
     "riley.simple.room": [
       "Let's start with your room. Pick one like yours, set the size, then tap the walls your pipes are in.",
       "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque las paredes donde están las tuberías.",

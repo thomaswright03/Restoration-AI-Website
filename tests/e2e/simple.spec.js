@@ -11,6 +11,7 @@ const {
   studioStatus,
   studioToast,
   expectNoPlaceholders,
+  pickTemplate,
 } = require("./helpers");
 
 // The studio a first visit sees: the basics of each step, with the rest
@@ -18,6 +19,12 @@ const {
 // setting back (tests/e2e/studio.spec.js drives those).
 test.describe("the simple studio", () => {
   const open = (page, url) => openStudio(page, url, { simple: true });
+  const question = (page) => page.locator(".studio-question");
+  // Next through the Room step's first question (the size) to the pipes.
+  const toPipes = async (page) => {
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "pipes");
+  };
 
   test("opens with the basics, keeps the rest behind More options, and remembers All options", async ({ page }) => {
     const errors = await open(page);
@@ -25,11 +32,11 @@ test.describe("the simple studio", () => {
     await expect(mode).not.toBeChecked();
     await expect(page.locator("#studio")).toHaveClass(/is-simple/);
     // The width and length are asked; the height waits behind the fold,
-    // with the room's shape and windows.
+    // with the room's shape.
     await expect(page.locator("#studio-size-w")).toBeVisible();
     await expect(page.locator("#studio-size-l")).toBeVisible();
     await expect(page.locator("#studio-size-h")).toBeHidden();
-    const more = page.locator('.studio-more[data-more="room"]');
+    const more = page.locator('.studio-more[data-more="roomSize"]');
     await expect(more).toHaveCount(1);
     await expect(more).not.toHaveAttribute("open");
     await more.locator("summary").click();
@@ -45,7 +52,10 @@ test.describe("the simple studio", () => {
     // All options lays every setting out, as it always did.
     await mode.check();
     await expect(page.locator("#studio")).not.toHaveClass(/is-simple/);
-    await expect(page.locator(".studio-more")).toHaveCount(0);
+    await expect(page.locator(".studio-more:not(.studio-templates-fold)")).toHaveCount(0);
+    // Every question of the step at once, with no Question 1 of 3.
+    await expect(page.locator(".studio-question")).toHaveCount(0);
+    await expect(byKey(page, "stack-N")).toBeVisible();
     await expect(page.locator("#studio-size-h")).toBeVisible();
     await expect(byKey(page, "size-w-more")).toHaveAttribute("aria-label", /: 1 inch more$/);
     await expect(page.locator("#studio-live")).toContainText("Showing all options.");
@@ -66,6 +76,7 @@ test.describe("the simple studio", () => {
     test.setTimeout(60000); // two rooms drawn in 3D
     const errors = await open(page);
     await wait3d(page);
+    await toPipes(page);
     // Each wall is named by what stands on it, so "the toilet's wall" is a
     // tap, not a letter to look up on the plan.
     await expect(byKey(page, "stack-N")).toContainText("A");
@@ -75,6 +86,10 @@ test.describe("the simple studio", () => {
     await expect(byKey(page, "stack-S")).toContainText("Door");
     await expect(byKey(page, "stack-W")).toContainText("nothing on it yet");
     await expect(page.locator("[data-key^='stack-'][aria-pressed='true']")).toHaveCount(0);
+    // No wall is marked as having the pipes until one is picked.
+    await expect(page.locator(".studio-wall-pipes")).toHaveCount(0);
+    await expect(page.locator(".plan-stack")).toHaveCount(0);
+    expect(await page.evaluate(() => window.BathroomRoom3D.getPipes())).toEqual([]);
     await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the walls your pipes are in.");
     // Over the room, the hint says so too, and a tap on wall A there answers it.
     await expect(page.locator("#studio-hint")).toContainText("Tap the wall your pipes are in.");
@@ -86,11 +101,21 @@ test.describe("the simple studio", () => {
     await expect(byKey(page, "suggest-stack")).toHaveCount(0);
     await expect(page.locator("#studio-step-need")).toHaveCount(0);
     await expect(page.locator("#studio-hint")).not.toContainText("Tap the wall your pipes are in.");
+    // The wall with the pipes is marked: a Pipes tag on its button, pipe
+    // blue on the plan and pipes on that wall in the 3D room.
+    await expect(byKey(page, "stack-N").locator(".studio-wall-pipes")).toHaveText("Pipes");
+    await expect(page.locator(".studio-wall-pipes")).toHaveCount(1);
+    await expect(page.locator('.studio-wall-plan .plan-stack[data-wall="N"]')).toHaveCount(1);
+    expect(await page.evaluate(() => window.BathroomRoom3D.getPipes())).toEqual(["N"]);
 
-    // A new room asks again; "Not sure?" takes the wall the room suggests
-    // (the least pipe).
-    await byKey(page, "tpl-full5x8").click();
+    // A new room (back on the size question) asks again; "Not sure?" takes
+    // the wall the room suggests (the least pipe).
+    await byKey(page, "nav-prev").click();
+    await expect(question(page)).toHaveAttribute("data-question", "size");
+    await pickTemplate(page, "full5x8");
+    await toPipes(page);
     await expect(page.locator("#studio-step-need")).toHaveText("To go on: tap the walls your pipes are in.");
+    expect(await page.evaluate(() => window.BathroomRoom3D.getPipes())).toEqual([]);
     await expect(byKey(page, "suggest-stack")).toHaveText(/Not sure\? Use wall A/);
     await byKey(page, "suggest-stack").click();
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
@@ -101,9 +126,15 @@ test.describe("the simple studio", () => {
     await expect(byKey(page, "stack-N")).toHaveAttribute("aria-pressed", "true");
     await expect(byKey(page, "stack-E")).toHaveAttribute("aria-pressed", "true");
     expect(await page.evaluate(() => window.RoomPlan.stackWalls(window.RoomStudio.design()))).toEqual(["N", "E"]);
+    await expect(page.locator(".studio-wall-pipes")).toHaveCount(2);
+    expect(await page.evaluate(() => window.BathroomRoom3D.getPipes())).toEqual(["N", "E"]);
     await byKey(page, "stack-E").click();
     await expect(byKey(page, "stack-E")).toHaveAttribute("aria-pressed", "false");
-    // Answered, the room step gets its check mark once it's left.
+    await expect(byKey(page, "stack-E").locator(".studio-wall-pipes")).toHaveCount(0);
+    // Answered, the room step gets its check mark once it's left (past
+    // its last question, the door).
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "door");
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-layout")).toBeVisible();
     await expect(step(page, "room")).toHaveClass(/is-done/);
@@ -142,12 +173,13 @@ test.describe("the simple studio", () => {
     expect(errors).toEqual([]);
   });
 
-  test("electrical says what's done; products are kept or changed by picture, and Keep moves to the next list", async ({
+  test("electrical says what's done; products are asked one list at a time, kept or changed by picture", async ({
     page,
   }) => {
     test.setTimeout(90000); // a pick in each of the sample room's product lists loads its model
     const errors = await open(page);
     await wait3d(page);
+    await toPipes(page);
     await byKey(page, "suggest-stack").click();
     await step(page, "electrical").click();
     const done = page.locator('[data-testid="elec-done"]');
@@ -158,27 +190,38 @@ test.describe("the simple studio", () => {
     await step(page, "products").click();
     const progress = page.locator('[data-testid="products-progress"]');
     await expect(progress).toHaveText("0 of 14 picked");
-    const waiting = page.locator('.studio-pick[data-picked="false"]');
-    await expect(waiting).toHaveCount(14);
-    // Each list shows what's in the room now, with its picture, and says so.
-    const first = waiting.first();
-    await expect(first.locator(".studio-pick-state")).toContainText("Shown now");
-    await expect(first.locator(".studio-thumb")).toBeVisible();
-    await expect(first.locator(".studio-pick-keep")).toHaveText(/Keep/);
-    await expect(first.locator(".studio-pick-change")).toHaveText(/Change/);
-    const firstSlot = await first.getAttribute("data-slot");
-    // Keep counts, marks the list, and moves on to the next one waiting.
-    await first.locator(".studio-pick-keep").click();
+    // One list at a time.
+    await expect(page.locator(".studio-pick")).toHaveCount(1);
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 1 of 14");
+    const pick = page.locator(".studio-pick");
+    // The list shows what's in the room now, with its picture, and says so.
+    await expect(pick.locator(".studio-pick-state")).toContainText("Shown now");
+    await expect(pick.locator(".studio-thumb")).toBeVisible();
+    await expect(pick.locator(".studio-pick-keep")).toHaveText(/Keep/);
+    await expect(pick.locator(".studio-pick-change")).toHaveText(/Change/);
+    // Next waits for a pick.
+    await expect(byKey(page, "nav-next")).toHaveText("Next");
+    const firstSlot = await pick.getAttribute("data-slot");
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 1 of 14");
+    await expect(studioToast(page)).toContainText("To go on: pick a product for:");
+    // Keep counts and goes on to the next list.
+    await pick.locator(".studio-pick-keep").click();
     await expect(progress).toHaveText("1 of 14 picked");
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 2 of 14");
+    const nextSlot = await pick.getAttribute("data-slot");
+    expect(nextSlot).not.toBe(firstSlot);
+    await expect(page.locator(":focus")).toHaveAttribute("data-key", `keep-${nextSlot}`);
+    // Back shows the first one again, picked.
+    await byKey(page, "nav-prev").click();
     await expect(page.locator(`.studio-pick[data-slot="${firstSlot}"]`)).toHaveAttribute("data-picked", "true");
     await expect(page.locator(`.studio-pick[data-slot="${firstSlot}"] .studio-pick-state`)).toContainText("Picked");
-    await expect(page.locator(`.studio-pick[data-slot="${firstSlot}"] .studio-pick-keep`)).toHaveCount(0);
-    const nextSlot = await waiting.first().getAttribute("data-slot");
-    await expect(page.locator(":focus")).toHaveAttribute("data-key", `keep-${nextSlot}`);
-    // Change opens the choices as pictures; one picked closes them.
-    await waiting.first().locator(".studio-pick-change").click();
-    await expect(waiting.first().locator(".studio-pick-change")).toHaveAttribute("aria-expanded", "true");
-    await expect(waiting.first().locator(".studio-pick-change")).toHaveText(/Close the choices/);
+    await byKey(page, "nav-next").click();
+    // Change opens the choices as pictures; one picked closes them and
+    // stays on the list, for Next.
+    await pick.locator(".studio-pick-change").click();
+    await expect(pick.locator(".studio-pick-change")).toHaveAttribute("aria-expanded", "true");
+    await expect(pick.locator(".studio-pick-change")).toHaveText(/Close the choices/);
     const options = page.locator(".studio-option");
     await expect(options.first()).toBeVisible();
     await expect(page.locator(".studio-option[aria-pressed='true']")).toHaveCount(1);
@@ -188,22 +231,111 @@ test.describe("the simple studio", () => {
     await other.click();
     await expect(page.locator(".studio-option")).toHaveCount(0);
     await expect(progress).toHaveText("2 of 14 picked");
-    const changed = page.locator(`.studio-pick[data-slot="${nextSlot}"]`);
-    await expect(changed).toHaveAttribute("data-picked", "true");
-    await expect(changed.locator(".studio-pick-name")).toHaveText(otherName);
+    await expect(pick).toHaveAttribute("data-slot", nextSlot);
+    await expect(pick).toHaveAttribute("data-picked", "true");
+    await expect(pick.locator(".studio-pick-name")).toHaveText(otherName);
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 3 of 14");
     // Keep on each list left finishes the step.
-    while (await waiting.count()) await waiting.first().locator(".studio-pick-keep").click();
+    while ((await page.locator('.studio-pick[data-picked="false"]').count()) > 0)
+      await page.locator(".studio-pick-keep").click();
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 14 of 14");
     await expect(progress).toHaveText("All picked. Change any of them whenever you like.");
     await expect(progress).toHaveClass(/is-done/);
+    await expect(byKey(page, "nav-next")).toHaveText("Next: Finishes");
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-finishes")).toBeVisible();
     await expect(step(page, "products")).toHaveClass(/is-done/);
     expect(errors).toEqual([]);
   });
 
+  test("every question comes one at a time: Next shows the next, Back the one before, across steps", async ({
+    page,
+  }) => {
+    test.setTimeout(60000);
+    const errors = await open(page);
+    await wait3d(page);
+    // The Room step opens with only the size.
+    await expect(question(page)).toHaveCount(1);
+    await expect(question(page)).toHaveAttribute("data-question", "size");
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 1 of 3");
+    await expect(page.locator(".studio-q-title")).toHaveText("What are the dimensions of the bathroom?");
+    await expect(page.locator("#studio-size-w")).toBeVisible();
+    await expect(page.locator('[data-key^="stack-"]')).toHaveCount(0);
+    await expect(page.locator('[data-key^="door-wall-"]')).toHaveCount(0);
+    // "Pick a bathroom like yours" comes after the size, folded.
+    const fold = page.locator(".studio-templates-fold");
+    await expect(fold).not.toHaveAttribute("open");
+    await expect(fold.locator("summary")).toHaveText("Pick a bathroom like yours");
+    await expect(byKey(page, "tpl-full5x8")).toBeHidden();
+    const order = await page.evaluate(() => {
+      const size = document.querySelector(".studio-question");
+      const tpl = document.querySelector(".studio-templates-fold");
+      return size.compareDocumentPosition(tpl) & Node.DOCUMENT_POSITION_FOLLOWING;
+    });
+    expect(order).toBeTruthy();
+    await expect(byKey(page, "nav-prev")).toHaveCount(0);
+    await expect(byKey(page, "nav-next")).toHaveText("Next");
+    // Next: the size goes away and the pipes are asked, then the door.
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "pipes");
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 2 of 3");
+    await expect(page.locator(":focus")).toHaveClass(/studio-q-title/);
+    await expect(page.locator("#studio-size-w")).toHaveCount(0);
+    await expect(page.locator("#studio-hint")).toContainText("Tap the wall your pipes are in.");
+    // Unanswered, Next stays and says what it needs.
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "pipes");
+    await expect(studioToast(page)).toContainText("To go on: tap the walls your pipes are in.");
+    await byKey(page, "suggest-stack").click();
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "door");
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 3 of 3");
+    await expect(byKey(page, "nav-next")).toHaveText("Next: Layout");
+    await expect(byKey(page, "nav-prev")).toHaveText("Back");
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-layout")).toBeVisible();
+    // Back from the next step lands on the Room step's last question.
+    await byKey(page, "nav-prev").click();
+    await expect(question(page)).toHaveAttribute("data-question", "door");
+    // The stepper opens a step at its first question.
+    await step(page, "room").click();
+    await expect(question(page)).toHaveAttribute("data-question", "door");
+    await step(page, "layout").click();
+    await step(page, "room").click();
+    await expect(question(page)).toHaveAttribute("data-question", "size");
+
+    // Finishes asks the floor, the walls, then the ceiling. Going there with
+    // the product lists unanswered (a locked step, so the click is sent
+    // straight to it) goes to the first list waiting.
+    await step(page, "finishes").dispatchEvent("click");
+    await expect(page.locator(".studio-step.is-products")).toBeVisible();
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 1 of 14");
+    await answerAll(page);
+    await step(page, "finishes").click();
+    await expect(question(page)).toHaveAttribute("data-question", "floor");
+    await expect(page.locator(".studio-q-count")).toHaveText("Question 1 of 3");
+    await expect(byKey(page, "fin-walls-paint")).toHaveCount(0);
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "walls");
+    await expect(byKey(page, "fin-floor-tile")).toHaveCount(0);
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "ceiling");
+    await expect(page.locator('.studio-more[data-more="finishes"]')).toHaveCount(1);
+    await expect(byKey(page, "nav-next")).toHaveText(/^Next: /);
+    await byKey(page, "nav-next").click();
+    await expect(page.locator(".studio-step.is-estimate")).toBeVisible();
+    await expectNoPlaceholders(page);
+    expect(errors).toEqual([]);
+  });
+
   test("the door is a tap on its wall; sliding it and a second door wait under More options", async ({ page }) => {
     const errors = await open(page);
     await wait3d(page);
+    await toPipes(page);
+    await byKey(page, "suggest-stack").click();
+    await byKey(page, "nav-next").click();
+    await expect(question(page)).toHaveAttribute("data-question", "door");
     const picker = page.locator('[data-key^="door-wall-"]');
     await expect(picker).toHaveCount(4);
     await expect(byKey(page, "door-wall-S")).toHaveAttribute("aria-pressed", "true");
@@ -278,10 +410,12 @@ test.describe("the simple studio", () => {
   }) => {
     const errors = await open(page);
     await wait3d(page);
+    await toPipes(page);
     await byKey(page, "nav-next").click();
     await expect(studioToast(page)).toBeVisible();
     await expect(studioToast(page)).toContainText("To go on: tap the walls your pipes are in.");
     await byKey(page, "suggest-stack").click();
+    await byKey(page, "nav-next").click();
     await byKey(page, "nav-next").click();
     await expect(page.locator(".studio-step.is-layout")).toBeVisible();
     await expect(studioToast(page)).toBeHidden();
@@ -304,6 +438,7 @@ test.describe("the simple studio", () => {
       const errors = await open(page, `/${lang}/designer.html`);
       await wait3d(page);
       await expectNoPlaceholders(page);
+      await byKey(page, "nav-next").click();
       await byKey(page, "suggest-stack").click();
       await expectNoPlaceholders(page);
       for (const name of ["layout", "electrical", "products"]) {

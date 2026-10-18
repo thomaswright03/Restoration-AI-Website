@@ -439,6 +439,9 @@
     "studio.stepNav": "Pasos",
     "studio.back": "Volver a {step}",
     "studio.next": "Siguiente: {step}",
+    "studio.backQ": "Atrás",
+    "studio.nextQ": "Siguiente",
+    "studio.questionOf": "Pregunta {n} de {total}",
     "studio.type.toilet": "Inodoro",
     "studio.type.vanity": "Mueble de lavabo",
     "studio.type.sink": "Lavabo de pedestal",
@@ -1042,7 +1045,7 @@
     "studio.details": "Detalles",
     "studio.stepDone": "listo",
     "studio.simple.room.intro":
-      "Elija un baño parecido al suyo, ponga su tamaño y luego toque las paredes donde están las tuberías.",
+      "Una pregunta a la vez: el tamaño, las paredes donde están las tuberías y luego la puerta.",
     "studio.simple.layout.intro":
       "Toque para agregar una pieza. Arrástrela en el baño para moverla. Si algo no cabe, lo verá enseguida.",
     "studio.simple.electrical.intro":
@@ -1052,6 +1055,10 @@
     "studio.simple.finishes.intro": "Toque un piso, una pared y un techo. Los verá en el baño enseguida.",
     "studio.room.pick": "Elija un baño parecido al suyo",
     "studio.room.howBig": "¿Qué tan grande es?",
+    "studio.room.dims": "¿Cuáles son las medidas del baño?",
+    "studio.room.pickHelp":
+      "Empieza con una distribución común con sus muebles ya puestos. Después puede cambiar lo que quiera.",
+    "studio.room.pipesHere": "Tuberías",
     "studio.room.pipes": "¿Dónde están las tuberías?",
     "studio.room.pipesHelp":
       "Toque cada pared por donde entran las tuberías de agua y desagüe. Casi siempre es la pared del inodoro, más la de la tina si está en otra.",
@@ -1145,6 +1152,12 @@
       "Aquí está su diseño completo. Guárdelo como proyecto o descargue el PDF para su cliente.",
     "riley.step.estimateOwnerDefaults":
       "Esto es lo que suma, por ahora con precios de ejemplo predeterminados: defina sus propios precios de mano de obra en la página de la cuenta y esto los seguirá. Guárdelo como proyecto o descargue el PDF para su cliente.",
+    "riley.q.size": "Empecemos con su baño. ¿Cuánto mide de ancho y de largo, de pared a pared?",
+    "riley.q.pipes": "Ahora toque las paredes donde están las tuberías. Se las marco con tuberías en el baño.",
+    "riley.q.door": "¿En qué pared está la puerta?",
+    "riley.q.floor": "Primero el piso. Toque uno y lo verá en el baño.",
+    "riley.q.walls": "Ahora las paredes: pintura, azulejo o ambos.",
+    "riley.q.ceiling": "Por último, el techo: pintado o como está.",
     "riley.simple.room":
       "Empecemos con su baño. Elija uno parecido, ponga el tamaño y luego toque las paredes donde están las tuberías.",
     "riley.simple.layout":

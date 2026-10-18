@@ -425,6 +425,9 @@
     "studio.stepNav": "Steps",
     "studio.back": "Back to {step}",
     "studio.next": "Next: {step}",
+    "studio.backQ": "Back",
+    "studio.nextQ": "Next",
+    "studio.questionOf": "Question {n} of {total}",
     "studio.type.toilet": "Toilet",
     "studio.type.vanity": "Vanity",
     "studio.type.sink": "Pedestal sink",
@@ -1018,7 +1021,7 @@
     "studio.more": "More options",
     "studio.details": "Details",
     "studio.stepDone": "done",
-    "studio.simple.room.intro": "Pick a bathroom like yours, set its size, then tap the walls your pipes are in.",
+    "studio.simple.room.intro": "One question at a time: the size, the walls your pipes are in, then the door.",
     "studio.simple.layout.intro":
       "Tap to add a fixture. Drag it in the room to move it. If something doesn't fit, you'll see it right away.",
     "studio.simple.electrical.intro":
@@ -1027,6 +1030,10 @@
     "studio.simple.finishes.intro": "Tap a floor, a wall and a ceiling. You'll see them in the room right away.",
     "studio.room.pick": "Pick a bathroom like yours",
     "studio.room.howBig": "How big is it?",
+    "studio.room.dims": "What are the dimensions of the bathroom?",
+    "studio.room.pickHelp":
+      "Starts you from a common layout with its fixtures in place. You can change anything after.",
+    "studio.room.pipesHere": "Pipes",
     "studio.room.pipes": "Where are the pipes?",
     "studio.room.pipesHelp":
       "Tap each wall the water and drain pipes come in through. Usually it's the wall the toilet is on, plus the tub's wall if it's on another one.",
@@ -1121,6 +1128,12 @@
     "riley.step.designOwner": "Here's your design in full. Save it as a project, or download the PDF for your client.",
     "riley.step.estimateOwnerDefaults":
       "Here's what it adds up to, at default sample prices for now: set your own labor prices on the account page and this follows them. Save it as a project, or download the PDF for your client.",
+    "riley.q.size": "Let's start with your room. How wide and how long is it, wall to wall?",
+    "riley.q.pipes": "Now tap the walls your pipes are in. I'll mark them with pipes in the room.",
+    "riley.q.door": "Which wall is the door on?",
+    "riley.q.floor": "First the floor. Tap one and you'll see it in the room.",
+    "riley.q.walls": "Now the walls: paint, tile, or both.",
+    "riley.q.ceiling": "Last, the ceiling: painted or left as it is.",
     "riley.simple.room":
       "Let's start with your room. Pick one like yours, set the size, then tap the walls your pipes are in.",
     "riley.simple.layout":

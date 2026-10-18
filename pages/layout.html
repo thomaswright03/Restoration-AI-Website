@@ -26,6 +26,12 @@
           var t = localStorage.getItem("pr_theme");
           if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
         } catch (e) {}
+        // Signed in (Supabase's sb-<project>-auth-token): visitor-only parts (data-nav-signed-out) stay hidden from the first paint.
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            if (/^sb-.+-auth-token$/.test(localStorage.key(i) || "")) document.documentElement.setAttribute("data-signed-in", "1");
+          }
+        } catch (e) {}
         // designer.html?embed=1 is the designer framed by our own project page (project.html): no product header or footer.
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();

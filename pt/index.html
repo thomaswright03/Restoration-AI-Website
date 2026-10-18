@@ -32,6 +32,13 @@
           var t = localStorage.getItem("pr_theme");
           if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
         } catch (e) {}
+        // Signed in (Supabase's sb-<project>-auth-token): visitor-only parts (data-nav-signed-out) stay hidden from the first paint.
+        try {
+          for (var i = 0; i < localStorage.length; i++) {
+            if (/^sb-.+-auth-token$/.test(localStorage.key(i) || ""))
+              document.documentElement.setAttribute("data-signed-in", "1");
+          }
+        } catch (e) {}
         // designer.html?embed=1 is the designer framed by our own project page (project.html): no product header or footer.
         if (/[?&]embed=1\b/.test(location.search)) document.documentElement.setAttribute("data-embed", "1");
       })();
@@ -192,6 +199,29 @@
             </figcaption>
           </figure>
         </div>
+      </section>
+
+      <!-- The ad (videos/, retranscoded to 720p from Thomas's 1080p cut): for visitors only, hidden once signed in (js/script.js and the head script in layout.html). No autoplay; nothing loads until Play. -->
+      <section class="section video-section" data-nav-signed-out aria-labelledby="video-title">
+        <p class="eyebrow center">Veja em um minuto</p>
+        <h2 class="section-title" id="video-title">Room Designer 3D em ação</h2>
+        <figure class="video-frame">
+          <video
+            controls
+            playsinline
+            preload="none"
+            width="1280"
+            height="720"
+            poster="../images/video-poster.webp"
+            aria-label="Vídeo: um tour de um minuto pelo Room Designer 3D"
+          >
+            <source src="../videos/room-designer-3d-tour.mp4" type="video/mp4" />
+          </video>
+          <figcaption>
+            Projete o banheiro com o seu cliente, percorram juntos, mostre uma estimativa clara e veja os planos. A sua
+            primeira semana é grátis. Vídeo em inglês.
+          </figcaption>
+        </figure>
       </section>
 
       <section class="section" aria-labelledby="how-title">

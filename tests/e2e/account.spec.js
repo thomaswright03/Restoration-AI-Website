@@ -1177,3 +1177,22 @@ test("visitors see the free week on the home page and sign-up page; signed in, t
   await page.goto("/index.html");
   await expect(page.locator(".hero-offer")).toBeHidden();
 });
+
+test("visitors see the ad video on the home page, nothing loads before Play; signed in, it's gone", async ({
+  page,
+}) => {
+  await page.goto("/es/index.html?lang=es");
+  const video = page.locator(".video-section video");
+  await expect(video).toBeVisible();
+  await expect(video).toHaveAttribute("aria-label", /Room Designer 3D/);
+  await expect(video).toHaveAttribute("preload", "none");
+  expect(await video.evaluate((v) => v.autoplay)).toBe(false);
+  await expect(page.locator(".video-section figcaption")).toContainText("Video en inglés");
+  const src = await page.locator(".video-section source").getAttribute("src");
+  const res = await page.request.get(new URL(src || "", page.url()).href);
+  expect(res.ok()).toBe(true);
+
+  await page.evaluate(() => localStorage.setItem("sb-fakeproject-auth-token", "{}"));
+  await page.goto("/es/index.html");
+  await expect(page.locator(".video-section")).toBeHidden();
+});

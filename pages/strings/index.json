@@ -40,6 +40,18 @@
     "El paso de distribución: arrastre las piezas junto a las paredes, vea el plano de un vistazo y observe cómo la estimación se actualiza.",
     "A etapa de layout: arraste as peças junto às paredes, veja a planta de relance e acompanhe a estimativa mudar."
   ],
+  "index.video.eyebrow": ["See it in a minute", "Véalo en un minuto", "Veja em um minuto"],
+  "index.video.title": ["Room Designer 3D in action", "Room Designer 3D en acción", "Room Designer 3D em ação"],
+  "index.video.label": [
+    "Video: a one-minute tour of Room Designer 3D",
+    "Video: un recorrido de un minuto por Room Designer 3D",
+    "Vídeo: um tour de um minuto pelo Room Designer 3D"
+  ],
+  "index.video.caption": [
+    "Design the bathroom with your customer, walk through it together, show a clear estimate, and see the plans. Your first week is free.",
+    "Diseñe el baño con su cliente, recórranlo juntos, muestre una estimación clara y vea los planes. Su primera semana es gratis. Video en inglés.",
+    "Projete o banheiro com o seu cliente, percorram juntos, mostre uma estimativa clara e veja os planos. A sua primeira semana é grátis. Vídeo em inglês."
+  ],
   "index.how.eyebrow": ["How it works", "Cómo funciona", "Como funciona"],
   "index.how.title": ["Up and running in three steps", "Listo en tres pasos", "Pronto em três passos"],
   "index.how.1.title": ["Sign up", "Regístrese", "Cadastre-se"],

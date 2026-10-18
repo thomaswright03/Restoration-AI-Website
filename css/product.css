@@ -1666,3 +1666,37 @@ body:has(.studio-page) .nav {
 .plan-mini li {
   margin-bottom: var(--space-1);
 }
+
+/* ---------- The ad video, for visitors ---------- */
+.video-section {
+  padding-bottom: 0;
+}
+
+.video-frame {
+  max-width: 960px;
+  margin: var(--space-6) auto 0;
+}
+
+.video-frame video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-line);
+  background: #0b1530;
+}
+
+.video-frame figcaption {
+  margin: var(--space-4) auto 0;
+  max-width: 640px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
+}
+
+/* Signed in: the visitor-only parts stay hidden before js/script.js runs. */
+html[data-signed-in] [data-nav-signed-out],
+.video-section[hidden] {
+  display: none;
+}

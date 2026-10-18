@@ -35,6 +35,26 @@
         </div>
       </section>
 
+      <!-- The ad (videos/, retranscoded to 720p from Thomas's 1080p cut): for visitors only, hidden once signed in (js/script.js and the head script in layout.html). No autoplay; nothing loads until Play. -->
+      <section class="section video-section" data-nav-signed-out aria-labelledby="video-title">
+        <p class="eyebrow center">{{index.video.eyebrow}}</p>
+        <h2 class="section-title" id="video-title">{{index.video.title}}</h2>
+        <figure class="video-frame">
+          <video
+            controls
+            playsinline
+            preload="none"
+            width="1280"
+            height="720"
+            poster="{{@root}}images/video-poster.webp"
+            aria-label="{{index.video.label}}"
+          >
+            <source src="{{@root}}videos/room-designer-3d-tour.mp4" type="video/mp4" />
+          </video>
+          <figcaption>{{index.video.caption}}</figcaption>
+        </figure>
+      </section>
+
       <section class="section" aria-labelledby="how-title">
         <p class="eyebrow center">{{index.how.eyebrow}}</p>
         <h2 class="section-title" id="how-title">{{index.how.title}}</h2>

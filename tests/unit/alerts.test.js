@@ -141,3 +141,55 @@ test("alerts: a Resend rejection writes an alert-failed log line", async () => {
   assert.equal(failed.status, 403);
   assert.match(failed.message, /domain not verified/);
 });
+
+// api/alert-test.js: the owner's way to send one real test alert.
+const alertTest = require("../../api/alert-test.js");
+
+async function getAlertTest(url, testKey) {
+  const saved = process.env.ALERT_TEST_KEY;
+  if (testKey === undefined) delete process.env.ALERT_TEST_KEY;
+  else process.env.ALERT_TEST_KEY = testKey;
+  const res = fakeRes();
+  try {
+    await alertTest({ method: "GET", url, headers: { "x-vercel-id": "iad1::test" } }, res);
+  } finally {
+    if (saved === undefined) delete process.env.ALERT_TEST_KEY;
+    else process.env.ALERT_TEST_KEY = saved;
+  }
+  return res;
+}
+
+test("alert test: without ALERT_TEST_KEY or with a wrong key the route is a 404 and sends nothing", async () => {
+  const calls = await withAlerts(
+    "owner@example.com",
+    () => ({ ok: true }),
+    async () => {
+      assert.equal((await getAlertTest("/api/alert-test?key=anything", undefined)).statusCode, 404);
+      assert.equal((await getAlertTest("/api/alert-test", "secret-key")).statusCode, 404);
+      assert.equal((await getAlertTest("/api/alert-test?key=secret-kez", "secret-key")).statusCode, 404);
+    },
+  );
+  assert.equal(calls.length, 0);
+});
+
+test("alert test: the right key sends one test email through the alert path", async () => {
+  const calls = await withAlerts(
+    "owner@example.com",
+    () => ({ ok: true }),
+    async () => {
+      const res = await getAlertTest("/api/alert-test?key=secret-key", "secret-key");
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(JSON.parse(res.body), { requestId: "iad1::test", sent: true });
+    },
+  );
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].body.to, ["owner@example.com"]);
+  assert.match(calls[0].body.subject, /test on \/api\/alert-test/);
+  assert.match(calls[0].body.text, /alert emails work/);
+});
+
+test("alert test: only GET", async () => {
+  const res = fakeRes();
+  await alertTest({ method: "POST", url: "/api/alert-test", headers: {} }, res);
+  assert.equal(res.statusCode, 405);
+});

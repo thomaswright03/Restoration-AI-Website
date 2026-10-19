@@ -3554,10 +3554,16 @@ html[data-embed="1"] .studio-plan {
     margin-top: var(--space-1);
   }
 
+  /* The button keeps to one line where it fits and two at most (longer in
+     Spanish and Portuguese), never wider than the screen. */
+  .designer-intro-text {
+    min-width: 0;
+  }
+
   .studio-page .designer-intro .btn {
-    flex: 0 0 auto;
-    max-width: none;
-    white-space: nowrap;
+    flex: 0 1 auto;
+    max-width: 62%;
+    text-wrap: balance;
     padding-inline: var(--space-4);
   }
 

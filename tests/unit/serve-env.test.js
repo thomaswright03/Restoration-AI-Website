@@ -52,6 +52,7 @@ not a line
   // .env.example itself parses to exactly the variables the functions read.
   const example = parseEnvFile(fs.readFileSync(path.join(ROOT, ".env.example"), "utf8"));
   assert.deepEqual(Object.keys(example).sort(), [
+    "ALERT_WEBHOOK_URL",
     "PROMO_CODES",
     "SITE_URL",
     "STRIPE_API_VERSION",

@@ -68,8 +68,6 @@
     Painting_Price_Per_SqFt: 1.79,
 
     Plumbing_Price_Per_Point: 300,
-    No_Stack_Surcharge_Price: 1000,
-    Bad_Valve_Surcharge_Price: 400,
 
     Electrical_Price_Per_Point: 100,
     // Running a new drain line to a fixture away from the stack wall:
@@ -123,8 +121,6 @@
     drainRun: ["Drain_Run_Price_Per_Ft"],
     electrical: ["Electrical_Price_Per_Point"],
     plumbing: ["Plumbing_Price_Per_Point"],
-    noStack: ["No_Stack_Surcharge_Price"],
-    badValve: ["Bad_Valve_Surcharge_Price"],
   };
   FIXTURES.forEach(function (f) {
     LINE_PRICE_KEYS[f.key] = f.priceKey ? [f.priceKey] : ["Bathtub_Price", "Shower_Price"];
@@ -265,9 +261,7 @@
   //
   // values: { Bathroom_Width_Ft, Bathroom_Length_Ft, Bathroom_Height_Ft,
   //           (a shaped room: Floor_SqFt, Wall_Perimeter_Ft, Wall_Count),
-  //           <fixture>_Quantity..., Electrical_Points, Drain_Run_Ft,
-  //           and with includeTrade:
-  //           No_Stack_Surcharge_Included, Bad_Valve_Surcharge_Included }
+  //           <fixture>_Quantity..., Electrical_Points, Drain_Run_Ft }
   // scope:  { demolition: bool, floorFinish: "tile"|"flooring"|"none",
   //           walls: "tile"|"tileWet"|"paint"|"none", paintCeiling: bool }
   //         ("tileWet": tile around the tub, Wet_Wall_SqFt, and paint the
@@ -297,21 +291,6 @@
         rate: rate,
         cost: cost,
         detail: T("line.detail", { qty: formatQty(qty), unit: unit, rate: money(rate) }),
-      });
-    }
-
-    function addFlat(key, section, label, rate) {
-      rate = Number(rate) || 0;
-      if (rate <= 0) return;
-      lines.push({
-        key: key,
-        section: section,
-        label: label,
-        qty: 1,
-        unit: T("unit.flat"),
-        rate: rate,
-        cost: roundCents(rate),
-        detail: T("line.flatCharge"),
       });
     }
 
@@ -397,12 +376,6 @@
         T(fixtureCount === 1 ? "unit.point" : "unit.points"),
         prices.Plumbing_Price_Per_Point,
       );
-      if (values.No_Stack_Surcharge_Included === true) {
-        addFlat("noStack", plumbing, T("line.noStack"), prices.No_Stack_Surcharge_Price);
-      }
-      if (values.Bad_Valve_Surcharge_Included === true) {
-        addFlat("badValve", plumbing, T("line.badValve"), prices.Bad_Valve_Surcharge_Price);
-      }
     }
 
     var subtotal = roundCents(

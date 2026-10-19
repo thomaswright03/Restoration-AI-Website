@@ -2,7 +2,7 @@
 
 // The estimate math, on the path the studio runs: computeEstimate() with
 // includeTrade (every trade priced: plumbing points, electrical points,
-// drain line, surcharges when flagged) at the business's prices.
+// drain line) at the business's prices.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -10,7 +10,7 @@ const P = require("../../js/bathroom-pricing.js");
 
 const NOTHING = { demolition: false, floorFinish: "none", walls: "none", paintCeiling: false };
 const ROOM_5x8x8 = { Bathroom_Width_Ft: 5, Bathroom_Length_Ft: 8, Bathroom_Height_Ft: 8 };
-const TRADE_KEYS = ["plumbing", "noStack", "badValve", "electrical", "drainRun"];
+const TRADE_KEYS = ["plumbing", "electrical", "drainRun"];
 
 function line(result, key) {
   return result.lines.find((l) => l.key === key);
@@ -161,8 +161,6 @@ test("across a table of inputs, the trade lines are exactly the plumbing points,
     const withTrade = Object.assign({}, values, {
       Electrical_Points: 3,
       Drain_Run_Ft: 2,
-      No_Stack_Surcharge_Included: true,
-      Bad_Valve_Surcharge_Included: true,
     });
     const r = studioEstimate(withTrade, scope);
     const fixtures = P.plumbingFixtureCount(values);
@@ -172,8 +170,6 @@ test("across a table of inputs, the trade lines are exactly the plumbing points,
     else assert.equal(line(r, "plumbing"), undefined, JSON.stringify(values));
     assert.equal(line(r, "electrical").cost, 300);
     assert.equal(line(r, "drainRun").cost, 190);
-    assert.equal(line(r, "noStack").cost, 1000);
-    assert.equal(line(r, "badValve").cost, 400);
     // The subtotal is exactly the sum of the lines, and the trade lines are
     // the only lines a design's fixtures and finishes don't produce.
     const sum = P.roundCents(r.lines.reduce((s, l) => s + l.cost, 0));
@@ -184,26 +180,22 @@ test("across a table of inputs, the trade lines are exactly the plumbing points,
       plain.lines.filter((l) => !TRADE_KEYS.includes(l.key)),
       "same lines, same order: " + JSON.stringify(values),
     );
-    assert.ok(plain.lines.every((l) => !["noStack", "badValve", "electrical", "drainRun"].includes(l.key)));
+    assert.ok(plain.lines.every((l) => !["electrical", "drainRun"].includes(l.key)));
   }
 });
 
-test("plumbing is one point per toilet, sink, shower and bathtub, plus surcharges only when flagged", () => {
+test("plumbing is one point per toilet, sink, shower and bathtub", () => {
   const values = {
     Toilet_Quantity: 1,
     Sink_Quantity: 2,
     Shower_Quantity: 1,
     Bathtub_Quantity: 1,
     Electrical_Points: 4,
-    No_Stack_Surcharge_Included: true,
-    Bad_Valve_Surcharge_Included: false,
   };
   const r = studioEstimate(values, NOTHING);
   assert.equal(line(r, "plumbing").qty, 5);
   assert.equal(line(r, "plumbing").cost, 1500);
   assert.equal(line(r, "plumbing").detail, "5 points × $300.00");
-  assert.equal(line(r, "noStack").cost, 1000);
-  assert.equal(line(r, "badValve"), undefined);
   assert.equal(line(r, "electrical").cost, 400);
   assert.equal(r.plumbingFixtureCount, 5);
   assert.equal(r.plumbingIncluded, true);
@@ -330,7 +322,6 @@ test("every estimate line names the owner's price it is at (for 'sample rates fo
     Bathtub_Quantity: 1,
     Electrical_Points: 2,
     Drain_Run_Ft: 3,
-    No_Stack_Surcharge_Included: true,
   };
   const r = P.computeEstimate(values, scope, { includeTrade: true, prices: P.DEFAULT_PRICES });
   for (const line of r.lines) {

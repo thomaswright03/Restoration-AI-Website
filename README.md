@@ -73,7 +73,7 @@ Start with Stripe test keys; switch to live keys once a test sign-up, checkout a
 1. Edit `supabase/schema.sql` additively (new columns with defaults, new tables, replaced functions). Never rename or drop in the same change that the code starts relying on something new.
 2. Run the file in the SQL Editor **before** merging code that needs the change, so the old code and the new both work against the database (the functions answer `{ "error": "setup" }` with a 503 when a table they need is missing).
 3. Merge the code. If it has to be rolled back, the schema can stay as it is: additive changes are harmless to older code.
-4. To undo a schema change, write the reverse as its own statements (`alter table ... drop column if exists ...`), run them once in the SQL Editor, and remove the forward statements from `schema.sql` in the same commit, so a fresh database and an existing one end up the same. Take a backup first (Supabase > Database > Backups) when a drop loses data.
+4. To undo a schema change, write the reverse as its own statements (`alter table ... drop column if exists ...`), run them once in the SQL Editor, and remove the forward statements from `schema.sql` in the same commit, so a fresh database and an existing one end up the same. Take a backup first when a drop loses data: run **Actions > Database backup > Run workflow** (the weekly encrypted backup, `docs/backups.md`; the Free plan has no Supabase backups).
 
 The retired `subscriptions.website` column and the `leads` table are kept this way: nothing writes them, and dropping them is a one-line reverse step once the old requests have been dealt with.
 

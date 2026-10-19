@@ -1,8 +1,9 @@
-# Live check: Stripe, Supabase and the kill switch (test mode)
+# Live check: Stripe, Supabase and the kill switch (live mode)
 
 A by-hand run of the money and database paths against the live site
-(https://restoration-ai-website-nu.vercel.app) with Stripe in **Test mode**.
-No real card is charged. Log each run below with its date, who ran it, and
+(https://restoration-ai-website-nu.vercel.app) with Stripe in **Live mode** since 2026-10-17 (the first rows below were run
+in Test mode, with no real card charged; the live-mode purchase and refund are
+logged further down). Use Test mode only on a preview with `sk_test_` keys. Log each run below with its date, who ran it, and
 what happened at each step.
 
 Before starting: Vercel's `STRIPE_SECRET_KEY` begins `sk_test_`, and

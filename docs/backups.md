@@ -13,6 +13,8 @@ Then **Actions > Database backup > Run workflow** once to check it works.
 
 GitHub turns scheduled workflows off after 60 days with no commits to the repo; it emails first, and one click re-enables it.
 
+`.github/workflows/backup-heartbeat.yml` runs daily at 15:43 UTC and fails (GitHub emails the owner) if the last successful backup is more than 36 hours old, so a schedule that silently stops is noticed.
+
 ## Restoring
 
 1. **Actions > Database backup**, open a run, download the artifact and unzip it to get `db-backup-<date>.tar.gz.gpg`.
@@ -41,4 +43,6 @@ GitHub turns scheduled workflows off after 60 days with no commits to the repo; 
 
 ## Status
 
-Every backup run rehearses the restore on its own (`scripts/restore-check.sh`, the last step of `.github/workflows/backup.yml`): it decrypts the file it just uploaded, restores it into an empty Postgres 17 in the same order as the steps above, and fails the run (GitHub emails the failure) unless every table comes back with the row count the live database had when the backup was taken (`scripts/db-counts.sh`, stored inside the encrypted file as `counts.txt`). The log shows only table names and "match", never counts, since the repo is public. The first passing run is recorded in `docs/live-check.md`. A full drill into a new Supabase project (steps above) is still worth doing once before relying on it in an emergency.
+Every backup run rehearses a restore on its own (`scripts/restore-check.sh`, the last step of `.github/workflows/backup.yml`): it decrypts the file it just uploaded, restores it into an empty Postgres 17, and fails the run (GitHub emails the failure) unless every table comes back with the row count the live database had when the backup was taken (`scripts/db-counts.sh`, stored inside the encrypted file as `counts.txt`). The log shows only table names and "match", never counts, since the repo is public. The first passing run is recorded in `docs/live-check.md`.
+
+**What the rehearsal does not prove.** It is not the same procedure as the steps above. It loads the dumps in sections (pre-data, then rows with `session_replication_role=replica`, then post-data) into a plain Postgres with stand-ins for Supabase's roles, `auth.uid()` and `auth.users`/`auth.identities` definitions, and it never runs `supabase/schema.sql` or goes through a Supabase pooler. So it proves the dumps are complete, readable and satisfy every key, index, policy and trigger. The documented Supabase path (schema.sql, then data-only restores through the pooler with triggers off) has **never been run end to end**, and the Free plan's project limit means there is no scratch Supabase project to run it in. Run that drill once (steps above, into a new project after deleting an unused one, or after upgrading) and record it in `docs/live-check.md`; until then treat the documented path as untested.

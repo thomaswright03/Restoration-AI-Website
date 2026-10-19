@@ -44,3 +44,10 @@ Done this round:
 - live-check.md has live-mode, backup and schema rows (from owner report). Restore rehearsal still open.
 - 2026-10-19 fix round 2: STATE.md formatted (run `npx prettier --write STATE.md` after editing it); sendAlert logs `alert-failed` and all logError calls are awaited; backup is daily with auth limited to users+identities; docs/backups.md restore uses session_replication_role=replica (UNTESTED, needs a scratch Supabase project), RPO 24 h / RTO 1-2 h; Latest update card rewritten. Open for Thomas: restore rehearsal, one real test alert in live-check.md, branch protection, WebKit/screenshots, studio.js split.
 - Legacy leads card/table kept: removal drops live data, needs owner OK.
+
+## Excellence fix round 3 (last grade 74)
+
+- Phone designer (css/studio.css, end): at <=600px the room strip is 24svh, Riley clamps to 2 lines, banner button drops under its text. UNVERIFIED in a browser (no node_modules in this sandbox): check 390x844 shows step, question, Next.
+- docs/backups.md now says plainly the rehearsal differs from the documented Supabase restore, which has never been run; docs/live-check.md retitled for live mode.
+- New .github/workflows/backup-heartbeat.yml fails if the last good backup is >36 h old.
+- Still deferred by owner: studio.js split/strict types, WebKit + screenshots, leads removal, 12 MB video in git history.

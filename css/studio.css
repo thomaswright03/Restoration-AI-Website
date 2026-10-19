@@ -3511,3 +3511,36 @@ html[data-embed="1"] .studio-plan {
     max-width: 160px;
   }
 }
+
+/* ---------- Phones: the question is on the first screen ---------- */
+/* At 390x844 the room is a strip (not 38% of the screen), Riley keeps to two
+   lines, and the banner's button drops under its text instead of wrapping
+   into a narrow column, so the step, its question and Next are all in view. */
+@media (max-width: 600px) {
+  .studio-room,
+  .studio-plan {
+    height: 24svh;
+    min-height: 168px;
+  }
+
+  .studio-riley.is-under {
+    margin-top: var(--space-1);
+  }
+
+  .studio-riley.is-under .riley-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .studio-banner {
+    flex-wrap: wrap;
+  }
+
+  .studio-banner .btn {
+    flex: 1 0 100%;
+    white-space: normal;
+  }
+}

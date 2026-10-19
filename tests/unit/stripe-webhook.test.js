@@ -417,13 +417,14 @@ test("webhook: a second live subscription for the same account is cancelled (the
   const alerts = [];
   const stripeAndDb = global.fetch;
   global.fetch = async (url, opts) => {
-    if (new URL(url).host === "alerts.example") {
+    if (new URL(url).host === "api.resend.com") {
       alerts.push(JSON.parse(opts.body).text);
       return reply(200);
     }
     return stripeAndDb(url, opts);
   };
-  process.env.ALERT_WEBHOOK_URL = "https://alerts.example/hook";
+  process.env.ALERT_EMAIL = "owner@example.com";
+  process.env.RESEND_API_KEY = "re_test";
   const { value: res, warned } = await quietWarn(() =>
     post(
       event("checkout.session.completed", {
@@ -445,7 +446,8 @@ test("webhook: a second live subscription for the same account is cancelled (the
   assert.equal(line.kept, "sub_first");
   assert.equal(line.cancelled, "sub_second");
   assert.equal(line.ownerId, OWNER);
-  delete process.env.ALERT_WEBHOOK_URL;
+  delete process.env.ALERT_EMAIL;
+  delete process.env.RESEND_API_KEY;
   assert.equal(alerts.length, 1);
   assert.match(alerts[0], /duplicate-subscription/);
   assert.match(alerts[0], /cancelling the newer one \(sub_second\) and keeping sub_first/);

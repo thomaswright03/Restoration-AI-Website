@@ -128,42 +128,49 @@ function requestId(req) {
   return req.__requestId;
 }
 
-// Alerts. With ALERT_WEBHOOK_URL set (a Slack or Discord incoming webhook, or
-// anything that takes a JSON POST), every error line, and the billing
-// warnings that need the owner (a duplicate subscription), is also posted
-// there as one short message, so a failure reaches a phone and not only the
-// Vercel log. At most one alert per route and error word per ALERT_EVERY_MS
-// on one instance, so an outage sends a few messages, not hundreds. Waits
-// at most ALERT_TIMEOUT_MS and never throws: an alert that can't be sent
-// doesn't change the answer the request gets.
+// Alerts. With ALERT_EMAIL and RESEND_API_KEY set, every error line, and the
+// billing warnings that need the owner (a duplicate subscription), is also
+// emailed to ALERT_EMAIL through Resend (resend.com), so a failure reaches
+// the owner and not only the Vercel log. The sender is ALERT_EMAIL_FROM, or
+// Resend's onboarding@resend.dev, which delivers only to the Resend
+// account's own address until a domain is verified there. At most one
+// alert per route and error word per ALERT_EVERY_MS on one instance, so an
+// outage sends a few emails, not hundreds. Waits at most ALERT_TIMEOUT_MS
+// and never throws: an alert that can't be sent doesn't change the answer
+// the request gets.
 const ALERT_TIMEOUT_MS = 1000;
 const ALERT_EVERY_MS = 10 * 60 * 1000;
+const ALERT_FROM = "Room Designer 3D <onboarding@resend.dev>";
 const alertsSent = new Map();
 
 async function sendAlert(line) {
-  const url = env("ALERT_WEBHOOK_URL");
-  if (!url || !line) return false;
-  const key = (line.route || "") + " " + (line.error || "");
+  const to = env("ALERT_EMAIL");
+  const key = env("RESEND_API_KEY");
+  if (!to || !key || !line) return false;
+  const throttle = (line.route || "") + " " + (line.error || "");
   const now = Date.now();
-  const last = alertsSent.get(key);
+  const last = alertsSent.get(throttle);
   if (last !== undefined && now - last < ALERT_EVERY_MS) return false;
-  alertsSent.set(key, now);
-  const text = (
+  alertsSent.set(throttle, now);
+  const subject = (
     "Room Designer 3D " +
     (line.level || "error") +
     ": " +
     (line.error || "server") +
-    (line.route ? " on " + line.route : "") +
-    ". " +
+    (line.route ? " on " + line.route : "")
+  ).slice(0, 200);
+  const text =
+    subject +
+    "\n\n" +
     (line.message || "") +
-    (line.requestId ? " (Reference: " + line.requestId + ")" : "")
-  ).slice(0, 1900);
+    (line.requestId ? "\n\nReference: " + line.requestId + " (search the Vercel logs for it)" : "") +
+    "\n\n" +
+    JSON.stringify(line, null, 2);
   try {
-    const res = await fetch(url, {
+    const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      // Slack reads "text", Discord reads "content"; each ignores the other.
-      body: JSON.stringify({ text, content: text }),
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + key },
+      body: JSON.stringify({ from: env("ALERT_EMAIL_FROM") || ALERT_FROM, to: [to], subject, text }),
       signal: AbortSignal.timeout(ALERT_TIMEOUT_MS),
     });
     return res.ok;

@@ -1,9 +1,9 @@
 "use strict";
 
-// api/_lib.js sendAlert: with ALERT_WEBHOOK_URL set, an error line is also
-// posted to that webhook (Slack "text", Discord "content"), at most once per
-// route and error word per ALERT_EVERY_MS, and a webhook that fails or hangs
-// never changes the request's answer. Unset, nothing is sent.
+// api/_lib.js sendAlert: with ALERT_EMAIL and RESEND_API_KEY set, an error
+// line is also emailed through Resend, at most once per route and error word
+// per ALERT_EVERY_MS, and a send that fails or hangs never changes the
+// request's answer. Unset, nothing is sent.
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -24,23 +24,30 @@ function fakeRes() {
   };
 }
 
-// Runs fn with ALERT_WEBHOOK_URL = url, global fetch stubbed by `reply`, and
-// console.error silenced; resolves the fetch calls made.
-async function withAlerts(url, reply, fn) {
-  const saved = { url: process.env.ALERT_WEBHOOK_URL, fetch: global.fetch, error: console.error };
+const VARS = ["ALERT_EMAIL", "RESEND_API_KEY", "ALERT_EMAIL_FROM"];
+
+// Runs fn with ALERT_EMAIL = to (and a Resend key), global fetch stubbed by
+// `reply`, and console.error silenced; resolves the fetch calls made.
+async function withAlerts(to, reply, fn) {
+  const saved = { env: VARS.map((k) => process.env[k]), fetch: global.fetch, error: console.error };
   const calls = [];
-  if (url === undefined) delete process.env.ALERT_WEBHOOK_URL;
-  else process.env.ALERT_WEBHOOK_URL = url;
+  VARS.forEach((k) => delete process.env[k]);
+  if (to !== undefined) {
+    process.env.ALERT_EMAIL = to;
+    process.env.RESEND_API_KEY = "re_test";
+  }
   global.fetch = async (u, opts) => {
-    calls.push({ url: u, body: JSON.parse(opts.body) });
+    calls.push({ url: u, auth: opts.headers.Authorization, body: JSON.parse(opts.body) });
     return reply();
   };
   console.error = () => {};
   try {
     await fn();
   } finally {
-    if (saved.url === undefined) delete process.env.ALERT_WEBHOOK_URL;
-    else process.env.ALERT_WEBHOOK_URL = saved.url;
+    VARS.forEach((k, i) => {
+      if (saved.env[i] === undefined) delete process.env[k];
+      else process.env[k] = saved.env[i];
+    });
     global.fetch = saved.fetch;
     console.error = saved.error;
   }
@@ -66,7 +73,7 @@ test("alerts: unset, a server error posts nothing", async () => {
 
 test("alerts: a server error is posted once with its route, cause and reference, then throttled", async () => {
   const calls = await withAlerts(
-    "https://hooks.example/alert",
+    "owner@example.com",
     () => ({ ok: true }),
     async () => {
       for (let i = 0; i < 3; i++) {
@@ -79,17 +86,19 @@ test("alerts: a server error is posted once with its route, cause and reference,
     },
   );
   assert.equal(calls.length, 2);
-  assert.equal(calls[0].url, "https://hooks.example/alert");
-  const { text, content } = calls[0].body;
-  assert.equal(text, content);
-  assert.match(text, /stripe on \/api\/alert-once/);
+  assert.equal(calls[0].url, "https://api.resend.com/emails");
+  assert.equal(calls[0].auth, "Bearer re_test");
+  const { to, from, subject, text } = calls[0].body;
+  assert.deepEqual(to, ["owner@example.com"]);
+  assert.match(from, /onboarding@resend\.dev/);
+  assert.match(subject, /stripe on \/api\/alert-once/);
   assert.match(text, /Stripe 503: down/);
   assert.match(text, /Reference: iad1::abc/);
 });
 
-test("alerts: a failing or rejecting webhook doesn't change the answer", async () => {
+test("alerts: a failing or rejected send doesn't change the answer", async () => {
   await withAlerts(
-    "https://hooks.example/alert",
+    "owner@example.com",
     () => ({ ok: false }),
     async () => {
       const res = fakeRes();
@@ -99,7 +108,7 @@ test("alerts: a failing or rejecting webhook doesn't change the answer", async (
     },
   );
   await withAlerts(
-    "https://hooks.example/alert",
+    "owner@example.com",
     () => {
       throw new Error("network");
     },

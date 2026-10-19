@@ -39,6 +39,8 @@ Done this round:
 - NOT done (need a browser/ops access or a large refactor): studio.js split, strictNullChecks, WebKit project, 4-width screenshots, alerting/restore/rollback/live Stripe check, video captions, custom domain, branch-protection confirmation. Thomas said to ignore "needs me" items.
 
 ## Excellence fix round 1 (2026-10-19)
+
 - CI browser suite now sharded 4 ways (ci.yml); confirm each shard <15 min on first run.
 - live-check.md has live-mode, backup and schema rows (from owner report). Restore rehearsal still open.
+- 2026-10-19 fix round 2: STATE.md formatted (run `npx prettier --write STATE.md` after editing it); sendAlert logs `alert-failed` and all logError calls are awaited; backup is daily with auth limited to users+identities; docs/backups.md restore uses session_replication_role=replica (UNTESTED, needs a scratch Supabase project), RPO 24 h / RTO 1-2 h; Latest update card rewritten. Open for Thomas: restore rehearsal, one real test alert in live-check.md, branch protection, WebKit/screenshots, studio.js split.
 - Legacy leads card/table kept: removal drops live data, needs owner OK.

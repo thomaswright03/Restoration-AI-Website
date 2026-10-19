@@ -62,7 +62,7 @@ async function switches(now = Date.now(), fresh = false) {
     if (/Supabase 404|PGRST20[25]|42P01|does not exist|Could not find/i.test(String(e && e.message))) {
       value = ALL_ON;
     } else {
-      logError(null, e, { route: "site_switches", error: "switches" });
+      await logError(null, e, { route: "site_switches", error: "switches" });
     }
   }
   cache = { at: now, value };

@@ -295,39 +295,24 @@
   "account.update.date": ["October 19, 2026", "19 de octubre de 2026", "19 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "Studio, Room, Products and Finishes: the simple studio asks one question at a time (size, pipes, door; each product list; floor, walls, ceiling). Next and Back move between questions.",
-    "Estudio, Habitación, Productos y Acabados: el estudio sencillo hace una pregunta a la vez (tamaño, tuberías, puerta; cada lista de productos; piso, paredes, techo). Siguiente y Atrás pasan entre preguntas.",
-    "Estúdio, Cômodo, Produtos e Acabamentos: o estúdio simples faz uma pergunta por vez (tamanho, tubulação, porta; cada lista de produtos; piso, paredes, teto). Avançar e Voltar passam entre as perguntas."
-  ],
-  "account.update.f2": [
-    "Studio, Room and Layout: walls with plumbing show a Pipes tag, pipe blue on the plan and pipes in the 3D view.",
-    "Estudio, Habitación y Distribución: las paredes con plomería muestran una etiqueta de Tuberías, azul en el plano y tuberías en la vista 3D.",
-    "Estúdio, Cômodo e Layout: paredes com hidráulica mostram uma etiqueta de Tubulação, azul na planta e tubos na vista 3D."
-  ],
-  "account.update.f3": [
-    "Top bar: FAQ moved to the footer.",
-    "Barra superior: las preguntas frecuentes pasaron al pie de página.",
-    "Barra superior: as perguntas frequentes foram para o rodapé."
-  ],
-  "account.update.f4": [
-    "Home, sign-up and demo pages: new accounts get Starter free for 7 days, no card; the home page has a short video tour.",
-    "Inicio, registro y demo: las cuentas nuevas reciben Starter gratis por 7 días, sin tarjeta; la página de inicio tiene un breve video.",
-    "Início, cadastro e demo: contas novas recebem o Starter grátis por 7 dias, sem cartão; a página inicial tem um vídeo curto."
-  ],
-  "account.update.f5": [
-    "Account: this Latest update section; the top bar now switches to My projects, Account and Log out as soon as you sign in.",
-    "Cuenta: esta sección de Última actualización; la barra superior cambia a Mis proyectos, Cuenta y Salir en cuanto inicia sesión.",
-    "Conta: esta seção de Última atualização; a barra superior passa para Meus projetos, Conta e Sair assim que você entra."
+    "No frontend changes in this round.",
+    "Sin cambios visibles en esta ronda.",
+    "Sem mudanças visíveis nesta rodada."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [
-    "The free week is granted at sign-up (one per person). If the database has not yet had its latest update, the designer still opens and plans are worked out without the free week; the problem is logged.",
-    "La semana gratis se otorga al registrarse (una por persona). Si la base de datos aún no tiene su última actualización, el diseñador abre igual y los planes se calculan sin la semana gratis; el problema queda registrado.",
-    "A semana grátis é concedida no cadastro (uma por pessoa). Se o banco de dados ainda não recebeu a última atualização, o projetista abre normalmente e os planos são calculados sem a semana grátis; o problema fica registrado."
+    "If something goes wrong on our side (a failed save, checkout or account call), the owner is now emailed straight away, and a failed alert is logged too.",
+    "Si algo falla de nuestro lado (un guardado, un pago o una consulta de cuenta), ahora se avisa por correo al propietario de inmediato, y una alerta fallida también queda registrada.",
+    "Se algo falhar do nosso lado (um salvamento, um pagamento ou uma consulta da conta), o proprietário agora é avisado por e-mail na hora, e um alerta que falhar também fica registrado."
   ],
   "account.update.o2": [
-    "Behind the scenes: the 3D room code is now type-checked.",
-    "Por dentro: el código de la habitación 3D ahora se revisa por tipos.",
-    "Por dentro: o código do cômodo 3D agora tem verificação de tipos."
+    "Your data is backed up every day, encrypted, and kept for 90 days.",
+    "Sus datos se copian cada día, cifrados, y se guardan 90 días.",
+    "Seus dados são copiados todos os dias, criptografados, e guardados por 90 dias."
+  ],
+  "account.update.o3": [
+    "Removed an unused surcharge feature from the estimate code. Prices and estimates are unchanged.",
+    "Se quitó del código de presupuestos una función de recargos que no se usaba. Los precios y presupuestos no cambian.",
+    "Removemos do código de orçamentos um recurso de sobretaxa que não era usado. Preços e orçamentos não mudam."
   ]
 }

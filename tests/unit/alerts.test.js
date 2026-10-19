@@ -120,3 +120,24 @@ test("alerts: a failing or rejected send doesn't change the answer", async () =>
     },
   );
 });
+
+test("alerts: a Resend rejection writes an alert-failed log line", async () => {
+  const lines = [];
+  const orig = console.error;
+  await withAlerts(
+    "owner@example.com",
+    () => ({ ok: false, status: 403, text: async () => "domain not verified" }),
+    async () => {
+      console.error = (m) => lines.push(String(m));
+      try {
+        assert.equal(await lib.sendAlert({ route: "/api/alert-403", error: "server", message: "x" }), false);
+      } finally {
+        console.error = orig;
+      }
+    },
+  );
+  const failed = lines.map((l) => JSON.parse(l)).find((l) => l.error === "alert-failed");
+  assert.ok(failed);
+  assert.equal(failed.status, 403);
+  assert.match(failed.message, /domain not verified/);
+});

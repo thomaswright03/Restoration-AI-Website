@@ -173,8 +173,33 @@ async function sendAlert(line) {
       body: JSON.stringify({ from: env("ALERT_EMAIL_FROM") || ALERT_FROM, to: [to], subject, text }),
       signal: AbortSignal.timeout(ALERT_TIMEOUT_MS),
     });
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = String(await res.text()).slice(0, 300);
+      } catch {
+        detail = "unreadable";
+      }
+      console.error(
+        JSON.stringify({
+          level: "error",
+          error: "alert-failed",
+          route: line.route || "",
+          status: res.status,
+          message: detail,
+        }),
+      );
+    }
     return res.ok;
-  } catch {
+  } catch (e) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        error: "alert-failed",
+        route: line.route || "",
+        message: String((e && e.message) || e).slice(0, 300),
+      }),
+    );
     return false;
   }
 }

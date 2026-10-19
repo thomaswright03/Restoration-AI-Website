@@ -1,12 +1,12 @@
 name: Database backup
 
-# Every Monday, a copy of the live Supabase database (the public tables and
+# Every day, a copy of the live Supabase database (the public tables and
 # the sign-in accounts), encrypted with BACKUP_PASSPHRASE, kept as a workflow
 # artifact for 90 days. The repo is public, so nothing unencrypted is ever
 # stored. How to restore: docs/backups.md.
 on:
   schedule:
-    - cron: "17 9 * * 1"
+    - cron: "17 9 * * *"
   workflow_dispatch:
 
 permissions:
@@ -48,8 +48,8 @@ jobs:
           mkdir dump
           # The app's tables, with their schema, policies and functions.
           $PG/pg_dump "$DB" --schema=public --no-owner --no-privileges -Fc -f dump/public.dump
-          # The sign-in accounts (rows only: a new Supabase project already has the auth tables).
-          $PG/pg_dump "$DB" --schema=auth --data-only -Fc -f dump/auth.dump
+          # The sign-in accounts (users and identities only; a new Supabase project already has the other auth tables).
+          $PG/pg_dump "$DB" --table=auth.users --table=auth.identities --data-only -Fc -f dump/auth.dump
           # A dump that can't be read back fails the run (and GitHub emails the failure).
           $PG/pg_restore --list dump/public.dump | grep -q "TABLE DATA public subscriptions"
           $PG/pg_restore --list dump/auth.dump | grep -q "TABLE DATA auth users"

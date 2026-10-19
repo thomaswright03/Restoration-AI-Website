@@ -37,3 +37,8 @@ Done this round:
 - Live DB has subscriptions.free_week_ends: CONFIRMED by Thomas 2026-10-19 (screenshot of the table).
 - 2026-10-19: email alerts (ALERT_EMAIL, RESEND_API_KEY, ALERT_EMAIL_FROM set in Vercel by Thomas); weekly encrypted DB backup workflow (.github/workflows/backup.yml, docs/backups.md; Supabase is on the Free plan with no backups).
 - NOT done (need a browser/ops access or a large refactor): studio.js split, strictNullChecks, WebKit project, 4-width screenshots, alerting/restore/rollback/live Stripe check, video captions, custom domain, branch-protection confirmation. Thomas said to ignore "needs me" items.
+
+## Excellence fix round 1 (2026-10-19)
+- CI browser suite now sharded 4 ways (ci.yml); confirm each shard <15 min on first run.
+- live-check.md has live-mode, backup and schema rows (from owner report). Restore rehearsal still open.
+- Legacy leads card/table kept: removal drops live data, needs owner OK.

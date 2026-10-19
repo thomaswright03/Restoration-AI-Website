@@ -56,3 +56,13 @@ jobs:
           name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7
+
+  # The one check main's branch protection requires (by this name, from before
+  # the suite was split into shards): green only when every shard passed.
+  all:
+    name: Lint, format, pages in sync, unit and browser tests
+    needs: checks
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: '[ "${{ needs.checks.result }}" = success ]'

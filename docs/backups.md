@@ -41,4 +41,4 @@ GitHub turns scheduled workflows off after 60 days with no commits to the repo; 
 
 ## Status
 
-The restore steps have not yet been rehearsed into a scratch project; record the date and the row counts in `docs/live-check.md` when they are.
+Every backup run rehearses the restore on its own (`scripts/restore-check.sh`, the last step of `.github/workflows/backup.yml`): it decrypts the file it just uploaded, restores it into an empty Postgres 17 in the same order as the steps above, and fails the run (GitHub emails the failure) unless every table comes back with the row count the live database had when the backup was taken (`scripts/db-counts.sh`, stored inside the encrypted file as `counts.txt`). The log shows only table names and "match", never counts, since the repo is public. The first passing run is recorded in `docs/live-check.md`. A full drill into a new Supabase project (steps above) is still worth doing once before relying on it in an emergency.

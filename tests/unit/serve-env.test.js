@@ -54,6 +54,7 @@ not a line
   assert.deepEqual(Object.keys(example).sort(), [
     "ALERT_EMAIL",
     "ALERT_EMAIL_FROM",
+    "ALERT_TEST_KEY",
     "PROMO_CODES",
     "RESEND_API_KEY",
     "SITE_URL",

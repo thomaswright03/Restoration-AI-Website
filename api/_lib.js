@@ -75,9 +75,13 @@ async function fetchWithTimeout(url, options = {}, ms = UPSTREAM_TIMEOUT_MS) {
     timedOut = true;
     throw upstreamError(new Error("request budget spent"));
   }
+  const budget = budgetStore.getStore();
   const timer = setTimeout(
     () => {
       timedOut = true;
+      // A timer can fire a millisecond before the deadline by the clock; when
+      // it was the budget's, the budget is spent now, so no later call starts.
+      if (budget && left <= ms) budget.deadline = Math.min(budget.deadline, Date.now());
       controller.abort();
     },
     Math.min(ms, left),

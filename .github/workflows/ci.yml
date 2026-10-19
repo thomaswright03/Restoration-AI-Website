@@ -9,10 +9,14 @@ permissions:
 
 jobs:
   checks:
-    name: Lint, format, pages in sync, unit and browser tests
+    name: Checks and browser tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    # The browser suite runs one worker at a time and takes about 28 minutes on its own.
-    timeout-minutes: 45
+    # The browser suite takes about 26 minutes in one piece; four shards keep each job under 15.
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
 
@@ -43,12 +47,12 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: End-to-end tests
-        run: npm run test:e2e
+        run: npx playwright test --shard=${{ matrix.shard }}/4
 
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: playwright-report/
           retention-days: 7

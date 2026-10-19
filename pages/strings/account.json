@@ -314,5 +314,10 @@
     "Removed an unused surcharge feature from the estimate code. Prices and estimates are unchanged.",
     "Se quitó del código de presupuestos una función de recargos que no se usaba. Los precios y presupuestos no cambian.",
     "Removemos do código de orçamentos um recurso de sobretaxa que não era usado. Preços e orçamentos não mudam."
+  ],
+  "account.update.o4": [
+    "Every daily backup is now restored into an empty test database and checked table by table, and the owner can send a test alert to confirm emails arrive.",
+    "Cada copia diaria ahora se restaura en una base de datos de prueba vacía y se comprueba tabla por tabla, y el propietario puede enviar una alerta de prueba para confirmar que los correos llegan.",
+    "Cada cópia diária agora é restaurada em um banco de dados de teste vazio e conferida tabela por tabela, e o proprietário pode enviar um alerta de teste para confirmar que os e-mails chegam."
   ]
 }

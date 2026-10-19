@@ -1,0 +1,67 @@
+name: Database backup
+
+# Every Monday, a copy of the live Supabase database (the public tables and
+# the sign-in accounts), encrypted with BACKUP_PASSPHRASE, kept as a workflow
+# artifact for 90 days. The repo is public, so nothing unencrypted is ever
+# stored. How to restore: docs/backups.md.
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Encrypted database backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check the secrets are set
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ] || [ -z "$BACKUP_PASSPHRASE" ]; then
+            echo "::error::Set the SUPABASE_DB_URL and BACKUP_PASSPHRASE repository secrets (docs/backups.md)."
+            exit 1
+          fi
+
+      # pg_dump must be at least the server's version; Supabase runs Postgres 15 or 17.
+      - name: Install pg_dump 17
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Dump the database
+        run: |
+          set -euo pipefail
+          PG=/usr/lib/postgresql/17/bin
+          mkdir dump
+          # The app's tables, with their schema, policies and functions.
+          $PG/pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges -Fc -f dump/public.dump
+          # The sign-in accounts (rows only: a new Supabase project already has the auth tables).
+          $PG/pg_dump "$SUPABASE_DB_URL" --schema=auth --data-only -Fc -f dump/auth.dump
+          # A dump that can't be read back fails the run (and GitHub emails the failure).
+          $PG/pg_restore --list dump/public.dump | grep -q "TABLE DATA public subscriptions"
+          $PG/pg_restore --list dump/auth.dump | grep -q "TABLE DATA auth users"
+          ls -l dump
+
+      - name: Encrypt
+        run: |
+          set -euo pipefail
+          name="db-backup-$(date -u +%Y-%m-%d)"
+          tar -czf - dump | gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 \
+            --passphrase-file <(printf %s "$BACKUP_PASSPHRASE") -o "$name.tar.gz.gpg"
+          rm -rf dump
+          echo "NAME=$name" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}
+          path: ${{ env.NAME }}.tar.gz.gpg
+          retention-days: 90
+          if-no-files-found: error

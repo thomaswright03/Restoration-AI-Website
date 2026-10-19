@@ -41,7 +41,6 @@
     "unit.units": ["units", "unidades", "unidades"],
     "unit.point": ["point", "punto", "ponto"],
     "unit.points": ["points", "puntos", "pontos"],
-    "unit.flat": ["flat", "fijo", "fixo"],
     "unit.foot": ["foot", "pie", "pé"],
     "unit.feet": ["feet", "pies", "pés"],
     "unit.gallon": ["gallon", "galón", "galão"],
@@ -99,7 +98,6 @@
 
     // ---------- estimate: priced lines ----------
     "line.detail": ["{qty} {unit} × {rate}", "{qty} {unit} × {rate}", "{qty} {unit} × {rate}"],
-    "line.flatCharge": ["Flat charge", "Cargo fijo", "Valor fixo"],
     "section.preparation": ["Preparation", "Preparación", "Preparação"],
     "section.fixtures": ["Fixtures", "Instalaciones", "Instalações"],
     "section.surfaces": ["Surfaces", "Superficies", "Superfícies"],
@@ -121,12 +119,6 @@
     "line.wallPaint": ["Painting (walls)", "Pintura (paredes)", "Pintura (paredes)"],
     "line.ceilingPaint": ["Painting (ceiling)", "Pintura (techo)", "Pintura (teto)"],
     "line.plumbingPoints": ["Plumbing points", "Puntos de plomería", "Pontos hidráulicos"],
-    "line.noStack": [
-      "No existing plumbing stack",
-      "Sin bajante de plomería existente",
-      "Sem prumada hidráulica existente",
-    ],
-    "line.badValve": ["Bad valve replacement", "Cambio de válvula dañada", "Troca de registro com defeito"],
     "line.electricalPoints": ["Electrical points", "Puntos eléctricos", "Pontos elétricos"],
     "line.drainRun": [
       "New drain line to the nearest plumbing wall",

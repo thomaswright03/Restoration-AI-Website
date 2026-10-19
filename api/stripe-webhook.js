@@ -29,6 +29,7 @@ const {
   verifyStripeSignature,
   readRawBody,
   refuseMethod,
+  sendAlert,
 } = require("./_lib.js");
 const { LIVE_STATUSES, saveSubscription, subscriptionOf } = require("./_subscriptions.js");
 
@@ -64,16 +65,22 @@ async function recordSubscription(ownerId, sub) {
     if (other) {
       const newer = (sub.created || 0) >= (other.created || 0) ? sub : other;
       const older = newer === sub ? other : sub;
-      console.warn(
-        JSON.stringify({
-          level: "warn",
-          error: "duplicate-subscription",
-          message: "Two live subscriptions for one account: cancelling the newer one.",
-          ownerId,
-          kept: older.id,
-          cancelled: newer.id,
-        }),
-      );
+      const line = {
+        level: "warn",
+        route: "/api/stripe-webhook",
+        error: "duplicate-subscription",
+        message:
+          "Two live subscriptions for one account: cancelling the newer one (" +
+          newer.id +
+          ") and keeping " +
+          older.id +
+          ". Refund the cancelled one's charge in Stripe if it was billed.",
+        ownerId,
+        kept: older.id,
+        cancelled: newer.id,
+      };
+      console.warn(JSON.stringify(line));
+      await sendAlert(line);
       await stripe("subscriptions/" + encodeURIComponent(newer.id), undefined, "DELETE");
       return saveSubscription(ownerId, older);
     }

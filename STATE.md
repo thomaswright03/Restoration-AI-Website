@@ -34,5 +34,6 @@ Done this round:
 ## 2026-10-18 Excellence fix round 2 (last grade 73)
 
 - Done: account page "Latest update" card (en/es/pt, frontend changes first); subscriptionOf() retries without free_week_ends when the column is missing and logs `schema-missing-free-week` (unit test in business-preview.test.js); nav follows sign-in/out without reload (js/script.js watches sb-*-auth-token writes; e2e in account.spec.js); local e2e workers = cores/2 (max 3), expect timeout 15 s everywhere.
-- Whether the live DB has free_week_ends: UNKNOWN as of 2026-10-18 (Thomas to confirm; code now tolerates either).
+- Live DB has subscriptions.free_week_ends: CONFIRMED by Thomas 2026-10-19 (screenshot of the table).
+- 2026-10-19: email alerts (ALERT_EMAIL, RESEND_API_KEY, ALERT_EMAIL_FROM set in Vercel by Thomas); weekly encrypted DB backup workflow (.github/workflows/backup.yml, docs/backups.md; Supabase is on the Free plan with no backups).
 - NOT done (need a browser/ops access or a large refactor): studio.js split, strictNullChecks, WebKit project, 4-width screenshots, alerting/restore/rollback/live Stripe check, video captions, custom domain, branch-protection confirmation. Thomas said to ignore "needs me" items.

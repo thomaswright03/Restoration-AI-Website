@@ -2561,7 +2561,10 @@ main.studio-page.solid-header {
     padding-bottom: var(--space-2);
   }
 
-  .designer-intro-text > span:last-child {
+  /* One line on phones: the badge, the title and a short button. The long
+     description and the free-week line say what the button already says. */
+  .designer-intro-text > span:not(.designer-intro-badge),
+  .designer-intro-text > strong[data-nav-signed-out] {
     display: none;
   }
 
@@ -3513,26 +3516,59 @@ html[data-embed="1"] .studio-plan {
 }
 
 /* ---------- Phones: the question is on the first screen ---------- */
-/* At 390x844 the room is a strip (not 38% of the screen), Riley keeps to two
-   lines, and the banner's button drops under its text instead of wrapping
-   into a narrow column, so the step, its question and Next are all in view. */
+/* At 390x844 the room is a strip (not 38% of the screen), the demo ribbon is
+   one line, Riley's question shows in full, and the banner's button drops
+   under its text instead of wrapping into a narrow column, so the step, its
+   question and Next are all in view. */
 @media (max-width: 600px) {
   .studio-room,
   .studio-plan {
-    height: 24svh;
-    min-height: 168px;
+    height: 20svh;
+    min-height: 150px;
+  }
+
+  .studio-step {
+    gap: var(--space-3);
+    padding-top: var(--space-3);
+  }
+
+  /* Riley already says what the Room step asks, so its intro waits for
+     larger screens and the size question itself is in view. */
+  .studio-step.is-room .studio-step-intro {
+    display: none;
+  }
+
+  /* The fixed bar already names the step ("Step 1 of 6 · Your room"), so its
+     heading stays for screen readers only. */
+  .studio-step-head h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
   }
 
   .studio-riley.is-under {
     margin-top: var(--space-1);
   }
 
-  .studio-riley.is-under .riley-text {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+  .studio-page .designer-intro .btn {
+    flex: 0 0 auto;
+    max-width: none;
+    white-space: nowrap;
+    padding-inline: var(--space-4);
+  }
+
+  /* The fixed step bar is one row: "Step 1 of 6 · Your room" beside the
+     buttons, not over them. */
+  .studio-step-nav {
+    align-items: center;
+  }
+
+  .studio-step-nav-title {
+    flex: 1 1 8rem;
   }
 
   .studio-banner {

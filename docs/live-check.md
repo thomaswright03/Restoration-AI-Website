@@ -6,8 +6,9 @@ in Test mode, with no real card charged; the live-mode purchase and refund are
 logged further down). Use Test mode only on a preview with `sk_test_` keys. Log each run below with its date, who ran it, and
 what happened at each step.
 
-Before starting: Vercel's `STRIPE_SECRET_KEY` begins `sk_test_`, and
-`supabase/schema.sql` has been re-run (it adds `used_trials`).
+Before starting: on the live site Vercel's `STRIPE_SECRET_KEY` begins `sk_live_`, so any purchase is a real
+charge (refund it afterwards). A run with the `4242` test card below needs a preview deployment whose key begins
+`sk_test_`. Also check `supabase/schema.sql` has been re-run (it adds `used_trials`).
 
 Use a fresh test email for the new account, e.g. `you+check1@gmail.com`
 (Gmail delivers +aliases to the same inbox). Card: `4242 4242 4242 4242`,

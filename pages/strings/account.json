@@ -295,9 +295,9 @@
   "account.update.date": ["October 19, 2026", "19 de octubre de 2026", "19 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "No frontend changes in this round.",
-    "Sin cambios visibles en esta ronda.",
-    "Sem mudanças visíveis nesta rodada."
+    "On phones, the designer's first screen now shows Riley's whole opening question and the room-size question itself: the demo banner is one line, the 3D room is a shorter strip, and the bottom bar puts the step name beside Next.",
+    "En teléfonos, la primera pantalla del diseñador ahora muestra completa la primera pregunta de Riley y la pregunta del tamaño del baño: el aviso de la demo ocupa una línea, la habitación 3D es una franja más baja y la barra inferior pone el nombre del paso junto a Siguiente.",
+    "No celular, a primeira tela do projetista agora mostra inteira a primeira pergunta da Riley e a pergunta do tamanho do banheiro: o aviso da demo ocupa uma linha, o banheiro 3D é uma faixa mais baixa e a barra de baixo põe o nome da etapa ao lado de Próximo."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [

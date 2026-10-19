@@ -40,11 +40,16 @@ jobs:
         run: |
           set -euo pipefail
           PG=/usr/lib/postgresql/17/bin
+          # A secret pasted with a trailing newline or spaces still works.
+          DB=$(printf %s "$SUPABASE_DB_URL" | tr -d '\r\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
+          case "$DB" in
+            *"[YOUR-PASSWORD]"*) echo "::error::SUPABASE_DB_URL still has [YOUR-PASSWORD] in it: put the database password there."; exit 1 ;;
+          esac
           mkdir dump
           # The app's tables, with their schema, policies and functions.
-          $PG/pg_dump "$SUPABASE_DB_URL" --schema=public --no-owner --no-privileges -Fc -f dump/public.dump
+          $PG/pg_dump "$DB" --schema=public --no-owner --no-privileges -Fc -f dump/public.dump
           # The sign-in accounts (rows only: a new Supabase project already has the auth tables).
-          $PG/pg_dump "$SUPABASE_DB_URL" --schema=auth --data-only -Fc -f dump/auth.dump
+          $PG/pg_dump "$DB" --schema=auth --data-only -Fc -f dump/auth.dump
           # A dump that can't be read back fails the run (and GitHub emails the failure).
           $PG/pg_restore --list dump/public.dump | grep -q "TABLE DATA public subscriptions"
           $PG/pg_restore --list dump/auth.dump | grep -q "TABLE DATA auth users"

@@ -25,7 +25,7 @@
     if (!iso) return "never";
     var d = new Date(iso);
     if (isNaN(d.getTime())) return "unknown";
-    var opts = { dateStyle: "medium", timeStyle: "short" };
+    var opts = { dateStyle: "medium", timeStyle: "long" };
     if (zone) opts.timeZone = zone;
     try {
       return d.toLocaleString("en-US", opts);
@@ -75,7 +75,9 @@
         cell(tr, when(f.last_checked));
         cell(tr, when(f.last_success));
         cell(tr, f.next_expected_run ? when(f.next_expected_run) : "");
-        cell(tr, f.detail || "");
+        // Details can carry ISO times (deploy time, oldest undelivered
+        // event); show them like the other columns, with their zone.
+        cell(tr, (f.detail || "").replace(/\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d(\.\d+)?)?(Z|[+-]\d\d:\d\d)/g, when));
         body.appendChild(tr);
       });
       table.appendChild(body);

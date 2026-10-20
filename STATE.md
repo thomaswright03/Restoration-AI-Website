@@ -23,6 +23,7 @@
 - Legal items are Thomas's: DPAs, consent checkbox, sub-processor list, blank owner/privacy fields in site-config.json.
 
 ## Round 3 (grade fix)
+
 - Latest update card rewritten for the PR #20 round (en/es/pt; source pages/account.html + pages/strings/account.json).
 - Deployed version row is Warning when the deploy time isn't found (tested); 20-type webhook limit commented.
 - Still open (owner): Vercel rollback rehearsal log, company.timeZone, one live bearer-token /admin/status.json read, studio.js split.

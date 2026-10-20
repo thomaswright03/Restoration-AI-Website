@@ -164,6 +164,71 @@ async function workflowRun(file, everyHours, staleHours) {
   return { last_success: lastSuccess, next_expected_run: next };
 }
 
+// Stripe keeps retrying a failed delivery for days; one still failing after
+// this long means the site isn't taking webhooks.
+const WEBHOOK_GRACE_MS = 30 * 60 * 1000;
+const WEBHOOK_LOOKBACK_DAYS = 3;
+
+// This site's webhook endpoint in Stripe, and whether Stripe could deliver to
+// it lately: Down when there's no enabled endpoint at /api/stripe-webhook, or
+// when an event of a type it listens to has been undelivered for longer than
+// WEBHOOK_GRACE_MS in the last WEBHOOK_LOOKBACK_DAYS days. Stripe reports
+// delivery per event, not per endpoint, so on an account shared with other
+// products a failure at another endpoint for the same event type also shows.
+/** @returns {Promise<Result>} */
+async function webhookHealth() {
+  need("STRIPE_WEBHOOK_SECRET");
+  const eps = await stripeGet("webhook_endpoints?limit=100");
+  const ours = ((eps && eps.data) || []).filter((e) => /\/api\/stripe-webhook\/?$/.test(String(e.url || "")));
+  if (!ours.length) throw new Error("No Stripe webhook endpoint points at /api/stripe-webhook");
+  const on = ours.find((e) => e.status === "enabled");
+  if (!on) throw new Error("The Stripe webhook endpoint is disabled");
+  const listens = Array.isArray(on.enabled_events) && !on.enabled_events.includes("*") ? on.enabled_events : [];
+  const types = listens
+    .slice(0, 20)
+    .map((t) => "&types%5B%5D=" + encodeURIComponent(t))
+    .join("");
+  const since = Math.floor(Date.now() / 1000) - WEBHOOK_LOOKBACK_DAYS * 24 * 3600;
+  const failed = await stripeGet("events?delivery_success=false&limit=100&created%5Bgte%5D=" + since + types);
+  const stuck = ((failed && failed.data) || []).filter((e) => e.created * 1000 < Date.now() - WEBHOOK_GRACE_MS);
+  const latest = await stripeGet("events?limit=1" + types);
+  const last = latest && latest.data && latest.data[0];
+  const lastAt = last ? new Date(last.created * 1000).toISOString() : null;
+  if (stuck.length) {
+    const oldest = new Date(Math.min(...stuck.map((e) => e.created * 1000))).toISOString();
+    return {
+      status: "down",
+      detail: stuck.length + " event(s) not delivered, the oldest from " + oldest,
+      last_success: null,
+    };
+  }
+  if (!last) return { status: "unknown", detail: "Stripe has no events of these types yet", last_success: null };
+  return { last_success: lastAt };
+}
+
+// The commit this function runs (Vercel sets VERCEL_GIT_COMMIT_SHA) and when
+// it went live: the time of Vercel's successful GitHub deployment for that
+// commit. Vercel sets no deploy-time variable of its own.
+/** @returns {Promise<Result>} */
+async function deployedVersion() {
+  const sha = env("VERCEL_GIT_COMMIT_SHA");
+  if (!sha) return { status: "unknown", detail: "Not running on Vercel", last_success: null };
+  const commit = "Commit " + sha.slice(0, 7);
+  /** @type {Record<string, string>} */
+  const headers = { Accept: "application/vnd.github+json", "User-Agent": "room-designer-status" };
+  if (env("GITHUB_TOKEN")) headers.Authorization = "Bearer " + env("GITHUB_TOKEN");
+  const base = "https://api.github.com/repos/" + REPO + "/deployments";
+  const deps = await getJson(base + "?per_page=5&sha=" + encodeURIComponent(sha), headers);
+  const list = Array.isArray(deps.body) ? deps.body : [];
+  const want = env("VERCEL_ENV") === "production" ? "Production" : "Preview";
+  const dep = list.find((d) => d.environment === want) || list[0];
+  if (!deps.ok || !dep) return { detail: commit + " (deploy time not found)", last_success: null };
+  const st = await getJson(base + "/" + dep.id + "/statuses?per_page=1", headers);
+  const done = Array.isArray(st.body) && st.body.find((x) => x.state === "success");
+  if (!done) return { detail: commit + " (deploy time not found)", last_success: null };
+  return { detail: commit + ", deployed " + done.created_at, last_success: done.created_at };
+}
+
 async function buildStatus() {
   const sw = supabaseReady() ? await switches(Date.now(), true) : null;
   /** @returns {Result} */
@@ -194,17 +259,8 @@ async function buildStatus() {
       await stripeGet("balance");
       return switchOff("checkout", "Checkout");
     }),
-    check(
-      "important",
-      "Stripe webhook (last event)",
-      "Check the webhook endpoint in the Stripe dashboard",
-      async () => {
-        need("STRIPE_WEBHOOK_SECRET");
-        const ev = await stripeGet("events?limit=1");
-        const e = ev && ev.data && ev.data[0];
-        if (!e) return { status: "unknown", detail: "Stripe has no events yet", last_success: null };
-        return { last_success: new Date(e.created * 1000).toISOString() };
-      },
+    check("important", "Stripe webhook deliveries", "Check the webhook endpoint in the Stripe dashboard", () =>
+      webhookHealth(),
     ),
     // Key
     check("key", "Stripe API", "Check STRIPE_SECRET_KEY and Stripe's status page", async () => {
@@ -254,19 +310,8 @@ async function buildStatus() {
         if (off.length) return { status: "warning", detail: "Switched off: " + off.join(", ") };
       },
     ),
-    check("basic", "Deployed version", "Deploy from Vercel", async () => {
-      const sha = env("VERCEL_GIT_COMMIT_SHA");
-      if (!sha) return { status: "unknown", detail: "Not running on Vercel", last_success: null };
-      const deployed = env("VERCEL_DEPLOYED_AT");
-      return { detail: "", last_success: deployed || null };
-    }),
+    check("basic", "Deployed version", "Deploy from Vercel", () => deployedVersion()),
   ]);
-
-  const sha = env("VERCEL_GIT_COMMIT_SHA");
-  const version = rows.find((r) => r.name === "Deployed version");
-  if (version && sha && version.status === "ok") {
-    version.detail = "Commit " + sha.slice(0, 7) + (env("VERCEL_DEPLOYED_AT") ? "" : " (deploy time not recorded)");
-  }
 
   let overall = "ok";
   for (const r of rows) if (r.tier === "important" && RANK[r.status] > RANK[overall]) overall = r.status;

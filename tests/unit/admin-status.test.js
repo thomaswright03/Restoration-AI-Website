@@ -22,6 +22,7 @@ const VARS = [
   "ALERT_EMAIL",
   "RESEND_API_KEY",
   "VERCEL_GIT_COMMIT_SHA",
+  "VERCEL_ENV",
 ];
 const TIERS = ["important", "key", "basic"];
 
@@ -37,7 +38,7 @@ function json(status, body) {
 
 // Healthy upstreams; `dead` is a host fragment that refuses connections, and
 // `run` the latest GitHub Actions run.
-function upstream(dead, run) {
+function upstream(dead, run, hooks = {}) {
   return async (url) => {
     const u = String(url);
     if (dead && u.includes(dead)) throw new Error("connect ECONNREFUSED");
@@ -45,14 +46,29 @@ function upstream(dead, run) {
     if (u.includes("/auth/v1/settings")) return json(200, { external: { email: true } });
     if (u.includes("/auth/v1/health")) return json(200, { ok: true });
     if (u.includes("api.stripe.com/v1/balance")) return json(200, { object: "balance" });
+    if (u.includes("api.stripe.com/v1/webhook_endpoints"))
+      return json(200, {
+        data: [
+          {
+            url: "https://site.example/api/stripe-webhook",
+            status: hooks.endpoint || "enabled",
+            enabled_events: ["checkout.session.completed", "customer.subscription.updated"],
+          },
+        ],
+      });
+    if (u.includes("api.stripe.com/v1/events") && u.includes("delivery_success=false"))
+      return json(200, { data: hooks.failed || [] });
     if (u.includes("api.stripe.com/v1/events")) return json(200, { data: [{ created: 1760000000 }] });
+    if (u.includes("/deployments/7/statuses"))
+      return json(200, [{ state: "success", created_at: "2026-10-20T21:39:10Z" }]);
+    if (u.includes("/deployments?")) return json(200, [{ id: 7, environment: "Production" }]);
     if (u.includes("api.resend.com")) return json(200, { data: [] });
     if (u.includes("api.github.com")) return json(200, { workflow_runs: [run] });
     return json(404, {});
   };
 }
 
-async function call(headers, { dead, env = {}, run } = {}) {
+async function call(headers, { dead, env = {}, run, hooks } = {}) {
   const saved = VARS.map((k) => process.env[k]);
   const realFetch = global.fetch;
   const realError = console.error;
@@ -74,7 +90,7 @@ async function call(headers, { dead, env = {}, run } = {}) {
     env,
   );
   Object.keys(env).forEach((k) => env[k] === undefined && delete process.env[k]);
-  global.fetch = upstream(dead, run || { conclusion: "success", updated_at: new Date().toISOString() });
+  global.fetch = upstream(dead, run || { conclusion: "success", updated_at: new Date().toISOString() }, hooks);
   console.error = () => {};
   switches.resetCache();
   const res = {
@@ -168,4 +184,26 @@ test("a failed backup run is Down in Key, a stale one is a Warning, and overall 
   const stale = await call(AUTH, { run: { conclusion: "success", updated_at: old } });
   assert.equal(row(stale.body, "Daily backup").status, "warning");
   assert.ok(row(stale.body, "Daily backup").last_success);
+});
+
+test("the webhook row is Down when deliveries fail or the endpoint is disabled, not just OK on the latest event", async () => {
+  const old = Math.floor(Date.now() / 1000) - 2 * 3600;
+  const failing = await call(AUTH, { hooks: { failed: [{ created: old }, { created: old + 60 }] } });
+  assert.equal(row(failing.body, "Stripe webhook").status, "down");
+  assert.match(row(failing.body, "Stripe webhook").detail, /^2 event\(s\) not delivered/);
+  assert.equal(failing.body.overall, "down");
+  // An event Stripe is still on its first tries for isn't a failure yet.
+  const fresh = await call(AUTH, { hooks: { failed: [{ created: Math.floor(Date.now() / 1000) - 60 }] } });
+  assert.equal(row(fresh.body, "Stripe webhook").status, "ok");
+  const off = await call(AUTH, { hooks: { endpoint: "disabled" } });
+  assert.equal(row(off.body, "Stripe webhook").status, "down");
+  assert.match(row(off.body, "Stripe webhook").detail, /disabled/);
+});
+
+test("the deployed version names the commit and when Vercel's deployment of it went live", async () => {
+  const r = await call(AUTH, { env: { VERCEL_ENV: "production" } });
+  const v = row(r.body, "Deployed version");
+  assert.equal(v.status, "ok");
+  assert.equal(v.detail, "Commit 0123456, deployed 2026-10-20T21:39:10Z");
+  assert.equal(v.last_success, "2026-10-20T21:39:10Z");
 });

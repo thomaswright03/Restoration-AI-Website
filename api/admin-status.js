@@ -184,6 +184,7 @@ async function webhookHealth() {
   const on = ours.find((e) => e.status === "enabled");
   if (!on) throw new Error("The Stripe webhook endpoint is disabled");
   const listens = Array.isArray(on.enabled_events) && !on.enabled_events.includes("*") ? on.enabled_events : [];
+  // Stripe's `types` filter takes at most 20 types; any beyond that go unchecked.
   const types = listens
     .slice(0, 20)
     .map((t) => "&types%5B%5D=" + encodeURIComponent(t))
@@ -222,10 +223,10 @@ async function deployedVersion() {
   const list = Array.isArray(deps.body) ? deps.body : [];
   const want = env("VERCEL_ENV") === "production" ? "Production" : "Preview";
   const dep = list.find((d) => d.environment === want) || list[0];
-  if (!deps.ok || !dep) return { detail: commit + " (deploy time not found)", last_success: null };
+  if (!deps.ok || !dep) return { status: "warning", detail: commit + " (deploy time not found)", last_success: null };
   const st = await getJson(base + "/" + dep.id + "/statuses?per_page=1", headers);
   const done = Array.isArray(st.body) && st.body.find((x) => x.state === "success");
-  if (!done) return { detail: commit + " (deploy time not found)", last_success: null };
+  if (!done) return { status: "warning", detail: commit + " (deploy time not found)", last_success: null };
   return { detail: commit + ", deployed " + done.created_at, last_success: done.created_at };
 }
 

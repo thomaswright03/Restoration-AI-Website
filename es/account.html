@@ -628,21 +628,21 @@
               <h3>Cambios visibles</h3>
               <ul>
                 <li>
-                  Una página de estado privada en /admin para el propietario del sitio muestra de un vistazo si
-                  funcionan el guardado, los presupuestos, el registro, el pago, el webhook de Stripe y las copias
-                  diarias. Nada cambia para los clientes.
+                  En la página de estado /admin del propietario, la fila del webhook de Stripe ahora se llama "Stripe
+                  webhook deliveries". Pasa a Caído si el endpoint del webhook está desactivado o si Stripe tiene
+                  eventos sin entregar pasados 30 minutos. Nada cambia para los clientes.
+                </li>
+                <li>
+                  La fila "Deployed version" ahora muestra el commit y la hora en que entró en producción, y muestra una
+                  advertencia si no se encuentra esa hora.
                 </li>
               </ul>
               <h3>Otros cambios</h3>
               <ul>
                 <li>
-                  Se corrigió un fallo de tiempo poco frecuente en el límite que damos a cada solicitud a nuestros
-                  proveedores de pagos y base de datos, por el que una llamada más podía empezar justo después del
-                  límite.
-                </li>
-                <li>
-                  El diseño para teléfonos ahora también se prueba en el motor que usan los iPhone (Safari/WebKit), no
-                  solo en Chrome.
+                  Las comprobaciones automáticas ahora cubren las filas de webhook y hora de despliegue de la página de
+                  estado, con pruebas para webhooks con fallos, recientes y desactivados, y para una hora de despliegue
+                  ausente.
                 </li>
               </ul>
             </details>

@@ -626,20 +626,21 @@
               <h3>Mudanças visíveis</h3>
               <ul>
                 <li>
-                  Uma página de status privada em /admin para o proprietário do site mostra de relance se salvar,
-                  orçamentos, cadastro, pagamento, o webhook do Stripe e os backups diários estão funcionando. Nada muda
-                  para os clientes.
+                  Na página de status /admin do proprietário, a linha do webhook do Stripe agora se chama "Stripe
+                  webhook deliveries". Ela fica Fora do ar se o endpoint do webhook estiver desativado ou se o Stripe
+                  tiver eventos não entregues após 30 minutos. Nada muda para os clientes.
+                </li>
+                <li>
+                  A linha "Deployed version" agora mostra o commit e a hora em que entrou no ar, e mostra um aviso se
+                  essa hora não for encontrada.
                 </li>
               </ul>
               <h3>Outras mudanças</h3>
               <ul>
                 <li>
-                  Corrigimos uma falha de tempo rara no limite que damos a cada solicitação aos nossos provedores de
-                  pagamento e banco de dados, em que mais uma chamada podia começar logo após o limite.
-                </li>
-                <li>
-                  O layout para celular agora também é testado no motor usado pelos iPhones (Safari/WebKit), não só no
-                  Chrome.
+                  As verificações automáticas agora cobrem as linhas de webhook e hora de implantação da página de
+                  status, com testes para webhooks com falha, recentes e desativados, e para hora de implantação
+                  ausente.
                 </li>
               </ul>
             </details>

@@ -61,7 +61,7 @@ function upstream(dead, run, hooks = {}) {
     if (u.includes("api.stripe.com/v1/events")) return json(200, { data: [{ created: 1760000000 }] });
     if (u.includes("/deployments/7/statuses"))
       return json(200, [{ state: "success", created_at: "2026-10-20T21:39:10Z" }]);
-    if (u.includes("/deployments?")) return json(200, [{ id: 7, environment: "Production" }]);
+    if (u.includes("/deployments?")) return json(200, hooks.noDeploy ? [] : [{ id: 7, environment: "Production" }]);
     if (u.includes("api.resend.com")) return json(200, { data: [] });
     if (u.includes("api.github.com")) return json(200, { workflow_runs: [run] });
     return json(404, {});
@@ -206,4 +206,12 @@ test("the deployed version names the commit and when Vercel's deployment of it w
   assert.equal(v.status, "ok");
   assert.equal(v.detail, "Commit 0123456, deployed 2026-10-20T21:39:10Z");
   assert.equal(v.last_success, "2026-10-20T21:39:10Z");
+});
+
+test("the deployed version is a Warning, not OK, when the deploy time can't be found", async () => {
+  const r = await call(AUTH, { env: { VERCEL_ENV: "production" }, hooks: { noDeploy: true } });
+  const v = row(r.body, "Deployed version");
+  assert.equal(v.status, "warning");
+  assert.match(v.detail, /deploy time not found/);
+  assert.equal(v.last_success, null);
 });

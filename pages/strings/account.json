@@ -295,19 +295,19 @@
   "account.update.date": ["October 20, 2026", "20 de octubre de 2026", "20 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "A private status page at /admin for the site's owner shows at a glance whether saving, estimates, sign-up, checkout, the Stripe webhook and the daily backups are working. Nothing changes for customers.",
-    "Una página de estado privada en /admin para el propietario del sitio muestra de un vistazo si funcionan el guardado, los presupuestos, el registro, el pago, el webhook de Stripe y las copias diarias. Nada cambia para los clientes.",
-    "Uma página de status privada em /admin para o proprietário do site mostra de relance se salvar, orçamentos, cadastro, pagamento, o webhook do Stripe e os backups diários estão funcionando. Nada muda para os clientes."
+    "On the owner's /admin status page, the Stripe webhook row is now called \"Stripe webhook deliveries\". It turns Down if the webhook endpoint is disabled, or if Stripe has events it still hasn't delivered after 30 minutes. Nothing changes for customers.",
+    "En la página de estado /admin del propietario, la fila del webhook de Stripe ahora se llama \"Stripe webhook deliveries\". Pasa a Caído si el endpoint del webhook está desactivado o si Stripe tiene eventos sin entregar pasados 30 minutos. Nada cambia para los clientes.",
+    "Na página de status /admin do proprietário, a linha do webhook do Stripe agora se chama \"Stripe webhook deliveries\". Ela fica Fora do ar se o endpoint do webhook estiver desativado ou se o Stripe tiver eventos não entregues após 30 minutos. Nada muda para os clientes."
+  ],
+  "account.update.f2": [
+    "The \"Deployed version\" row now shows the commit and the time it went live, and shows a warning if that time can't be found.",
+    "La fila \"Deployed version\" ahora muestra el commit y la hora en que entró en producción, y muestra una advertencia si no se encuentra esa hora.",
+    "A linha \"Deployed version\" agora mostra o commit e a hora em que entrou no ar, e mostra um aviso se essa hora não for encontrada."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [
-    "Fixed a rare timing slip in the time limit we give each request to our payment and database providers, where one more call could start just after the limit.",
-    "Se corrigió un fallo de tiempo poco frecuente en el límite que damos a cada solicitud a nuestros proveedores de pagos y base de datos, por el que una llamada más podía empezar justo después del límite.",
-    "Corrigimos uma falha de tempo rara no limite que damos a cada solicitação aos nossos provedores de pagamento e banco de dados, em que mais uma chamada podia começar logo após o limite."
-  ],
-  "account.update.o2": [
-    "The phone layout is now also tested in the engine iPhones use (Safari/WebKit), not only Chrome.",
-    "El diseño para teléfonos ahora también se prueba en el motor que usan los iPhone (Safari/WebKit), no solo en Chrome.",
-    "O layout para celular agora também é testado no motor usado pelos iPhones (Safari/WebKit), não só no Chrome."
+    "The automatic checks now cover the status page's webhook and deploy-time rows, with tests for failing, fresh and disabled webhooks and for a missing deploy time.",
+    "Las comprobaciones automáticas ahora cubren las filas de webhook y hora de despliegue de la página de estado, con pruebas para webhooks con fallos, recientes y desactivados, y para una hora de despliegue ausente.",
+    "As verificações automáticas agora cobrem as linhas de webhook e hora de implantação da página de status, com testes para webhooks com falha, recentes e desativados, e para hora de implantação ausente."
   ]
 }

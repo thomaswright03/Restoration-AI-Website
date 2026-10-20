@@ -615,18 +615,21 @@
               <h3>Frontend changes</h3>
               <ul>
                 <li>
-                  A private status page at /admin for the site's owner shows at a glance whether saving, estimates,
-                  sign-up, checkout, the Stripe webhook and the daily backups are working. Nothing changes for
-                  customers.
+                  On the owner's /admin status page, the Stripe webhook row is now called "Stripe webhook deliveries".
+                  It turns Down if the webhook endpoint is disabled, or if Stripe has events it still hasn't delivered
+                  after 30 minutes. Nothing changes for customers.
+                </li>
+                <li>
+                  The "Deployed version" row now shows the commit and the time it went live, and shows a warning if that
+                  time can't be found.
                 </li>
               </ul>
               <h3>Other changes</h3>
               <ul>
                 <li>
-                  Fixed a rare timing slip in the time limit we give each request to our payment and database providers,
-                  where one more call could start just after the limit.
+                  The automatic checks now cover the status page's webhook and deploy-time rows, with tests for failing,
+                  fresh and disabled webhooks and for a missing deploy time.
                 </li>
-                <li>The phone layout is now also tested in the engine iPhones use (Safari/WebKit), not only Chrome.</li>
               </ul>
             </details>
           </div>

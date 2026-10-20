@@ -51,3 +51,10 @@ Done this round:
 - docs/backups.md now says plainly the rehearsal differs from the documented Supabase restore, which has never been run; docs/live-check.md retitled for live mode.
 - New .github/workflows/backup-heartbeat.yml fails if the last good backup is >36 h old.
 - Still deferred by owner: studio.js split/strict types, WebKit + screenshots, leads removal, 12 MB video in git history.
+
+## Excellence fix round 4 (last grade 70)
+
+- NEW /admin status page + /admin/status.json (admin.html, js/admin.js, css/admin.css, api/admin-status.js; rewrites in vercel.json and scripts/serve.mjs). Three groups Important/Key/Basic, real read-only checks, backup rows from the GitHub Actions API. Access: Bearer ADMIN_STATUS_TOKEN or a signed-in email in ADMIN_EMAILS; neither set = 404. Unit tests tests/unit/admin-status.test.js, e2e tests/e2e/admin.spec.js. NEEDS Thomas to set those Vercel env vars (README "Status page").
+- WebKit iPhone project added (playwright.config.js, only with E2E_WEBKIT=1) and a separate non-required CI job `webkit`. NOT run locally (sandbox lacks WebKit libs): read its first CI result on main.
+- Latest update card reset to this round only (en/es/pt); mentions the withBudget race fix.
+- Not done: slow browser suite profiling (finding 4), studio.js split, leads card removal, Supabase restore and Vercel rollback rehearsals (owner).

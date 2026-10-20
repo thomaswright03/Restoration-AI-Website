@@ -611,27 +611,22 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Latest update</h2></summary>
-              <p class="form-note">October 19, 2026</p>
+              <p class="form-note">October 20, 2026</p>
               <h3>Frontend changes</h3>
               <ul>
                 <li>
-                  On phones, the designer's first screen now shows Riley's whole opening question and the room-size
-                  question itself: the demo banner is one line, the 3D room is a shorter strip, and the bottom bar puts
-                  the step name beside Next.
+                  A private status page at /admin for the site's owner shows at a glance whether saving, estimates,
+                  sign-up, checkout, the Stripe webhook and the daily backups are working. Nothing changes for
+                  customers.
                 </li>
               </ul>
               <h3>Other changes</h3>
               <ul>
                 <li>
-                  If something goes wrong on our side (a failed save, checkout or account call), the owner is now
-                  emailed straight away, and a failed alert is logged too.
+                  Fixed a rare timing slip in the time limit we give each request to our payment and database providers,
+                  where one more call could start just after the limit.
                 </li>
-                <li>Your data is backed up every day, encrypted, and kept for 90 days.</li>
-                <li>Removed an unused surcharge feature from the estimate code. Prices and estimates are unchanged.</li>
-                <li>
-                  Every daily backup is now restored into an empty test database and checked table by table, and the
-                  owner can send a test alert to confirm emails arrive.
-                </li>
+                <li>The phone layout is now also tested in the engine iPhones use (Safari/WebKit), not only Chrome.</li>
               </ul>
             </details>
           </div>

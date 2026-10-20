@@ -624,29 +624,25 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Última actualización</h2></summary>
-              <p class="form-note">19 de octubre de 2026</p>
+              <p class="form-note">20 de octubre de 2026</p>
               <h3>Cambios visibles</h3>
               <ul>
                 <li>
-                  En teléfonos, la primera pantalla del diseñador ahora muestra completa la primera pregunta de Riley y
-                  la pregunta del tamaño del baño: el aviso de la demo ocupa una línea, la habitación 3D es una franja
-                  más baja y la barra inferior pone el nombre del paso junto a Siguiente.
+                  Una página de estado privada en /admin para el propietario del sitio muestra de un vistazo si
+                  funcionan el guardado, los presupuestos, el registro, el pago, el webhook de Stripe y las copias
+                  diarias. Nada cambia para los clientes.
                 </li>
               </ul>
               <h3>Otros cambios</h3>
               <ul>
                 <li>
-                  Si algo falla de nuestro lado (un guardado, un pago o una consulta de cuenta), ahora se avisa por
-                  correo al propietario de inmediato, y una alerta fallida también queda registrada.
-                </li>
-                <li>Sus datos se copian cada día, cifrados, y se guardan 90 días.</li>
-                <li>
-                  Se quitó del código de presupuestos una función de recargos que no se usaba. Los precios y
-                  presupuestos no cambian.
+                  Se corrigió un fallo de tiempo poco frecuente en el límite que damos a cada solicitud a nuestros
+                  proveedores de pagos y base de datos, por el que una llamada más podía empezar justo después del
+                  límite.
                 </li>
                 <li>
-                  Cada copia diaria ahora se restaura en una base de datos de prueba vacía y se comprueba tabla por
-                  tabla, y el propietario puede enviar una alerta de prueba para confirmar que los correos llegan.
+                  El diseño para teléfonos ahora también se prueba en el motor que usan los iPhone (Safari/WebKit), no
+                  solo en Chrome.
                 </li>
               </ul>
             </details>

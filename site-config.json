@@ -19,7 +19,8 @@
     "promoFreeDays": 7
   },
   "company": {
-    "supportEmail": "thomas@wright-ai-solutions.com"
+    "supportEmail": "thomas@wright-ai-solutions.com",
+    "timeZone": ""
   },
   "priceEstimator": {
     "enabled": true

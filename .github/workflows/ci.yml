@@ -66,3 +66,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: '[ "${{ needs.checks.result }}" = success ]'
+
+  # iOS Safari's engine (WebKit, iPhone 13 preset): the phone first-screen
+  # test and the /admin page. Its own job, outside the required check above,
+  # so a WebKit-on-Linux quirk can't block a merge; read its result on main.
+  webkit:
+    name: WebKit iPhone smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install WebKit for Playwright
+        run: npx playwright install --with-deps webkit
+
+      - name: WebKit tests
+        run: npx playwright test --project=webkit-iphone
+        env:
+          E2E_WEBKIT: "1"

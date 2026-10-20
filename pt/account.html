@@ -622,29 +622,24 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Última atualização</h2></summary>
-              <p class="form-note">19 de outubro de 2026</p>
+              <p class="form-note">20 de outubro de 2026</p>
               <h3>Mudanças visíveis</h3>
               <ul>
                 <li>
-                  No celular, a primeira tela do projetista agora mostra inteira a primeira pergunta da Riley e a
-                  pergunta do tamanho do banheiro: o aviso da demo ocupa uma linha, o banheiro 3D é uma faixa mais baixa
-                  e a barra de baixo põe o nome da etapa ao lado de Próximo.
+                  Uma página de status privada em /admin para o proprietário do site mostra de relance se salvar,
+                  orçamentos, cadastro, pagamento, o webhook do Stripe e os backups diários estão funcionando. Nada muda
+                  para os clientes.
                 </li>
               </ul>
               <h3>Outras mudanças</h3>
               <ul>
                 <li>
-                  Se algo falhar do nosso lado (um salvamento, um pagamento ou uma consulta da conta), o proprietário
-                  agora é avisado por e-mail na hora, e um alerta que falhar também fica registrado.
-                </li>
-                <li>Seus dados são copiados todos os dias, criptografados, e guardados por 90 dias.</li>
-                <li>
-                  Removemos do código de orçamentos um recurso de sobretaxa que não era usado. Preços e orçamentos não
-                  mudam.
+                  Corrigimos uma falha de tempo rara no limite que damos a cada solicitação aos nossos provedores de
+                  pagamento e banco de dados, em que mais uma chamada podia começar logo após o limite.
                 </li>
                 <li>
-                  Cada cópia diária agora é restaurada em um banco de dados de teste vazio e conferida tabela por
-                  tabela, e o proprietário pode enviar um alerta de teste para confirmar que os e-mails chegam.
+                  O layout para celular agora também é testado no motor usado pelos iPhones (Safari/WebKit), não só no
+                  Chrome.
                 </li>
               </ul>
             </details>

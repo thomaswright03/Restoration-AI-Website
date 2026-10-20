@@ -101,6 +101,8 @@ Every function writes one JSON line per failure to Vercel's function log, and no
 
 Checkout and the billing portal run inside one 9 s budget (`api/_lib.js` `withBudget`): each upstream call gets what is left of it and a retry is skipped when too little remains, so the request always answers before the browser's 15 s wait and `vercel.json`'s `maxDuration` (10 s). Stripe's `Stripe-Should-Retry` header decides a retry when it is sent.
 
+- **Status page.** `/admin` (page: `admin.html`, `js/admin.js`) and `/admin/status.json` (`api/admin-status.js`) show what is working, in three groups: Important (saving, estimate, sign-up and free week, checkout, webhook), Key (Stripe, alert email, sign-up email, the daily backup and its restore check, the heartbeat) and Basic (database, sign-in, email provider, backup age, kill switches, deployed commit). Every row is a real read-only check or a GitHub Actions run; none sends mail, charges or writes data. Set `ADMIN_EMAILS` (comma separated sign-in emails allowed to see it) and/or `ADMIN_STATUS_TOKEN` (a long random value; callers send `Authorization: Bearer <token>`) in Vercel; with neither set the routes answer 404. Optional: `GITHUB_TOKEN` (read-only) for the backup rows if GitHub rate-limits the anonymous calls, `VERCEL_DEPLOYED_AT`, and `company.timeZone` in `site-config.json` for the page's times (blank = the viewer's own).
+
 ## Editing pages and text
 
 Pages are built from templates so the three languages can't drift apart:

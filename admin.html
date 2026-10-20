@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Status · Room Designer 3D</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
+  <body>
+    <main id="main" class="admin">
+      <h1>Room Designer 3D status</h1>
+      <p id="admin-message" role="status">Checking your sign-in…</p>
+      <section id="admin-top" hidden>
+        <p>
+          Overall: <strong id="admin-overall" class="st"></strong>
+          <span class="muted">· checked <time id="admin-checked"></time></span>
+        </p>
+        <p><button type="button" id="admin-refresh">Check again</button></p>
+      </section>
+      <div id="admin-groups"></div>
+    </main>
+    <script src="/js/vendor/supabase/supabase.js"></script>
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

@@ -37,7 +37,16 @@ module.exports = defineConfig({
     trace: "retain-on-failure",
     launchOptions: executablePath ? { executablePath } : {},
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // iOS Safari's engine, on an iPhone preset: the phone first-screen test
+    // (svh units, fixed bar, one-line ribbon, WebGL) and the status page.
+    // Only with E2E_WEBKIT=1 (the CI webkit job), so a machine without the
+    // WebKit browser still runs everything else.
+    ...(process.env.E2E_WEBKIT
+      ? [{ name: "webkit-iphone", use: { ...devices["iPhone 13"] }, grep: /on a phone|\/admin/ }]
+      : []),
+  ],
   webServer: {
     command: `node scripts/serve.mjs ${PORT}`,
     // Never a developer's .env.local: the tests run in demo mode and mock

@@ -1,4 +1,14 @@
 {
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/admin/status.json",
+      "destination": "/api/admin-status"
+    }
+  ],
   "functions": {
     "api/*.js": {
       "maxDuration": 10

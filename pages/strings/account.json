@@ -292,32 +292,22 @@
   "account.biz.copyUrl": ["Copy address", "Copiar dirección", "Copiar endereço"],
   "account.biz.openUrl": ["Open my designer", "Abrir mi diseñador", "Abrir meu projetista"],
   "account.update.title": ["Latest update", "Última actualización", "Última atualização"],
-  "account.update.date": ["October 19, 2026", "19 de octubre de 2026", "19 de outubro de 2026"],
+  "account.update.date": ["October 20, 2026", "20 de octubre de 2026", "20 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "On phones, the designer's first screen now shows Riley's whole opening question and the room-size question itself: the demo banner is one line, the 3D room is a shorter strip, and the bottom bar puts the step name beside Next.",
-    "En teléfonos, la primera pantalla del diseñador ahora muestra completa la primera pregunta de Riley y la pregunta del tamaño del baño: el aviso de la demo ocupa una línea, la habitación 3D es una franja más baja y la barra inferior pone el nombre del paso junto a Siguiente.",
-    "No celular, a primeira tela do projetista agora mostra inteira a primeira pergunta da Riley e a pergunta do tamanho do banheiro: o aviso da demo ocupa uma linha, o banheiro 3D é uma faixa mais baixa e a barra de baixo põe o nome da etapa ao lado de Próximo."
+    "A private status page at /admin for the site's owner shows at a glance whether saving, estimates, sign-up, checkout, the Stripe webhook and the daily backups are working. Nothing changes for customers.",
+    "Una página de estado privada en /admin para el propietario del sitio muestra de un vistazo si funcionan el guardado, los presupuestos, el registro, el pago, el webhook de Stripe y las copias diarias. Nada cambia para los clientes.",
+    "Uma página de status privada em /admin para o proprietário do site mostra de relance se salvar, orçamentos, cadastro, pagamento, o webhook do Stripe e os backups diários estão funcionando. Nada muda para os clientes."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [
-    "If something goes wrong on our side (a failed save, checkout or account call), the owner is now emailed straight away, and a failed alert is logged too.",
-    "Si algo falla de nuestro lado (un guardado, un pago o una consulta de cuenta), ahora se avisa por correo al propietario de inmediato, y una alerta fallida también queda registrada.",
-    "Se algo falhar do nosso lado (um salvamento, um pagamento ou uma consulta da conta), o proprietário agora é avisado por e-mail na hora, e um alerta que falhar também fica registrado."
+    "Fixed a rare timing slip in the time limit we give each request to our payment and database providers, where one more call could start just after the limit.",
+    "Se corrigió un fallo de tiempo poco frecuente en el límite que damos a cada solicitud a nuestros proveedores de pagos y base de datos, por el que una llamada más podía empezar justo después del límite.",
+    "Corrigimos uma falha de tempo rara no limite que damos a cada solicitação aos nossos provedores de pagamento e banco de dados, em que mais uma chamada podia começar logo após o limite."
   ],
   "account.update.o2": [
-    "Your data is backed up every day, encrypted, and kept for 90 days.",
-    "Sus datos se copian cada día, cifrados, y se guardan 90 días.",
-    "Seus dados são copiados todos os dias, criptografados, e guardados por 90 dias."
-  ],
-  "account.update.o3": [
-    "Removed an unused surcharge feature from the estimate code. Prices and estimates are unchanged.",
-    "Se quitó del código de presupuestos una función de recargos que no se usaba. Los precios y presupuestos no cambian.",
-    "Removemos do código de orçamentos um recurso de sobretaxa que não era usado. Preços e orçamentos não mudam."
-  ],
-  "account.update.o4": [
-    "Every daily backup is now restored into an empty test database and checked table by table, and the owner can send a test alert to confirm emails arrive.",
-    "Cada copia diaria ahora se restaura en una base de datos de prueba vacía y se comprueba tabla por tabla, y el propietario puede enviar una alerta de prueba para confirmar que los correos llegan.",
-    "Cada cópia diária agora é restaurada em um banco de dados de teste vazio e conferida tabela por tabela, e o proprietário pode enviar um alerta de teste para confirmar que os e-mails chegam."
+    "The phone layout is now also tested in the engine iPhones use (Safari/WebKit), not only Chrome.",
+    "El diseño para teléfonos ahora también se prueba en el motor que usan los iPhone (Safari/WebKit), no solo en Chrome.",
+    "O layout para celular agora também é testado no motor usado pelos iPhones (Safari/WebKit), não só no Chrome."
   ]
 }

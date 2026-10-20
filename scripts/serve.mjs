@@ -72,7 +72,12 @@ async function runApi(req, res, name) {
   }
 }
 
+// vercel.json "rewrites", for the paths that need one.
+const REWRITES = { "/admin": "/admin.html", "/admin/status.json": "/api/admin-status" };
+
 const server = createServer(async (req, res) => {
+  const rewritten = REWRITES[String(req.url || "").split("?")[0]];
+  if (rewritten) req.url = rewritten;
   const api = /^\/api\/([a-z][a-z0-9-]*)(?:\?|$)/.exec(req.url || "");
   if (api) {
     let exists = false;

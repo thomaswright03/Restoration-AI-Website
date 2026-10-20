@@ -1,0 +1,100 @@
+/* The owner's status page (admin.html). Plain on purpose. */
+:root {
+  color-scheme: light dark;
+  --bg: #fff;
+  --fg: #14182b;
+  --muted: #5b6075;
+  --line: #d6d9e4;
+  --ok: #0b6b2e;
+  --warning: #8a5300;
+  --down: #b3261e;
+  --unknown: #4a4f66;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a1024;
+    --fg: #eef0fa;
+    --muted: #a6abc4;
+    --line: #2b3354;
+    --ok: #5fd68a;
+    --warning: #f0b45a;
+    --down: #ff8a80;
+    --unknown: #b4b9d2;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    16px/1.5 system-ui,
+    sans-serif;
+}
+.admin {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+.muted {
+  color: var(--muted);
+}
+.admin h2 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.15rem;
+}
+.admin table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin th,
+.admin td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.92rem;
+}
+.st {
+  font-weight: 700;
+}
+.st::before {
+  content: "● ";
+}
+.st-ok {
+  color: var(--ok);
+}
+.st-warning {
+  color: var(--warning);
+}
+.st-down {
+  color: var(--down);
+}
+.st-unknown {
+  color: var(--unknown);
+}
+.admin button {
+  font: inherit;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+@media (max-width: 40rem) {
+  .admin thead {
+    display: none;
+  }
+  .admin tr,
+  .admin td {
+    display: block;
+  }
+  .admin td {
+    border: 0;
+    padding: 0.1rem 0.2rem;
+  }
+  .admin tr {
+    border-bottom: 1px solid var(--line);
+    padding: 0.5rem 0;
+  }
+}

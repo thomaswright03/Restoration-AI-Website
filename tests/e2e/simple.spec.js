@@ -452,3 +452,33 @@ test.describe("the simple studio", () => {
     });
   }
 });
+
+test.describe("the simple studio on a phone", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("the first screen shows Riley's whole message, the size question, Next and a short demo button", async ({
+    page,
+  }) => {
+    const errors = await openStudio(page, "/designer.html", { simple: true });
+    const title = page.locator(".studio-q-title");
+    await expect(title).toHaveText("What are the dimensions of the bathroom?");
+    const seen = await page.evaluate(() => {
+      const text = document.querySelector(".riley-text");
+      const btn = document.querySelector(".designer-intro .btn");
+      const line = parseFloat(getComputedStyle(btn).lineHeight) || 20;
+      return {
+        clipped: text.scrollHeight > text.clientHeight + 1,
+        questionBottom: document.querySelector(".studio-q-title").getBoundingClientRect().bottom,
+        nextBottom: document.querySelector('[data-key="nav-next"]').getBoundingClientRect().bottom,
+        btnLines: btn.getBoundingClientRect().height / line,
+        scrollWidth: document.documentElement.scrollWidth,
+      };
+    });
+    expect(seen.clipped, "Riley's text is clipped").toBe(false);
+    expect(seen.questionBottom, "the size question is on the first screen").toBeLessThanOrEqual(844);
+    expect(seen.nextBottom, "Next is on the first screen").toBeLessThanOrEqual(844);
+    expect(seen.btnLines, "the demo button is at most two lines").toBeLessThanOrEqual(2.5);
+    expect(seen.scrollWidth).toBeLessThanOrEqual(390);
+    expect(errors).toEqual([]);
+  });
+});

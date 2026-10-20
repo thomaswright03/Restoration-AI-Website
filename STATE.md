@@ -47,7 +47,7 @@ Done this round:
 
 ## Excellence fix round 3 (last grade 74)
 
-- Phone designer (css/studio.css, end): at <=600px the room strip is 24svh, Riley clamps to 2 lines, banner button drops under its text. UNVERIFIED in a browser (no node_modules in this sandbox): check 390x844 shows step, question, Next.
+- Phone designer (css/studio.css, end): at <=600px the strip is 20svh, Riley unclamped, ribbon one line. Verified at 390x844 by tests/e2e/simple.spec.js "on a phone" (question, Next, unclipped Riley, short demo button).
 - docs/backups.md now says plainly the rehearsal differs from the documented Supabase restore, which has never been run; docs/live-check.md retitled for live mode.
 - New .github/workflows/backup-heartbeat.yml fails if the last good backup is >36 h old.
 - Still deferred by owner: studio.js split/strict types, WebKit + screenshots, leads removal, 12 MB video in git history.

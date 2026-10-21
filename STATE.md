@@ -17,7 +17,6 @@
 
 - js/studio.js is ~6.7k lines in one closure, strictNullChecks off: split deferred by owner until the next big designer change (full browser suite after each step).
 - Vercel rollback rehearsed 2026-10-21 (under a minute; logged in docs/live-check.md). Supabase-restore drill impossible on the Free plan (project limit); the daily backup restore check covers it.
-- site-config.json company.timeZone is blank, so /admin shows times in the viewer's zone: needs the owner's zone.
 - Browser suite is slow (15-26 min unsharded); profile slowest specs.
 - Legacy leads card/table kept (removal drops live data; owner OK needed).
 - Legal items are Thomas's: DPAs, consent checkbox, sub-processor list, blank owner/privacy fields in site-config.json.
@@ -26,4 +25,4 @@
 
 - Latest update card rewritten for the PR #20 round (en/es/pt; source pages/account.html + pages/strings/account.json).
 - Deployed version row is Warning when the deploy time isn't found (tested); 20-type webhook limit commented.
-- Still open (owner): company.timeZone, one live bearer-token /admin/status.json read, studio.js split.
+- Still open (owner): one live bearer-token /admin/status.json read, studio.js split.

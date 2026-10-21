@@ -20,7 +20,7 @@
   },
   "company": {
     "supportEmail": "thomas@wright-ai-solutions.com",
-    "timeZone": ""
+    "timeZone": "America/Phoenix"
   },
   "priceEstimator": {
     "enabled": true

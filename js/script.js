@@ -188,15 +188,36 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("scroll", onScroll, { passive: true });
   }
 
-  // Scroll-reveal (skipped when the visitor prefers reduced motion).
+  // Scroll-reveal (skipped when the visitor prefers reduced motion): each
+  // block rises into place as it comes into view, and blocks side by side
+  // (the cards in a row, the plans) follow one another. The landing page
+  // reveals its headings, plans and video too.
   var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  var revealTargets = document.querySelectorAll(".card, .faq-item, .scope-note");
+  var revealSelector = ".card, .faq-item, .scope-note";
+  if (document.querySelector(".hero-landing")) {
+    revealSelector +=
+      ", main .section > .eyebrow, main .section-title, main .section-subtitle, .plan-card, .plan-free, .plan-includes, .video-frame, .demo-link, .cta-band > *";
+  }
+  var revealTargets = Array.prototype.filter.call(document.querySelectorAll(revealSelector), function (el) {
+    return !el.closest(".hero");
+  });
   if (!reduceMotion && "IntersectionObserver" in window) {
+    var seen = false;
+    var show = function (el) {
+      el.classList.add("visible");
+      // Once in place it's an ordinary block again: no delay left on its
+      // hover effects.
+      setTimeout(function () {
+        el.classList.remove("reveal", "visible");
+        el.style.removeProperty("--reveal-i");
+      }, 1400);
+    };
     var observer = new IntersectionObserver(
       function (entries) {
+        seen = true;
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
+            show(entry.target);
             observer.unobserve(entry.target);
           }
         });
@@ -204,14 +225,24 @@ document.addEventListener("DOMContentLoaded", function () {
       { threshold: 0.1, rootMargin: "0px 0px -60px 0px" },
     );
     revealTargets.forEach(function (el) {
+      var before = el.previousElementSibling;
+      var i = 0;
+      while (
+        before &&
+        i < 5 &&
+        revealTargets.indexOf(before) !== -1 &&
+        before.className.replace(" reveal", "") === el.className
+      ) {
+        i++;
+        before = before.previousElementSibling;
+      }
+      if (i) el.style.setProperty("--reveal-i", String(i));
       el.classList.add("reveal");
       observer.observe(el);
     });
     // Never leave content invisible if the observer doesn't fire.
     setTimeout(function () {
-      revealTargets.forEach(function (el) {
-        el.classList.add("visible");
-      });
+      if (!seen) revealTargets.forEach(show);
     }, 1500);
   }
 

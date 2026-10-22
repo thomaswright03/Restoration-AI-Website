@@ -168,8 +168,8 @@ function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 // ---------------------------------------------------------------------
@@ -2191,8 +2191,8 @@ function frameObjects(s, parts, scale, pad) {
     to: center.clone().addScaledVector(dir, distance),
     targetFrom: s.controls.target.clone(),
     targetTo: center,
-    start: performance.now(),
-    durationMs: 700,
+    durationMs: 850,
+    lift: 0.12,
   };
   needsRender = true;
   return true;
@@ -2437,6 +2437,10 @@ function ensureScene() {
     // Fires on every drag and on every damping-settle frame afterward, and
     // stops firing once the camera is genuinely still — exactly the signal
     // the render loop needs to know a frame is worth actually drawing.
+    // A drag mid-glide takes the camera from there.
+    controls.addEventListener("start", function () {
+      if (threeState) threeState.cameraLerp = null;
+    });
     controls.addEventListener("change", function () {
       // Panning stays over the room.
       var dims = Layout.computeRoomDimensions(state.dims);
@@ -3214,14 +3218,48 @@ function reducedMotion() {
   return Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }
 
+// A glide swings around what it looks at (the angle, height and distance
+// each ease from where they were to where they end) rather than cutting
+// straight through the room, and rises a little on the way, like a camera
+// on a crane. The look-at point eases along with it.
+var lerpFrom = null;
+var lerpTo = null;
 function applyCameraLerp(s) {
-  if (!s.cameraLerp) return;
-  var t = reducedMotion() ? 1 : clamp((performance.now() - s.cameraLerp.start) / s.cameraLerp.durationMs, 0, 1);
-  var eased = easeOutCubic(t);
-  s.camera.position.lerpVectors(s.cameraLerp.from, s.cameraLerp.to, eased);
-  // A focus move (focusCameraOn) turns to look at the fixture as it goes.
-  if (s.cameraLerp.targetTo) s.controls.target.lerpVectors(s.cameraLerp.targetFrom, s.cameraLerp.targetTo, eased);
-  if (t >= 1) s.cameraLerp = null;
+  var m = s.cameraLerp;
+  if (!m) return;
+  // Time is counted frame by frame, at most 100 ms a frame, so a busy moment
+  // (the first shaders compiling, a model arriving) pauses the glide
+  // instead of skipping most of it.
+  var now = performance.now();
+  m.elapsed = (m.elapsed || 0) + clamp(now - (m.lastTick || now), 0, 100);
+  m.lastTick = now;
+  var t = reducedMotion() ? 1 : clamp(m.elapsed / m.durationMs, 0, 1);
+  var eased = easeInOutCubic(t);
+  var targetFrom = m.targetFrom || s.controls.target;
+  var targetTo = m.targetTo || s.controls.target;
+  if (!lerpFrom) {
+    lerpFrom = new THREE.Spherical();
+    lerpTo = new THREE.Spherical();
+  }
+  lerpFrom.setFromVector3(m.from.clone().sub(targetFrom));
+  lerpTo.setFromVector3(m.to.clone().sub(targetTo));
+  // The short way round.
+  var turn = lerpTo.theta - lerpFrom.theta;
+  if (turn > Math.PI) turn -= 2 * Math.PI;
+  if (turn < -Math.PI) turn += 2 * Math.PI;
+  var lift = (m.lift || 0) * Math.sin(Math.PI * eased);
+  var at = new THREE.Spherical(
+    lerpFrom.radius + (lerpTo.radius - lerpFrom.radius) * eased,
+    clamp(lerpFrom.phi + (lerpTo.phi - lerpFrom.phi) * eased - lift, 0.05, Math.PI - 0.05),
+    lerpFrom.theta + turn * eased,
+  );
+  if (m.targetTo) s.controls.target.lerpVectors(targetFrom, targetTo, eased);
+  s.camera.position.setFromSpherical(at).add(s.controls.target);
+  if (t >= 1) {
+    s.camera.position.copy(m.to);
+    if (m.targetTo) s.controls.target.copy(m.targetTo);
+    s.cameraLerp = null;
+  }
 }
 
 // Walk-in: puts the camera at the chosen doorway (eye height) and reuses
@@ -3356,21 +3394,37 @@ function applyCutaway(s, camera) {
   });
 }
 
-// Points the camera at the whole room. animate: glide there.
+// Points the camera at the whole room. animate: glide there; "intro": the
+// first look, swinging down and round onto the room from higher up.
 function frameRoom(s, animate) {
   var dims = Layout.computeRoomDimensions(state.dims);
   var pose = overviewPose(s);
   var diag = Math.sqrt(dims.widthFt * dims.widthFt + dims.lengthFt * dims.lengthFt);
   s.controls.minDistance = clamp(diag * 0.3, 2, 12);
   s.controls.maxDistance = Math.max(pose.distance * 1.9, 14);
-  if (animate) {
+  if (animate === "intro" && reducedMotion()) animate = false;
+  if (animate === "intro") {
+    var start = new THREE.Spherical().setFromVector3(pose.position.clone().sub(pose.target));
+    start.theta -= 0.9;
+    start.phi = Math.max(0.15, start.phi - 0.45);
+    start.radius *= 1.45;
+    s.controls.target.copy(pose.target);
+    s.camera.position.setFromSpherical(start).add(pose.target);
+    s.cameraLerp = {
+      from: s.camera.position.clone(),
+      to: pose.position,
+      targetFrom: pose.target.clone(),
+      targetTo: pose.target,
+      durationMs: 1300,
+    };
+  } else if (animate) {
     s.cameraLerp = {
       from: s.camera.position.clone(),
       to: pose.position,
       targetFrom: s.controls.target.clone(),
       targetTo: pose.target,
-      start: performance.now(),
-      durationMs: 450,
+      durationMs: 700,
+      lift: 0.08,
     };
   } else {
     s.cameraLerp = null;
@@ -3414,7 +3468,7 @@ function rebuild() {
 
     // The first time straight there; after a resize, a glide to the new
     // framing (unless standing in the doorway, which follows below).
-    if (state.cameraMode !== "walkin") frameRoom(s, !!s.lastDims);
+    if (state.cameraMode !== "walkin") frameRoom(s, s.lastDims ? true : "intro");
     s.lastDims = dims;
     s.lastShape = shapeKey;
   }
@@ -4365,6 +4419,12 @@ window.BathroomRoom3D = {
     state.walkInEntryIndex = walk ? s.lastEntryPlacements[0].index : 0;
     applyCameraMode(s);
     return walk ? "walk" : "orbit";
+  },
+
+  // False while the camera is gliding somewhere (the first look at the
+  // room, a step's close-up), true once it's still.
+  settled: function () {
+    return !threeState || !threeState.cameraLerp;
   },
 
   // Back to the view of the whole room.

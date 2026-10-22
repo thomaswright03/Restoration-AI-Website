@@ -2642,7 +2642,15 @@
     if (estimatorOn()) {
       var est = estimate();
       els.total.hidden = false;
-      els.totalValue.textContent = Pricing.money(est.grandTotal);
+      var money = Pricing.money(est.grandTotal);
+      // A new total gives a little nudge, so the change is noticed.
+      if (els.totalValue.textContent && els.totalValue.textContent !== money && moving() && els.total.animate) {
+        els.total.animate([{ transform: "scale(1)" }, { transform: "scale(1.06)" }, { transform: "scale(1)" }], {
+          duration: 420,
+          easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        });
+      }
+      els.totalValue.textContent = money;
     } else {
       els.total.hidden = true;
     }
@@ -2739,11 +2747,24 @@
     }
   }
 
+  // Where the panel last was (step and question), so a move to another one
+  // slides in from the side it's on, while a redraw of the same one (most
+  // edits) stays still.
+  var panelAt = null;
+  var REDUCED_MOTION = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+
+  function moving() {
+    return !(REDUCED_MOTION && REDUCED_MOTION.matches);
+  }
+
   function drawPanel(opts) {
     var panel = els.panel;
     var active = document.activeElement;
     var key = active && panel.contains(active) ? active.getAttribute("data-key") : null;
     var scroll = panel.scrollTop;
+    var at = STEPS.indexOf(ui.step) * 100 + (ui.q[ui.step] || 0);
+    var oldBar = panel.querySelector(".studio-progress-bar > span");
+    var oldWidth = oldBar ? oldBar.style.width : null;
     clear(panel);
     var body = h("div", { class: "studio-step is-" + ui.step });
     ({
@@ -2755,8 +2776,26 @@
       estimate: estimateStep,
     })[ui.step](body);
     body.appendChild(stepNav());
+    if (panelAt !== null && at !== panelAt && moving()) {
+      body.classList.add("is-entering");
+      body.setAttribute("data-from", at > panelAt ? "next" : "back");
+      body.addEventListener("animationend", function done(e) {
+        if (e.target !== body) return;
+        body.classList.remove("is-entering");
+        body.removeEventListener("animationend", done);
+      });
+    }
+    panelAt = at;
     panel.appendChild(body);
     panel.scrollTop = opts.top ? 0 : scroll;
+    // "3 of 9 picked": the bar grows from where it was rather than jumping.
+    var newBar = panel.querySelector(".studio-progress-bar > span");
+    if (newBar && oldWidth && newBar.style.width !== oldWidth && moving() && newBar.animate) {
+      newBar.animate([{ width: oldWidth }, { width: newBar.style.width }], {
+        duration: 450,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      });
+    }
     if (key) {
       var again = panel.querySelector('[data-key="' + key + '"]');
       if (again && !again.disabled) again.focus({ preventScroll: true });

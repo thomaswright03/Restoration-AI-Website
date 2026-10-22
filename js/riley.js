@@ -445,7 +445,20 @@
           }),
         );
       });
-      if (!again) speak(line.text);
+      if (!again) {
+        // A new line eases in, so the change catches the eye.
+        var still = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        if (!still && els.text.animate) {
+          els.text.animate(
+            [
+              { opacity: 0, transform: "translateY(6px)" },
+              { opacity: 1, transform: "none" },
+            ],
+            { duration: 380, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+          );
+        }
+        speak(line.text);
+      }
     },
 
     // Says it again out loud (the button on her bubble).

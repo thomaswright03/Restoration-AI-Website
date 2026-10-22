@@ -286,15 +286,17 @@ p {
 /* Scroll reveal */
 .reveal {
   opacity: 0;
-  transform: translateY(28px);
+  transform: translateY(28px) scale(0.985);
   transition:
-    opacity 0.9s var(--ease),
+    opacity 0.8s var(--ease),
     transform 0.9s var(--ease);
+  /* Blocks side by side follow one another (js/script.js sets --reveal-i). */
+  transition-delay: calc(var(--reveal-i, 0) * 90ms);
 }
 
 .reveal.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

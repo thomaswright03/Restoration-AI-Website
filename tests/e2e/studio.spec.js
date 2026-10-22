@@ -1211,6 +1211,8 @@ test.describe("design studio on a phone", () => {
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.locator(".studio-step-nav .btn-primary").click();
     await expect(page.locator(".studio-step h2")).toHaveText("Layout");
+    // Measured once the new step has finished sliding in.
+    await expect(page.locator(".studio-step.is-entering")).toHaveCount(0);
     const stage = await page.locator(".studio-stage").boundingBox();
     const heading = await page.locator(".studio-step h2").boundingBox();
     expect(stage.y).toBeGreaterThanOrEqual(0);

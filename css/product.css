@@ -1700,3 +1700,371 @@ html[data-signed-in] [data-nav-signed-out],
 .video-section[hidden] {
   display: none;
 }
+
+/* ---------- Motion ----------
+   Everything here moves only transform and opacity (the cheap kind, done
+   off the main thread), and only for visitors who haven't asked their
+   system for less motion; style.css cuts what's left short for those who
+   have. The designer's own motion is at the end of css/studio.css; the 3D
+   camera's glides are in js/bathroom-room-3d.js. */
+:root {
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Buttons lift toward the pointer and press in when clicked; the solid
+   ones catch a sweep of light. */
+.btn {
+  position: relative;
+  isolation: isolate;
+  transition:
+    background 0.3s var(--ease),
+    color 0.3s var(--ease),
+    border-color 0.3s var(--ease),
+    box-shadow 0.35s var(--ease-out),
+    transform 0.35s var(--ease-out);
+}
+
+.btn-primary {
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 0 12px 28px -10px color-mix(in srgb, var(--color-accent-bright) 75%, transparent);
+  }
+
+  .btn-primary:hover:not(:disabled)::after {
+    transform: translateX(110%);
+    transition: transform 0.8s var(--ease-out);
+  }
+
+  .nav-links a.nav-cta {
+    transition:
+      background 0.3s var(--ease),
+      transform 0.35s var(--ease-out),
+      box-shadow 0.35s var(--ease-out);
+  }
+
+  .nav-links a.nav-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px -10px color-mix(in srgb, var(--color-accent-bright) 80%, transparent);
+  }
+
+  /* Cards rise a little under the pointer. */
+  .card,
+  .plan-card {
+    transition:
+      transform 0.45s var(--ease-out),
+      box-shadow 0.45s var(--ease-out),
+      border-color 0.3s var(--ease);
+  }
+
+  .card:hover,
+  .plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+  }
+
+  .section-dark .card:hover {
+    border-color: rgba(94, 234, 212, 0.45);
+    box-shadow: 0 18px 40px -22px rgba(94, 234, 212, 0.45);
+  }
+
+  .card-number {
+    transition: transform 0.45s var(--ease-spring);
+  }
+
+  .card:hover .card-number {
+    transform: scale(1.12) rotate(-6deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
+    transition-duration: 0.08s;
+  }
+
+  /* Page to page: the old page lifts away and the new one settles in, with
+     the header held still (browsers that do cross-page view transitions). */
+  @view-transition {
+    navigation: auto;
+  }
+
+  .site-header {
+    view-transition-name: site-header;
+  }
+
+  ::view-transition-old(root) {
+    animation: page-out 0.2s var(--ease-in-out) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: page-in 0.42s var(--ease-out) both;
+  }
+
+  /* The landing hero: the words rise in one after another, then the
+     designer's picture tips up into place and a light passes over it. */
+  .hero-words > *,
+  .hero-page .hero-inner > * {
+    animation: rise-in 0.8s var(--ease-out) both;
+  }
+
+  .hero-words > :nth-child(2),
+  .hero-page .hero-inner > :nth-child(2) {
+    animation-delay: 0.06s;
+  }
+
+  .hero-words > :nth-child(3),
+  .hero-page .hero-inner > :nth-child(3) {
+    animation-delay: 0.12s;
+  }
+
+  .hero-words > :nth-child(4),
+  .hero-page .hero-inner > :nth-child(4) {
+    animation-delay: 0.18s;
+  }
+
+  .hero-words > :nth-child(5) {
+    animation-delay: 0.24s;
+  }
+
+  .hero-words > :nth-child(n + 6) {
+    animation-delay: 0.3s;
+  }
+
+  /* No fade on the picture itself: it's the page's largest paint, so it
+     shows from the first frame and only moves. */
+  .hero-shot {
+    animation: shot-in 1.3s var(--ease-out) 0.1s both;
+    transform-origin: 50% 100%;
+  }
+
+  .hero-shot picture {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .hero-shot picture::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(110deg, transparent 40%, rgba(255, 255, 255, 0.22) 50%, transparent 60%);
+    transform: translateX(-100%);
+    animation: sheen 1.6s var(--ease-in-out) 1s both;
+    pointer-events: none;
+  }
+
+  .hero-shot figcaption {
+    animation: rise-in 0.8s var(--ease-out) 0.6s both;
+  }
+
+  /* A slow glow drifting behind the hero and the closing band (wide
+     screens only: phones keep their battery). */
+  @media (min-width: 900px) {
+    .hero-landing,
+    .cta-band {
+      isolation: isolate;
+    }
+
+    .hero-landing::after,
+    .cta-band::after {
+      content: "";
+      position: absolute;
+      top: -20%;
+      left: 45%;
+      width: 60vw;
+      height: 60vw;
+      max-width: 900px;
+      max-height: 900px;
+      z-index: -1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(94, 234, 212, 0.13), transparent 62%);
+      pointer-events: none;
+      animation: drift 18s var(--ease-in-out) infinite alternate;
+      will-change: transform;
+    }
+
+    .cta-band::after {
+      top: -40%;
+      left: -10%;
+      background: radial-gradient(circle, rgba(51, 85, 240, 0.25), transparent 62%);
+      animation-duration: 22s;
+    }
+  }
+
+  /* The featured plan's edge: a band of colour running round it. */
+  @media (hover: hover) {
+    .plan-card-featured::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      padding: 2px;
+      border-radius: inherit;
+      background: conic-gradient(
+        from var(--plan-turn, 0deg),
+        var(--color-accent),
+        var(--color-accent-bright),
+        transparent 40%,
+        transparent 60%,
+        var(--color-accent)
+      );
+      -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: plan-turn 6s linear infinite;
+      pointer-events: none;
+    }
+  }
+
+  /* The menus in the nav (language, theme) and the phone menu drop open. */
+  .nav-menu[open] .lang-menu-list {
+    animation: drop-in 0.28s var(--ease-out) both;
+    transform-origin: top right;
+  }
+
+  .nav-links.open {
+    animation: drop-in 0.3s var(--ease-out) both;
+    transform-origin: top center;
+  }
+
+  /* Dialogs grow in over a fading backdrop. */
+  dialog[open] {
+    animation: dialog-in 0.38s var(--ease-out) both;
+  }
+
+  dialog[open]::backdrop {
+    animation: fade-in 0.3s var(--ease) both;
+  }
+
+  /* An answer opening in the FAQ slides its words down into place. */
+  .faq-item.open .faq-answer-inner > * {
+    animation: rise-in 0.5s var(--ease-out) both;
+  }
+
+  /* Messages that turn up on a page (a form's result, a notice). */
+  .form-status:not([hidden]),
+  .app-notice:not([hidden]) {
+    animation: rise-in 0.45s var(--ease-out) both;
+  }
+
+  /* A reading bar along the top of the landing page as it's scrolled
+     (browsers with scroll-driven animations; no script). */
+  @supports (animation-timeline: scroll()) {
+    .hero-landing::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 600;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-accent-bright));
+      transform-origin: 0 50%;
+      transform: scaleX(0);
+      animation: read-bar linear both;
+      animation-timeline: scroll(root);
+      pointer-events: none;
+    }
+  }
+}
+
+@property --plan-turn {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes shot-in {
+  from {
+    transform: perspective(1600px) rotateX(16deg) translateY(48px) scale(0.94);
+  }
+}
+
+@keyframes sheen {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate(-8%, -4%) scale(1);
+  }
+  to {
+    transform: translate(10%, 12%) scale(1.15);
+  }
+}
+
+@keyframes plan-turn {
+  to {
+    --plan-turn: 360deg;
+  }
+}
+
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes read-bar {
+  to {
+    transform: scaleX(1);
+  }
+}

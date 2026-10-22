@@ -3586,3 +3586,187 @@ html[data-embed="1"] .studio-plan {
     white-space: normal;
   }
 }
+
+/* ---------- Motion ----------
+   Transform and opacity only, and none at all for visitors who ask their
+   system for less motion. The panel is redrawn on most edits, so nothing in
+   it animates on being drawn except a move to another step or question
+   (js/studio.js marks that one .is-entering). */
+@media (prefers-reduced-motion: no-preference) {
+  /* A step or question slides in from the side it's on, its parts one
+     after another. */
+  .studio-step.is-entering {
+    animation: studio-step-in 0.42s var(--ease-out) both;
+  }
+
+  .studio-step.is-entering[data-from="back"] {
+    animation-name: studio-step-back;
+  }
+
+  .studio-step.is-entering > * {
+    animation: studio-rise 0.5s var(--ease-out) both;
+  }
+
+  .studio-step.is-entering > :nth-child(2) {
+    animation-delay: 0.04s;
+  }
+
+  .studio-step.is-entering > :nth-child(3) {
+    animation-delay: 0.08s;
+  }
+
+  .studio-step.is-entering > :nth-child(4) {
+    animation-delay: 0.12s;
+  }
+
+  .studio-step.is-entering > :nth-child(n + 5) {
+    animation-delay: 0.16s;
+  }
+
+  /* The step bar: the current step's number springs up, a finished step's
+     check pops in. */
+  .studio-step-btn[aria-current="step"] .studio-step-num {
+    animation: studio-spring 0.5s var(--ease-spring);
+  }
+
+  .studio-step-btn.is-done .studio-step-check {
+    animation: studio-spring 0.45s var(--ease-spring);
+  }
+
+  .studio-step-num {
+    transition:
+      background 0.25s var(--ease),
+      border-color 0.25s var(--ease),
+      color 0.25s var(--ease);
+  }
+
+  /* Choices answer the press. */
+  .studio-choice,
+  .studio-option,
+  .studio-view-btn,
+  .studio-icon-btn,
+  .studio-step-btn,
+  .riley-action,
+  .studio-toast-action {
+    transition:
+      background 0.2s var(--ease),
+      color 0.2s var(--ease),
+      border-color 0.2s var(--ease),
+      box-shadow 0.25s var(--ease-out),
+      transform 0.25s var(--ease-out);
+  }
+
+  .studio-choice:active:not(:disabled),
+  .studio-option:active:not(:disabled),
+  .studio-view-btn:active,
+  .studio-icon-btn:active:not(:disabled),
+  .studio-step-btn:active,
+  .riley-action:active,
+  .studio-toast-action:active {
+    transform: scale(0.95);
+    transition-duration: 0.08s;
+  }
+
+  @media (hover: hover) {
+    .studio-option:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-soft);
+    }
+  }
+
+  /* The 3D room comes up out of the loading screen, and the plan and the
+     room cross-fade when switched. */
+  .studio-canvas canvas {
+    animation: studio-canvas-in 0.9s var(--ease-out) both;
+  }
+
+  .studio-room:not([hidden]),
+  .studio-plan:not([hidden]) {
+    animation: studio-fade 0.35s var(--ease) both;
+  }
+
+  /* Waiting for the room: a sheen of light passes over the stage. */
+  .studio-canvas:empty::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 30%,
+      color-mix(in srgb, var(--color-accent-bright) 9%, transparent) 50%,
+      transparent 70%
+    );
+    animation: studio-sweep 1.8s var(--ease-in-out) infinite;
+    pointer-events: none;
+  }
+
+  /* Notes, the selected fixture's chip and Riley's card arrive rather than
+     appear. */
+  .studio-toast {
+    animation: studio-toast-in 0.45s var(--ease-spring);
+  }
+
+  .studio-selchip:not([hidden]) {
+    animation: studio-toast-in 0.4s var(--ease-spring);
+  }
+
+  .riley:not([hidden]) {
+    animation: studio-rise 0.5s var(--ease-out) both;
+  }
+}
+
+@keyframes studio-step-in {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes studio-step-back {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes studio-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes studio-spring {
+  from {
+    transform: scale(0.4);
+  }
+}
+
+@keyframes studio-canvas-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes studio-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes studio-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes studio-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.92);
+  }
+}

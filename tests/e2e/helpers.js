@@ -53,6 +53,8 @@ async function openStudio(page, url = "/designer.html", opts = {}) {
 async function wait3d(page) {
   await page.waitForFunction(() => window.BathroomRoom3D && window.BathroomRoom3D.available === true);
   await page.waitForFunction(() => window.BathroomRoom3D.itemScreenPoint("f1") !== null);
+  // The camera's first swing onto the room has finished.
+  await page.waitForFunction(() => window.BathroomRoom3D.settled());
 }
 
 // Answers every step's questions the way a person clicking through would

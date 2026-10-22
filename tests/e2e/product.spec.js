@@ -82,6 +82,15 @@ test("the landing page's hero shows the designer itself, in the page's language,
   await expect
     .poll(() => phone.evaluate((img) => img.complete && img.currentSrc))
     .toMatch(/hero-designer-en-phone\.webp$/);
+  // Measured once the picture has finished tipping into place.
+  await phone.evaluate((img) =>
+    Promise.all(
+      img
+        .closest("figure")
+        .getAnimations()
+        .map((a) => a.finished),
+    ),
+  );
   const box = await phone.boundingBox();
   expect(box.width).toBeGreaterThan(340);
   expect(await phone.evaluate((img) => img.naturalWidth / img.getBoundingClientRect().width)).toBeLessThan(2.1);

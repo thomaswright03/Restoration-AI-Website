@@ -624,25 +624,35 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Última actualización</h2></summary>
-              <p class="form-note">20 de octubre de 2026</p>
+              <p class="form-note">22 de octubre de 2026</p>
               <h3>Cambios visibles</h3>
               <ul>
                 <li>
-                  En la página de estado /admin del propietario, la fila del webhook de Stripe ahora se llama "Stripe
-                  webhook deliveries". Pasa a Caído si el endpoint del webhook está desactivado o si Stripe tiene
-                  eventos sin entregar pasados 30 minutos. Nada cambia para los clientes.
+                  Movimiento en todo el sitio: el encabezado de la página principal aparece deslizándose, los botones y
+                  las tarjetas se elevan al pasar el cursor, y los menús, diálogos y respuestas de preguntas frecuentes
+                  se abren y cierran suavemente.
                 </li>
                 <li>
-                  La fila "Deployed version" ahora muestra el commit y la hora en que entró en producción, y muestra una
-                  advertencia si no se encuentra esa hora.
+                  Movimiento en el diseñador: los pasos se deslizan, la barra de pasos salta al paso activo, la barra de
+                  progreso crece, el total se mueve al cambiar, las líneas de Riley y los avisos aparecen suavemente,
+                  las vistas de plano y 3D se funden, la carga muestra un brillo suave y la cámara se desliza entre
+                  vistas. Todo se desactiva si su dispositivo pide movimiento reducido.
+                </li>
+                <li>
+                  La página de estado /admin del propietario ahora muestra las horas en hora de Arizona e indica en qué
+                  zona están.
                 </li>
               </ul>
               <h3>Otros cambios</h3>
               <ul>
                 <li>
-                  Las comprobaciones automáticas ahora cubren las filas de webhook y hora de despliegue de la página de
-                  estado, con pruebas para webhooks con fallos, recientes y desactivados, y para una hora de despliegue
-                  ausente.
+                  La página de estado /admin tiene una fila nueva, "The 3D designer loads", que pasa a Caído si la
+                  página, los scripts o un modelo 3D del diseñador dejan de cargar. También tiene los mismos iconos que
+                  el resto del sitio.
+                </li>
+                <li>
+                  El subrayado del menú y la barra de progreso de productos ahora se animan con transformaciones, para
+                  mantenerse fluidos en teléfonos lentos.
                 </li>
               </ul>
             </details>

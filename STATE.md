@@ -4,7 +4,7 @@
 
 ## Status (2026-10-20, grade 74 at c6b475c; fixes merged in 6eef5ef)
 
-- /admin status page and /admin/status.json are live (env vars set 2026-10-20; 401 without credentials). Rows: Stripe webhook deliveries (endpoint enabled, no events undelivered >30 min), Deployed version (commit + real go-live time from GitHub deployment status), database, backups, kill switches.
+- /admin status page and /admin/status.json are live (env vars set 2026-10-20; 401 without credentials). Rows: The 3D designer loads (fetches designer.html, studio.js, room-3d, three, one .glb from the site origin; Down if any is missing), Stripe webhook deliveries (endpoint enabled, no events undelivered >30 min), Deployed version (commit + real go-live time from GitHub deployment status), database, backups, kill switches.
 - WebKit iPhone CI job passed on main (run 39502061990); recorded in docs/live-check.md.
 - Alerts: sendAlert emails server errors via Resend (throttled); test route /api/alert-test.
 - Backups: daily encrypted dump, restored into empty Postgres 17 and table counts checked every run; heartbeat fails if last good backup >36 h. 24 h recovery point accepted (Free plan).

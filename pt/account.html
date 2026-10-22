@@ -622,25 +622,34 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Última atualização</h2></summary>
-              <p class="form-note">20 de outubro de 2026</p>
+              <p class="form-note">22 de outubro de 2026</p>
               <h3>Mudanças visíveis</h3>
               <ul>
                 <li>
-                  Na página de status /admin do proprietário, a linha do webhook do Stripe agora se chama "Stripe
-                  webhook deliveries". Ela fica Fora do ar se o endpoint do webhook estiver desativado ou se o Stripe
-                  tiver eventos não entregues após 30 minutos. Nada muda para os clientes.
+                  Movimento em todo o site: o topo da página inicial surge deslizando, botões e cartões se elevam ao
+                  passar o cursor, e menus, diálogos e respostas do FAQ abrem e fecham suavemente.
                 </li>
                 <li>
-                  A linha "Deployed version" agora mostra o commit e a hora em que entrou no ar, e mostra um aviso se
-                  essa hora não for encontrada.
+                  Movimento no projetista: as etapas deslizam, a barra de etapas salta para a etapa ativa, a barra de
+                  progresso cresce, o total se move ao mudar, as falas da Riley e os avisos surgem suavemente, as vistas
+                  de planta e 3D se misturam, o carregamento mostra um brilho suave e a câmera desliza entre as vistas.
+                  Tudo é desligado se o seu dispositivo pedir movimento reduzido.
+                </li>
+                <li>
+                  A página de status /admin do proprietário agora mostra os horários no fuso do Arizona e informa qual é
+                  o fuso.
                 </li>
               </ul>
               <h3>Outras mudanças</h3>
               <ul>
                 <li>
-                  As verificações automáticas agora cobrem as linhas de webhook e hora de implantação da página de
-                  status, com testes para webhooks com falha, recentes e desativados, e para hora de implantação
-                  ausente.
+                  A página de status /admin tem uma nova linha, "The 3D designer loads", que fica Fora do ar se a
+                  página, os scripts ou um modelo 3D do projetista deixarem de carregar. Ela também tem os mesmos ícones
+                  do resto do site.
+                </li>
+                <li>
+                  O sublinhado do menu e a barra de progresso de produtos agora animam com transformações, para
+                  continuar fluidos em celulares mais lentos.
                 </li>
               </ul>
             </details>

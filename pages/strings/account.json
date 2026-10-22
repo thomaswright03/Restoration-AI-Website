@@ -292,22 +292,32 @@
   "account.biz.copyUrl": ["Copy address", "Copiar dirección", "Copiar endereço"],
   "account.biz.openUrl": ["Open my designer", "Abrir mi diseñador", "Abrir meu projetista"],
   "account.update.title": ["Latest update", "Última actualización", "Última atualização"],
-  "account.update.date": ["October 20, 2026", "20 de octubre de 2026", "20 de outubro de 2026"],
+  "account.update.date": ["October 22, 2026", "22 de octubre de 2026", "22 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "On the owner's /admin status page, the Stripe webhook row is now called \"Stripe webhook deliveries\". It turns Down if the webhook endpoint is disabled, or if Stripe has events it still hasn't delivered after 30 minutes. Nothing changes for customers.",
-    "En la página de estado /admin del propietario, la fila del webhook de Stripe ahora se llama \"Stripe webhook deliveries\". Pasa a Caído si el endpoint del webhook está desactivado o si Stripe tiene eventos sin entregar pasados 30 minutos. Nada cambia para los clientes.",
-    "Na página de status /admin do proprietário, a linha do webhook do Stripe agora se chama \"Stripe webhook deliveries\". Ela fica Fora do ar se o endpoint do webhook estiver desativado ou se o Stripe tiver eventos não entregues após 30 minutos. Nada muda para os clientes."
+    "Motion across the site: the landing hero fades and slides in, buttons and cards lift on hover, and menus, dialogs and FAQ answers ease open and shut.",
+    "Movimiento en todo el sitio: el encabezado de la página principal aparece deslizándose, los botones y las tarjetas se elevan al pasar el cursor, y los menús, diálogos y respuestas de preguntas frecuentes se abren y cierran suavemente.",
+    "Movimento em todo o site: o topo da página inicial surge deslizando, botões e cartões se elevam ao passar o cursor, e menus, diálogos e respostas do FAQ abrem e fecham suavemente."
   ],
   "account.update.f2": [
-    "The \"Deployed version\" row now shows the commit and the time it went live, and shows a warning if that time can't be found.",
-    "La fila \"Deployed version\" ahora muestra el commit y la hora en que entró en producción, y muestra una advertencia si no se encuentra esa hora.",
-    "A linha \"Deployed version\" agora mostra o commit e a hora em que entrou no ar, e mostra um aviso se essa hora não for encontrada."
+    "Motion in the designer: steps slide in, the step bar springs to the active step, the progress bar grows, the total nudges when it changes, Riley's lines and toasts appear gently, the plan and 3D views cross-fade, loading shows a soft sheen, and the camera glides between views. All of it is switched off if your device asks for reduced motion.",
+    "Movimiento en el diseñador: los pasos se deslizan, la barra de pasos salta al paso activo, la barra de progreso crece, el total se mueve al cambiar, las líneas de Riley y los avisos aparecen suavemente, las vistas de plano y 3D se funden, la carga muestra un brillo suave y la cámara se desliza entre vistas. Todo se desactiva si su dispositivo pide movimiento reducido.",
+    "Movimento no projetista: as etapas deslizam, a barra de etapas salta para a etapa ativa, a barra de progresso cresce, o total se move ao mudar, as falas da Riley e os avisos surgem suavemente, as vistas de planta e 3D se misturam, o carregamento mostra um brilho suave e a câmera desliza entre as vistas. Tudo é desligado se o seu dispositivo pedir movimento reduzido."
+  ],
+  "account.update.f3": [
+    "The owner's /admin status page now shows times in Arizona time and says which zone they are in.",
+    "La página de estado /admin del propietario ahora muestra las horas en hora de Arizona e indica en qué zona están.",
+    "A página de status /admin do proprietário agora mostra os horários no fuso do Arizona e informa qual é o fuso."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [
-    "The automatic checks now cover the status page's webhook and deploy-time rows, with tests for failing, fresh and disabled webhooks and for a missing deploy time.",
-    "Las comprobaciones automáticas ahora cubren las filas de webhook y hora de despliegue de la página de estado, con pruebas para webhooks con fallos, recientes y desactivados, y para una hora de despliegue ausente.",
-    "As verificações automáticas agora cobrem as linhas de webhook e hora de implantação da página de status, com testes para webhooks com falha, recentes e desativados, e para hora de implantação ausente."
+    "The /admin status page has a new row, \"The 3D designer loads\", that goes Down if the designer's page, scripts or a 3D model stop loading. It also has the same icons as the rest of the site.",
+    "La página de estado /admin tiene una fila nueva, \"The 3D designer loads\", que pasa a Caído si la página, los scripts o un modelo 3D del diseñador dejan de cargar. También tiene los mismos iconos que el resto del sitio.",
+    "A página de status /admin tem uma nova linha, \"The 3D designer loads\", que fica Fora do ar se a página, os scripts ou um modelo 3D do projetista deixarem de carregar. Ela também tem os mesmos ícones do resto do site."
+  ],
+  "account.update.o2": [
+    "The nav underline and the products progress bar now animate with transforms, so they stay smooth on slower phones.",
+    "El subrayado del menú y la barra de progreso de productos ahora se animan con transformaciones, para mantenerse fluidos en teléfonos lentos.",
+    "O sublinhado do menu e a barra de progresso de produtos agora animam com transformações, para continuar fluidos em celulares mais lentos."
   ]
 }

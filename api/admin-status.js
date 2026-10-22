@@ -230,7 +230,35 @@ async function deployedVersion() {
   return { detail: commit + ", deployed " + done.created_at, last_success: done.created_at };
 }
 
-async function buildStatus() {
+// The assets the paid designer needs, read from the site's own origin.
+/** @type {[string, RegExp][]} */
+const DESIGNER_ASSETS = [
+  ["/designer.html", /text\/html/],
+  ["/js/studio.js", /javascript/],
+  ["/js/bathroom-room-3d.js", /javascript/],
+  ["/js/vendor/three-r186/three.module.js", /javascript/],
+  ["/models/products/sterling/S1201-0.glb", /gltf|octet-stream/],
+];
+
+async function designerLoads(origin) {
+  const bad = [];
+  await Promise.all(
+    DESIGNER_ASSETS.map(async ([path, type]) => {
+      try {
+        const r = await fetchWithTimeout(origin + path, { method: "GET" }, CHECK_MS);
+        const ct = String((r.headers && r.headers.get && r.headers.get("content-type")) || "");
+        if (r.status !== 200) bad.push(path + " answered " + r.status);
+        else if (!type.test(ct)) bad.push(path + " has content type " + (ct || "none"));
+      } catch {
+        bad.push(path + " did not answer");
+      }
+    }),
+  );
+  if (bad.length) throw new Error(bad.sort().join("; "));
+}
+
+/** @param {string} [origin] */
+async function buildStatus(origin) {
   const sw = supabaseReady() ? await switches(Date.now(), true) : null;
   /** @returns {Result} */
   const switchOff = (name, label) =>
@@ -250,6 +278,10 @@ async function buildStatus() {
         { includeTrade: true, prices: P.DEFAULT_PRICES },
       );
       if (!(Number.isFinite(r.total) && r.total > 0)) throw new Error("The sample estimate came out as " + r.total);
+    }),
+    check("important", "The 3D designer loads", "Redeploy the last good version in Vercel", async () => {
+      if (!origin) throw new Error("The site address is unknown");
+      await designerLoads(origin);
     }),
     check("important", "Sign-up and the free week", "Check Supabase and the sign-ups switch", async () => {
       await dbRead("subscriptions?select=free_week_ends&limit=1");
@@ -325,7 +357,11 @@ module.exports = async function handler(req, res) {
   if (!env("ADMIN_STATUS_TOKEN") && !adminEmails().length) return sendJson(res, 404, { error: "not-found" });
   const who = await authorize(req);
   if (!who.allowed) return sendJson(res, who.status || 401, { error: who.status === 403 ? "forbidden" : "signin" });
-  return sendJson(res, 200, await buildStatus());
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "")
+    .split(",")[0]
+    .trim();
+  const origin = /^[a-z0-9.-]+(:\d+)?$/i.test(host) ? "https://" + host : "";
+  return sendJson(res, 200, await buildStatus(origin));
 };
 
 module.exports.buildStatus = buildStatus;

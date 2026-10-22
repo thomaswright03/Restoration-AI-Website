@@ -42,6 +42,13 @@ function upstream(dead, run, hooks = {}) {
   return async (url) => {
     const u = String(url);
     if (dead && u.includes(dead)) throw new Error("connect ECONNREFUSED");
+    if (u.startsWith("https://site.example/")) {
+      if (hooks.badAsset && u.includes(hooks.badAsset)) return json(404, {});
+      const type = u.endsWith(".glb") ? "model/gltf-binary" : u.endsWith(".js") ? "text/javascript" : "text/html";
+      const ok = json(200, {});
+      ok.headers = new Headers({ "content-type": type });
+      return ok;
+    }
     if (u.includes("/rest/v1/")) return json(200, []);
     if (u.includes("/auth/v1/settings")) return json(200, { external: { email: true } });
     if (u.includes("/auth/v1/health")) return json(200, { ok: true });
@@ -105,7 +112,7 @@ async function call(headers, { dead, env = {}, run, hooks } = {}) {
     },
   };
   try {
-    await handler({ method: "GET", url: "/admin/status.json", headers }, res);
+    await handler({ method: "GET", url: "/admin/status.json", headers: { host: "site.example", ...headers } }, res);
   } finally {
     VARS.forEach((k, i) => {
       if (saved[i] === undefined) delete process.env[k];
@@ -214,4 +221,17 @@ test("the deployed version is a Warning, not OK, when the deploy time can't be f
   assert.equal(v.status, "warning");
   assert.match(v.detail, /deploy time not found/);
   assert.equal(v.last_success, null);
+});
+
+test("the 3D designer row is OK when every asset loads from the site", async () => {
+  const r = await call(AUTH);
+  assert.equal(row(r.body, "The 3D designer loads").status, "ok");
+});
+
+test("a missing designer asset turns the 3D designer row and the overall status Down", async () => {
+  const r = await call(AUTH, { hooks: { badAsset: "/js/studio.js" } });
+  const d = row(r.body, "The 3D designer loads");
+  assert.equal(d.status, "down");
+  assert.match(d.detail, /\/js\/studio\.js answered 404/);
+  assert.equal(r.body.overall, "down");
 });

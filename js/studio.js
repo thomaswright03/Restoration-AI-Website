@@ -2764,7 +2764,7 @@
     var scroll = panel.scrollTop;
     var at = STEPS.indexOf(ui.step) * 100 + (ui.q[ui.step] || 0);
     var oldBar = panel.querySelector(".studio-progress-bar > span");
-    var oldWidth = oldBar ? oldBar.style.width : null;
+    var oldWidth = oldBar ? oldBar.style.transform : null;
     clear(panel);
     var body = h("div", { class: "studio-step is-" + ui.step });
     ({
@@ -2790,8 +2790,8 @@
     panel.scrollTop = opts.top ? 0 : scroll;
     // "3 of 9 picked": the bar grows from where it was rather than jumping.
     var newBar = panel.querySelector(".studio-progress-bar > span");
-    if (newBar && oldWidth && newBar.style.width !== oldWidth && moving() && newBar.animate) {
-      newBar.animate([{ width: oldWidth }, { width: newBar.style.width }], {
+    if (newBar && oldWidth && newBar.style.transform !== oldWidth && moving() && newBar.animate) {
+      newBar.animate([{ transform: oldWidth }, { transform: newBar.style.transform }], {
         duration: 450,
         easing: "cubic-bezier(0.16, 1, 0.3, 1)",
       });
@@ -4733,7 +4733,7 @@
     body.appendChild(
       h("p", { class: "studio-progress" + (allPicked ? " is-done" : ""), "data-testid": "products-progress" }, [
         h("span", { class: "studio-progress-bar", "aria-hidden": "true" }, [
-          h("span", { style: "width:" + Math.round((100 * picked) / Math.max(1, slots.length)) + "%" }),
+          h("span", { style: "transform:scaleX(" + picked / Math.max(1, slots.length) + ")" }),
         ]),
         h("span", {
           class: "studio-progress-text",

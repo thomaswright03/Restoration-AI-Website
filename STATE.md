@@ -26,3 +26,9 @@
 - Latest update card rewritten for the PR #20 round (en/es/pt; source pages/account.html + pages/strings/account.json).
 - Deployed version row is Warning when the deploy time isn't found (tested); 20-type webhook limit commented.
 - Still open (owner): one live bearer-token /admin/status.json read, studio.js split.
+
+## Excellence fix round 2 (2026-10-22)
+- /admin designer check uses HEAD (tested); origin prefers VERCEL_PROJECT_PRODUCTION_URL.
+- Header padding and FAQ grid-rows transitions removed; update card admin items moved to Frontend changes.
+- Open: studio.js split, strictNullChecks (~460 errors, 8 files), real-user session, throttled motion video.
+- Send future rounds through a PR.

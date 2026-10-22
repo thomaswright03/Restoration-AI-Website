@@ -337,7 +337,6 @@ p {
   padding: var(--space-5) var(--gutter);
   max-width: var(--max-width);
   margin: 0 auto;
-  transition: padding 0.4s var(--ease);
 }
 
 .site-header.scrolled .nav {
@@ -1015,7 +1014,6 @@ p {
 .faq-answer {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.35s var(--ease);
   color: var(--color-ink-soft);
 }
 
@@ -1034,6 +1032,14 @@ p {
 
 .faq-item.open .faq-answer-inner {
   padding-bottom: var(--space-5);
+  animation: faq-in 0.35s var(--ease) both;
+}
+
+@keyframes faq-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
 
 /* Dark band */

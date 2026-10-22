@@ -625,9 +625,6 @@
                   if your device asks for reduced motion.
                 </li>
                 <li>The owner's /admin status page now shows times in Arizona time and says which zone they are in.</li>
-              </ul>
-              <h3>Other changes</h3>
-              <ul>
                 <li>
                   The /admin status page has a new row, "The 3D designer loads", that goes Down if the designer's page,
                   scripts or a 3D model stop loading. It also has the same icons as the rest of the site.
@@ -635,6 +632,13 @@
                 <li>
                   The nav underline and the products progress bar now animate with transforms, so they stay smooth on
                   slower phones.
+                </li>
+              </ul>
+              <h3>Other changes</h3>
+              <ul>
+                <li>
+                  The /admin check that the designer loads now only asks for each file's headers instead of downloading
+                  it, so each status read is much lighter. It also always uses the site's configured address.
                 </li>
               </ul>
             </details>

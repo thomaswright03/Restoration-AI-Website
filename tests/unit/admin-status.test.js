@@ -39,8 +39,9 @@ function json(status, body) {
 // Healthy upstreams; `dead` is a host fragment that refuses connections, and
 // `run` the latest GitHub Actions run.
 function upstream(dead, run, hooks = {}) {
-  return async (url) => {
+  return async (url, init) => {
     const u = String(url);
+    if (hooks.siteMethods && u.startsWith("https://site.example/")) hooks.siteMethods.push(init && init.method);
     if (dead && u.includes(dead)) throw new Error("connect ECONNREFUSED");
     if (u.startsWith("https://site.example/")) {
       if (hooks.badAsset && u.includes(hooks.badAsset)) return json(404, {});
@@ -234,4 +235,12 @@ test("a missing designer asset turns the 3D designer row and the overall status 
   assert.equal(d.status, "down");
   assert.match(d.detail, /\/js\/studio\.js answered 404/);
   assert.equal(r.body.overall, "down");
+});
+
+test("the designer check asks only for headers (HEAD), not the whole files", async () => {
+  const methods = [];
+  const r = await call(AUTH, { hooks: { siteMethods: methods } });
+  assert.equal(row(r.body, "The 3D designer loads").status, "ok");
+  assert.equal(methods.length, 5);
+  assert.ok(methods.every((m) => m === "HEAD"));
 });

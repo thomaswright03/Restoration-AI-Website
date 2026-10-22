@@ -245,7 +245,7 @@ async function designerLoads(origin) {
   await Promise.all(
     DESIGNER_ASSETS.map(async ([path, type]) => {
       try {
-        const r = await fetchWithTimeout(origin + path, { method: "GET" }, CHECK_MS);
+        const r = await fetchWithTimeout(origin + path, { method: "HEAD" }, CHECK_MS);
         const ct = String((r.headers && r.headers.get && r.headers.get("content-type")) || "");
         if (r.status !== 200) bad.push(path + " answered " + r.status);
         else if (!type.test(ct)) bad.push(path + " has content type " + (ct || "none"));
@@ -357,7 +357,8 @@ module.exports = async function handler(req, res) {
   if (!env("ADMIN_STATUS_TOKEN") && !adminEmails().length) return sendJson(res, 404, { error: "not-found" });
   const who = await authorize(req);
   if (!who.allowed) return sendJson(res, who.status || 401, { error: who.status === 403 ? "forbidden" : "signin" });
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "")
+  // Prefer the configured production host so a caller-supplied header never picks the fetch target.
+  const host = String(env("VERCEL_PROJECT_PRODUCTION_URL") || req.headers["x-forwarded-host"] || req.headers.host || "")
     .split(",")[0]
     .trim();
   const origin = /^[a-z0-9.-]+(:\d+)?$/i.test(host) ? "https://" + host : "";

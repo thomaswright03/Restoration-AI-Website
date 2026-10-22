@@ -310,14 +310,19 @@
     "A página de status /admin do proprietário agora mostra os horários no fuso do Arizona e informa qual é o fuso."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
-  "account.update.o1": [
+  "account.update.f4": [
     "The /admin status page has a new row, \"The 3D designer loads\", that goes Down if the designer's page, scripts or a 3D model stop loading. It also has the same icons as the rest of the site.",
     "La página de estado /admin tiene una fila nueva, \"The 3D designer loads\", que pasa a Caído si la página, los scripts o un modelo 3D del diseñador dejan de cargar. También tiene los mismos iconos que el resto del sitio.",
     "A página de status /admin tem uma nova linha, \"The 3D designer loads\", que fica Fora do ar se a página, os scripts ou um modelo 3D do projetista deixarem de carregar. Ela também tem os mesmos ícones do resto do site."
   ],
-  "account.update.o2": [
+  "account.update.f5": [
     "The nav underline and the products progress bar now animate with transforms, so they stay smooth on slower phones.",
     "El subrayado del menú y la barra de progreso de productos ahora se animan con transformaciones, para mantenerse fluidos en teléfonos lentos.",
     "O sublinhado do menu e a barra de progresso de produtos agora animam com transformações, para continuar fluidos em celulares mais lentos."
+  ],
+  "account.update.o1": [
+    "The /admin check that the designer loads now only asks for each file's headers instead of downloading it, so each status read is much lighter. It also always uses the site's configured address.",
+    "La comprobación de /admin de que el diseñador carga ahora solo pide los encabezados de cada archivo en lugar de descargarlo, así que cada lectura del estado es mucho más ligera. También usa siempre la dirección configurada del sitio.",
+    "A verificação do /admin de que o projetista carrega agora pede apenas os cabeçalhos de cada arquivo em vez de baixá-lo, então cada leitura do status fica bem mais leve. Ela também usa sempre o endereço configurado do site."
   ]
 }

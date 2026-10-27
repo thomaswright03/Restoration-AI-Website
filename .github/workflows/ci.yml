@@ -1,8 +1,10 @@
 name: CI
 
+# Paused 2026-10-27 at Thomas's request (no automatic runs). To resume,
+# restore the trigger(s) noted below. Manual runs still work from the Actions tab.
+# Was: push and pull_request.
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read

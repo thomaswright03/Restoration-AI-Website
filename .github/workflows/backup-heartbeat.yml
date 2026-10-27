@@ -3,9 +3,10 @@ name: Backup heartbeat
 # A schedule that stops firing sends no failure email, so this second
 # schedule (a different hour) fails, and GitHub emails the owner, when the
 # last successful "Database backup" run is more than 36 hours old.
+# Paused 2026-10-27 at Thomas's request (no automatic runs). To resume,
+# restore the trigger(s) noted below. Manual runs still work from the Actions tab.
+# Was: schedule cron "43 15 * * *".
 on:
-  schedule:
-    - cron: "43 15 * * *"
   workflow_dispatch:
 
 permissions:

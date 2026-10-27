@@ -6,9 +6,10 @@ name: Database backup
 # stored. Each run then restores the backup into an empty Postgres and checks
 # every table comes back with the same row count. How to restore:
 # docs/backups.md.
+# Paused 2026-10-27 at Thomas's request (no automatic runs). To resume,
+# restore the trigger(s) noted below. Manual runs still work from the Actions tab.
+# Was: schedule cron "17 9 * * *".
 on:
-  schedule:
-    - cron: "17 9 * * *"
   workflow_dispatch:
 
 permissions:

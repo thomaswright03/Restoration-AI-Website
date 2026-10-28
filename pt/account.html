@@ -622,39 +622,21 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Última atualização</h2></summary>
-              <p class="form-note">22 de outubro de 2026</p>
+              <p class="form-note">28 de outubro de 2026</p>
               <h3>Mudanças visíveis</h3>
               <ul>
-                <li>
-                  Movimento em todo o site: o topo da página inicial surge deslizando, botões e cartões se elevam ao
-                  passar o cursor, e menus, diálogos e respostas do FAQ abrem e fecham suavemente.
-                </li>
-                <li>
-                  Movimento no projetista: as etapas deslizam, a barra de etapas salta para a etapa ativa, a barra de
-                  progresso cresce, o total se move ao mudar, as falas da Riley e os avisos surgem suavemente, as vistas
-                  de planta e 3D se misturam, o carregamento mostra um brilho suave e a câmera desliza entre as vistas.
-                  Tudo é desligado se o seu dispositivo pedir movimento reduzido.
-                </li>
-                <li>
-                  A página de status /admin do proprietário agora mostra os horários no fuso do Arizona e informa qual é
-                  o fuso.
-                </li>
-                <li>
-                  A página de status /admin tem uma nova linha, "The 3D designer loads", que fica Fora do ar se a
-                  página, os scripts ou um modelo 3D do projetista deixarem de carregar. Ela também tem os mesmos ícones
-                  do resto do site.
-                </li>
-                <li>
-                  O sublinhado do menu e a barra de progresso de produtos agora animam com transformações, para
-                  continuar fluidos em celulares mais lentos.
-                </li>
+                <li>Não há mudanças visíveis nesta rodada.</li>
               </ul>
               <h3>Outras mudanças</h3>
               <ul>
                 <li>
-                  A verificação do /admin de que o projetista carrega agora pede apenas os cabeçalhos de cada arquivo em
-                  vez de baixá-lo, então cada leitura do status fica bem mais leve. Ela também usa sempre o endereço
-                  configurado do site.
+                  As execuções automáticas do GitHub Actions (testes a cada mudança, o backup diário do banco de dados e
+                  o alarme de backup) estão pausadas e só rodam quando iniciadas à mão. A linha de backup do /admin do
+                  proprietário informa isso, e um backup é feito à mão até o agendamento voltar.
+                </li>
+                <li>
+                  A produção agora só é publicada depois que os testes passam na ramificação principal, e as
+                  verificações da etapa salva do projetista ficaram mais estáveis.
                 </li>
               </ul>
             </details>

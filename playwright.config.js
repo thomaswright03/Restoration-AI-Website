@@ -32,6 +32,10 @@ module.exports = defineConfig({
   // the default 5s even running alone. Widen the default assertion timeout
   // in CI rather than keep chasing the render pipeline's startup cost.
   expect: { timeout: 15000 },
+  // Designer specs reload the page and wait for the 3D room more than once;
+  // software WebGL on a 2-core runner can take 20 s a reload, which blew the
+  // 30 s default (the page was fine, the test ran out of time).
+  timeout: 90000,
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",

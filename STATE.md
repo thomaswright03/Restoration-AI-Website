@@ -2,7 +2,7 @@
 
 3D bathroom designer for remodel/restoration businesses: layout, fixtures and finishes, estimate at the business's own prices, saved client projects, Stripe plans (Starter/Pro/Max). Static HTML + Vercel functions + Supabase + Stripe; EN/ES/PT-BR. See README.md. Live in production (live Stripe keys).
 
-## Status (2026-10-20, grade 74 at c6b475c; fixes merged in 6eef5ef)
+## Status (2026-10-28, grade 70 at 6ab034f; fix round 1 for it in progress)
 
 - /admin status page and /admin/status.json are live (env vars set 2026-10-20; 401 without credentials). Rows: The 3D designer loads (fetches designer.html, studio.js, room-3d, three, one .glb from the site origin; Down if any is missing), Stripe webhook deliveries (endpoint enabled, no events undelivered >30 min), Deployed version (commit + real go-live time from GitHub deployment status), database, backups, kill switches.
 - WebKit iPhone CI job passed on main (run 39502061990); recorded in docs/live-check.md.
@@ -28,7 +28,16 @@
 - Still open (owner): one live bearer-token /admin/status.json read, studio.js split.
 
 ## Excellence fix round 2 (2026-10-22)
+
 - /admin designer check uses HEAD (tested); origin prefers VERCEL_PROJECT_PRODUCTION_URL.
 - Header padding and FAQ grid-rows transitions removed; update card admin items moved to Frontend changes.
 - Open: studio.js split, strictNullChecks (~460 errors, 8 files), real-user session, throttled motion video.
 - Send future rounds through a PR.
+
+## Excellence fix round (2026-10-28)
+
+- Production deploys now go only through CI: Vercel auto-deploy of main is off (vercel.json); run CI by hand with "deploy" ticked (deploy job needs the all-shards gate; VERCEL_TOKEN Actions secret set).
+- Actions, daily backup and heartbeat stay paused (Thomas's call, on his list). /admin backup rows say "Paused, run by hand"; new row "Tests on main (CI)".
+- Playwright test timeout 90 s (electrical/products spec 240 s): reload specs were timing out on a 2-core box, not broken.
+- Update card rewritten for this round (en/es/pt). Real-user trial logged in docs/live-check.md (no details given).
+- Backups are paused: run backup.yml by hand until Thomas decides.

@@ -176,7 +176,7 @@ test.describe("the simple studio", () => {
   test("electrical says what's done; products are asked one list at a time, kept or changed by picture", async ({
     page,
   }) => {
-    test.setTimeout(90000); // a pick in each of the sample room's product lists loads its model
+    test.setTimeout(240000); // a pick in each of the sample room's product lists loads its model
     const errors = await open(page);
     await wait3d(page);
     await toPipes(page);

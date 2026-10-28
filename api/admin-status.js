@@ -132,7 +132,7 @@ async function stripeGet(path) {
 
 // The latest finished run of a workflow, from GitHub's public API. It is due
 // every `everyHours`; Warning once the last good run is older than `staleHours`.
-async function workflowRun(file, everyHours, staleHours) {
+async function workflowRun(file, everyHours, staleHours, paused = true) {
   /** @type {Record<string, string>} */
   const headers = { Accept: "application/vnd.github+json", "User-Agent": "room-designer-status" };
   if (env("GITHUB_TOKEN")) headers.Authorization = "Bearer " + env("GITHUB_TOKEN");
@@ -144,7 +144,8 @@ async function workflowRun(file, everyHours, staleHours) {
   const run = r.body && r.body.workflow_runs && r.body.workflow_runs[0];
   if (!run) return { status: "unknown", detail: "No finished run found", last_success: null };
   const at = Date.parse(run.updated_at || run.created_at);
-  const next = new Date(at + everyHours * HOUR).toISOString();
+  // The schedules are paused (workflow_dispatch only), so no run is promised.
+  const next = paused ? "Paused, run by hand" : new Date(at + everyHours * HOUR).toISOString();
   if (run.conclusion !== "success")
     return {
       status: "down",
@@ -319,6 +320,9 @@ async function buildStatus(origin) {
       workflowRun("backup-heartbeat.yml", 24, 36),
     ),
     // Basic
+    check("basic", "Tests on main (CI)", "Run the CI workflow by hand on main", () =>
+      workflowRun("ci.yml", 24, 24 * 14),
+    ),
     check("basic", "Database query", "Check Supabase", async () => {
       await dbRead("site_switches?select=id&limit=1");
     }),

@@ -5,6 +5,11 @@ name: CI
 # Was: push and pull_request.
 on:
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy main to production once every check is green
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -68,6 +73,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: '[ "${{ needs.checks.result }}" = success ]'
+
+  # Production deploys happen only here: Vercel's own deploys of main are off
+  # (vercel.json git.deploymentEnabled), so a commit goes live only after every
+  # shard passed. Run CI by hand on main with "deploy" ticked.
+  deploy:
+    name: Deploy to production (after green checks)
+    needs: all
+    if: github.ref == 'refs/heads/main' && inputs.deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_JDUvG9rUaogbngbMkyeQtsbG
+          VERCEL_PROJECT_ID: prj_2f0UExtGqLeXaiBUM5WdgH5knMA0
 
   # iOS Safari's engine (WebKit, iPhone 13 preset): the phone first-screen
   # test and the /admin page. Its own job, outside the required check above,

@@ -611,34 +611,21 @@
           <div class="app-card" id="update-card">
             <details class="app-details" open>
               <summary><h2>Latest update</h2></summary>
-              <p class="form-note">October 22, 2026</p>
+              <p class="form-note">October 28, 2026</p>
               <h3>Frontend changes</h3>
               <ul>
-                <li>
-                  Motion across the site: the landing hero fades and slides in, buttons and cards lift on hover, and
-                  menus, dialogs and FAQ answers ease open and shut.
-                </li>
-                <li>
-                  Motion in the designer: steps slide in, the step bar springs to the active step, the progress bar
-                  grows, the total nudges when it changes, Riley's lines and toasts appear gently, the plan and 3D views
-                  cross-fade, loading shows a soft sheen, and the camera glides between views. All of it is switched off
-                  if your device asks for reduced motion.
-                </li>
-                <li>The owner's /admin status page now shows times in Arizona time and says which zone they are in.</li>
-                <li>
-                  The /admin status page has a new row, "The 3D designer loads", that goes Down if the designer's page,
-                  scripts or a 3D model stop loading. It also has the same icons as the rest of the site.
-                </li>
-                <li>
-                  The nav underline and the products progress bar now animate with transforms, so they stay smooth on
-                  slower phones.
-                </li>
+                <li>No frontend changes in this round.</li>
               </ul>
               <h3>Other changes</h3>
               <ul>
                 <li>
-                  The /admin check that the designer loads now only asks for each file's headers instead of downloading
-                  it, so each status read is much lighter. It also always uses the site's configured address.
+                  The automatic GitHub Actions runs (tests on every change, the daily database backup and the backup
+                  alarm) are paused and only run when started by hand. The backup row on the owner's /admin page says
+                  so, and a backup is run by hand until the schedule returns.
+                </li>
+                <li>
+                  Production now deploys only after the tests pass on the main branch, and the designer's saved-step
+                  checks were made steadier.
                 </li>
               </ul>
             </details>

@@ -292,37 +292,22 @@
   "account.biz.copyUrl": ["Copy address", "Copiar dirección", "Copiar endereço"],
   "account.biz.openUrl": ["Open my designer", "Abrir mi diseñador", "Abrir meu projetista"],
   "account.update.title": ["Latest update", "Última actualización", "Última atualização"],
-  "account.update.date": ["October 22, 2026", "22 de octubre de 2026", "22 de outubro de 2026"],
+  "account.update.date": ["October 28, 2026", "28 de octubre de 2026", "28 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "Motion across the site: the landing hero fades and slides in, buttons and cards lift on hover, and menus, dialogs and FAQ answers ease open and shut.",
-    "Movimiento en todo el sitio: el encabezado de la página principal aparece deslizándose, los botones y las tarjetas se elevan al pasar el cursor, y los menús, diálogos y respuestas de preguntas frecuentes se abren y cierran suavemente.",
-    "Movimento em todo o site: o topo da página inicial surge deslizando, botões e cartões se elevam ao passar o cursor, e menus, diálogos e respostas do FAQ abrem e fecham suavemente."
-  ],
-  "account.update.f2": [
-    "Motion in the designer: steps slide in, the step bar springs to the active step, the progress bar grows, the total nudges when it changes, Riley's lines and toasts appear gently, the plan and 3D views cross-fade, loading shows a soft sheen, and the camera glides between views. All of it is switched off if your device asks for reduced motion.",
-    "Movimiento en el diseñador: los pasos se deslizan, la barra de pasos salta al paso activo, la barra de progreso crece, el total se mueve al cambiar, las líneas de Riley y los avisos aparecen suavemente, las vistas de plano y 3D se funden, la carga muestra un brillo suave y la cámara se desliza entre vistas. Todo se desactiva si su dispositivo pide movimiento reducido.",
-    "Movimento no projetista: as etapas deslizam, a barra de etapas salta para a etapa ativa, a barra de progresso cresce, o total se move ao mudar, as falas da Riley e os avisos surgem suavemente, as vistas de planta e 3D se misturam, o carregamento mostra um brilho suave e a câmera desliza entre as vistas. Tudo é desligado se o seu dispositivo pedir movimento reduzido."
-  ],
-  "account.update.f3": [
-    "The owner's /admin status page now shows times in Arizona time and says which zone they are in.",
-    "La página de estado /admin del propietario ahora muestra las horas en hora de Arizona e indica en qué zona están.",
-    "A página de status /admin do proprietário agora mostra os horários no fuso do Arizona e informa qual é o fuso."
+    "No frontend changes in this round.",
+    "No hay cambios visibles en esta ronda.",
+    "Não há mudanças visíveis nesta rodada."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
-  "account.update.f4": [
-    "The /admin status page has a new row, \"The 3D designer loads\", that goes Down if the designer's page, scripts or a 3D model stop loading. It also has the same icons as the rest of the site.",
-    "La página de estado /admin tiene una fila nueva, \"The 3D designer loads\", que pasa a Caído si la página, los scripts o un modelo 3D del diseñador dejan de cargar. También tiene los mismos iconos que el resto del sitio.",
-    "A página de status /admin tem uma nova linha, \"The 3D designer loads\", que fica Fora do ar se a página, os scripts ou um modelo 3D do projetista deixarem de carregar. Ela também tem os mesmos ícones do resto do site."
-  ],
-  "account.update.f5": [
-    "The nav underline and the products progress bar now animate with transforms, so they stay smooth on slower phones.",
-    "El subrayado del menú y la barra de progreso de productos ahora se animan con transformaciones, para mantenerse fluidos en teléfonos lentos.",
-    "O sublinhado do menu e a barra de progresso de produtos agora animam com transformações, para continuar fluidos em celulares mais lentos."
-  ],
   "account.update.o1": [
-    "The /admin check that the designer loads now only asks for each file's headers instead of downloading it, so each status read is much lighter. It also always uses the site's configured address.",
-    "La comprobación de /admin de que el diseñador carga ahora solo pide los encabezados de cada archivo en lugar de descargarlo, así que cada lectura del estado es mucho más ligera. También usa siempre la dirección configurada del sitio.",
-    "A verificação do /admin de que o projetista carrega agora pede apenas os cabeçalhos de cada arquivo em vez de baixá-lo, então cada leitura do status fica bem mais leve. Ela também usa sempre o endereço configurado do site."
+    "The automatic GitHub Actions runs (tests on every change, the daily database backup and the backup alarm) are paused and only run when started by hand. The backup row on the owner's /admin page says so, and a backup is run by hand until the schedule returns.",
+    "Las ejecuciones automáticas de GitHub Actions (pruebas en cada cambio, la copia de seguridad diaria de la base de datos y su alarma) están en pausa y solo se ejecutan a mano. La fila de copias de seguridad de /admin del propietario lo indica, y se hace una copia a mano hasta que vuelva el calendario.",
+    "As execuções automáticas do GitHub Actions (testes a cada mudança, o backup diário do banco de dados e o alarme de backup) estão pausadas e só rodam quando iniciadas à mão. A linha de backup do /admin do proprietário informa isso, e um backup é feito à mão até o agendamento voltar."
+  ],
+  "account.update.o2": [
+    "Production now deploys only after the tests pass on the main branch, and the designer's saved-step checks were made steadier.",
+    "La producción ahora se despliega solo cuando las pruebas pasan en la rama principal, y las comprobaciones del paso guardado del diseñador son más estables.",
+    "A produção agora só é publicada depois que os testes passam na ramificação principal, e as verificações da etapa salva do projetista ficaram mais estáveis."
   ]
 }

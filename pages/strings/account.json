@@ -295,9 +295,9 @@
   "account.update.date": ["October 28, 2026", "28 de octubre de 2026", "28 de outubro de 2026"],
   "account.update.frontend": ["Frontend changes", "Cambios visibles", "Mudanças visíveis"],
   "account.update.f1": [
-    "No frontend changes in this round.",
-    "No hay cambios visibles en esta ronda.",
-    "Não há mudanças visíveis nesta rodada."
+    "The owner's /admin page has a new \"Tests on main (CI)\" row, and the backup, heartbeat and CI rows now say \"Paused, run by hand\" instead of promising a next run.",
+    "La página /admin del propietario tiene una fila nueva \"Pruebas en main (CI)\", y las filas de copia de seguridad, latido y CI ahora dicen \"En pausa, se ejecuta a mano\" en vez de prometer una próxima ejecución.",
+    "A página /admin do proprietário tem uma nova linha \"Testes na main (CI)\", e as linhas de backup, heartbeat e CI agora dizem \"Pausado, executado à mão\" em vez de prometer a próxima execução."
   ],
   "account.update.other": ["Other changes", "Otros cambios", "Outras mudanças"],
   "account.update.o1": [

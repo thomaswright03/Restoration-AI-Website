@@ -82,13 +82,27 @@ jobs:
     needs: all
     if: github.ref == 'refs/heads/main' && inputs.deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
-      - run: npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN"
+      - id: vercel
+        run: |
+          url=$(npx --yes vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" -m githubCommitSha="$GITHUB_SHA")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: team_JDUvG9rUaogbngbMkyeQtsbG
           VERCEL_PROJECT_ID: prj_2f0UExtGqLeXaiBUM5WdgH5knMA0
+      # A CLI deploy creates no GitHub deployment, which the /admin "Deployed
+      # version" row reads for the go-live time; record one for this commit.
+      - name: Record the deployment on GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          id=$(gh api repos/${{ github.repository }}/deployments -f ref="$GITHUB_SHA" -f environment=Production -F auto_merge=false -F required_contexts[]= -f description="CI deploy" --jq .id)
+          gh api repos/${{ github.repository }}/deployments/$id/statuses -f state=success -f environment_url="${{ steps.vercel.outputs.url }}"
 
   # iOS Safari's engine (WebKit, iPhone 13 preset): the phone first-screen
   # test and the /admin page. Its own job, outside the required check above,

@@ -132,24 +132,31 @@ async function stripeGet(path) {
 
 // The latest finished run of a workflow, from GitHub's public API. It is due
 // every `everyHours`; Warning once the last good run is older than `staleHours`.
-async function workflowRun(file, everyHours, staleHours, paused = true) {
+async function workflowRun(file, everyHours, staleHours, paused = true, branch = "") {
   /** @type {Record<string, string>} */
   const headers = { Accept: "application/vnd.github+json", "User-Agent": "room-designer-status" };
   if (env("GITHUB_TOKEN")) headers.Authorization = "Bearer " + env("GITHUB_TOKEN");
   const r = await getJson(
-    "https://api.github.com/repos/" + REPO + "/actions/workflows/" + file + "/runs?per_page=1&status=completed",
+    "https://api.github.com/repos/" +
+      REPO +
+      "/actions/workflows/" +
+      file +
+      "/runs?per_page=1&status=completed" +
+      (branch ? "&branch=" + branch : ""),
     headers,
   );
   if (!r.ok) throw new Error("GitHub answered " + r.status);
   const run = r.body && r.body.workflow_runs && r.body.workflow_runs[0];
   if (!run) return { status: "unknown", detail: "No finished run found", last_success: null };
   const at = Date.parse(run.updated_at || run.created_at);
-  // The schedules are paused (workflow_dispatch only), so no run is promised.
-  const next = paused ? "Paused, run by hand" : new Date(at + everyHours * HOUR).toISOString();
+  // The schedules are paused (workflow_dispatch only), so no run is promised:
+  // no next time (the field is an ISO time or null), and the detail says so.
+  const next = paused ? null : new Date(at + everyHours * HOUR).toISOString();
+  const note = paused ? "Paused, run by hand" : "";
   if (run.conclusion !== "success")
     return {
       status: "down",
-      detail: "The last run ended " + run.conclusion,
+      detail: "The last run ended " + run.conclusion + (note ? ". " + note : ""),
       last_success: null,
       next_expected_run: next,
     };
@@ -158,11 +165,26 @@ async function workflowRun(file, everyHours, staleHours, paused = true) {
   if (age > staleHours * HOUR)
     return {
       status: "warning",
-      detail: "The last good run was " + Math.round(age / HOUR) + " h ago",
+      detail: "The last good run was " + Math.round(age / HOUR) + " h ago" + (note ? ". " + note : ""),
       last_success: lastSuccess,
       next_expected_run: next,
     };
-  return { last_success: lastSuccess, next_expected_run: next };
+  const sha = String(run.head_sha || "");
+  const deployed = env("VERCEL_GIT_COMMIT_SHA");
+  if (branch && deployed && sha && sha !== deployed)
+    return {
+      status: "warning",
+      detail:
+        "The last green run on " +
+        branch +
+        " is commit " +
+        sha.slice(0, 7) +
+        ", not the deployed " +
+        deployed.slice(0, 7),
+      last_success: lastSuccess,
+      next_expected_run: next,
+    };
+  return { ...(note ? { detail: note } : {}), last_success: lastSuccess, next_expected_run: next };
 }
 
 // Stripe keeps retrying a failed delivery for days; one still failing after
@@ -321,7 +343,7 @@ async function buildStatus(origin) {
     ),
     // Basic
     check("basic", "Tests on main (CI)", "Run the CI workflow by hand on main", () =>
-      workflowRun("ci.yml", 24, 24 * 14),
+      workflowRun("ci.yml", 24, 24 * 14, true, "main"),
     ),
     check("basic", "Database query", "Check Supabase", async () => {
       await dbRead("site_switches?select=id&limit=1");

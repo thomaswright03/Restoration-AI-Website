@@ -166,7 +166,9 @@ test("the bearer token returns the documented shape, three groups in order, all 
     ]);
     if (f.status !== "ok") assert.fail(f.name + ": " + f.detail);
   }
-  assert.ok(row(r.body, "Daily backup").next_expected_run);
+  // Paused schedules promise no run: null (never non-ISO text), said in the detail.
+  assert.equal(row(r.body, "Daily backup").next_expected_run, null);
+  assert.match(row(r.body, "Daily backup").detail, /Paused, run by hand/);
 });
 
 test("an unset STRIPE_SECRET_KEY turns Stripe checkout Down and overall down", async () => {

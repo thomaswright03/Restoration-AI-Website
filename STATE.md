@@ -41,3 +41,10 @@
 - Playwright test timeout 90 s (electrical/products spec 240 s): reload specs were timing out on a 2-core box, not broken.
 - Update card rewritten for this round (en/es/pt). Real-user trial logged in docs/live-check.md (no details given).
 - Backups are paused: run backup.yml by hand until Thomas decides.
+
+## Excellence fix round 2 of grade 72 (2026-10-28)
+
+- Paused rows: next_expected_run is now null (detail says "Paused, run by hand"); CI row filters branch=main and warns if the last green run isn't the deployed commit. Unit test added.
+- CI deploy job records a GitHub deployment (and passes the sha as meta) so the Deployed version row finds a go-live time; verify after the first CI deploy.
+- Update card lists the /admin changes (en/es/pt).
+- Still needs a manual CI run on main with deploy ticked, and a by-hand backup run.
